@@ -97,7 +97,18 @@ SUBROUTINE CoLMMAIN ( &
          ! additional variables required by coupling with WRF model
            emis,         z0m,          zol,          rib,           &
            ustar,        qstar,        tstar,        fm,            &
-           fh,           fq                                         )
+           fh,         &  
+#ifdef CH4
+c_atm,ch4_surf_flux_tot,net_methane,&
+annavg_agnpp,annavg_bgnpp,annavg_somhr,annavg_finrw,&
+ch4_prod_depth,o2_decomp_depth,&
+ch4_oxid_depth,o2_oxid_depth,&
+ch4_aere_depth,ch4_tran_depth,o2_aere_depth,&
+ch4_ebul_depth,&
+o2stress,ch4stress,ch4_surf_aere,ch4_surf_ebul,ch4_surf_diff,ch4_ebul_total,&
+! totcolch4,grnd_ch4_cond,& 
+#endif
+           fq                                         )
 
 !=======================================================================
 !
@@ -167,7 +178,8 @@ SUBROUTINE CoLMMAIN ( &
    USE YOS_CMF_INPUT, only: LWINFILT,LWEVAP
 #endif
    USE MOD_SPMD_Task
-
+   USE MOD_ch4_test
+   
    IMPLICIT NONE
 
 ! ------------------------ Dummy Argument ------------------------------
@@ -463,6 +475,66 @@ SUBROUTINE CoLMMAIN ( &
         fm          ,&! integral of profile function for momentum
         fh          ,&! integral of profile function for heat
         fq            ! integral of profile function for moisture
+
+
+!   --------------------------------------------------------------ch4----------------------------------------------
+!   ---------------------------------------------------------------------------------------------------------------
+#ifdef CH4
+
+! set input
+real(r8) :: &
+annsum_npp              , &! annual sum NPP (gC/m2/yr)
+rr                      , &! root respiration (fine root MR + total root GR) (gC/m2/s)
+
+agnpp                   , &! aboveground NPP (gC/m2/s)
+bgnpp                   , &! belowground NPP (gC/m2/s)
+somhr,&
+
+crootfr(1:nl_soil),lithr,hr_vr(1:nl_soil),o_scalar(1:nl_soil),fphr(1:nl_soil),pot_f_nit_vr(1:nl_soil),pH,&
+
+cellorg(1:nl_soil),t_h2osfc,organic_max
+
+! set output
+real(r8), INTENT(out) :: &
+c_atm(1:3),&
+ch4_surf_flux_tot            , &! CH4 flux to atm. (kg C/m**2/s)
+net_methane                  , &! average net methane correction to CO2 flux (g C/m^2/s)
+
+annavg_agnpp,&
+annavg_bgnpp,&
+annavg_somhr,&
+annavg_finrw,&
+
+ch4_prod_depth(1:nl_soil),o2_decomp_depth(1:nl_soil),&
+
+ch4_oxid_depth(1:nl_soil),o2_oxid_depth(1:nl_soil),&
+
+ch4_aere_depth(1:nl_soil),ch4_tran_depth(1:nl_soil),o2_aere_depth(1:nl_soil),&
+
+ch4_ebul_depth(1:nl_soil),&
+
+o2stress(1:nl_soil),ch4stress(1:nl_soil),ch4_surf_aere,ch4_surf_ebul,ch4_surf_diff,ch4_ebul_total
+
+! set inout
+logical ::&
+ch4_first_time
+
+real(r8) :: &
+totcolch4,&
+forc_pch4m              , &! CH4 concentration in atmos. (pascals)
+grnd_ch4_cond,&
+conc_o2  (1:nl_soil)    , &! O2 conc in each soil layer (mol/m3) 
+conc_ch4(1:nl_soil),&
+layer_sat_lag(1:nl_soil),&
+lake_soilc(1:nl_soil),&
+
+tempavg_agnpp,&
+tempavg_bgnpp,&
+annsum_counter,&
+tempavg_somhr,&
+tempavg_finrw
+
+#endif   
 
 ! ----------------------- Local  Variables -----------------------------
    real(r8) :: &
@@ -1472,6 +1544,73 @@ SUBROUTINE CoLMMAIN ( &
 
       z_sno (maxsnl+1:0) = z_soisno (maxsnl+1:0)
       dz_sno(maxsnl+1:0) = dz_soisno(maxsnl+1:0)
+
+
+#ifdef CH4
+! set input
+annsum_npp = 1
+rr = 1
+
+agnpp  = 1
+bgnpp  = 1
+somhr  = 1
+
+crootfr = 1
+lithr = 1
+hr_vr = 1
+o_scalar = 1
+fphr = 1
+pot_f_nit_vr =1
+pH=1
+
+cellorg =1
+t_h2osfc = 1
+organic_max = 1
+
+!  set inout
+ch4_first_time = .true.
+totcolch4 = 1
+forc_pch4m = 1
+grnd_ch4_cond = 1
+conc_o2  = 1 
+conc_ch4 = 1
+layer_sat_lag = 1
+lake_soilc=1
+
+tempavg_agnpp = 1
+tempavg_bgnpp = 1
+annsum_counter = 1
+tempavg_somhr =1 
+tempavg_finrw = 1
+
+CALL ch4 (ipatch,patchtype,&!input
+   patchlonr,patchlatr,&
+   lb,nl_soil,maxsnl,snl,&
+   deltim,&
+   z_soisno(lb:nl_soil),dz_soisno(lb:nl_soil),zi_soisno(lb-1:nl_soil),t_soisno(lb:nl_soil),t_grnd,wliq_soisno(lb:nl_soil),wice_soisno(lb:nl_soil),&
+   forc_t,forc_pbot,forc_po2m,forc_pco2m,&
+   zwt,rootfr(1:nl_soil),snowdp,wat,rsur,etr,lakedepth,lake_icefrac(1:nl_soil),wdsrf,bsw(1:nl_soil),&
+   smp(1:nl_soil),porsl(1:nl_soil),lai,&
+   annsum_npp,rr,&
+   idate,agnpp,bgnpp,somhr,&
+   crootfr(1:nl_soil),lithr,hr_vr(1:nl_soil),o_scalar(1:nl_soil),fphr(1:nl_soil),pot_f_nit_vr(1:nl_soil),pH,&
+   rootr(1:nl_soil),&
+   cellorg(1:nl_soil),t_h2osfc,organic_max,&
+   c_atm(1:3),ch4_surf_flux_tot,net_methane,&!output
+   annavg_agnpp,annavg_bgnpp,annavg_somhr,annavg_finrw,&
+   ch4_prod_depth(1:nl_soil),o2_decomp_depth(1:nl_soil),&
+   ch4_oxid_depth(1:nl_soil),o2_oxid_depth(1:nl_soil),&
+   ch4_aere_depth(1:nl_soil),ch4_tran_depth(1:nl_soil),o2_aere_depth(1:nl_soil),&
+   ch4_ebul_depth(1:nl_soil),&
+   o2stress(1:nl_soil),ch4stress(1:nl_soil),ch4_surf_aere,ch4_surf_ebul,ch4_surf_diff,ch4_ebul_total,&
+   ch4_first_time,totcolch4,forc_pch4m,grnd_ch4_cond,conc_o2(1:nl_soil),conc_ch4(1:nl_soil),layer_sat_lag(1:nl_soil),lake_soilc(1:nl_soil),&!inout
+   tempavg_agnpp,tempavg_bgnpp,annsum_counter,&
+   tempavg_somhr,tempavg_finrw)
+!  print*, ch4_surf_flux_tot,net_methane
+!  print*, totcolch4,grnd_ch4_cond
+!  print*, forc_pch4m,layer_sat_lag
+#endif
+!----------------------------------------------------------------------
 
 END SUBROUTINE CoLMMAIN
 ! ---------- EOP ------------

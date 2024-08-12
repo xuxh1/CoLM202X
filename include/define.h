@@ -1,24 +1,24 @@
 ! 1. Spatial structure:
 !    Select one of the following options.
-#define GRIDBASED
+#undef GRIDBASED
 #undef CATCHMENT
 #undef UNSTRUCTURED
-#undef SinglePoint
+#define SinglePoint
 
 ! 2. Land subgrid type classification:
 !    Select one of the following options.
 #undef LULC_USGS
-#define LULC_IGBP
-#undef LULC_IGBP_PFT
+#undef LULC_IGBP
+#define LULC_IGBP_PFT
 #undef LULC_IGBP_PC
 
 ! 2.1 3D Urban model (put it temporarily here):
 #undef URBAN_MODEL
 
 ! 3. If defined, debug information is output.
-#define CoLMDEBUG
+#undef CoLMDEBUG
 ! 3.1 If defined, range of variables is checked.
-#define RangeCheck
+#undef RangeCheck
 ! 3.1 If defined, surface data in vector is mapped to gridded data for checking.
 #undef SrfdataDiag
 
@@ -31,10 +31,10 @@
 
 ! 5. Hydrological process options.
 ! 5.1 Two soil hydraulic models can be used.
-#undef   Campbell_SOIL_MODEL
-#define  vanGenuchten_Mualem_SOIL_MODEL
+#define   Campbell_SOIL_MODEL
+#undef  vanGenuchten_Mualem_SOIL_MODEL
 ! 5.2 If defined, lateral flow is modeled.
-#define CatchLateralFlow
+#undef CatchLateralFlow
 !    Conflicts :
 #ifndef CATCHMENT
 #undef CatchLateralFlow
@@ -44,18 +44,21 @@
 #undef CaMa_Flood
 
 ! 7. If defined, BGC model is used.
-#undef BGC
+#define BGC
 
 !    Conflicts :  only used when LULC_IGBP_PFT is defined.
 #ifndef LULC_IGBP_PFT
 #undef BGC
 #endif
 ! 7.1 If defined, CROP model is used
-#define CROP
+#undef CROP
 !    Conflicts : only used when BGC is defined
 #ifndef BGC
 #undef CROP
 #endif
+
+! 7.2 If defined, CH4 model is used
+#define CH4
 
 ! 8. If defined, open Land use and land cover change mode.
 #undef LULCC
