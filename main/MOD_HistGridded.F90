@@ -54,6 +54,8 @@ CONTAINS
    USE MOD_SingleSrfData
 #endif
    USE MOD_Utils
+   USE MOD_SPMD_Task
+
    IMPLICIT NONE
 
    character(len=*), intent(in) :: dir_hist
@@ -120,6 +122,8 @@ CONTAINS
    USE MOD_Grid
    USE MOD_Vars_1DAccFluxes,  only: nac
    USE MOD_Vars_Global, only: spval
+   USE MOD_SPMD_Task
+
    IMPLICIT NONE
 
    real(r8), intent(inout) :: acc_vec(:)

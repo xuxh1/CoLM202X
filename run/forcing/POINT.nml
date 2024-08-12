@@ -1,7 +1,7 @@
 &nl_colm_forcing
 
    ! ----- forcing -----
-   DEF_dir_forcing  = '/tera06/zhwei/CoLM_Forcing/PLUMBER2/Forcing/'
+   DEF_dir_forcing  = '/tera11/zhwei/zhwei/data/Data_ref/stn_ref/FluxSite/PLUMBER-needrenew/PLUMBER2/all/Forcing/'
 
    DEF_forcing%dataset           = 'POINT' 
    DEF_forcing%solarin_all_band  = .true.  
@@ -10,19 +10,19 @@
    DEF_forcing%HEIGHT_Q          = 50.
    
    DEF_forcing%NVAR              = 8        ! variable number of forcing data
-   DEF_forcing%startyr           = 2013     ! start year of forcing data  
+   DEF_forcing%startyr           = 2008     ! start year of forcing data  
    DEF_forcing%startmo           = 1        ! start month of forcing data
-   DEF_forcing%endyr             = 2020     ! end year of forcing data
+   DEF_forcing%endyr             = 2009     ! end year of forcing data
    DEF_forcing%endmo             = 12       ! end month of forcing data
    
-   DEF_forcing%fprefix(1) = 'CN-Dan_2004-2005_FLUXNET2015_Met.nc'
-   DEF_forcing%fprefix(2) = 'CN-Dan_2004-2005_FLUXNET2015_Met.nc'
-   DEF_forcing%fprefix(3) = 'CN-Dan_2004-2005_FLUXNET2015_Met.nc'
-   DEF_forcing%fprefix(4) = 'CN-Dan_2004-2005_FLUXNET2015_Met.nc'
-   DEF_forcing%fprefix(5) = 'CN-Dan_2004-2005_FLUXNET2015_Met.nc'
-   DEF_forcing%fprefix(6) = 'CN-Dan_2004-2005_FLUXNET2015_Met.nc'
-   DEF_forcing%fprefix(7) = 'CN-Dan_2004-2005_FLUXNET2015_Met.nc'
-   DEF_forcing%fprefix(8) = 'CN-Dan_2004-2005_FLUXNET2015_Met.nc'
+   DEF_forcing%fprefix(1) = 'CN-Cng_2008-2009_FLUXNET2015_Met.nc'
+   DEF_forcing%fprefix(2) = 'CN-Cng_2008-2009_FLUXNET2015_Met.nc'
+   DEF_forcing%fprefix(3) = 'CN-Cng_2008-2009_FLUXNET2015_Met.nc'
+   DEF_forcing%fprefix(4) = 'CN-Cng_2008-2009_FLUXNET2015_Met.nc'
+   DEF_forcing%fprefix(5) = 'CN-Cng_2008-2009_FLUXNET2015_Met.nc'
+   DEF_forcing%fprefix(6) = 'CN-Cng_2008-2009_FLUXNET2015_Met.nc'
+   DEF_forcing%fprefix(7) = 'CN-Cng_2008-2009_FLUXNET2015_Met.nc'
+   DEF_forcing%fprefix(8) = 'CN-Cng_2008-2009_FLUXNET2015_Met.nc'
    
    DEF_forcing%vname    = 'Tair' 'Qair' 'Psurf' 'Precip' 'NULL' 'Wind' 'SWdown' 'LWdown' 
    DEF_forcing%tintalgo = 'linear' 'linear' 'linear' 'nearest' 'NULL' 'linear' 'coszen' 'linear'

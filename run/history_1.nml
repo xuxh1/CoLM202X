@@ -1,0 +1,6 @@
+&nl_colm_history
+   
+   ! ! ----- history -----
+   ! DEF_hist_vars%lai        = .false.
+
+/

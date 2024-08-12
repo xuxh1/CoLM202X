@@ -317,6 +317,9 @@ OBJS_MAIN = \
 				MOD_Lulcc_TransferTrace.o                 \
 				MOD_Lulcc_MassEnergyConserve.o            \
 				MOD_Lulcc_Driver.o                        \
+				MOD_Const_ch4.o		                      \
+				MOD_ch4varcon.o		                      \
+				MOD_ch4_test.o                            \
 				CoLMDRIVER.o                              \
 				CoLMMAIN.o                                \
 				CoLM.o
