@@ -347,7 +347,7 @@ contains
 		totcolch4 = 0
 
 		!-----------------------------------------------------------------------
-        ! compute jwt index
+		! compute jwt index
 		! The layer index of the first unsaturated layer,
 		! i.e., the layer right above the water table
 		jwt = nl_soil
@@ -370,11 +370,11 @@ contains
 		do j= 1, nl_soil
 			dzmm(j) = dz_soisno(j)*denh2o
 			vol_liq(j) = wliq_soisno(j)/dzmm(j)
-        end do
+		end do
         
-        lon = patchlonr/deg2rad
-        lat = patchlatr/deg2rad
-        print*, lon,lat
+		lon = patchlonr/deg2rad
+		lat = patchlatr/deg2rad
+		print*, lon,lat
 
 		!-----------------------------------------------------------------------
 		! Initialize local fluxes to zero: necessary for columns outside the filters because averaging up to gridcell will be done
@@ -664,7 +664,7 @@ contains
 		! Annual mean fields.
 		!-----------------------------------------------------------------------
 
-        use MOD_Precision
+		use MOD_Precision
 		implicit none
 
 		!-----------------------Argument----------------------------------------
@@ -890,10 +890,10 @@ contains
 					if (.not. anoxia) then
 						if (annavg_finrw /= spval) then
 						seasonalfin = max(finundated-annavg_finrw, 0._r8)
-						if (seasonalfin > 0._r8) then
-							sif = (annavg_finrw + mino2lim*seasonalfin) / finundated
-							base_decomp = base_decomp * sif
-						end if
+							if (seasonalfin > 0._r8) then
+								sif = (annavg_finrw + mino2lim*seasonalfin) / finundated
+								base_decomp = base_decomp * sif
+							end if
 						end if
 					end if ! anoxia
 				end if
@@ -1430,7 +1430,7 @@ contains
 		integer , INTENT(in) :: &
 			nl_soil                 , &! number of soil layers
 			jwt                     , &! index of the soil layer right above the water table (-) 
-         	sat                        ! 0 = unsaturated; 1 = saturated 
+			sat                        ! 0 = unsaturated; 1 = saturated 
 
 		real(r8), INTENT(in) :: &
 			deltim                     , &! land model time step (sec)
@@ -1765,14 +1765,14 @@ contains
 				write(6,*) 'Methane demands exceed methane available. Error in methane competition (mol/m^3/s), j:', &
 						source(j,1) + conc_ch4(j) / deltim, j
 				write(6,*)'Lat,Lon=',lat,lon
-					CALL CoLM_stop ()
+				CALL CoLM_stop ()
 	
 			else if (ch4stress(j) < 1._r8 .and. source(j,1) + conc_ch4(j) / deltim > 1.e-12_r8) then  
 	
 				write(6,*) 'Methane limited, yet some left over. Error in methane competition (mol/m^3/s), j:', &
 						source(j,1) + conc_ch4(j) / deltim, j
 				write(6,*)'Lat,Lon=',lat,lon
-					CALL CoLM_stop ()
+				CALL CoLM_stop ()
 	
 			end if
 	
@@ -1788,7 +1788,7 @@ contains
 	
 				write(6,*) 'Oxygen limited, yet some left over. Error in oxygen competition (mol/m^3/s), j:', &
 						source(j,2) + conc_o2(j) / deltim, j
-					write(6,*)'Lat,Lon=',lat,lon
+				write(6,*)'Lat,Lon=',lat,lon
 				CALL CoLM_stop ()
 	
 			end if
@@ -2060,12 +2060,12 @@ contains
 				enddo ! j; nl_soil
 	
 				call Tridiagonal(0, nl_soil, &
-							jtop, &
-							at(:), &
-							bt(:), &
-							ct(:), &
-							rt(:), &
-							conc_ch4_rel(0:nl_soil))
+					jtop, &
+					at(:), &
+					bt(:), &
+					ct(:), &
+					rt(:), &
+					conc_ch4_rel(0:nl_soil))
 	
 					
 	
@@ -2089,16 +2089,16 @@ contains
 					if (conc_ch4_rel(j) < 0._r8) then
 						deficit = - conc_ch4_rel(j)*epsilon_t(j,1)*dz_soisno(j)  ! Mol/m^2 added
 						if (deficit > 1.e-3_r8 * scale_factor_gasdiff) then
-						if (deficit > 1.e-2_r8) then
-							write(6,*)'Note: sink > source in ch4_tran, sources are changing '// &
-									' quickly relative to diffusion timestep, and/or diffusion is rapid.'
-									write(6,*)'Lat,Lon=',lat,lon
-							write(6,*)'This typically occurs when there is a larger than normal '// &
-									' diffusive flux.'
-							write(6,*)'If this occurs frequently, consider reducing land model (or '// &
-									' methane model) timestep, or reducing the max. sink per timestep in the methane model.'
-						end if
-						write(6,*) 'Negative conc. in ch4tran. j,deficit (mol):',j,deficit
+							if (deficit > 1.e-2_r8) then
+								write(6,*)'Note: sink > source in ch4_tran, sources are changing '// &
+										' quickly relative to diffusion timestep, and/or diffusion is rapid.'
+										write(6,*)'Lat,Lon=',lat,lon
+								write(6,*)'This typically occurs when there is a larger than normal '// &
+										' diffusive flux.'
+								write(6,*)'If this occurs frequently, consider reducing land model (or '// &
+										' methane model) timestep, or reducing the max. sink per timestep in the methane model.'
+							end if
+							write(6,*) 'Negative conc. in ch4tran. j,deficit (mol):',j,deficit
 						end if
 						conc_ch4_rel(j) = 0._r8
 						! Subtract deficit
@@ -2150,11 +2150,11 @@ contains
 				enddo ! j; nl_soil
   
 				call Tridiagonal(0, nl_soil, jtop, &
-							at(:), &
-							bt(:), &
-							ct(:), &
-							rt(:), &
-							conc_o2_rel(0:nl_soil))
+					at(:), &
+					bt(:), &
+					ct(:), &
+					rt(:), &
+					conc_o2_rel(0:nl_soil))
   
 				! Ensure that concentrations stay above 0
 				do j = 1,nl_soil
@@ -2193,10 +2193,10 @@ contains
 		if (abs(errch4) < 1.e-8_r8) then 
 		   ch4_surf_diff = ch4_surf_diff - errch4/deltim
 		else ! errch4 > 1e-8 mol / m^2 / timestep
-		   ! write(6,*)'CH4 Conservation Error in CH4Mod during diffusion, istep, errch4 (mol /m^2.timestep)', &
-			  ! 	istep,errch4
-			  write(6,*)'Lat,Lon=',lat,lon
-			  CALL CoLM_stop ()
+		   	! write(6,*)'CH4 Conservation Error in CH4Mod during diffusion, istep, errch4 (mol /m^2.timestep)', &
+			! istep,errch4
+			write(6,*)'Lat,Lon=',lat,lon
+			CALL CoLM_stop ()
 		end if
   
 	end subroutine ch4_tran
