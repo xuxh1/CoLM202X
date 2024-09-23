@@ -716,7 +716,6 @@ contains
 			tempavg_somhr  = tempavg_somhr + deltim/secsperyear * somhr
 			tempavg_finrw  = tempavg_finrw + deltim/secsperyear * finundated * somhr
 		end if
-		
  
 		if (annsum_counter >= secsperyear) then
 			
