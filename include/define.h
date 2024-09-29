@@ -76,3 +76,5 @@
 #ifdef VectorInOneFileP
 #undef VectorInOneFileS
 #endif
+
+#undef USESplitAI

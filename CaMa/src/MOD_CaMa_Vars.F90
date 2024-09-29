@@ -410,23 +410,35 @@ CONTAINS
       CALL flux_map_and_write_2d_cama(DEF_hist_cama_vars%maxdph, &
       real(D2RIVDPH_MAX), file_hist, 'maxdph', itime_in_file,'daily maximum river depth','m')
 
+      IF (DEF_hist_cama_vars%damsto) THEN
       CALL flux_map_and_write_2d_cama(DEF_hist_cama_vars%damsto, &
       real(p2damsto), file_hist, 'damsto', itime_in_file,'reservoir storage','m3')
+      ENDIF
 
+      IF (DEF_hist_cama_vars%daminf) THEN
       CALL flux_map_and_write_2d_cama(DEF_hist_cama_vars%daminf, &
       real(d2daminf_avg), file_hist, 'daminf', itime_in_file,'reservoir inflow','m3/s')
+      ENDIF
 
+      IF (DEF_hist_cama_vars%wevap) THEN
       CALL flux_map_and_write_2d_cama(DEF_hist_cama_vars%wevap, &
       real(D2WEVAPEX_AVG), file_hist, 'wevap', itime_in_file,'inundation water evaporation','m/s')
+      ENDIF
 
+      IF (DEF_hist_cama_vars%winfilt) THEN
       CALL flux_map_and_write_2d_cama(DEF_hist_cama_vars%winfilt, &
       real(D2WINFILTEX_AVG), file_hist, 'winfilt', itime_in_file,'inundation water infiltration','m/s')
+      ENDIF
 
+      IF (DEF_hist_cama_vars%levsto) THEN
       CALL flux_map_and_write_2d_cama(DEF_hist_cama_vars%levsto, &
       real(P2LEVSTO), file_hist, 'levsto', itime_in_file,'protected area storage','m3')
+      ENDIF
 
+      IF (DEF_hist_cama_vars%levdph) THEN
       CALL flux_map_and_write_2d_cama(DEF_hist_cama_vars%levdph, &
       real(D2LEVDPH), file_hist, 'levdph', itime_in_file,'protected area depth','m')
+      ENDIF
       
       !*** reset variable
       CALL CMF_DIAG_RESET
@@ -657,9 +669,9 @@ CONTAINS
 
                   smesg = (/p_iam_glb, ixseg, iyseg/)
                   CALL mpi_send (smesg, 3, MPI_INTEGER, &
-                     p_root, 10011, p_comm_glb, p_err)
+                     p_address_master, 10011, p_comm_glb, p_err)
                   CALL mpi_send (sbuf, xcnt*ycnt, MPI_DOUBLE, &
-                     p_root, 10011, p_comm_glb, p_err)
+                     p_address_master, 10011, p_comm_glb, p_err)
 
                   deallocate (sbuf)
 
@@ -740,7 +752,7 @@ CONTAINS
          ENDDO
       ELSEIF  (p_is_io) THEN
          DO WHILE (.true.)
-            CALL mpi_recv (rmesg, 2, MPI_INTEGER, p_root, 10000, p_comm_glb, p_stat, p_err)
+            CALL mpi_recv (rmesg, 2, MPI_INTEGER, p_address_master, 10000, p_comm_glb, p_stat, p_err)
             ixseg = rmesg(1)
             iyseg = rmesg(2)
 
@@ -754,7 +766,7 @@ CONTAINS
 
                allocate (rbuf(xcnt,ycnt))
                CALL mpi_recv (rbuf, xcnt*ycnt, MPI_DOUBLE, &
-                  p_root, 10000, p_comm_glb, p_stat, p_err)
+                  p_address_master, 10000, p_comm_glb, p_stat, p_err)
                IOVar%blk(iblk,jblk)%val(xdsp+1:xdsp+xcnt,ydsp+1:ydsp+ycnt)= rbuf
                deallocate (rbuf)
             ELSE
