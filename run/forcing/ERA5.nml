@@ -1,7 +1,7 @@
 &nl_colm_forcing
    
   ! ----- forcing -----
-   DEF_dir_forcing  = '/tera06/zhwei/CoLM_Forcing/ERA5/' 
+   DEF_dir_forcing  = '/shr03/CoLM_Forcing/ERA5/' 
 
    DEF_forcing%dataset           = 'ERA5' 
    DEF_forcing%solarin_all_band  = .true.  

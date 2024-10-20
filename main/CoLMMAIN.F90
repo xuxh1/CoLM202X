@@ -1625,7 +1625,7 @@ CALL ch4 (ipatch,patchtype,&!input
    deltim,&
    z_soisno(lb:nl_soil),dz_soisno(lb:nl_soil),zi_soisno(lb-1:nl_soil),t_soisno(lb:nl_soil),t_grnd,wliq_soisno(lb:nl_soil),wice_soisno(lb:nl_soil),&
    forc_t,forc_pbot,forc_po2m,forc_pco2m,&
-   zwt,rootfr(1:nl_soil),snowdp,wat,rsur,etr,lakedepth,lake_icefrac(1:nl_soil),wdsrf,bsw(1:nl_soil),&
+   zwt,rootfr(1:nl_soil),snowdp,wat,rsur,etr,lakedepth,lake_icefrac(1:nl_lake),wdsrf,bsw(1:nl_soil),&
    smp(1:nl_soil),porsl(1:nl_soil),lai,&
    annsum_npp,rr,&
    idate,agnpp,bgnpp,somhr,&

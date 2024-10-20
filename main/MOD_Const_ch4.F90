@@ -45,7 +45,10 @@ MODULE MOD_Const_ch4
 
 !------------------------------------------------------------------
 
-	real(r8), public, parameter :: rgasm = 287.04_r8/1000._r8 ! J/mol.K; rgas / 1000; will be set below
+	real(r8), public, parameter :: rgasm = SHR_CONST_RGAS/1000._r8 ! J/mol.K; Universal gas constant 
+	!!! rgas Different from CoLM
+	!!! rgas in CoLM is gas constant for dry air [J/kg/K]
+	!!! not Universal gas constant
 	real(r8), parameter :: rgasLatm = 0.0821_r8 ! L.atm/mol.K
 
 	real(r8), public, parameter :: secspday = 86400._r8 ! Seconds per day
