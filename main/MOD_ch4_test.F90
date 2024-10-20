@@ -18,8 +18,9 @@ module MOD_ch4_test
 	use MOD_ch4varcon, only : transpirationloss, use_aereoxid_prog
 	use MOD_ch4varcon, only : ch4frzout
 	use MOD_Namelist, only : DEF_USE_VariablySaturatedFlow
-	use MOD_Vars_Global, only : maxsnl,nl_soil,spval,PI,deg2rad
+	use MOD_Vars_Global, only : maxsnl,nl_soil,nl_lake,spval,PI,deg2rad
 	use MOD_SPMD_Task
+   USE MOD_LandPFT, only: patch_pft_s, patch_pft_e
 	!-----------------------------------------------------------------------
 	implicit none
 	save
@@ -34,12 +35,8 @@ module MOD_ch4_test
 	private :: ch4_prod
 	private :: ch4_oxid
 	private :: ch4_aere
-	private :: SiteOxAere
 	private :: ch4_ebul
 	private :: ch4_tran
-	private :: Tridiagonal
-
-
 
 	type, private :: params_type
 		! ch4 production constants
@@ -143,7 +140,7 @@ contains
 		integer, INTENT(in) :: &
 			lb               , &! lower bound of array (snl+1)
 			nl_soil          , &! upper bound of array (10)
-			maxsnl			 , &!  max number of snow layers (-5)
+			maxsnl			  , &!  max number of snow layers (-5)
 			snl				    !  number of snow layers     (-5~-1)
 
 		real(r8), INTENT(in) :: &
@@ -390,7 +387,7 @@ contains
 		else
 			if (forc_pch4m == 0._r8) then
 				write(6,*) 'not using ch4offline, but methane concentration not passed from the atmosphere', &
-				'to land model! CLM Model is stopping.'
+				'to land model! CoLM Model is stopping.'
 				CALL CoLM_stop ()
 			end if
 		end if
@@ -557,19 +554,19 @@ contains
 				end if
 	
 				if (j == nl_soil) then
-				! Adjustment to NEE flux to atm. for methane production
-				if (.not. replenishlakec) then
-					net_methane = net_methane + ch4_prod_tot
-					! Here this is positive because it is actually the CO2 that comes off with the methane
-					! NOTE THIS MODE ASSUMES TRANSIENT CARBON SUPPLY FROM LAKES; COUPLED MODEL WILL NOT CONSERVE CARBON
-					! IN THIS MODE.
-				else ! replenishlakec
-					net_methane = net_methane - ch4_prod_tot
-					! Keep total C constant, just shift from CO2 to methane
-				end if
+					! Adjustment to NEE flux to atm. for methane production
+					if (.not. replenishlakec) then
+						net_methane = net_methane + ch4_prod_tot
+						! Here this is positive because it is actually the CO2 that comes off with the methane
+						! NOTE THIS MODE ASSUMES TRANSIENT CARBON SUPPLY FROM LAKES; COUPLED MODEL WILL NOT CONSERVE CARBON
+						! IN THIS MODE.
+					else ! replenishlakec
+						net_methane = net_methane - ch4_prod_tot
+						! Keep total C constant, just shift from CO2 to methane
+					end if
 
-				! Adjustment to NEE flux to atm. for methane oxidation
-				net_methane = net_methane + ch4_oxid_tot
+					! Adjustment to NEE flux to atm. for methane oxidation
+					net_methane = net_methane + ch4_oxid_tot
 
 				end if
 			end do
@@ -617,37 +614,10 @@ contains
 				end if
 			end if
 		end if
-	
-		!
-		! Gricell level balance
-		!
-	
-		! Skip the check if dynamic lakes are on and it's
-		! - the beginning of a new year (ok for restart runs) OR
-		! - the beginning of a simulation (needed for hybrid/startup runs)
-		! See (https://github.com/ESCOMP/CTSM/issues/43#issuecomment-1282609233)
-		! 
+
 		! if ( is_beg_curr_year() .and. get_do_transient_lakes() .or. &
 		! 	is_first_step() .and. get_do_transient_lakes() )then
 		! 	ch4_first_time = .true.
-		! end if
-	
-
-		! if (.not. ch4_first_time) then
-		! 	! Check balance
-		! 	errch4 = totcolch4 - totcolch4_bef + deltim * &
-		! 	(nem_grc + ch4_surf_flux_tot * 1000._r8)  ! kg C --> g C
-
-		! 	if (abs(errch4) > 1.e-7_r8) then  ! g C / m^2 / timestep
-		! 		! write(6,*)'Gridcell-level CH4 Conservation Error in CH4Mod driver, istep, errch4 (gC /m^2.timestep)', &
-		! 		! istep, errch4
-		! 		write(6,*)'Latrad,Lonrad=',patchlatr,patchlonr
-		! 		write(6,*)'totcolch4     =', totcolch4
-		! 		write(6,*)'totcolch4_bef =', totcolch4_bef
-		! 		write(6,*)'deltim * nem_grc   =', deltim * nem_grc
-		! 		write(6,*)'deltim * ch4_surf_flux_tot * 1000 =', deltim * ch4_surf_flux_tot * 1000._r8
-		! 		CALL CoLM_stop ()
-		! 	end if
 		! end if
 	
 		ch4_first_time = .false.
@@ -669,7 +639,8 @@ contains
 
 		!-----------------------Argument----------------------------------------
 		integer, INTENT(in) :: &
-			idate(3)             , &! current date (year, days of the year, seconds of the day)
+			idate(3)             , &! model calendar for next time step
+			! (year, days of the year, seconds of the day)
 			finundated              ! fractional inundated area, =sat(0 or 1)
 
 		real(r8), INTENT(in) :: &
@@ -707,9 +678,9 @@ contains
 
 			! update annual average finrw
 			if (annavg_somhr > 0._r8) then
-					annavg_finrw      =  tempavg_finrw / annavg_somhr
+				annavg_finrw      =  tempavg_finrw / annavg_somhr
 			else
-					annavg_finrw      = 0._r8
+				annavg_finrw      = 0._r8
 			end if
 			tempavg_finrw  = 0._r8
 		else
@@ -888,7 +859,7 @@ contains
 					sif = 1._r8
 					if (.not. anoxia) then
 						if (annavg_finrw /= spval) then
-						seasonalfin = max(finundated-annavg_finrw, 0._r8)
+							seasonalfin = max(finundated-annavg_finrw, 0._r8)
 							if (seasonalfin > 0._r8) then
 								sif = (annavg_finrw + mino2lim*seasonalfin) / finundated
 								base_decomp = base_decomp * sif
@@ -988,7 +959,7 @@ contains
 					end if
 				end if
 			end if ! anoxia
-	
+	    
 			! Add root respiration
 			if (patchtype /= 4) then
 				o2_decomp_depth(j) = o2_decomp_depth(j) + rr_vr(j)/catomw/dz_soisno(j) ! mol/m^3/s
@@ -1092,7 +1063,7 @@ contains
 
 		! Loop to determine oxidation in each layer
 		do j=1,nl_soil
-			if (sat == 1 .or. j > jwt) then
+			if (sat == 1 .or. j > jwt) then ! B  elow the water table
 				! Literature (e.g. Bender & Conrad, 1992) suggests lower k_m and vmax for high-CH4-affinity methanotrophs in
 				! upland soils consuming ambient methane.
 				k_m_eff = k_m
@@ -1342,7 +1313,7 @@ contains
 			end if
 
 			! Calculate aerenchyma diffusion
-			if (j > jwt .and. t_soisno(j) > tfrz .and. lai > 0) then
+			if (j > jwt .and. t_soisno(j) > tfrz .and. lai > 0) then ! Below water table
 				! Attn EK: This calculation of aerenchyma properties is very uncertain. Let's check in once all
 				! the new components are in; if there is any tuning to be done to get a realistic global flux,
 				! this would probably be the place.  We will have to document clearly in the Tech Note
@@ -1440,7 +1411,7 @@ contains
 			lakedepth                  , &! lake depth
 			forc_pbot                  , &! atm bottom level pressure (or reference height) (pa)
 			t_soisno (1:nl_soil)       , &! soil temperature (Kelvin)
-			lake_icefrac (1:nl_soil)   , &! lake mass fraction of lake layer that is frozen
+			lake_icefrac (1:nl_lake)   , &! lake mass fraction of lake layer that is frozen
 			porsl    (1:nl_soil)       , &! volumetric soil water at saturation (porosity)
 			! vol_liq  (1:nl_soil)       , &! liquid volumetric water content
 			wdsrf                      , &! depth of surface water [mm]
@@ -1508,6 +1479,7 @@ contains
 			endif ! below the water table and not freezing
 
 			! Prevent ebullition from reaching the surface for frozen lakes
+			! lake_icefrac(1=the first lake, not soil)
 			if (patchtype==4 .and. lake_icefrac(1) > 0.1_r8) ch4_ebul_depth(j) = 0._r8
 		end do ! j
 
@@ -1524,13 +1496,16 @@ contains
 		grnd_ch4_cond, o2_oxid_depth, o2_decomp_depth, conc_o2, conc_ch4 )
 		!-----------------------------------------------------------------------
 		! !DESCRIPTION:
-		! Solves the reaction & diffusion equation for the timestep.  First "competition" between processes for
-		! CH4 & O2 demand is done.  Then concentrations are apportioned into gas & liquid fractions; only the gas
-		! fraction is considered for diffusion in unsat.  Snow and lake water resistance to diffusion is added as
-		! a bulk term in the ground conductance (which is really a surface layer conductance), but concentrations
-		! are not tracked and oxidation is not allowed inside snow and lake water.
-		! Diffusivity is set based on soil texture and organic matter fraction. A Crank-Nicholson solution is used.
-		! Then CH4 diffusive flux is calculated and consistency is checked.
+		! Solves the reaction & diffusion equation for the timestep.  
+		! 1  "Competition" between processes for CH4 & O2 demand is done.  
+		! 2  Concentrations are apportioned into gas & liquid fractions; 
+		!    only the gas fraction is considered for diffusion in unsat.  
+		! 3  Snow and lake water resistance to diffusion is added as a bulk term in the ground conductance 
+		!    (which is really a surface layer conductance), but concentrations are not tracked and oxidation 
+		!    is not allowed inside snow and lake water.
+		! 4  Diffusivity is set based on soil texture and organic matter fraction. 
+		!    A Crank-Nicholson solution is used.
+		! 5  CH4 diffusive flux is calculated and consistency is checked.
 		!-----------------------------------------------------------------------
 
 		!-----------------------Argument----------------------------------------
@@ -1687,24 +1662,24 @@ contains
 						! Recalculate oxygen limitation
 						o2demand = o2_decomp_depth(j)
 						if (o2demand > 0._r8) then
-						o2stress(j) = min((conc_o2(j)/deltim + o2_aere_depth(j) - ch4stress(j)*o2_oxid_depth(j))/o2demand, 1._r8)
+							o2stress(j) = min((conc_o2(j)/deltim + o2_aere_depth(j) - ch4stress(j)*o2_oxid_depth(j))/o2demand, 1._r8)
 						else
-						o2stress(j) = 1._r8
+							o2stress(j) = 1._r8
 						end if
 					end if
 					! Reset oxidation
 					ch4_oxid_depth(j) = ch4_oxid_depth(j) * ch4stress(j)
-					o2_oxid_depth(j) = o2_oxid_depth(j) * ch4stress(j)
+					o2_oxid_depth(j)  = o2_oxid_depth(j) * ch4stress(j)
 				else                                      
 					! oxygen limited
 					if (ch4stress(j) < 1._r8) then
 						! Recalculate methane limitation
 						ch4demand = ch4_aere_depth(j) + ch4_ebul_depth(j)
 						if (ch4demand > 0._r8) then
-						ch4stress(j) = min( (conc_ch4(j) / deltim + ch4_prod_depth(j) - &
-								o2stress(j)*ch4_oxid_depth(j)) / ch4demand, 1._r8)
+							ch4stress(j) = min( (conc_ch4(j) / deltim + ch4_prod_depth(j) - &
+									o2stress(j)*ch4_oxid_depth(j)) / ch4demand, 1._r8)
 						else
-						ch4stress(j) = 1._r8
+							ch4stress(j) = 1._r8
 						end if
 					end if
 					! Reset oxidation
@@ -1804,9 +1779,9 @@ contains
   
 		! Add in ebullition to source at depth just above WT
 		if (jwt /= 0) then
-		   	source(jwt,1) = source(jwt,1) + ch4_ebul_total/dz_soisno(jwt)
+			source(jwt,1) = source(jwt,1) + ch4_ebul_total/dz_soisno(jwt)
 		endif
-  
+   
 		! Calculate concentration relative to m^3 of air or water: needed for the diffusion
 		do j = 0,nl_soil
 			if (j == 0) then
@@ -1814,10 +1789,10 @@ contains
 				conc_o2_rel(j)  = c_atm(2)
 			else
 				vol_liq_min(j) = min(porsl(j), vol_liq(j))
-				liqfrac(j) = 1._r8
+				! liqfrac(j) = 1._r8
 				if (ch4frzout) then
 					liqfrac(j) = max(0.05_r8, (wliq_soisno(j)/denh2o+smallnumber)/ &
-						(wliq_soisno(j)/denh2o+wice_soisno(j)/denice+smallnumber))
+					(wliq_soisno(j)/denh2o+wice_soisno(j)/denice+smallnumber))
 				else
 					liqfrac(j) = 1._r8
 				end if
@@ -1835,7 +1810,7 @@ contains
 				conc_o2_rel(j)  = conc_o2(j) /epsilon_t(j,2)
 			end if
 		end do
-  
+
   
 		! Loop over species
 		do s = 1, 2 ! 1=CH4; 2=O2; 3=CO2

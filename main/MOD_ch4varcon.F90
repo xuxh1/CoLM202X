@@ -84,4 +84,5 @@ module MOD_ch4varcon
     ! default value reset in controlMod
     logical, public :: anoxia  = .true. 
 
+    logical, public :: use_nitrif_denitrif = .false.
 end module MOD_ch4varcon

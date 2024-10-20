@@ -127,7 +127,7 @@ CONTAINS
             write(*,*)'vegc,livecrootc         = ',livecrootc_p(m)+livecrootc_storage_p(m)+livecrootc_xfer_p(m)
             write(*,*)'vegc,deadcrootc         = ',deadcrootc_p(m)+deadcrootc_storage_p(m)+deadcrootc_xfer_p(m)
             write(*,*)'grainc                  = ',grainc_p(m)+grainc_storage_p(m)+grainc_xfer_p(m)+cropseedc_deficit_p(m)
-            write(*,*)'grwoth respiration c    = ',gresp_storage_p(m)+gresp_xfer_p(m)+xsmrpool_p(m)
+            write(*,*)'growth respiration c    = ',gresp_storage_p(m)+gresp_xfer_p(m)+xsmrpool_p(m)
          ENDDO
          write(*,*)'--- Inputs ---'
          write(*,*)'gpp                      = ',gpp(i)*deltim

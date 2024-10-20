@@ -180,18 +180,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
              ! additional variables required by coupling with WRF model
                emis(i),         z0m(i),          zol(i),          rib(i),          &
                ustar(i),        qstar(i),        tstar(i),                         &
-               fm(i),           fh(i),     &      
-               
-#ifdef CH4
-c_atm(1:3,i),ch4_surf_flux_tot(i),net_methane(i),&
-annavg_agnpp(i),annavg_bgnpp(i),annavg_somhr(i),annavg_finrw(i),&
-ch4_prod_depth(1:,i),o2_decomp_depth(1:,i),&
-ch4_oxid_depth(1:,i),o2_oxid_depth(1:,i),&
-ch4_aere_depth(1:,i),ch4_tran_depth(1:,i),o2_aere_depth(1:,i),&
-! totcolch4(i),grnd_ch4_cond(i),&
-#endif
-               fq(i)                             )
-
+               fm(i),           fh(i),           fq(i)                             )
             ENDDO
          ENDIF
 
@@ -201,7 +190,16 @@ ch4_aere_depth(1:,i),ch4_tran_depth(1:,i),o2_aere_depth(1:,i),&
             !
             !                ***** Call CoLM BGC model *****
             !
-            CALL bgc_driver (i,idate(1:3),deltim, patchlatr(i)*180/PI,patchlonr(i)*180/PI)
+            CALL bgc_driver (i,idate(1:3),deltim, patchlatr(i)*180/PI,patchlonr(i)*180/PI,&
+            #ifdef CH4
+            c_atm(1:3,i),ch4_surf_flux_tot(i),net_methane(i),&
+            annavg_agnpp(i),annavg_bgnpp(i),annavg_somhr(i),annavg_finrw(i),&
+            ch4_prod_depth(1:,i),o2_decomp_depth(1:,i),&
+            ch4_oxid_depth(1:,i),o2_oxid_depth(1:,i),&
+            ch4_aere_depth(1:,i),ch4_tran_depth(1:,i),o2_aere_depth(1:,i),&
+            ! totcolch4(i),grnd_ch4_cond(i),&
+            #endif
+            )
          ENDIF
 #endif
 

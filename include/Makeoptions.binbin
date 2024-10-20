@@ -1,0 +1,41 @@
+# =======================================================
+# mpif90 - gfortran 
+# 
+
+  FF = /stu01/lianghb21/CoLM202X/2023student/lib/mpich/mpich-4.1.2/mpich-412/bin/mpifort -fopenmp
+   
+  NETCDF_LIB = /stu01/lianghb21/CoLM202X/2023student/lib/netcdf/netcdf/lib
+  NETCDF_INC = /stu01/lianghb21/CoLM202X/2023student/lib/netcdf/netcdf/include
+
+  LAPACK_LIB = /stu01/lianghb21/CoLM202X/2023student/lib/lapack/lapack-3.11/lapack-311/lib
+   
+  MOD_CMD = -J
+ 
+  FOPTS = -fdefault-real-8 -ffree-form -C -g -u -xcheck=stkovf \
+           -ffpe-trap=invalid,zero,overflow -fbounds-check \
+           -mcmodel=medium -fbacktrace -fdump-core -cpp \
+           -ffree-line-length-0  
+  
+  INCLUDE_DIR = -I../include -I../share -I../mksrfdata -I../mkinidata -I../main -I$(NETCDF_INC)
+  LDFLAGS = -L$(NETCDF_LIB) -lnetcdff -lnetcdf -L$(LAPACK_LIB) -llapack -lblas 
+#============================================================
+# CaMa-Flood Mkinclude (for Linux, Intel fortran)
+
+RM = /bin/rm -f
+CP = /bin/cp
+#----
+# Pre-Prosessing options
+# DMPI=-DUseMPI: activate when MPI parallelization is used
+# DCDF=-DUseCDF: activate when using netCDF, comment out when not needed
+# DATM=-DNoAtom: activate when OMP ATOMIC calculation should be avoided (bit identical simulation)
+#----
+#DMPI=-DUseMPI
+DCDF=-DUseCDF
+#DATM=-DNoAtom
+CFLAGS=$(DMPI) $(DCDF) $(DATM)
+#----
+# FCMP: main program (src/), FC: pre/post process (map/ etc/)
+FCMP = ifort -qopenmp
+FC = ifort
+LFLAGS =
+FFLAGS = -O3 -traceback -warn all -fpp -free -assume byterecl -heap-arrays -nogen-interface -lpthread -static-intel 

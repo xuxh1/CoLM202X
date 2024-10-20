@@ -1,0 +1,121 @@
+&nl_colm_history
+
+   ! ----- history -----
+   DEF_hist_vars%xy_us        = .false.
+   DEF_hist_vars%xy_vs        = .false.
+   DEF_hist_vars%xy_t         = .true.
+   DEF_hist_vars%xy_q         = .false.
+   DEF_hist_vars%xy_prc       = .true.
+   DEF_hist_vars%xy_prl       = .true.
+   DEF_hist_vars%xy_pbot      = .true.
+   DEF_hist_vars%xy_frl       = .true.
+   DEF_hist_vars%xy_solarin   = .true.
+   DEF_hist_vars%xy_rain      = .true.
+   DEF_hist_vars%xy_snow      = .true.
+   DEF_hist_vars%xy_hpbl      = .false.
+
+   DEF_hist_vars%taux         = .false. 
+   DEF_hist_vars%tauy         = .false. 
+   DEF_hist_vars%fsena        = .true. 
+   DEF_hist_vars%lfevpa       = .true. 
+   DEF_hist_vars%fevpa        = .true. 
+   DEF_hist_vars%fsenl        = .true. 
+   DEF_hist_vars%fevpl        = .true. 
+   DEF_hist_vars%etr          = .true. 
+   DEF_hist_vars%fseng        = .true. 
+   DEF_hist_vars%fevpg        = .true.
+   DEF_hist_vars%fgrnd        = .true. 
+   DEF_hist_vars%sabvsun      = .false. 
+   DEF_hist_vars%sabvsha      = .false. 
+   DEF_hist_vars%sabg         = .false. 
+   DEF_hist_vars%olrg         = .false. 
+   DEF_hist_vars%rnet         = .true. 
+   DEF_hist_vars%xerr         = .true.
+   DEF_hist_vars%zerr         = .true. 
+   DEF_hist_vars%rsur         = .true.
+   DEF_hist_vars%rsub         = .true. 
+   DEF_hist_vars%rnof         = .true. 
+   DEF_hist_vars%xwsur         = .true. 
+   DEF_hist_vars%xwsub         = .true. 
+
+
+   DEF_hist_vars%qintr        = .true. 
+   DEF_hist_vars%qinfl        = .true. 
+   DEF_hist_vars%qdrip        = .true. 
+   DEF_hist_vars%wat          = .true.  
+   DEF_hist_vars%wat_inst     = .true.  
+
+   DEF_hist_vars%assim        = .false. 
+   DEF_hist_vars%respc        = .false. 
+   DEF_hist_vars%qcharge      = .true.
+
+   DEF_hist_vars%t_grnd       = .true. 
+
+   DEF_hist_vars%tleaf        = .false. 
+   DEF_hist_vars%ldew         = .true. 
+   DEF_hist_vars%scv          = .true. 
+   DEF_hist_vars%snowdp       = .true. 
+   DEF_hist_vars%fsno         = .true. 
+   DEF_hist_vars%sigf         = .false. 
+   DEF_hist_vars%green        = .false. 
+   DEF_hist_vars%lai          = .true. 
+   DEF_hist_vars%laisun       = .false. 
+   DEF_hist_vars%laisha       = .false. 
+   DEF_hist_vars%sai          = .true.
+   DEF_hist_vars%alb          = .true. 
+   DEF_hist_vars%emis         = .false. 
+   DEF_hist_vars%z0m          = .false. 
+   DEF_hist_vars%trad         = .false. 
+   DEF_hist_vars%rss          = .false.
+   DEF_hist_vars%tref         = .true. 
+   DEF_hist_vars%qref         = .true.
+
+   DEF_hist_vars%wetwat         = .true.
+   DEF_hist_vars%wetwat_inst    = .true.
+   DEF_hist_vars%wdsrf          = .true.
+
+   DEF_hist_vars%t_soisno     = .true. 
+   DEF_hist_vars%wliq_soisno  = .true. 
+   DEF_hist_vars%wice_soisno  = .true. 
+
+   DEF_hist_vars%h2osoi       = .true. 
+   DEF_hist_vars%rstfacsun    = .false. 
+   DEF_hist_vars%rstfacsha    = .false.
+   DEF_hist_vars%rootr        = .true.
+   DEF_hist_vars%vegwp        = .true.
+   DEF_hist_vars%zwt          = .true. 
+   DEF_hist_vars%wa           = .true. 
+
+   DEF_hist_vars%t_lake       = .false. 
+   DEF_hist_vars%lake_icefrac = .false. 
+
+   DEF_hist_vars%ustar        = .false.
+   DEF_hist_vars%tstar        = .false.
+   DEF_hist_vars%qstar        = .false.
+   DEF_hist_vars%zol          = .false.
+   DEF_hist_vars%rib          = .false.
+   DEF_hist_vars%fm           = .false.
+   DEF_hist_vars%fh           = .false.
+   DEF_hist_vars%fq           = .false.
+   DEF_hist_vars%us10m        = .false.
+   DEF_hist_vars%vs10m        = .false.
+   DEF_hist_vars%fm10m        = .false.
+   DEF_hist_vars%sr           = .false.
+   DEF_hist_vars%solvd        = .false.
+   DEF_hist_vars%solvi        = .false.
+   DEF_hist_vars%solnd        = .false.
+   DEF_hist_vars%solni        = .false.
+   DEF_hist_vars%srvd         = .false.
+   DEF_hist_vars%srvi         = .false.
+   DEF_hist_vars%srnd         = .false.
+   DEF_hist_vars%srni         = .false.
+   DEF_hist_vars%solvdln      = .false.
+   DEF_hist_vars%solviln      = .false.
+   DEF_hist_vars%solndln      = .false.
+   DEF_hist_vars%solniln      = .false.
+   DEF_hist_vars%srvdln       = .false.
+   DEF_hist_vars%srviln       = .false.
+   DEF_hist_vars%srndln       = .false.
+   DEF_hist_vars%srniln       = .false.
+/
+
