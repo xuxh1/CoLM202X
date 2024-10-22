@@ -488,64 +488,64 @@ o2stress,ch4stress,ch4_surf_aere,ch4_surf_ebul,ch4_surf_diff,ch4_ebul_total,&
         fq            ! integral of profile function for moisture
 
 
-!   --------------------------------------------------------------ch4----------------------------------------------
-!   ---------------------------------------------------------------------------------------------------------------
-#ifdef CH4
+! !   --------------------------------------------------------------ch4----------------------------------------------
+! !   ---------------------------------------------------------------------------------------------------------------
+! #ifdef CH4
 
-! set input
-real(r8) :: &
-annsum_npp              , &! annual sum NPP (gC/m2/yr)
-rr                      , &! root respiration (fine root MR + total root GR) (gC/m2/s)
+! ! set input
+! real(r8) :: &
+! annsum_npp              , &! annual sum NPP (gC/m2/yr)
+! rr                      , &! root respiration (fine root MR + total root GR) (gC/m2/s)
 
-agnpp                   , &! aboveground NPP (gC/m2/s)
-bgnpp                   , &! belowground NPP (gC/m2/s)
-somhr,&
+! agnpp                   , &! aboveground NPP (gC/m2/s)
+! bgnpp                   , &! belowground NPP (gC/m2/s)
+! somhr,&
 
-crootfr(1:nl_soil),lithr,hr_vr(1:nl_soil),o_scalar(1:nl_soil),fphr(1:nl_soil),pot_f_nit_vr(1:nl_soil),pH,&
+! crootfr(1:nl_soil),lithr,hr_vr(1:nl_soil),o_scalar(1:nl_soil),fphr(1:nl_soil),pot_f_nit_vr(1:nl_soil),pH,&
 
-cellorg(1:nl_soil),t_h2osfc,organic_max
+! cellorg(1:nl_soil),t_h2osfc,organic_max
 
-! set output
-real(r8), INTENT(out) :: &
-c_atm(1:3),&
-ch4_surf_flux_tot            , &! CH4 flux to atm. (kg C/m**2/s)
-net_methane                  , &! average net methane correction to CO2 flux (g C/m^2/s)
+! ! set output
+! real(r8), INTENT(out) :: &
+! c_atm(1:3),&
+! ch4_surf_flux_tot            , &! CH4 flux to atm. (kg C/m**2/s)
+! net_methane                  , &! average net methane correction to CO2 flux (g C/m^2/s)
 
-annavg_agnpp,&
-annavg_bgnpp,&
-annavg_somhr,&
-annavg_finrw,&
+! annavg_agnpp,&
+! annavg_bgnpp,&
+! annavg_somhr,&
+! annavg_finrw,&
 
-ch4_prod_depth(1:nl_soil),o2_decomp_depth(1:nl_soil),&
+! ch4_prod_depth(1:nl_soil),o2_decomp_depth(1:nl_soil),&
 
-ch4_oxid_depth(1:nl_soil),o2_oxid_depth(1:nl_soil),&
+! ch4_oxid_depth(1:nl_soil),o2_oxid_depth(1:nl_soil),&
 
-ch4_aere_depth(1:nl_soil),ch4_tran_depth(1:nl_soil),o2_aere_depth(1:nl_soil),&
+! ch4_aere_depth(1:nl_soil),ch4_tran_depth(1:nl_soil),o2_aere_depth(1:nl_soil),&
 
-ch4_ebul_depth(1:nl_soil),&
+! ch4_ebul_depth(1:nl_soil),&
 
-o2stress(1:nl_soil),ch4stress(1:nl_soil),ch4_surf_aere,ch4_surf_ebul,ch4_surf_diff,ch4_ebul_total
+! o2stress(1:nl_soil),ch4stress(1:nl_soil),ch4_surf_aere,ch4_surf_ebul,ch4_surf_diff,ch4_ebul_total
 
-! set inout
-logical ::&
-ch4_first_time
+! ! set inout
+! logical ::&
+! ch4_first_time
 
-real(r8) :: &
-totcolch4,&
-forc_pch4m              , &! CH4 concentration in atmos. (pascals)
-grnd_ch4_cond,&
-conc_o2  (1:nl_soil)    , &! O2 conc in each soil layer (mol/m3) 
-conc_ch4(1:nl_soil),&
-layer_sat_lag(1:nl_soil),&
-lake_soilc(1:nl_soil),&
+! real(r8) :: &
+! totcolch4,&
+! forc_pch4m              , &! CH4 concentration in atmos. (pascals)
+! grnd_ch4_cond,&
+! conc_o2  (1:nl_soil)    , &! O2 conc in each soil layer (mol/m3) 
+! conc_ch4(1:nl_soil),&
+! layer_sat_lag(1:nl_soil),&
+! lake_soilc(1:nl_soil),&
 
-tempavg_agnpp,&
-tempavg_bgnpp,&
-annsum_counter,&
-tempavg_somhr,&
-tempavg_finrw
+! tempavg_agnpp,&
+! tempavg_bgnpp,&
+! annsum_counter,&
+! tempavg_somhr,&
+! tempavg_finrw
 
-#endif   
+! #endif   
 
 ! ----------------------- Local  Variables -----------------------------
    real(r8) :: &

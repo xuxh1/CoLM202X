@@ -500,29 +500,29 @@ MODULE MOD_Vars_TimeVariables
    real(r8), allocatable :: fh            (:) ! integral of profile FUNCTION for heat
    real(r8), allocatable :: fq            (:) ! integral of profile FUNCTION for moisture
 
-#ifdef CH4
-	real(r8), allocatable :: c_atm               (:,:) 
-	real(r8), allocatable :: ch4_surf_flux_tot     (:) ! CH4 flux to atm. (kg C/m**2/s)
-	real(r8), allocatable :: net_methane           (:) ! average net methane correction to CO2 flux (g C/m^2/s)
-	real(r8), allocatable :: annavg_agnpp          (:) 
-	real(r8), allocatable :: annavg_bgnpp          (:) 
-	real(r8), allocatable :: annavg_somhr          (:) 
-	real(r8), allocatable :: annavg_finrw          (:) 
-	real(r8), allocatable :: ch4_prod_depth      (:,:) 
-	real(r8), allocatable :: o2_decomp_depth     (:,:) 
-	real(r8), allocatable :: ch4_oxid_depth      (:,:) 
-	real(r8), allocatable :: o2_oxid_depth       (:,:) 
-	real(r8), allocatable :: ch4_aere_depth      (:,:) 
-	real(r8), allocatable :: ch4_tran_depth      (:,:) 
-	real(r8), allocatable :: o2_aere_depth       (:,:) 
-	real(r8), allocatable :: ch4_ebul_depth      (:,:) 
-	real(r8), allocatable :: o2stress            (:,:) 
-	real(r8), allocatable :: ch4stress           (:,:) 
-	real(r8), allocatable :: ch4_surf_aere         (:) 
-	real(r8), allocatable :: ch4_surf_ebul         (:) 
-	real(r8), allocatable :: ch4_surf_diff         (:)
-	real(r8), allocatable :: ch4_ebul_total        (:)
-#endif
+! #ifdef CH4
+! 	real(r8), allocatable :: c_atm               (:,:) 
+! 	real(r8), allocatable :: ch4_surf_flux_tot     (:) ! CH4 flux to atm. (kg C/m**2/s)
+! 	real(r8), allocatable :: net_methane           (:) ! average net methane correction to CO2 flux (g C/m^2/s)
+! 	real(r8), allocatable :: annavg_agnpp          (:) 
+! 	real(r8), allocatable :: annavg_bgnpp          (:) 
+! 	real(r8), allocatable :: annavg_somhr          (:) 
+! 	real(r8), allocatable :: annavg_finrw          (:) 
+! 	real(r8), allocatable :: ch4_prod_depth      (:,:) 
+! 	real(r8), allocatable :: o2_decomp_depth     (:,:) 
+! 	real(r8), allocatable :: ch4_oxid_depth      (:,:) 
+! 	real(r8), allocatable :: o2_oxid_depth       (:,:) 
+! 	real(r8), allocatable :: ch4_aere_depth      (:,:) 
+! 	real(r8), allocatable :: ch4_tran_depth      (:,:) 
+! 	real(r8), allocatable :: o2_aere_depth       (:,:) 
+! 	real(r8), allocatable :: ch4_ebul_depth      (:,:) 
+! 	real(r8), allocatable :: o2stress            (:,:) 
+! 	real(r8), allocatable :: ch4stress           (:,:) 
+! 	real(r8), allocatable :: ch4_surf_aere         (:) 
+! 	real(r8), allocatable :: ch4_surf_ebul         (:) 
+! 	real(r8), allocatable :: ch4_surf_diff         (:)
+! 	real(r8), allocatable :: ch4_ebul_total        (:)
+! #endif
 
    real(r8), allocatable :: irrig_rate          (:) ! irrigation rate [mm s-1]
    real(r8), allocatable :: deficit_irrig       (:) ! irrigation amount [kg/m2]
@@ -675,29 +675,29 @@ CONTAINS
             allocate (fm                          (numpatch)); fm            (:) = spval
             allocate (fh                          (numpatch)); fh            (:) = spval
             allocate (fq                          (numpatch)); fq            (:) = spval
-#ifdef CH4
-            allocate (c_atm                   (1:3,numpatch)); c_atm                (:,:) = spval
-            allocate (ch4_surf_flux_tot           (numpatch)); ch4_surf_flux_tot      (:) = spval
-            allocate (net_methane                 (numpatch)); net_methane            (:) = spval
-            allocate (annavg_agnpp                (numpatch)); annavg_agnpp           (:) = spval
-            allocate (annavg_bgnpp                (numpatch)); annavg_bgnpp           (:) = spval
-            allocate (annavg_somhr                (numpatch)); annavg_somhr           (:) = spval
-            allocate (annavg_finrw                (numpatch)); annavg_finrw           (:) = spval
-            allocate (ch4_prod_depth    (1:nl_soil,numpatch)); ch4_prod_depth       (:,:) = spval
-            allocate (o2_decomp_depth   (1:nl_soil,numpatch)); o2_decomp_depth      (:,:) = spval
-            allocate (ch4_oxid_depth    (1:nl_soil,numpatch)); ch4_oxid_depth       (:,:) = spval
-            allocate (o2_oxid_depth     (1:nl_soil,numpatch)); o2_oxid_depth        (:,:) = spval
-            allocate (ch4_aere_depth    (1:nl_soil,numpatch)); ch4_aere_depth       (:,:) = spval
-            allocate (ch4_tran_depth    (1:nl_soil,numpatch)); ch4_tran_depth       (:,:) = spval
-            allocate (o2_aere_depth     (1:nl_soil,numpatch)); o2_aere_depth        (:,:) = spval
-            allocate (ch4_ebul_depth    (1:nl_soil,numpatch)); ch4_ebul_depth       (:,:) = spval
-            allocate (o2stress          (1:nl_soil,numpatch)); o2stress             (:,:) = spval
-            allocate (ch4stress         (1:nl_soil,numpatch)); ch4stress            (:,:) = spval
-            allocate (ch4_surf_aere               (numpatch)); ch4_surf_aere          (:) = spval
-            allocate (ch4_surf_ebul               (numpatch)); ch4_surf_ebul          (:) = spval
-            allocate (ch4_surf_diff               (numpatch)); ch4_surf_diff          (:) = spval
-            allocate (ch4_ebul_total              (numpatch)); ch4_ebul_total         (:) = spval
-#endif
+! #ifdef CH4
+!             allocate (c_atm                   (1:3,numpatch)); c_atm                (:,:) = spval
+!             allocate (ch4_surf_flux_tot           (numpatch)); ch4_surf_flux_tot      (:) = spval
+!             allocate (net_methane                 (numpatch)); net_methane            (:) = spval
+!             allocate (annavg_agnpp                (numpatch)); annavg_agnpp           (:) = spval
+!             allocate (annavg_bgnpp                (numpatch)); annavg_bgnpp           (:) = spval
+!             allocate (annavg_somhr                (numpatch)); annavg_somhr           (:) = spval
+!             allocate (annavg_finrw                (numpatch)); annavg_finrw           (:) = spval
+!             allocate (ch4_prod_depth    (1:nl_soil,numpatch)); ch4_prod_depth       (:,:) = spval
+!             allocate (o2_decomp_depth   (1:nl_soil,numpatch)); o2_decomp_depth      (:,:) = spval
+!             allocate (ch4_oxid_depth    (1:nl_soil,numpatch)); ch4_oxid_depth       (:,:) = spval
+!             allocate (o2_oxid_depth     (1:nl_soil,numpatch)); o2_oxid_depth        (:,:) = spval
+!             allocate (ch4_aere_depth    (1:nl_soil,numpatch)); ch4_aere_depth       (:,:) = spval
+!             allocate (ch4_tran_depth    (1:nl_soil,numpatch)); ch4_tran_depth       (:,:) = spval
+!             allocate (o2_aere_depth     (1:nl_soil,numpatch)); o2_aere_depth        (:,:) = spval
+!             allocate (ch4_ebul_depth    (1:nl_soil,numpatch)); ch4_ebul_depth       (:,:) = spval
+!             allocate (o2stress          (1:nl_soil,numpatch)); o2stress             (:,:) = spval
+!             allocate (ch4stress         (1:nl_soil,numpatch)); ch4stress            (:,:) = spval
+!             allocate (ch4_surf_aere               (numpatch)); ch4_surf_aere          (:) = spval
+!             allocate (ch4_surf_ebul               (numpatch)); ch4_surf_ebul          (:) = spval
+!             allocate (ch4_surf_diff               (numpatch)); ch4_surf_diff          (:) = spval
+!             allocate (ch4_ebul_total              (numpatch)); ch4_ebul_total         (:) = spval
+! #endif
 
             allocate ( irrig_rate                 (numpatch)); irrig_rate             (:) = spval
             allocate ( deficit_irrig              (numpatch)); deficit_irrig          (:) = spval
@@ -857,29 +857,29 @@ CONTAINS
             deallocate (fh                     )
             deallocate (fq                     )
 
-#ifdef CH4
-            deallocate (c_atm                  )
-            deallocate (ch4_surf_flux_tot      )
-            deallocate (net_methane            )
-            deallocate (annavg_agnpp           )
-            deallocate (annavg_bgnpp           )
-            deallocate (annavg_somhr           )
-            deallocate (annavg_finrw           )
-            deallocate (ch4_prod_depth         )
-            deallocate (o2_decomp_depth        )
-            deallocate (ch4_oxid_depth         )
-            deallocate (o2_oxid_depth          )
-            deallocate (ch4_aere_depth         )
-            deallocate (ch4_tran_depth         )
-            deallocate (o2_aere_depth          )
-            deallocate (ch4_ebul_depth         )
-            deallocate (o2stress               )
-            deallocate (ch4stress              )
-            deallocate (ch4_surf_aere          )
-            deallocate (ch4_surf_ebul          )
-            deallocate (ch4_surf_diff          )
-            deallocate (ch4_ebul_total         )
-#endif
+! #ifdef CH4
+!             deallocate (c_atm                  )
+!             deallocate (ch4_surf_flux_tot      )
+!             deallocate (net_methane            )
+!             deallocate (annavg_agnpp           )
+!             deallocate (annavg_bgnpp           )
+!             deallocate (annavg_somhr           )
+!             deallocate (annavg_finrw           )
+!             deallocate (ch4_prod_depth         )
+!             deallocate (o2_decomp_depth        )
+!             deallocate (ch4_oxid_depth         )
+!             deallocate (o2_oxid_depth          )
+!             deallocate (ch4_aere_depth         )
+!             deallocate (ch4_tran_depth         )
+!             deallocate (o2_aere_depth          )
+!             deallocate (ch4_ebul_depth         )
+!             deallocate (o2stress               )
+!             deallocate (ch4stress              )
+!             deallocate (ch4_surf_aere          )
+!             deallocate (ch4_surf_ebul          )
+!             deallocate (ch4_surf_diff          )
+!             deallocate (ch4_ebul_total         )
+! #endif
 
             deallocate (irrig_rate             )
             deallocate (deficit_irrig          )
