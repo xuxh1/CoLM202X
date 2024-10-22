@@ -1,6 +1,6 @@
 #include <define.h>
 
-SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
+SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
 
 
 !=======================================================================
@@ -42,11 +42,19 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
    logical,  intent(in) :: dosst    ! true if time for update sst/ice/snow
 
    real(r8), intent(inout) :: oro(numpatch)  ! ocean(0)/seaice(2)/ flag
+   integer,  intent(in) :: istep
 
    real(r8) :: deltim_phy
    integer  :: steps_in_one_deltim
    integer  :: i, m, u, k
 
+   real(r8):: &
+      z_soisno   (maxsnl+1:nl_soil) , &! layer depth (m)
+      dz_soisno  (maxsnl+1:nl_soil) , &! layer thickness (m)
+      zi_soisno  (maxsnl:nl_soil)      ! interface level below a "z" level (m)'
+
+   integer  :: lb,snl
+  
 ! ======================================================================
 
 #ifdef OPENMP
@@ -180,7 +188,8 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
              ! additional variables required by coupling with WRF model
                emis(i),         z0m(i),          zol(i),          rib(i),          &
                ustar(i),        qstar(i),        tstar(i),                         &
-               fm(i),           fh(i),           fq(i)                             )
+               fm(i),           fh(i),           fq(i),            lb,         snl,&
+               z_soisno(maxsnl+1:),     dz_soisno(maxsnl+1:),    zi_soisno(maxsnl:))
             ENDDO
          ENDIF
 
@@ -192,36 +201,14 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
             !
             CALL bgc_driver (i,idate(1:3),deltim, patchlatr(i)*180/PI,patchlonr(i)*180/PI)
 #if(defined CH4)
-            CALL ch4_driver(i,idate(1:3),patchtype(i),deltim,&!input
+            CALL ch4_driver(istep,i,idate(1:3),patchtype(i),deltim,lb,snl,&!input
             patchlonr(i)*180/PI,patchlatr(i)*180/PI,&
-            z_soisno(i),dz_soisno(i),zi_soisno(i),t_soisno(i),t_grnd(i),wliq_soisno(maxsnl+1:,i),wice_soisno(maxsnl+1:,i),&
+            z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:,i),&
+            t_grnd(i),wliq_soisno(maxsnl+1:,i),wice_soisno(maxsnl+1:,i),&
             forc_t(i),forc_pbot(i),forc_po2m(i),forc_pco2m(i),&
             zwt(i),rootfr(1:,m),snowdp(i),wat(i),rsur(i),etr(i),lakedepth(i),lake_icefrac(1:,i),wdsrf(i),bsw(1:,i),&
-            smp(1:,i),porsl(1,:),lai(i),&
-            ! rr,&
-            ! agnpp,bgnpp,somhr,&
-            ! crootfr,lithr,hr_vr,o_scalar,fphr,pot_f_nit_vr,pH,&
-            rootr(1:,i))
-            ! cellorg,t_h2osfc,organic_max,&
-            ! c_atm(1:3,i),ch4_surf_flux_tot(i),net_methane(i),&
-            ! annavg_agnpp(i),annavg_bgnpp(i),annavg_somhr(i),annavg_finrw(i),&
-            ! ch4_prod_depth(1:,i),o2_decomp_depth(1:,i),&
-            ! ch4_oxid_depth(1:,i),o2_oxid_depth(1:,i),&
-            ! ch4_aere_depth(1:,i),ch4_tran_depth(1:,i),o2_aere_depth(1:,i))
-            ! ch4_ebul_depth,&
-            ! o2stress,ch4stress,ch4_surf_aere,ch4_surf_ebul,ch4_surf_diff,ch4_ebul_total,&
-            ! ch4_first_time,totcolch4,forc_pch4m,grnd_ch4_cond,conc_o2,conc_ch4,layer_sat_lag,lake_soilc,&!inout
-            ! tempavg_agnpp,tempavg_bgnpp,annsum_counter,&
-            ! tempavg_somhr,tempavg_finrw)
-
-            ! c_atm(1:3,i),ch4_surf_flux_tot(i),net_methane(i),&
-            ! annavg_agnpp(i),annavg_bgnpp(i),annavg_somhr(i),annavg_finrw(i),&
-            ! ch4_prod_depth(1:,i),o2_decomp_depth(1:,i),&
-            ! ch4_oxid_depth(1:,i),o2_oxid_depth(1:,i),&
-            ! ch4_aere_depth(1:,i),ch4_tran_depth(1:,i),o2_aere_depth(1:,i))
-            ! totcolch4(i),grnd_ch4_cond(i),&
+            smp(1:,i),porsl(1:,i),lai(i),rootr(1:,i))
 #endif
-            
             ENDIF
 #endif
 

@@ -422,7 +422,7 @@ PROGRAM CoLM
          ! Call colm driver
          ! ----------------------------------------------------------------------
          IF (p_is_worker) THEN
-            CALL CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oroflag)
+            CALL CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oroflag,istep)
          ENDIF
 
 

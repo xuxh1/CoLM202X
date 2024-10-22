@@ -252,6 +252,7 @@ MODULE MOD_BGC_Vars_TimeVariables
 
 #ifdef CH4
    real(r8), allocatable :: annsum_npp          (:) ! annual sum NPP (gC/m2/yr)
+   
 
    real(r8), allocatable :: c_atm               (:,:) ! CH4, O2, CO2 atmospheric conc  (mol/m3)  
 	real(r8), allocatable :: ch4_surf_flux_tot     (:) ! CH4 flux to atm. (kg C/m2/s)
