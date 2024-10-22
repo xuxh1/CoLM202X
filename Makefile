@@ -320,6 +320,7 @@ OBJS_MAIN = \
 				MOD_Const_ch4.o		                      \
 				MOD_ch4varcon.o		                      \
 				MOD_ch4_test.o                            \
+				MOD_ch4_driver.o                              \
 				CoLMDRIVER.o                              \
 				CoLMMAIN.o                                \
 				CoLM.o
