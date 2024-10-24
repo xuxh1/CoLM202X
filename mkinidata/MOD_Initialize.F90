@@ -1239,7 +1239,6 @@ CONTAINS
             prms(4,1:nl_soil) = sc_vgm   (1:nl_soil,i)
             prms(5,1:nl_soil) = fc_vgm   (1:nl_soil,i)
 #endif
-
             CALL iniTimeVar(i, patchtype(i)&
                ,porsl(1:,i),psi0(1:,i),hksati(1:,i)&
                ,soil_s_v_alb(i),soil_d_v_alb(i),soil_s_n_alb(i),soil_d_n_alb(i)&
@@ -1288,6 +1287,20 @@ CONTAINS
                ,AKX_soil1_exit_n_vr_acc    (:,i), AKX_soil2_exit_n_vr_acc    (:,i), AKX_soil3_exit_n_vr_acc    (:,i) &
                ,diagVX_n_vr_acc          (:,:,i), upperVX_n_vr_acc         (:,:,i), lowerVX_n_vr_acc         (:,:,i) &
    !------------------------------------------------------------
+#endif
+#ifdef CH4
+               ,c_atm                (:,i), ch4_surf_flux_tot      (i), net_methane            (i), &
+               annavg_agnpp           (i), annavg_bgnpp           (i), annavg_somhr           (i), &
+               annavg_finrw           (i), ch4_prod_depth       (:,i), o2_decomp_depth      (:,i), &
+               ch4_oxid_depth       (:,i), o2_oxid_depth        (:,i), ch4_aere_depth       (:,i), &
+               ch4_tran_depth       (:,i), o2_aere_depth        (:,i), ch4_ebul_depth       (:,i), &
+               o2stress             (:,i), ch4stress            (:,i), ch4_surf_aere          (i), &
+               ch4_surf_ebul          (i), ch4_surf_diff          (i), ch4_ebul_total         (i), &
+               totcolch4              (i), forc_pch4m             (i), grnd_ch4_cond          (i), &
+               conc_o2              (:,i), conc_ch4             (:,i), layer_sat_lag        (:,i), &
+               lake_soilc           (:,i), tempavg_agnpp          (i), tempavg_bgnpp          (i), &
+               annsum_counter         (i), tempavg_somhr          (i),tempavg_finrw           (i)  &
+
 #endif
                ! for SOIL INIT of water, temperature, snow depth
                ,use_soilini, nl_soil_ini, soil_z, soil_t(1:,i), soil_w(1:,i), use_snowini, snow_d(i) &

@@ -149,13 +149,13 @@ MODULE MOD_BGC_Vars_1DFluxes
    real(r8), allocatable :: smin_no3_runoff          (:)     ! soil mineral NO3 loss due to runoff (gN m-2 s-1)
  !----------------- end BGC variables -----------------------------------
  
-#ifdef CH4
-   real(r8), allocatable :: froot_mr                 (:)     ! fine root maintenance respiration (gC m-2 s-1)
-   real(r8), allocatable :: cpool_froot_gr           (:)     ! available C allocated to fine root display growth respiration (gC m-2 s-1)
-   real(r8), allocatable :: cpool_froot_storage_gr   (:)     ! available C allocated to fine root storage growth respiration (gC m-2 s-1)
-   real(r8), allocatable :: transfer_froot_gr        (:)     ! available C allocated to fine root transfer growth respiration (gC m-2 s-1)
+! #ifdef CH4
+!    real(r8), allocatable :: froot_mr                 (:)     ! fine root maintenance respiration (gC m-2 s-1)
+!    real(r8), allocatable :: cpool_froot_gr           (:)     ! available C allocated to fine root display growth respiration (gC m-2 s-1)
+!    real(r8), allocatable :: cpool_froot_storage_gr   (:)     ! available C allocated to fine root storage growth respiration (gC m-2 s-1)
+!    real(r8), allocatable :: transfer_froot_gr        (:)     ! available C allocated to fine root transfer growth respiration (gC m-2 s-1)
 
-#endif 
+! #endif 
  ! PUBLIC MEMBER FUNCTIONS:
    PUBLIC :: allocate_1D_BGCFluxes
    PUBLIC :: deallocate_1D_BGCFluxes
@@ -319,13 +319,13 @@ CONTAINS
             allocate (smin_no3_leached         (numpatch)) ; smin_no3_leached         (:) = spval
             allocate (smin_no3_runoff          (numpatch)) ; smin_no3_runoff          (:) = spval
 
-#ifdef CH4
-            allocate (froot_mr                 (numpatch)) ; froot_mr                 (:) = spval
-            allocate (cpool_froot_gr           (numpatch)) ; cpool_froot_gr           (:) = spval
-            allocate (cpool_froot_storage_gr   (numpatch)) ; cpool_froot_storage_gr   (:) = spval
-            allocate (transfer_froot_gr        (numpatch)) ; transfer_froot_gr        (:) = spval
+! #ifdef CH4
+!             allocate (froot_mr                 (numpatch)) ; froot_mr                 (:) = spval
+!             allocate (cpool_froot_gr           (numpatch)) ; cpool_froot_gr           (:) = spval
+!             allocate (cpool_froot_storage_gr   (numpatch)) ; cpool_froot_storage_gr   (:) = spval
+!             allocate (transfer_froot_gr        (numpatch)) ; transfer_froot_gr        (:) = spval
 
-#endif
+! #endif
          ENDIF
       ENDIF
 
@@ -477,13 +477,13 @@ CONTAINS
             deallocate (smin_no3_leached         )
             deallocate (smin_no3_runoff          )
 
-#ifdef CH4
-            deallocate (froot_mr                 )
-            deallocate (cpool_froot_gr           )
-            deallocate (cpool_froot_storage_gr   )
-            deallocate (transfer_froot_gr        )
+! #ifdef CH4
+!             deallocate (froot_mr                 )
+!             deallocate (cpool_froot_gr           )
+!             deallocate (cpool_froot_storage_gr   )
+!             deallocate (transfer_froot_gr        )
 
-#endif
+! #endif
          ENDIF
       ENDIF
 
@@ -641,13 +641,13 @@ SUBROUTINE set_1D_BGCFluxes(Values, Nan)
             smin_no3_leached         (:)     = Values
             smin_no3_runoff          (:)     = Values
 
-#ifdef CH4
-            froot_mr                 (:)   = Values
-            cpool_froot_gr           (:)   = Values
-            cpool_froot_storage_gr   (:)   = Values
-            transfer_froot_gr        (:)   = Values
+! #ifdef CH4
+!             froot_mr                 (:)   = Values
+!             cpool_froot_gr           (:)   = Values
+!             cpool_froot_storage_gr   (:)   = Values
+!             transfer_froot_gr        (:)   = Values
 
-#endif
+! #endif
          ENDIF
       ENDIF
 
