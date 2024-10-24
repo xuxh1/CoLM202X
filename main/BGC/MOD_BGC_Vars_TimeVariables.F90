@@ -251,8 +251,13 @@ MODULE MOD_BGC_Vars_TimeVariables
    real(r8), allocatable :: lag_npp             (:) !!! lagged net primary production (gC m-2)
 
 #ifdef CH4
-   real(r8), allocatable :: annsum_npp          (:) ! annual sum NPP (gC/m2/yr)
-   
+   ! real(r8), allocatable :: annsum_npp          (:) ! annual sum NPP (gC/m2/yr)
+
+   ! real(r8), allocatable :: froot_mr                 (:)     ! fine root maintenance respiration (gC m-2 s-1)
+   ! real(r8), allocatable :: cpool_froot_gr           (:)     ! available C allocated to fine root display growth respiration (gC m-2 s-1)
+   ! real(r8), allocatable :: cpool_froot_storage_gr   (:)     ! available C allocated to fine root storage growth respiration (gC m-2 s-1)
+   ! real(r8), allocatable :: transfer_froot_gr        (:)     ! available C allocated to fine root transfer growth respiration (gC m-2 s-1)
+
 
    real(r8), allocatable :: c_atm               (:,:) ! CH4, O2, CO2 atmospheric conc  (mol/m3)  
 	real(r8), allocatable :: ch4_surf_flux_tot     (:) ! CH4 flux to atm. (kg C/m2/s)
@@ -560,10 +565,14 @@ CONTAINS
             allocate (lag_npp                      (numpatch))                            ; lag_npp               (:) = spval
 
 #ifdef CH4
-            allocate (annsum_npp                   (numpatch))                            ; annsum_npp            (:) = spval
+            ! allocate (annsum_npp                   (numpatch))                            ; annsum_npp            (:) = spval
 
+            ! allocate (froot_mr                 (numpatch)) ; froot_mr                 (:) = spval
+            ! allocate (cpool_froot_gr           (numpatch)) ; cpool_froot_gr           (:) = spval
+            ! allocate (cpool_froot_storage_gr   (numpatch)) ; cpool_froot_storage_gr   (:) = spval
+            ! allocate (transfer_froot_gr        (numpatch)) ; transfer_froot_gr        (:) = spval
 
-            allocate (c_atm                   (1:3,numpatch)); c_atm                (:,:) = spval
+            allocate (c_atm                     (3,numpatch)); c_atm                (:,:) = spval
             allocate (ch4_surf_flux_tot           (numpatch)); ch4_surf_flux_tot      (:) = spval
             allocate (net_methane                 (numpatch)); net_methane            (:) = spval
             allocate (annavg_agnpp                (numpatch)); annavg_agnpp           (:) = spval
@@ -852,7 +861,12 @@ CONTAINS
 #endif
 
 #ifdef CH4
-            deallocate (annsum_npp                  )
+            ! deallocate (annsum_npp                  )
+
+            ! deallocate (froot_mr                 )
+            ! deallocate (cpool_froot_gr           )
+            ! deallocate (cpool_froot_storage_gr   )
+            ! deallocate (transfer_froot_gr        )
 
             deallocate (c_atm                  )
             deallocate (ch4_surf_flux_tot      )
@@ -924,6 +938,7 @@ CONTAINS
       CALL ncio_define_dimension_vector (file_restart, landpatch, 'soil_full', nl_soil_full)
       CALL ncio_define_dimension_vector (file_restart, landpatch, 'ndecomp_pools', ndecomp_pools)
       CALL ncio_define_dimension_vector (file_restart, landpatch, 'doy' , 365)
+      CALL ncio_define_dimension_vector (file_restart, landpatch, 'species' , 3)
 
  ! bgc variables
       CALL ncio_write_vector (file_restart, 'totlitc              ', 'patch', landpatch, totlitc              )
@@ -1061,9 +1076,15 @@ CONTAINS
 #endif
 
 #ifdef CH4
-      CALL ncio_write_vector (file_restart, 'annsum_npp  ' , 'patch', landpatch, annsum_npp               )
+      ! CALL ncio_write_vector (file_restart, 'annsum_npp          ' , 'patch', landpatch, annsum_npp              , compress    )
 
-      CALL ncio_write_vector (file_restart, 'c_atm               ' , 'species', 3 ,'patch', landpatch, c_atm          )
+      ! CALL ncio_write_vector (file_restart, 'froot_mr            ' , 'patch', landpatch, froot_mr                , compress    )
+      ! CALL ncio_write_vector (file_restart, 'cpool_froot_gr      ' , 'patch', landpatch, cpool_froot_gr           , compress   )
+      ! CALL ncio_write_vector (file_restart, 'cpool_froot_storage_gr  ' , 'patch', landpatch, cpool_froot_storage_gr , compress )
+      ! CALL ncio_write_vector (file_restart, 'transfer_froot_gr   ' , 'patch', landpatch, transfer_froot_gr      , compress     )
+
+
+      CALL ncio_write_vector (file_restart, 'c_atm               ' , 'species', 3 ,'patch', landpatch, c_atm             )
       CALL ncio_write_vector (file_restart, 'ch4_surf_flux_tot   ' , 'patch', landpatch, ch4_surf_flux_tot     , compress)
       CALL ncio_write_vector (file_restart, 'net_methane         ' , 'patch', landpatch, net_methane           , compress)
       CALL ncio_write_vector (file_restart, 'annavg_agnpp        ' , 'patch', landpatch, annavg_agnpp          , compress)
@@ -1120,6 +1141,7 @@ CONTAINS
    IMPLICIT NONE
 
    character(len=*), intent(in) :: file_restart
+   print*, "-------------------------------------------------5-------------------------------"
 
 ! bgc variables
       CALL ncio_read_vector (file_restart, 'totlitc              ', landpatch, totlitc              )
@@ -1245,13 +1267,15 @@ CONTAINS
       CALL ncio_read_vector (file_restart, 'fertnitro_sugarcane' , landpatch, fertnitro_sugarcane)
 #endif
 
-#ifdef RangeCheck
-      CALL check_BGCTimeVariables
-#endif
-
-
 #ifdef CH4
-      CALL ncio_read_vector (file_restart, 'annsum_npp         ' , landpatch, annsum_npp                )
+print*, "-------------------------------------------------6-------------------------------"
+      ! CALL ncio_read_vector (file_restart, 'annsum_npp         ' , landpatch, annsum_npp                   )
+      
+      ! CALL ncio_read_vector (file_restart, 'froot_mr          ' , landpatch, froot_mr                      )
+      ! CALL ncio_read_vector (file_restart, 'cpool_froot_gr    ' , landpatch, cpool_froot_gr                )
+      ! CALL ncio_read_vector (file_restart, ' cpool_froot_storage_gr ' , landpatch,  cpool_froot_storage_gr )
+      ! CALL ncio_read_vector (file_restart, 'transfer_froot_gr ' , landpatch, transfer_froot_gr             )
+
 
       CALL ncio_read_vector (file_restart, 'c_atm              ' , 3, landpatch, c_atm                  )
       CALL ncio_read_vector (file_restart, 'ch4_surf_flux_tot  ' , landpatch, ch4_surf_flux_tot         )
@@ -1288,6 +1312,12 @@ CONTAINS
       CALL ncio_read_vector (file_restart, 'tempavg_somhr      ' , landpatch,tempavg_somhr              )
       CALL ncio_read_vector (file_restart, 'tempavg_finrw      ' , landpatch, tempavg_finrw             )
 #endif
+print*, "-------------------------------------------------7-------------------------------"
+
+#ifdef RangeCheck
+      CALL check_BGCTimeVariables
+#endif
+
    END SUBROUTINE READ_BGCTimeVariables
 
   !---------------------------------------
@@ -1541,7 +1571,13 @@ CONTAINS
       CALL check_vector_data ('lag_npp    ' , lag_npp    )
 
 #ifdef CH4
-      CALL check_vector_data ('annsum_npp     ' , annsum_npp            )
+      ! CALL check_vector_data ('annsum_npp             ' , annsum_npp            )
+
+      ! CALL check_vector_data ('froot_mr               ' , froot_mr              )
+      ! CALL check_vector_data ('cpool_froot_gr         ' , cpool_froot_gr        )
+      ! CALL check_vector_data ('cpool_froot_storage_gr ' , cpool_froot_storage_gr)
+      ! CALL check_vector_data ('transfer_froot_gr      ' , transfer_froot_gr     )
+
 
       CALL check_vector_data ('c_atm              ' , c_atm             )
       CALL check_vector_data ('ch4_surf_flux_tot  ' , ch4_surf_flux_tot )

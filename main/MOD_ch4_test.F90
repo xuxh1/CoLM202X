@@ -36,19 +36,19 @@ module MOD_ch4_test
 
 	type, private :: params_type
 		! ch4 production constants
-		real(r8) :: q10ch4 =2              ! additional Q10 for methane production ABOVE the soil decomposition temperature relationship (2)
-		real(r8) :: q10ch4base = 295._r8   ! temperature at which the effective f_ch4 actually equals the constant f_ch4 (295)
-		real(r8) :: f_ch4 = 0.2            ! ratio of CH4 production to total C mineralization (0.2)
+		real(r8) :: q10ch4 =2              ! additional Q10 for methane production ABOVE the soil decomposition temperature relationship (2+)
+		real(r8) :: q10ch4base = 295.15_r8 ! temperature at which the effective f_ch4 actually equals the constant f_ch4 (295+)
+		real(r8) :: f_ch4 = 0.2            ! ratio of CH4 production to total C mineralization (0.2+?) -------- defination differ with documentation
 		! ! real(r8) :: rootlitfrac        ! Fraction of soil organic matter associated with roots
-		real(r8) :: cnscalefactor=1        ! scale factor on CN decomposition for assigning methane flux (?)
-		real(r8) :: redoxlag =30           ! Number of days to lag in the calculation of finundated_lag (30)
+		real(r8) :: cnscalefactor=1        ! scale factor on CN decomposition for assigning methane flux (?-)
+		real(r8) :: redoxlag =30           ! Number of days to lag in the calculation of finundated_lag (30+)
 		real(r8) :: lake_decomp_fact =1    ! Base decomposition rate (1/s) at 25C (1)
-		real(r8) :: redoxlag_vertical=30   ! time lag (days) to inhibit production for newly unsaturated layers (30)
+		real(r8) :: redoxlag_vertical=30   ! time lag (days) to inhibit production for newly unsaturated layers (30+)
 		real(r8) :: pHmax = 9._r8          ! maximum pH for methane production(= 9._r8)
 		real(r8) :: pHmin = 2.2_r8         ! minimum pH for methane production(= 2.2_r8)
-		real(r8) :: oxinhib = 400          ! inhibition of methane production by oxygen (m^3/mol) (400)
+		real(r8) :: oxinhib = 400          ! inhibition of methane production by oxygen (m^3/mol) (400+?)
 
-		real(r8) :: mino2lim = 0.2         ! minimum anaerobic decomposition rate as a fraction of potential aerobic rate (0.2)
+		real(r8) :: mino2lim = 0.2         ! minimum anaerobic decomposition rate as a fraction of potential aerobic rate (0.2+)
 
 		! ! ch4 oxidation constants
 		real(r8) :: vmax_ch4_oxid = 45.e-6_r8 * 1000._r8 / 3600._r8       ! oxidation rate constant (= 45.e-6_r8 * 1000._r8 / 3600._r8) [mol/m3-w/s];
@@ -792,7 +792,7 @@ contains
   
 		! O2 limitation on decomposition and methanogenesis
 		real(r8) :: seasonalfin       ! finundated in excess of respiration-weighted annual average
-		real(r8) :: oxinhib           ! inhibition of methane production by oxygen (m^3/mol)
+		real(r8) :: oxinhib           ! inhibition of methane production by oxygen (m3/mol)
   
 		! For calculating column average (rootfrac(j)*rr(j))
 		real(r8) :: rr_vr(1:nl_soil)  ! vertically resolved column-mean root respiration (g C/m^2/s)
@@ -818,7 +818,6 @@ contains
 		mino2lim         = params_inst%mino2lim
   
 		q10lake = q10ch4 * 1.5_r8
-		print*, 'q10lake',q10lake
 
 		! PATCH loop to calculate vertically resolved column-averaged root respiration
 		if (patchtype /= 4) then
@@ -832,7 +831,8 @@ contains
 		  
 		end if
 		print*, rr_vr
-  
+		print*, sat
+
 		partition_z = 1._r8
 		base_decomp = 0.0_r8
   
@@ -886,7 +886,7 @@ contains
 				partition_z = 1._r8
 			endif
 			print*, 'partition_z',partition_z
-	
+			print*, t_soisno(j)
 			! Adjust f_ch4 to account for the fact that methanogens may have a higher Q10 than aerobic decomposers.
 			! Note this is crude and should ideally be applied to all anaerobic decomposition rather than just the
 			! f_ch4.

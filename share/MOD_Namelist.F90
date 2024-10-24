@@ -779,6 +779,41 @@ MODULE MOD_Namelist
       logical :: wdsrf_hru                        = .true.
       logical :: veloc_hru                        = .true.
 
+#ifdef CH4
+      logical :: c_atm           = .true.
+      logical :: ch4_surf_flux_tot           = .true.
+      logical :: net_methane           = .true.
+      logical :: annavg_agnpp           = .true.
+      logical :: annavg_bgnpp           = .true.
+      logical :: annavg_somhr           = .true.
+      logical :: annavg_finrw           = .true.
+      logical :: ch4_prod_depth           = .true.
+      logical :: o2_decomp_depth           = .true.
+      logical :: ch4_oxid_depth           = .true.
+      logical :: o2_oxid_depth           = .true.
+      logical :: ch4_aere_depth           = .true.
+      logical :: ch4_tran_depth           = .true.
+      logical :: o2_aere_depth           = .true.
+      logical :: ch4_ebul_depth           = .true.
+      logical :: o2stress           = .true.
+      logical :: ch4stress           = .true.
+      logical :: ch4_surf_aere           = .true.
+      logical :: ch4_surf_ebul           = .true.
+      logical :: ch4_surf_diff           = .true.
+      logical :: ch4_ebul_total           = .true.
+      logical :: totcolch4           = .true.
+      logical :: forc_pch4m           = .true.
+      logical :: grnd_ch4_cond           = .true.
+      logical :: conc_o2           = .true.
+      logical :: conc_ch4           = .true.
+      logical :: layer_sat_lag           = .true.
+      logical :: lake_soilc           = .true.
+      logical :: tempavg_agnpp           = .true.
+      logical :: tempavg_bgnpp           = .true.
+      logical :: annsum_counter           = .true.
+      logical :: tempavg_somhr           = .true.
+      logical :: tempavg_finrw           = .true.
+#endif
    END type history_var_type
 
    type (history_var_type) :: DEF_hist_vars
@@ -1686,6 +1721,41 @@ CONTAINS
          CALL sync_hist_vars_one (DEF_hist_vars%sum_irrig                    , set_defaults)
          CALL sync_hist_vars_one (DEF_hist_vars%sum_irrig_count              , set_defaults)
       ENDIF
+#endif
+#ifdef CH4
+      CALL sync_hist_vars_one (DEF_hist_vars%c_atm           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%ch4_surf_flux_tot           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%net_methane           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%annavg_agnpp           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%annavg_bgnpp           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%annavg_somhr           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%annavg_finrw           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%ch4_prod_depth           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%o2_decomp_depth           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%ch4_oxid_depth           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%o2_oxid_depth           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%ch4_aere_depth           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%ch4_tran_depth           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%o2_aere_depth           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%ch4_ebul_depth           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%o2stress           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%ch4stress           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%ch4_surf_aere           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%ch4_surf_ebul           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%ch4_surf_diff           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%ch4_ebul_total           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%totcolch4           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%forc_pch4m           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%grnd_ch4_cond           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%conc_o2           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%conc_ch4           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%layer_sat_lag           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%lake_soilc           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%tempavg_agnpp           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%tempavg_bgnpp           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%annsum_counter           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%tempavg_somhr           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%tempavg_finrw           , set_defaults)
 #endif
       CALL sync_hist_vars_one (DEF_hist_vars%ndep_to_sminn                   , set_defaults)
       IF(DEF_USE_FIRE)THEN

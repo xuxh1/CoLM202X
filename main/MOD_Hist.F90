@@ -954,6 +954,125 @@ CONTAINS
              'grain carbon transfer pool','gC/m2')
 #endif
 
+#ifdef CH4
+         ! CALL write_history_variable_2d ( DEF_hist_vars%annsum_npp, &
+         !     a_annsum_npp, file_hist, 'f_annsum_npp', itime_in_file, sumarea, filter, &
+         !     '-','-')
+         ! CALL write_history_variable_2d ( DEF_hist_vars%froot_mr, &
+         !     a_froot_mr, file_hist, 'f_froot_mr', itime_in_file, sumarea, filter, &
+         !     '-','-')
+         ! CALL write_history_variable_2d ( DEF_hist_vars%cpool_froot_gr, &
+         !     a_cpool_froot_gr, file_hist, 'f_cpool_froot_gr', itime_in_file, sumarea, filter, &
+         !     '-','-')
+         ! CALL write_history_variable_2d ( DEF_hist_vars%cpool_froot_storage_gr, &
+         !     a_cpool_froot_storage_gr, file_hist, 'f_cpool_froot_storage_gr', itime_in_file, sumarea, filter, &
+         !     '-','-')
+         ! CALL write_history_variable_2d ( DEF_hist_vars%transfer_froot_gr, &
+         !     a_transfer_froot_gr, file_hist, 'f_transfer_froot_gr', itime_in_file, sumarea, filter, &
+         !     '-','-')
+
+         CALL write_history_variable_3d ( DEF_hist_vars%c_atm, &
+         a_c_atm, file_hist, 'f_c_atm', itime_in_file, 'species', 1, 3, &
+         sumarea, filter,'-','-')
+
+         CALL write_history_variable_2d ( DEF_hist_vars%ch4_surf_flux_tot, &
+             a_ch4_surf_flux_tot, file_hist, 'f_ch4_surf_flux_tot', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%net_methane, &
+             a_net_methane, file_hist, 'f_net_methane', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%annavg_agnpp, &
+             a_annavg_agnpp, file_hist, 'f_annavg_agnpp', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%annavg_bgnpp, &
+             a_annavg_bgnpp, file_hist, 'f_annavg_bgnpp', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%annavg_somhr, &
+             a_annavg_somhr, file_hist, 'f_annavg_somhr', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%annavg_finrw, &
+             a_annavg_finrw, file_hist, 'f_annavg_finrw', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%ch4_prod_depth, &
+             a_ch4_prod_depth, file_hist, 'f_ch4_prod_depth', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%o2_decomp_depth, &
+             a_o2_decomp_depth, file_hist, 'f_o2_decomp_depth', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%ch4_oxid_depth, &
+             a_ch4_oxid_depth, file_hist, 'f_ch4_oxid_depth', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%o2_oxid_depth, &
+             a_o2_oxid_depth, file_hist, 'f_o2_oxid_depth', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%ch4_aere_depth, &
+             a_ch4_aere_depth, file_hist, 'f_ch4_aere_depth', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%ch4_tran_depth, &
+             a_ch4_tran_depth, file_hist, 'f_ch4_tran_depth', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%o2_aere_depth, &
+             a_o2_aere_depth, file_hist, 'f_o2_aere_depth', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%ch4_ebul_depth, &
+             a_ch4_ebul_depth, file_hist, 'f_ch4_ebul_depth', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%o2stress, &
+             a_o2stress, file_hist, 'f_o2stress', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%ch4stress, &
+             a_ch4stress, file_hist, 'f_ch4stress', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%ch4_surf_aere, &
+             a_ch4_surf_aere, file_hist, 'f_ch4_surf_aere', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%ch4_surf_ebul, &
+             a_ch4_surf_ebul, file_hist, 'f_ch4_surf_ebul', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%ch4_surf_diff, &
+             a_ch4_surf_diff, file_hist, 'f_ch4_surf_diff', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%ch4_ebul_total, &
+             a_ch4_ebul_total, file_hist, 'f_ch4_ebul_total', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%totcolch4, &
+             a_totcolch4, file_hist, 'f_totcolch4', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%forc_pch4m, &
+             a_forc_pch4m, file_hist, 'f_forc_pch4m', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%grnd_ch4_cond, &
+             a_grnd_ch4_cond, file_hist, 'f_grnd_ch4_cond', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%conc_o2, &
+             a_conc_o2, file_hist, 'f_conc_o2', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%conc_ch4, &
+             a_conc_ch4, file_hist, 'f_conc_ch4', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%layer_sat_lag, &
+             a_layer_sat_lag, file_hist, 'f_layer_sat_lag', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_3d ( DEF_hist_vars%lake_soilc, &
+             a_lake_soilc, file_hist, 'f_lake_soilc', itime_in_file, 'soil', 1, nl_soil, &
+             sumarea, filter, '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%tempavg_agnpp, &
+             a_tempavg_agnpp, file_hist, 'f_tempavg_agnpp', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%tempavg_bgnpp, &
+             a_tempavg_bgnpp, file_hist, 'f_tempavg_bgnpp', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%annsum_counter, &
+             a_annsum_counter, file_hist, 'f_annsum_counter', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%tempavg_somhr, &
+             a_tempavg_somhr, file_hist, 'f_tempavg_somhr', itime_in_file, sumarea, filter, &
+             '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%tempavg_finrw, &
+             a_tempavg_finrw, file_hist, 'f_tempavg_finrw', itime_in_file, sumarea, filter, &
+             '-','-')
+
+#endif
          ! leaf nitrogen display pool
          CALL write_history_variable_2d ( DEF_hist_vars%leafn, &
              a_leafn, file_hist, 'f_leafn', itime_in_file, sumarea, filter, &
