@@ -1,6 +1,40 @@
 &nl_colm_history
    
    ! ! ----- history -----
-   ! DEF_hist_vars%lai        = .false.
+   ! DEF_hist_vars%forc_po2m           = .true.
+   ! DEF_hist_vars%forc_pco2m          = .true.
 
+   DEF_hist_vars%c_atm           = .true.
+   DEF_hist_vars%ch4_surf_flux_tot           = .true.
+   DEF_hist_vars%net_methane           = .true.
+   DEF_hist_vars%annavg_agnpp           = .true.
+   DEF_hist_vars%annavg_bgnpp           = .true.
+   DEF_hist_vars%annavg_somhr           = .true.
+   DEF_hist_vars%annavg_finrw           = .true.
+   DEF_hist_vars%ch4_prod_depth           = .true.
+   DEF_hist_vars%o2_decomp_depth           = .true.
+   DEF_hist_vars%ch4_oxid_depth           = .true.
+   DEF_hist_vars%o2_oxid_depth           = .true.
+   DEF_hist_vars%ch4_aere_depth           = .true.
+   DEF_hist_vars%ch4_tran_depth           = .true.
+   DEF_hist_vars%o2_aere_depth           = .true.
+   DEF_hist_vars%ch4_ebul_depth           = .true.
+   DEF_hist_vars%o2stress           = .true.
+   DEF_hist_vars%ch4stress           = .true.
+   DEF_hist_vars%ch4_surf_aere           = .true.
+   DEF_hist_vars%ch4_surf_ebul           = .true.
+   DEF_hist_vars%ch4_surf_diff           = .true.
+   DEF_hist_vars%ch4_ebul_total           = .true.
+   DEF_hist_vars%totcolch4           = .true.
+   DEF_hist_vars%forc_pch4m           = .true.
+   DEF_hist_vars%grnd_ch4_cond           = .true.
+   DEF_hist_vars%conc_o2           = .true.
+   DEF_hist_vars%conc_ch4           = .true.
+   DEF_hist_vars%layer_sat_lag           = .true.
+   DEF_hist_vars%lake_soilc           = .true.
+   DEF_hist_vars%tempavg_agnpp           = .true.
+   DEF_hist_vars%tempavg_bgnpp           = .true.
+   DEF_hist_vars%annsum_counter           = .true.
+   DEF_hist_vars%tempavg_somhr           = .true.
+   DEF_hist_vars%tempavg_finrw           = .true.
 /

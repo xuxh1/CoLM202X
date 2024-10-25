@@ -2319,6 +2319,11 @@ CONTAINS
       CALL ncio_write_serial (filename, 'rtyp', (/1,2/), 'rtyp')
       CALL ncio_put_attr_str (filename, 'rtyp', 'long_name', '1 = direct; 2 = diffuse')
 
+#ifdef CH4
+      CALL ncio_define_dimension (filename, 'species', 3)
+      CALL ncio_write_serial (filename, 'species', (/1,2,3/), 'species')
+      CALL ncio_put_attr_str (filename, 'species', 'long_name', '1 = CH4; 2 = O2; 3 = CO2')
+#endif
    END SUBROUTINE ncio_write_colm_dimension 
 
 END MODULE MOD_NetCDFSerial

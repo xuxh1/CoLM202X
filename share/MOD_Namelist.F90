@@ -780,6 +780,9 @@ MODULE MOD_Namelist
       logical :: veloc_hru                        = .true.
 
 #ifdef CH4
+      ! logical :: forc_po2m           = .true.
+      ! logical :: forc_pco2m           = .true.
+
       logical :: c_atm           = .true.
       logical :: ch4_surf_flux_tot           = .true.
       logical :: net_methane           = .true.
@@ -1723,6 +1726,9 @@ CONTAINS
       ENDIF
 #endif
 #ifdef CH4
+      ! CALL sync_hist_vars_one (DEF_hist_vars%forc_po2m           , set_defaults)
+      ! CALL sync_hist_vars_one (DEF_hist_vars%forc_pco2m           , set_defaults)
+
       CALL sync_hist_vars_one (DEF_hist_vars%c_atm           , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%ch4_surf_flux_tot           , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%net_methane           , set_defaults)

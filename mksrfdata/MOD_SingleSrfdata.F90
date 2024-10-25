@@ -508,6 +508,10 @@ CONTAINS
       CALL ncio_define_dimension (fsrfdata, 'pft', numpft)
 #endif
 
+#ifdef CH4
+   CALL ncio_define_dimension (fsrfdata, 'species', 3)
+#endif
+
       CALL ncio_define_dimension (fsrfdata, 'LAI_year', size(SITE_LAI_year))
       IF (DEF_LAI_MONTHLY) THEN
          CALL ncio_define_dimension (fsrfdata, 'month', 12)

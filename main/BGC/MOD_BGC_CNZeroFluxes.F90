@@ -386,12 +386,29 @@ MODULE MOD_BGC_CNZeroFluxes
        decomp_ntransfer_vr                  , &
        decomp_sminn_flux_vr                 , &
        sminn_to_denit_decomp_vr             , &
- 
+#ifdef CH4
+       hr,&
+#endif
        decomp_npools_sourcesink       
     
    USE MOD_BGC_Vars_TimeVariables, only:           &
+#ifdef CH4
+       decomp_cpools_vr,&
+
+      !  c_atm, ch4_surf_flux_tot, net_methane,annavg_agnpp,annavg_bgnpp,&
+      !  annavg_somhr,annavg_finrw,ch4_prod_depth,o2_decomp_depth,ch4_oxid_depth,o2_oxid_depth,&
+      !  ch4_aere_depth,ch4_tran_depth,o2_aere_depth,ch4_ebul_depth,o2stress,ch4stress,ch4_surf_aere,&
+      !  ch4_surf_ebul,ch4_surf_diff,ch4_ebul_total,&
+
+      !  totcolch4,forc_pch4m,grnd_ch4_cond,conc_o2,conc_ch4,&
+      !  layer_sat_lag,lake_soilc,tempavg_agnpp,tempavg_bgnpp,annsum_counter,tempavg_somhr,tempavg_finrw,&
+#endif
        decomp_k                  
      
+#ifdef CH4
+   USE MOD_BGC_Vars_PFTimeVariables, only: annsum_npp_p
+#endif
+
    IMPLICIT NONE
  
    PUBLIC CNZeroFluxes
@@ -832,6 +849,19 @@ CONTAINS
          ENDDO
       ENDDO
 
+
+#ifdef CH4
+      hr_vr(i) = 0._r8
+
+      DO k = 1, ndecomp_pools
+         DO j = 1, nl_soil
+            decomp_cpools_vr(j,k,i) = 0._r8
+         ENDDO
+      ENDDO
+      DO m = ps, pe
+         annsum_npp_p(m) = 0._r8
+      ENDDO
+#endif
    END SUBROUTINE CNZeroFluxes
 
 END MODULE MOD_BGC_CNZeroFluxes

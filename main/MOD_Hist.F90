@@ -971,108 +971,172 @@ CONTAINS
          !     a_transfer_froot_gr, file_hist, 'f_transfer_froot_gr', itime_in_file, sumarea, filter, &
          !     '-','-')
 
+         ! CH4, O2, CO2 atmospheric conc
          CALL write_history_variable_3d ( DEF_hist_vars%c_atm, &
-         a_c_atm, file_hist, 'f_c_atm', itime_in_file, 'species', 1, 3, &
-         sumarea, filter,'-','-')
+             a_c_atm, file_hist, 'f_c_atm', itime_in_file, 'species', 1, 3, &
+             sumarea, filter,'CH4, O2, CO2 atmospheric conc','mol/m3')
 
+         ! CH4 flux to atm.
          CALL write_history_variable_2d ( DEF_hist_vars%ch4_surf_flux_tot, &
              a_ch4_surf_flux_tot, file_hist, 'f_ch4_surf_flux_tot', itime_in_file, sumarea, filter, &
-             '-','-')
+             'CH4 flux to atm.','kgC/m2/s')
+
+         ! average net methane correction to CO2 flux
          CALL write_history_variable_2d ( DEF_hist_vars%net_methane, &
              a_net_methane, file_hist, 'f_net_methane', itime_in_file, sumarea, filter, &
-             '-','-')
+             'average net methane correction to CO2 flux','gC/m2/s')
+
+         ! annual average above-ground NPP 
          CALL write_history_variable_2d ( DEF_hist_vars%annavg_agnpp, &
              a_annavg_agnpp, file_hist, 'f_annavg_agnpp', itime_in_file, sumarea, filter, &
-             '-','-')
+             'annual average above-ground NPP','gC/m2/s')
+
+         ! annual average below-ground NPP
          CALL write_history_variable_2d ( DEF_hist_vars%annavg_bgnpp, &
              a_annavg_bgnpp, file_hist, 'f_annavg_bgnpp', itime_in_file, sumarea, filter, &
-             '-','-')
+             'annual average below-ground NPP','-')
+
+         ! annual average SOM heterotrophic resp.
          CALL write_history_variable_2d ( DEF_hist_vars%annavg_somhr, &
              a_annavg_somhr, file_hist, 'f_annavg_somhr', itime_in_file, sumarea, filter, &
-             '-','-')
+             'annual average SOM heterotrophic resp.','gC/m2/s')
+
+         ! respiration-weighted annual average of finundated
          CALL write_history_variable_2d ( DEF_hist_vars%annavg_finrw, &
              a_annavg_finrw, file_hist, 'f_annavg_finrw', itime_in_file, sumarea, filter, &
-             '-','-')
+             'respiration-weighted annual average of finundated','-')
+
+         ! production of CH4 in each soil layer
          CALL write_history_variable_3d ( DEF_hist_vars%ch4_prod_depth, &
              a_ch4_prod_depth, file_hist, 'f_ch4_prod_depth', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'production of CH4 in each soil layer','mol/m3/s')
+
+         ! O2 consumption during decomposition in each soil layer
          CALL write_history_variable_3d ( DEF_hist_vars%o2_decomp_depth, &
              a_o2_decomp_depth, file_hist, 'f_o2_decomp_depth', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'O2 consumption during decomposition in each soil layer','mol/m3/s')
+
+         ! CH4 consumption rate via oxidation in each soil layer
          CALL write_history_variable_3d ( DEF_hist_vars%ch4_oxid_depth, &
              a_ch4_oxid_depth, file_hist, 'f_ch4_oxid_depth', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'CH4 consumption rate via oxidation in each soil layer','mol/m3/s')
+
+         ! O2 consumption rate via oxidation in each soil layer
          CALL write_history_variable_3d ( DEF_hist_vars%o2_oxid_depth, &
              a_o2_oxid_depth, file_hist, 'f_o2_oxid_depth', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'O2 consumption rate via oxidation in each soil layer','mol/m3/s')
+
+         ! CH4 loss rate via aerenchyma in each soil layer
          CALL write_history_variable_3d ( DEF_hist_vars%ch4_aere_depth, &
              a_ch4_aere_depth, file_hist, 'f_ch4_aere_depth', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'CH4 loss rate via aerenchyma in each soil layer','mol/m3/s')
+
+         ! CH4 loss rate via transpiration in each soil layer
          CALL write_history_variable_3d ( DEF_hist_vars%ch4_tran_depth, &
              a_ch4_tran_depth, file_hist, 'f_ch4_tran_depth', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'CH4 loss rate via transpiration in each soil layer','mol/m3/s')
+
+         ! O2 gain rate via aerenchyma in each soil layer
          CALL write_history_variable_3d ( DEF_hist_vars%o2_aere_depth, &
              a_o2_aere_depth, file_hist, 'f_o2_aere_depth', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'O2 gain rate via aerenchyma in each soil layer','mol/m3/s')
+
+         ! CH4 loss rate via ebullition in each soil layer
          CALL write_history_variable_3d ( DEF_hist_vars%ch4_ebul_depth, &
              a_ch4_ebul_depth, file_hist, 'f_ch4_ebul_depth', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'CH4 loss rate via ebullition in each soil layer','mol/m3/s')
+
+         ! Ratio of oxygen available to that demanded by roots, aerobes, & methanotrophs
          CALL write_history_variable_3d ( DEF_hist_vars%o2stress, &
              a_o2stress, file_hist, 'f_o2stress', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'Ratio of oxygen available to that demanded by roots, aerobes, & methanotrophs','-')
+
+         ! Ratio of methane available to the total per-timestep methane sinks 
          CALL write_history_variable_3d ( DEF_hist_vars%ch4stress, &
              a_ch4stress, file_hist, 'f_ch4stress', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'Ratio of methane available to the total per-timestep methane sinks ','-')
+
+         ! Total column CH4 aerenchyma
          CALL write_history_variable_2d ( DEF_hist_vars%ch4_surf_aere, &
              a_ch4_surf_aere, file_hist, 'f_ch4_surf_aere', itime_in_file, sumarea, filter, &
-             '-','-')
+             'Total column CH4 aerenchyma','mol/m2/s')
+
+         ! CH4 ebullition to atmosphere
          CALL write_history_variable_2d ( DEF_hist_vars%ch4_surf_ebul, &
              a_ch4_surf_ebul, file_hist, 'f_ch4_surf_ebul', itime_in_file, sumarea, filter, &
-             '-','-')
+             'CH4 ebullition to atmosphere','mol/m2/s')
+
+         ! CH4 surface flux
          CALL write_history_variable_2d ( DEF_hist_vars%ch4_surf_diff, &
              a_ch4_surf_diff, file_hist, 'f_ch4_surf_diff', itime_in_file, sumarea, filter, &
-             '-','-')
+             'CH4 surface flux','mol/m2/s')
+
+         ! Total column CH4 ebullition
          CALL write_history_variable_2d ( DEF_hist_vars%ch4_ebul_total, &
              a_ch4_ebul_total, file_hist, 'f_ch4_ebul_total', itime_in_file, sumarea, filter, &
-             '-','-')
+             'Total column CH4 ebullition','mol/m2/s')
+
+         ! total methane in soil column, start of timestep
          CALL write_history_variable_2d ( DEF_hist_vars%totcolch4, &
              a_totcolch4, file_hist, 'f_totcolch4', itime_in_file, sumarea, filter, &
-             '-','-')
+             'total methane in soil column, start of timestep','gC/m2')
+
+         ! CH4 concentration in atmos.
          CALL write_history_variable_2d ( DEF_hist_vars%forc_pch4m, &
              a_forc_pch4m, file_hist, 'f_forc_pch4m', itime_in_file, sumarea, filter, &
-             '-','-')
+             'CH4 concentration in atmos.','pa')
+
+         ! tracer conductance for boundary layer
          CALL write_history_variable_2d ( DEF_hist_vars%grnd_ch4_cond, &
              a_grnd_ch4_cond, file_hist, 'f_grnd_ch4_cond', itime_in_file, sumarea, filter, &
-             '-','-')
+             'tracer conductance for boundary layer','m/s')
+
+         ! O2 conc in each soil layer
          CALL write_history_variable_3d ( DEF_hist_vars%conc_o2, &
              a_conc_o2, file_hist, 'f_conc_o2', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'O2 conc in each soil layer','mol/m3')
+
+         ! CH4 conc in each soil layer
          CALL write_history_variable_3d ( DEF_hist_vars%conc_ch4, &
              a_conc_ch4, file_hist, 'f_conc_ch4', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'CH4 conc in each soil layer','mol/m3')
+
+         
          CALL write_history_variable_3d ( DEF_hist_vars%layer_sat_lag, &
              a_layer_sat_lag, file_hist, 'f_layer_sat_lag', itime_in_file, 'soil', 1, nl_soil, &
              sumarea, filter, '-','-')
+         
+         ! total soil organic matter found in level
          CALL write_history_variable_3d ( DEF_hist_vars%lake_soilc, &
              a_lake_soilc, file_hist, 'f_lake_soilc', itime_in_file, 'soil', 1, nl_soil, &
-             sumarea, filter, '-','-')
+             sumarea, filter, 'total soil organic matter found in level','gC/m3')
+
+         ! temporary average above-ground NPP
          CALL write_history_variable_2d ( DEF_hist_vars%tempavg_agnpp, &
              a_tempavg_agnpp, file_hist, 'f_tempavg_agnpp', itime_in_file, sumarea, filter, &
-             '-','-')
+             'temporary average above-ground NPP','gC/m2/s')
+
+         ! temporary average below-ground NPP
          CALL write_history_variable_2d ( DEF_hist_vars%tempavg_bgnpp, &
              a_tempavg_bgnpp, file_hist, 'f_tempavg_bgnpp', itime_in_file, sumarea, filter, &
-             '-','-')
+             'temporary average below-ground NPP','gC/m2/s')
+
+         ! seconds since last annual accumulator turnover 
          CALL write_history_variable_2d ( DEF_hist_vars%annsum_counter, &
              a_annsum_counter, file_hist, 'f_annsum_counter', itime_in_file, sumarea, filter, &
-             '-','-')
+             'seconds since last annual accumulator turnover','s')
+
+         ! temporary average SOM heterotrophic resp.
          CALL write_history_variable_2d ( DEF_hist_vars%tempavg_somhr, &
              a_tempavg_somhr, file_hist, 'f_tempavg_somhr', itime_in_file, sumarea, filter, &
-             '-','-')
+             'temporary average SOM heterotrophic resp.','gC/m2/s')
+
+         ! respiration-weighted annual average of finundated 
          CALL write_history_variable_2d ( DEF_hist_vars%tempavg_finrw, &
              a_tempavg_finrw, file_hist, 'f_tempavg_finrw', itime_in_file, sumarea, filter, &
-             '-','-')
-
+             'respiration-weighted annual average of finundated','-')
 #endif
+
          ! leaf nitrogen display pool
          CALL write_history_variable_2d ( DEF_hist_vars%leafn, &
              a_leafn, file_hist, 'f_leafn', itime_in_file, sumarea, filter, &

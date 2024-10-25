@@ -22,10 +22,10 @@
 		USE MOD_LandPFT, only: patch_pft_s, patch_pft_e
 		USE MOD_Vars_PFTimeInvariants,  only: pftfrac
 
-		USE MOD_BGC_Vars_1DFluxes, only: hr, decomp_hr_vr, pot_f_nit_vr   
-		USE MOD_BGC_Vars_TimeVariables, only: decomp0_cpools_vr
+		USE MOD_BGC_Vars_1DFluxes, only: decomp_hr, decomp_hr_vr, pot_f_nit_vr, froot_mr, cpool_froot_gr, cpool_froot_storage_gr, transfer_froot_gr   
+		USE MOD_BGC_Vars_TimeVariables, only: decomp_cpools_vr, annsum_npp
 	
-		! USE MOD_BGC_Vars_TimeVariables, only:  froot_mr, cpool_froot_gr, cpool_froot_storage_gr, transfer_froot_gr
+		! USE MOD_BGC_Vars_TimeVariables, only: froot_mr, cpool_froot_gr, cpool_froot_storage_gr, transfer_froot_gr
 		USE MOD_BGC_Vars_TimeVariables, only: c_atm, ch4_surf_flux_tot, net_methane,annavg_agnpp,annavg_bgnpp,&
 		annavg_somhr,annavg_finrw,ch4_prod_depth,o2_decomp_depth,ch4_oxid_depth,o2_oxid_depth,&
 		ch4_aere_depth,ch4_tran_depth,o2_aere_depth,ch4_ebul_depth,o2stress,ch4stress,ch4_surf_aere,&
@@ -34,8 +34,8 @@
 		USE MOD_BGC_Vars_TimeVariables, only: totcolch4,forc_pch4m,grnd_ch4_cond,conc_o2,conc_ch4,&
 		layer_sat_lag,lake_soilc,tempavg_agnpp,tempavg_bgnpp,annsum_counter,tempavg_somhr,tempavg_finrw
 
-		USE MOD_BGC_Vars_PFTimeVariables, only: annsum_npp_p
-		USE MOD_BGC_Vars_1DPFTFluxes, only: froot_mr_p, cpool_froot_gr_p, cpool_froot_storage_gr_p, transfer_froot_gr_p
+		! USE MOD_BGC_Vars_PFTimeVariables, only: annsum_npp_p
+		! USE MOD_BGC_Vars_1DPFTFluxes, only: froot_mr_p, cpool_froot_gr_p, cpool_froot_storage_gr_p, transfer_froot_gr_p
 		IMPLICIT NONE
 		integer ,intent(inout) :: istep  
 
@@ -80,12 +80,12 @@
 		integer :: ps, pe
 		integer j
 		logical :: ch4_first_time = .false.
-		real(r8):: &
-				annsum_npp,&
-				froot_mr,&
-				cpool_froot_gr,&
-				cpool_froot_storage_gr,&
-				transfer_froot_gr
+		! real(r8):: &
+				! annsum_npp
+				! froot_mr,&
+				! cpool_froot_gr,&
+				! cpool_froot_storage_gr,&
+				! transfer_froot_gr
 		real(r8):: &
 				agnpp                   , &! aboveground NPP (gC/m2/s)
 				bgnpp                   , &! belowground NPP (gC/m2/s)
@@ -103,29 +103,28 @@
 
 		ps = patch_pft_s(i)      
 		pe = patch_pft_e(i)
-		annsum_npp               = sum(annsum_npp_p(ps:pe)              * pftfrac(ps:pe))
-		froot_mr                 = sum(froot_mr_p(ps:pe)                * pftfrac(ps:pe))
-		cpool_froot_gr           = sum(cpool_froot_gr_p(ps:pe)          * pftfrac(ps:pe))
-		cpool_froot_storage_gr   = sum(cpool_froot_storage_gr_p(ps:pe)  * pftfrac(ps:pe))
-		transfer_froot_gr        = sum(transfer_froot_gr_p(ps:pe)       * pftfrac(ps:pe))
+		! annsum_npp               = sum(annsum_npp_p(ps:pe)              * pftfrac(ps:pe))
+		! froot_mr                 = sum(froot_mr_p(ps:pe)                * pftfrac(ps:pe))
+		! cpool_froot_gr           = sum(cpool_froot_gr_p(ps:pe)          * pftfrac(ps:pe))
+		! cpool_froot_storage_gr   = sum(cpool_froot_storage_gr_p(ps:pe)  * pftfrac(ps:pe))
+		! transfer_froot_gr        = sum(transfer_froot_gr_p(ps:pe)       * pftfrac(ps:pe))
 
-		agnpp = annsum_npp/365/86400/2
-		bgnpp = annsum_npp/365/86400/2
+		agnpp = annsum_npp(i)/365/86400/2
+		bgnpp = annsum_npp(i)/365/86400/2
 
-		rr = froot_mr + cpool_froot_gr + cpool_froot_storage_gr + transfer_froot_gr
+		rr = froot_mr(i) + cpool_froot_gr(i) + cpool_froot_storage_gr(i) + transfer_froot_gr(i)
 
-
-
-		somhr = hr(i)/2
-		lithr = hr(i)/2
-		hr_vr(1:10) = decomp_hr_vr(6:15,1,i)
+		somhr = decomp_hr(i)/2
+		lithr = decomp_hr(i)/2
+		! hr_vr(1:10) = sum(decomp_hr_vr(1:10,1:10,i), dim=2)
+		hr_vr(1:10) = decomp_hr_vr(1:10,1,i)
 		crootfr(:) = rootfr(:)
 		o_scalar(:) = 1
 		fphr(:) = 1
 		pH = 7
 
 		cellorg = 0.
-		cellorg(:) = cellorg(:) + sum(decomp0_cpools_vr(:, 1:7, i), dim=2)
+		cellorg(:) = cellorg(:) + sum(decomp_cpools_vr(1:10, 1:7, i), dim=2)
 		t_h2osfc = (t_grnd+forc_t)/2
 		organic_max = cellorg(1)
 
@@ -134,15 +133,23 @@
 		endif
 		
 
+		if (istep == 1 .or. istep == 48) then
+			print*, 'decomp_hr',decomp_hr(i)
+			print*, 'decomp_hr_vr',sum(decomp_hr_vr(1:10,1:10,i), dim=2)
+			print*, 'hr_vr',hr_vr
+			print*, 'rootfr',rootfr
+			print*, 'rr',rr
+			print*, 'cellorg',cellorg
+			print*, 'decomp_cpools_vr',sum(decomp_cpools_vr(:, 1:7, i), dim=2)
 
-		! print*, hr(i)
-		! print*, hr_vr
-		! print*, rootfr
-		! print*, rr
+			print*, 'annsum_npp',annsum_npp(i)
+			print*, 'froot_mr',froot_mr(i)
+			print*, 'cpool_froot_gr',cpool_froot_gr(i)
+			print*, 'cpool_froot_storage_gr',cpool_froot_storage_gr(i)
+			print*, 'transfer_froot_gr',transfer_froot_gr(i)
 
-
-
-
+			print*, 'pot_f_nit_vr',pot_f_nit_vr(1:nl_soil,i)
+		endif
 
 		CALL ch4 (i,idate(1:3),patchtype,lb,nl_soil,maxsnl,snl,dlon,dlat,deltim,&
 		z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:),&
@@ -150,7 +157,7 @@
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&
 		zwt,rootfr,snowdp,wat,rsur,etr,lakedepth,lake_icefrac,wdsrf,bsw,&
 		smp,porsl,lai,rootr,&
-		annsum_npp,rr,agnpp,bgnpp,somhr,&
+		annsum_npp(i),rr,agnpp,bgnpp,somhr,&
 		crootfr(1:nl_soil),lithr,hr_vr(1:nl_soil),o_scalar(1:nl_soil),fphr(1:nl_soil),pot_f_nit_vr(1:nl_soil,i),pH,&
 		cellorg(1:nl_soil),t_h2osfc,organic_max,&
 		c_atm(1:3,i),ch4_surf_flux_tot(i),net_methane(i),annavg_agnpp(i),annavg_bgnpp(i),annavg_somhr(i),annavg_finrw(i),&

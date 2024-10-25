@@ -54,6 +54,8 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
       zi_soisno  (maxsnl:nl_soil)      ! interface level below a "z" level (m)'
 
    integer  :: lb,snl
+
+   integer  :: patchtype_reset
   
 ! ======================================================================
 
@@ -193,9 +195,13 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
             ENDDO
          ENDIF
 
+         patchtype_reset = patchtype(i)
+         if (patchtype_reset == 2) then
+          patchtype_reset = 0
+         endif
 
 #if(defined BGC)
-         IF(patchtype(i) .eq. 0)THEN
+         IF(patchtype_reset .eq. 0)THEN
             !
             !                ***** Call CoLM BGC model *****
             !
