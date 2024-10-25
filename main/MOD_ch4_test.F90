@@ -207,19 +207,6 @@ contains
 
 		!=================== output ============================================
 		real(r8), intent(out) :: &
-		! 	! ch4_oxid_depth (1:nl_soil)   , &! CH4 consumption rate via oxidation in each soil layer (mol/m3/s) 
-		! 	! o2_oxid_depth  (1:nl_soil)   , &! O2 consumption rate via oxidation in each soil layer (mol/m3/s) 
-		! 	! co2_oxid_depth (1:nl_soil)   , &! CO2 production rate via oxidation in each soil layer (mol/m3/s) 
-		! 	! o2_decomp_depth(1:nl_soil)      ! O2 consumption during decomposition in each soil layer (mol/m3/s)
-		
-
-		! 	ch4_surf_diff                , &! CH4 surface flux (mol/m2/s)                            
-		! 	ch4_surf_ebul                , &! CH4 ebullition to atmosphere (mol/m2/s)                 
-		! 	ch4_surf_aere                , &! Total column CH4 aerenchyma (mol/m2/s)            
-		
-		! 	ch4_oxid_depth (1:nl_soil)   , &! CH4 consumption rate via oxidation in each soil layer (mol/m3/s) 
-		! 	ch4_prod_depth (1:nl_soil)   , &! production of CH4 in each soil layer (mol/m3/s)
-
 		! 	soilc          (1:nl_soil)   , &! total soil organic matter found in level (g C / m3) 
 		! 	! conc_o2_lake   (1:nl_soil)   , &! O2 conc  in each soil layer (mol/m3)
 		! 	! ch4_dfsat_flux               , &! CH4 flux to atm due to decreasing finundated (kg C/m^2/s) [+]
@@ -229,8 +216,8 @@ contains
 			c_atm      (1:3)             , &! CH4, O2, CO2 atmospheric conc  (mol/m3)         
 		! 	ch4co2                       , &! CO2 production from CH4 oxidation (g C/m**2/s)
 		! 	ch4prod                      , &! average CH4 production (g C/m^2/s)       
-			ch4_surf_flux_tot            , &! CH4 flux to atm. (kg C/m**2/s)
-			net_methane                     ! average net methane correction to CO2 flux (g C/m^2/s)
+			ch4_surf_flux_tot            , &! CH4 flux to atm. (kg C/m2/s)
+			net_methane                     ! average net methane correction to CO2 flux (g C/m2/s)
 
 		!------------------- ch4_annualupdate ------------------------------
 		real(r8), intent(out) :: &
@@ -261,12 +248,12 @@ contains
 
 		!------------------- ch4_tran ------------------------------
 		real(r8), intent(out) :: &
-			o2stress          (1:nl_soil)  , &! Output: Ratio of oxygen available to that demanded by roots, aerobes, & methanotrophs
-			ch4stress         (1:nl_soil)  , &! Output: Ratio of methane available to the total per-timestep methane sinks 
-			ch4_surf_aere                  , &! Output: Total column CH4 aerenchyma (mol/m2/s)
-			ch4_surf_ebul                  , &! Output: CH4 ebullition to atmosphere (mol/m2/s)
-			ch4_surf_diff                  , &! Output: CH4 surface flux (mol/m2/s)
-			ch4_ebul_total                    ! Output: Total column CH4 ebullition (mol/m2/s)
+			o2stress          (1:nl_soil)  , &! Ratio of oxygen available to that demanded by roots, aerobes, & methanotrophs
+			ch4stress         (1:nl_soil)  , &! Ratio of methane available to the total per-timestep methane sinks 
+			ch4_surf_aere                  , &! Total column CH4 aerenchyma (mol/m2/s)
+			ch4_surf_ebul                  , &! CH4 ebullition to atmosphere (mol/m2/s)
+			ch4_surf_diff                  , &! CH4 surface flux (mol/m2/s)
+			ch4_ebul_total                    ! Total column CH4 ebullition (mol/m2/s)
 
 
 		!=================== inout ============================================
@@ -274,13 +261,13 @@ contains
 			ch4_first_time
 		
 		real(r8), intent(inout) :: &
-			totcolch4               , &! total methane in soil column, start of timestep (g C / m^2)
+			totcolch4               , &! total methane in soil column, start of timestep (gC/m2)
 			forc_pch4m              , &! CH4 concentration in atmos. (pascals)
 			grnd_ch4_cond           , &! tracer conductance for boundary layer [m/s]
 			conc_o2  (1:nl_soil)    , &! O2 conc in each soil layer (mol/m3) 
 			conc_ch4   (1:nl_soil)  , &! CH4 conc in each soil layer (mol/m3) 
 			layer_sat_lag(1:nl_soil), &
-			lake_soilc  (1:nl_soil)    ! total soil organic matter found in level (g C / m^3) (nl_soil)
+			lake_soilc  (1:nl_soil)    ! total soil organic matter found in level (gC/m3) (nl_soil)
 
 		!------------------- ch4_annualupdate ------------------------------
 		real(r8), intent(inout) :: &
@@ -363,7 +350,8 @@ contains
 			vol_liq(j) = wliq_soisno(j)/dzmm(j)
 		end do
         
-		print*, dlon,dlat
+		print*, "dlon,dlat",dlon,dlat
+		print*, "vol_liq",vol_liq
 
 		!-----------------------------------------------------------------------
 		! Initialize local fluxes to zero: necessary for columns outside the filters because averaging up to gridcell will be done
@@ -384,10 +372,14 @@ contains
 			end if
 		end if
 
+		print*, "forc_pch4m",forc_pch4m
+
 		c_atm(1) =  forc_pch4m / rgasm / forc_t ! [mol/m3 air]
 		c_atm(2) =  forc_po2m  / rgasm / forc_t ! [mol/m3 air]
 		c_atm(3) =  forc_pco2m / rgasm / forc_t ! [mol/m3 air]
 	
+		print*, "c_atm",c_atm
+
 		!!!! Begin biochemistry
 	
 		! First for soil
@@ -643,10 +635,10 @@ contains
 			somhr                      ! (gC/m2/s) soil organic matter heterotrophic respiration
 
 		real(r8), intent(out) :: &
-			annavg_agnpp            , &! output: annual average above-ground NPP (gC/m2/s)         
-			annavg_bgnpp            , &! output: annual average below-ground NPP (gC/m2/s)         
-			annavg_somhr            , &! output: annual average SOM heterotrophic resp. (gC/m2/s)  
-			annavg_finrw               ! output: respiration-weighted annual average of finundated 
+			annavg_agnpp            , &! annual average above-ground NPP (gC/m2/s)         
+			annavg_bgnpp            , &! annual average below-ground NPP (gC/m2/s)         
+			annavg_somhr            , &! annual average SOM heterotrophic resp. (gC/m2/s)  
+			annavg_finrw               ! respiration-weighted annual average of finundated 
 		
 		real(r8), intent(inout) :: &
 			tempavg_agnpp           , &! inout: temporary average above-ground NPP (gC/m2/s)      
@@ -759,8 +751,8 @@ contains
 				
   
 		real(r8), intent(out) :: &            
-			ch4_prod_depth    (1:nl_soil)         , &! Output: production of CH4 in each soil layer (nl_soil) (mol/m3/s)
-			o2_decomp_depth   (1:nl_soil)            ! Output: O2 consumption during decomposition in each soil layer (nl_soil) (mol/m3/s)
+			ch4_prod_depth    (1:nl_soil)         , &! production of CH4 in each soil layer (nl_soil) (mol/m3/s)
+			o2_decomp_depth   (1:nl_soil)            ! O2 consumption during decomposition in each soil layer (nl_soil) (mol/m3/s)
 		
 		real(r8), intent(inout) :: &            
 			layer_sat_lag   (1:nl_soil)           ! Lagged saturation status of soil layer in the unsaturated zone (1 = sat)
@@ -830,7 +822,7 @@ contains
 			end if
 		  
 		end if
-		print*, rr_vr
+		! print*, rr_vr
 		print*, sat
 
 		partition_z = 1._r8
@@ -869,7 +861,7 @@ contains
 					q10lake**((t_soisno(j)-q10lakebase)/10._r8) / catomw
 				! convert from g C to mol C
 			end if
-			print*, 'base_decomp',base_decomp
+			! print*, 'base_decomp',base_decomp
   
 			! For all landunits, prevent production or oxygen consumption when soil is at or below freezing.
 			! If using VERTSOILC, it is OK to use base_decomp as given because liquid water stress will limit decomp.
@@ -885,8 +877,8 @@ contains
 			else ! lake
 				partition_z = 1._r8
 			endif
-			print*, 'partition_z',partition_z
-			print*, t_soisno(j)
+			! print*, 'partition_z',partition_z
+			! print*, t_soisno(j)
 			! Adjust f_ch4 to account for the fact that methanogens may have a higher Q10 than aerobic decomposers.
 			! Note this is crude and should ideally be applied to all anaerobic decomposition rather than just the
 			! f_ch4.
@@ -908,7 +900,7 @@ contains
 				f_ch4_adj = 0.5_r8 ! For lakes assume no redox limitation. Production only depends on temp, soil C, and
 				! lifetime parameter.
 			end if
-			print*, 'f_ch4_adj',f_ch4_adj
+			! print*, 'f_ch4_adj',f_ch4_adj
 	
 			! If switched on, use pH factor for production based on spatial pH data defined in surface data.
 			if ((patchtype /= 4) .and. usephfact )then 
@@ -935,7 +927,7 @@ contains
 			! so that the NEE is sensible. Even perfectly anaerobic conditions with no alternative
 			! electron acceptors would predict no more than 0.5 b/c some oxygen is present in organic matter.
 			! e.g. 2CH2O --> CH4 + CO2.
-			print*, 'f_ch4_adj',f_ch4_adj
+			! print*, 'f_ch4_adj',f_ch4_adj
 	
 	
 			! Decomposition uses 1 mol O2 per mol CO2 produced (happens below WT also, to deplete O2 below WT)
@@ -965,7 +957,7 @@ contains
 					! g N/m^3/s           mol O2 / g N
 				end if
 			end if
-			print*, 'o2_decomp_depth',j,'==',o2_decomp_depth(j)
+			! print*, 'o2_decomp_depth',j,'==',o2_decomp_depth(j)
 	
 			if (j  >  jwt) then ! Below the water table so anaerobic CH4 production can occur
 				! partition decomposition to layer
@@ -979,7 +971,7 @@ contains
 					ch4_prod_depth(j) = 0._r8 ! [mol/m3 total/s]
 				endif ! anoxicmicrosites
 			endif ! WT
-			print*, 'ch4_prod_depth',j,'==',ch4_prod_depth(j)
+			! print*, 'ch4_prod_depth',j,'==',ch4_prod_depth(j)
 	
 		end do ! nl_soil
 	
@@ -1407,7 +1399,7 @@ contains
 			porsl    (1:nl_soil)       , &! volumetric soil water at saturation (porosity)
 			! vol_liq  (1:nl_soil)       , &! liquid volumetric water content
 			wdsrf                      , &! depth of surface water [mm]
-			conc_ch4       (1:nl_soil)    ! Output: CH4 conc in each soil layer (mol/m3) 
+			conc_ch4       (1:nl_soil)    ! CH4 conc in each soil layer (mol/m3) 
 
 		real(r8), intent(out) :: &
 			ch4_ebul_depth (1:nl_soil)   ! CH4 loss rate via ebullition in each soil layer (mol/m3/s)
@@ -1546,12 +1538,12 @@ contains
 			organic_max               		! organic matter content (kg m-3) where soil is assumed to act like peat
 
 		real(r8), intent(out) :: &
-			o2stress          (1:nl_soil)  , &! Output: Ratio of oxygen available to that demanded by roots, aerobes, & methanotrophs
-			ch4stress         (1:nl_soil)  , &! Output: Ratio of methane available to the total per-timestep methane sinks 
-			ch4_surf_aere                  , &! Output: Total column CH4 aerenchyma (mol/m2/s)
-			ch4_surf_ebul                  , &! Output: CH4 ebullition to atmosphere (mol/m2/s)
-			ch4_surf_diff                  , &! Output: CH4 surface flux (mol/m2/s)
-			ch4_ebul_total                    ! Output: Total column CH4 ebullition (mol/m2/s)
+			o2stress          (1:nl_soil)  , &! Ratio of oxygen available to that demanded by roots, aerobes, & methanotrophs
+			ch4stress         (1:nl_soil)  , &! Ratio of methane available to the total per-timestep methane sinks 
+			ch4_surf_aere                  , &! Total column CH4 aerenchyma (mol/m2/s)
+			ch4_surf_ebul                  , &! CH4 ebullition to atmosphere (mol/m2/s)
+			ch4_surf_diff                  , &! CH4 surface flux (mol/m2/s)
+			ch4_ebul_total                    ! Total column CH4 ebullition (mol/m2/s)
 
 		real(r8), intent(inout) :: &
 			ch4_oxid_depth    (1:nl_soil)  , &! InOut: CH4 consumption rate via oxidation in each soil layer (mol/m3/s) 

@@ -68,6 +68,9 @@ PROGRAM hist_concatenate
             CALL ncio_define_dimension (filehist, 'vegnodes', nvegwcs)
          ENDIF
    
+#ifdef CH4
+         CALL ncio_define_dimension (filehist, 'species', 3)
+#endif
       ENDIF
    
       CALL hist_concatenate_var_2d (filehist, 'f_taux   ', timelen, compress, &

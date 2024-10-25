@@ -33,9 +33,9 @@ MODULE MOD_BGC_CNSummary
        fertnitro_cotton, fertnitro_rice1, fertnitro_rice2, fertnitro_sugarcane, &
        grainn, grainn_storage, grainn_xfer, plantdate, &
 #endif
-! #ifdef CH4
-!        annsum_npp, froot_mr, cpool_froot_gr, cpool_froot_storage_gr, transfer_froot_gr, &
-! #endif
+#ifdef CH4
+       annsum_npp, &
+#endif
        leafn, frootn, livestemn, deadstemn, livecrootn, deadcrootn, leafn_storage, frootn_storage, livestemn_storage, &
        deadstemn_storage, livecrootn_storage, deadcrootn_storage, leafn_xfer, frootn_xfer, livestemn_xfer, &
        deadstemn_xfer, livecrootn_xfer, deadcrootn_xfer, retransn, downreg, lag_npp
@@ -56,9 +56,9 @@ MODULE MOD_BGC_CNSummary
        plantdate_p, cphase_p, fertnitro_p, hui_p, gddmaturity_p, gddplant_p, vf_p, &
        grainn_p, grainn_storage_p, grainn_xfer_p, cropseedn_deficit_p, & 
 #endif
-! #ifdef CH4
-!        annsum_npp_p, &
-! #endif
+#ifdef CH4
+       annsum_npp_p, &
+#endif
       leafn_p, frootn_p, livestemn_p, deadstemn_p, livecrootn_p, deadcrootn_p, &
        leafn_storage_p, frootn_storage_p, livestemn_storage_p, &
        deadstemn_storage_p, livecrootn_storage_p, deadcrootn_storage_p, &
@@ -75,9 +75,9 @@ MODULE MOD_BGC_CNSummary
 #ifdef CROP
        cropprod1c_loss, grainc_to_cropprodc, grainc_to_seed, grainn_to_cropprodn, &
 #endif
-! #ifdef CH4
-!        froot_mr, cpool_froot_gr, cpool_froot_storage_gr, transfer_froot_gr, &
-! #endif
+#ifdef CH4
+       froot_mr, cpool_froot_gr, cpool_froot_storage_gr, transfer_froot_gr, &
+#endif
        sminn_leached, sminn_leached_vr, smin_no3_leached, smin_no3_leached_vr, smin_no3_runoff, smin_no3_runoff_vr, &
        f_n2o_nit, f_n2o_nit_vr, decomp_cpools_transport_tendency, decomp_npools_transport_tendency, &
        denit, f_denit_vr, fire_closs, hrv_xsmrpool_to_atm, som_c_leached, som_n_leached, sminn_to_denit_excess_vr, &
@@ -97,9 +97,9 @@ MODULE MOD_BGC_CNSummary
 #ifdef CROP
        cropprod1c_loss_p, grainc_to_seed_p, grainc_to_food_p, grainn_to_food_p, &
 #endif
-! #ifdef CH4
-!        froot_mr_p, cpool_froot_gr_p, cpool_froot_storage_gr_p, transfer_froot_gr_p, &
-! #endif
+#ifdef CH4
+       froot_mr_p, cpool_froot_gr_p, cpool_froot_storage_gr_p, transfer_froot_gr_p, &
+#endif
        m_leafc_to_fire_p, m_leafc_storage_to_fire_p, m_leafc_xfer_to_fire_p, &
        m_frootc_to_fire_p, m_frootc_storage_to_fire_p, m_frootc_xfer_to_fire_p, &
        m_livestemc_to_fire_p, m_livestemc_storage_to_fire_p, m_livestemc_xfer_to_fire_p, &
@@ -346,14 +346,13 @@ CONTAINS
       fertnitro_rice2(i) = 0._r8
       fertnitro_sugarcane(i) = 0._r8
 #endif
-! #ifdef CH4
-!       annsum_npp(i)               = sum(annsum_npp_p(ps:pe)              * pftfrac(ps:pe))
-!       froot_mr(i)                 = sum(froot_mr_p(ps:pe)                * pftfrac(ps:pe))
-!       cpool_froot_gr(i)           = sum(cpool_froot_gr_p(ps:pe)          * pftfrac(ps:pe))
-!       cpool_froot_storage_gr(i)   = sum(cpool_froot_storage_gr_p(ps:pe)  * pftfrac(ps:pe))
-!       transfer_froot_gr(i)        = sum(transfer_froot_gr_p(ps:pe)       * pftfrac(ps:pe))
-
-! #endif
+#ifdef CH4
+      annsum_npp(i)               = sum(annsum_npp_p(ps:pe)              * pftfrac(ps:pe))
+      ! froot_mr(i)                 = sum(froot_mr_p(ps:pe)                * pftfrac(ps:pe))
+      ! cpool_froot_gr(i)           = sum(cpool_froot_gr_p(ps:pe)          * pftfrac(ps:pe))
+      ! cpool_froot_storage_gr(i)   = sum(cpool_froot_storage_gr_p(ps:pe)  * pftfrac(ps:pe))
+      ! transfer_froot_gr(i)        = sum(transfer_froot_gr_p(ps:pe)       * pftfrac(ps:pe))
+#endif
       DO m = ps, pe
          totvegc_p(m) = leafc_p(m)             + frootc_p(m)             + livestemc_p(m) &
                       + deadstemc_p(m)         + livecrootc_p(m)         + deadcrootc_p(m) &
@@ -543,7 +542,6 @@ CONTAINS
          ENDDO
       ENDDO
 
-
    END SUBROUTINE soilbiogeochem_carbonflux_summary
 
    SUBROUTINE soilbiogeochem_nitrogenflux_summary(i,nl_soil,dz_soi,ndecomp_transitions,ndecomp_pools)
@@ -731,6 +729,12 @@ CONTAINS
          lag_npp(i) = gpp(i) - ar(i)
       ENDIF
 
+#ifdef CH4
+      froot_mr(i)                 = sum(froot_mr_p(ps:pe)                * pftfrac(ps:pe))
+      cpool_froot_gr(i)           = sum(cpool_froot_gr_p(ps:pe)          * pftfrac(ps:pe))
+      cpool_froot_storage_gr(i)   = sum(cpool_froot_storage_gr_p(ps:pe)  * pftfrac(ps:pe))
+      transfer_froot_gr(i)        = sum(transfer_froot_gr_p(ps:pe)       * pftfrac(ps:pe))
+#endif
    END SUBROUTINE cnveg_carbonflux_summary
 
    SUBROUTINE cnveg_nitrogenflux_summary(i,ps,pe)
