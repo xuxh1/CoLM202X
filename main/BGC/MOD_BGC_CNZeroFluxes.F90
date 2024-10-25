@@ -850,18 +850,18 @@ CONTAINS
       ENDDO
 
 
-#ifdef CH4
-      hr_vr(i) = 0._r8
+! #ifdef CH4
+!       hr_vr(i) = 0._r8
 
-      DO k = 1, ndecomp_pools
-         DO j = 1, nl_soil
-            decomp_cpools_vr(j,k,i) = 0._r8
-         ENDDO
-      ENDDO
-      DO m = ps, pe
-         annsum_npp_p(m) = 0._r8
-      ENDDO
-#endif
+!       DO k = 1, ndecomp_pools
+!          DO j = 1, nl_soil
+!             decomp_cpools_vr(j,k,i) = 0._r8
+!          ENDDO
+!       ENDDO
+!       DO m = ps, pe
+!          annsum_npp_p(m) = 0._r8
+!       ENDDO
+! #endif
    END SUBROUTINE CNZeroFluxes
 
 END MODULE MOD_BGC_CNZeroFluxes

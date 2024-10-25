@@ -152,8 +152,16 @@ MODULE MOD_BGC_Vars_1DFluxes
 #ifdef CH4
    real(r8), allocatable :: froot_mr                 (:)     ! fine root maintenance respiration (gC m-2 s-1)
    real(r8), allocatable :: cpool_froot_gr           (:)     ! available C allocated to fine root display growth respiration (gC m-2 s-1)
+   real(r8), allocatable :: cpool_livecroot_gr                 (:) ! pft level: allocation-associated flux: available C allocated to live coarse display growth respiration (gC m-2 s-1)
+   real(r8), allocatable :: cpool_deadcroot_gr                 (:) ! pft level: allocation-associated flux: available C allocated to dead coarse display growth respiration (gC m-2 s-1)
+
    real(r8), allocatable :: cpool_froot_storage_gr   (:)     ! available C allocated to fine root storage growth respiration (gC m-2 s-1)
+   real(r8), allocatable :: cpool_livecroot_storage_gr         (:) ! pft level: allocation-associated flux: available C allocated to live coarse storage growth respiration (gC m-2 s-1)
+   real(r8), allocatable :: cpool_deadcroot_storage_gr         (:) ! pft level: allocation-associated flux: available C allocated to dead coarse storage growth respiration (gC m-2 s-1)
+
    real(r8), allocatable :: transfer_froot_gr        (:)     ! available C allocated to fine root transfer growth respiration (gC m-2 s-1)
+   real(r8), allocatable :: transfer_livecroot_gr              (:) ! pft level: allocation-associated flux: available C allocated to live coarse transfer growth respiration (gC m-2 s-1)
+   real(r8), allocatable :: transfer_deadcroot_gr              (:) ! pft level: allocation-associated flux: available C allocated to dead coarse transfer growth respiration (gC m-2 s-1)
 
 #endif 
  ! PUBLIC MEMBER FUNCTIONS:
@@ -322,8 +330,14 @@ CONTAINS
 #ifdef CH4
             allocate (froot_mr                 (numpatch)) ; froot_mr                 (:) = spval
             allocate (cpool_froot_gr           (numpatch)) ; cpool_froot_gr           (:) = spval
+            allocate (cpool_livecroot_gr                 (numpatch)) ; cpool_livecroot_gr                 (:) = spval
+            allocate (cpool_deadcroot_gr                 (numpatch)) ; cpool_deadcroot_gr                 (:) = spval
             allocate (cpool_froot_storage_gr   (numpatch)) ; cpool_froot_storage_gr   (:) = spval
+            allocate (cpool_livecroot_storage_gr         (numpatch)) ; cpool_livecroot_storage_gr         (:) = spval
+            allocate (cpool_deadcroot_storage_gr         (numpatch)) ; cpool_deadcroot_storage_gr         (:) = spval
             allocate (transfer_froot_gr        (numpatch)) ; transfer_froot_gr        (:) = spval
+            allocate (transfer_livecroot_gr              (numpatch)) ; transfer_livecroot_gr              (:) = spval
+            allocate (transfer_deadcroot_gr              (numpatch)) ; transfer_deadcroot_gr              (:) = spval
 
 #endif
          ENDIF
@@ -480,8 +494,14 @@ CONTAINS
 #ifdef CH4
             deallocate (froot_mr                 )
             deallocate (cpool_froot_gr           )
+            deallocate (cpool_livecroot_gr                 )
+            deallocate (cpool_deadcroot_gr                 )
             deallocate (cpool_froot_storage_gr   )
+            deallocate (cpool_livecroot_storage_gr         )
+            deallocate (cpool_deadcroot_storage_gr         )
             deallocate (transfer_froot_gr        )
+            deallocate (transfer_livecroot_gr              )
+            deallocate (transfer_deadcroot_gr              )
 
 #endif
          ENDIF
@@ -644,8 +664,15 @@ SUBROUTINE set_1D_BGCFluxes(Values, Nan)
 #ifdef CH4
             froot_mr                 (:)   = Values
             cpool_froot_gr           (:)   = Values
+            cpool_livecroot_gr                 (:) = Values
+            cpool_deadcroot_gr                 (:) = Values
             cpool_froot_storage_gr   (:)   = Values
+            cpool_livecroot_storage_gr         (:) = Values
+            cpool_deadcroot_storage_gr         (:) = Values
             transfer_froot_gr        (:)   = Values
+            transfer_livecroot_gr              (:) = Values
+            transfer_deadcroot_gr              (:) = Values
+
 
 #endif
          ENDIF

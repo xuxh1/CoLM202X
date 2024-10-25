@@ -76,7 +76,9 @@ MODULE MOD_BGC_CNSummary
        cropprod1c_loss, grainc_to_cropprodc, grainc_to_seed, grainn_to_cropprodn, &
 #endif
 #ifdef CH4
-       froot_mr, cpool_froot_gr, cpool_froot_storage_gr, transfer_froot_gr, &
+       froot_mr, cpool_froot_gr, cpool_livecroot_gr, cpool_deadcroot_gr, &
+       cpool_froot_storage_gr, cpool_livecroot_storage_gr, cpool_deadcroot_storage_gr, &
+       transfer_froot_gr, transfer_livecroot_gr, transfer_deadcroot_gr, &
 #endif
        sminn_leached, sminn_leached_vr, smin_no3_leached, smin_no3_leached_vr, smin_no3_runoff, smin_no3_runoff_vr, &
        f_n2o_nit, f_n2o_nit_vr, decomp_cpools_transport_tendency, decomp_npools_transport_tendency, &
@@ -96,9 +98,6 @@ MODULE MOD_BGC_CNSummary
        fire_closs_p, hrv_xsmrpool_to_atm_p, &
 #ifdef CROP
        cropprod1c_loss_p, grainc_to_seed_p, grainc_to_food_p, grainn_to_food_p, &
-#endif
-#ifdef CH4
-       froot_mr_p, cpool_froot_gr_p, cpool_froot_storage_gr_p, transfer_froot_gr_p, &
 #endif
        m_leafc_to_fire_p, m_leafc_storage_to_fire_p, m_leafc_xfer_to_fire_p, &
        m_frootc_to_fire_p, m_frootc_storage_to_fire_p, m_frootc_xfer_to_fire_p, &
@@ -348,10 +347,6 @@ CONTAINS
 #endif
 #ifdef CH4
       annsum_npp(i)               = sum(annsum_npp_p(ps:pe)              * pftfrac(ps:pe))
-      ! froot_mr(i)                 = sum(froot_mr_p(ps:pe)                * pftfrac(ps:pe))
-      ! cpool_froot_gr(i)           = sum(cpool_froot_gr_p(ps:pe)          * pftfrac(ps:pe))
-      ! cpool_froot_storage_gr(i)   = sum(cpool_froot_storage_gr_p(ps:pe)  * pftfrac(ps:pe))
-      ! transfer_froot_gr(i)        = sum(transfer_froot_gr_p(ps:pe)       * pftfrac(ps:pe))
 #endif
       DO m = ps, pe
          totvegc_p(m) = leafc_p(m)             + frootc_p(m)             + livestemc_p(m) &
@@ -732,8 +727,17 @@ CONTAINS
 #ifdef CH4
       froot_mr(i)                 = sum(froot_mr_p(ps:pe)                * pftfrac(ps:pe))
       cpool_froot_gr(i)           = sum(cpool_froot_gr_p(ps:pe)          * pftfrac(ps:pe))
+      cpool_livecroot_gr(i)           = sum(cpool_livecroot_gr_p(ps:pe)          * pftfrac(ps:pe))
+      cpool_deadcroot_gr(i)           = sum(cpool_deadcroot_gr_p(ps:pe)          * pftfrac(ps:pe))
+
       cpool_froot_storage_gr(i)   = sum(cpool_froot_storage_gr_p(ps:pe)  * pftfrac(ps:pe))
+      cpool_livecroot_storage_gr(i)   = sum(cpool_livecroot_storage_gr_p(ps:pe)  * pftfrac(ps:pe))
+      cpool_deadcroot_storage_gr(i)   = sum(cpool_deadcroot_storage_gr_p(ps:pe)  * pftfrac(ps:pe))
+
       transfer_froot_gr(i)        = sum(transfer_froot_gr_p(ps:pe)       * pftfrac(ps:pe))
+      transfer_livecroot_gr(i)        = sum(transfer_livecroot_gr_p(ps:pe)       * pftfrac(ps:pe))
+      transfer_deadcroot_gr(i)        = sum(transfer_deadcroot_gr_p(ps:pe)       * pftfrac(ps:pe))
+
 #endif
    END SUBROUTINE cnveg_carbonflux_summary
 
