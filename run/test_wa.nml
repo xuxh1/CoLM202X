@@ -1,6 +1,6 @@
 &nl_colm
 
-   DEF_CASE_NAME = 'Tibet_wa'
+   DEF_CASE_NAME = 'Tibet_CH4'
 
 !    DEF_domain%edges = 35.0
 !    DEF_domain%edgen = 39.0

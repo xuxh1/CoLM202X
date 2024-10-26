@@ -782,7 +782,8 @@ MODULE MOD_Namelist
       logical :: discharge                        = .true.
       logical :: wdsrf_hru                        = .true.
       logical :: veloc_hru                        = .true.
-
+      logical :: sensors                          = .true.
+      
 #ifdef CH4
       ! logical :: forc_po2m           = .true.
       ! logical :: forc_pco2m           = .true.

@@ -536,9 +536,9 @@ SUBROUTINE CoLMMAIN ( &
         qintr_snow  ,&! snowfall interception (mm h2o/s)
         errw_rsub     ! the possible subsurface runoff deficit after PHS is included
 
-   integer snl      ,&! number of snow layers
+   integer &
         imelt(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
-        lb ,lbsn    ,&! lower bound of arrays
+        lbsn    ,&! lower bound of arrays
         j             ! do looping index
 
    ! For SNICAR snow model
