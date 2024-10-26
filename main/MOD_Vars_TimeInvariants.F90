@@ -584,9 +584,9 @@ CONTAINS
       CALL ncio_define_dimension_vector (file_restart, landpatch, 'azi',      num_azimuth)
       CALL ncio_define_dimension_vector (file_restart, landpatch, 'zen',      num_zenith)
 
-#ifdef CH4
-      CALL ncio_define_dimension_vector (file_restart, landpatch, 'species', 3)
-#endif
+! #ifdef CH4
+!       CALL ncio_define_dimension_vector (file_restart, landpatch, 'species', 3)
+! #endif
 
       CALL ncio_write_vector (file_restart, 'patchclass', 'patch', landpatch, patchclass)                            !
       CALL ncio_write_vector (file_restart, 'patchtype' , 'patch', landpatch, patchtype )                            !

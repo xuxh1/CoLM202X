@@ -1,0 +1,107 @@
+Performing inexact rename detection: 100% (55473/55473), done.
+Auto-merging share/MOD_Precision.F90
+CONFLICT (add/add): Merge conflict in share/MOD_NetCDFSerial.F90
+Auto-merging share/MOD_NetCDFSerial.F90
+CONFLICT (add/add): Merge conflict in share/MOD_Namelist.F90
+Auto-merging share/MOD_Namelist.F90
+CONFLICT (add/add): Merge conflict in share/MOD_Block.F90
+Auto-merging share/MOD_Block.F90
+CONFLICT (add/add): Merge conflict in run/forcing/POINT.nml
+Auto-merging run/forcing/POINT.nml
+CONFLICT (add/add): Merge conflict in run/forcing/ERA5.nml
+Auto-merging run/forcing/ERA5.nml
+CONFLICT (add/add): Merge conflict in run/forcing/CRUJRA.nml
+Auto-merging run/forcing/CRUJRA.nml
+CONFLICT (add/add): Merge conflict in run/SiteSYSUAtmos_IGBP_VG.nml
+Auto-merging run/SiteSYSUAtmos_IGBP_VG.nml
+Auto-merging preprocess/rd_land_types.F90
+Auto-merging preprocess/aggregation_landtypes.F90
+CONFLICT (add/add): Merge conflict in postprocess/HistConcatenate.F90
+Auto-merging postprocess/HistConcatenate.F90
+CONFLICT (add/add): Merge conflict in mksrfdata/MOD_SingleSrfdata.F90
+Auto-merging mksrfdata/MOD_SingleSrfdata.F90
+CONFLICT (add/add): Merge conflict in mksrfdata/MOD_LandCrop.F90
+Auto-merging mksrfdata/MOD_LandCrop.F90
+CONFLICT (add/add): Merge conflict in mkinidata/MOD_LakeDepthReadin.F90
+Auto-merging mkinidata/MOD_LakeDepthReadin.F90
+CONFLICT (add/add): Merge conflict in mkinidata/MOD_Initialize.F90
+Auto-merging mkinidata/MOD_Initialize.F90
+CONFLICT (add/add): Merge conflict in mkinidata/MOD_IniTimeVariable.F90
+Auto-merging mkinidata/MOD_IniTimeVariable.F90
+CONFLICT (add/add): Merge conflict in main/URBAN/MOD_Urban_PerviousTemperature.F90
+Auto-merging main/URBAN/MOD_Urban_PerviousTemperature.F90
+CONFLICT (add/add): Merge conflict in main/URBAN/MOD_Urban_Hydrology.F90
+Auto-merging main/URBAN/MOD_Urban_Hydrology.F90
+CONFLICT (add/add): Merge conflict in main/URBAN/CoLMMAIN_Urban.F90
+Auto-merging main/URBAN/CoLMMAIN_Urban.F90
+Auto-merging main/MOD_WetBulb.F90
+CONFLICT (add/add): Merge conflict in main/MOD_Vars_TimeVariables.F90
+Auto-merging main/MOD_Vars_TimeVariables.F90
+CONFLICT (add/add): Merge conflict in main/MOD_Vars_TimeInvariants.F90
+Auto-merging main/MOD_Vars_TimeInvariants.F90
+CONFLICT (add/add): Merge conflict in main/MOD_Vars_Global.F90
+Auto-merging main/MOD_Vars_Global.F90
+CONFLICT (add/add): Merge conflict in main/MOD_Vars_1DFluxes.F90
+Auto-merging main/MOD_Vars_1DFluxes.F90
+CONFLICT (add/add): Merge conflict in main/MOD_Vars_1DAccFluxes.F90
+Auto-merging main/MOD_Vars_1DAccFluxes.F90
+CONFLICT (add/add): Merge conflict in main/MOD_UserSpecifiedForcing.F90
+Auto-merging main/MOD_UserSpecifiedForcing.F90
+CONFLICT (add/add): Merge conflict in main/MOD_Thermal.F90
+Auto-merging main/MOD_Thermal.F90
+CONFLICT (add/add): Merge conflict in main/MOD_SoilSnowHydrology.F90
+Auto-merging main/MOD_SoilSnowHydrology.F90
+Auto-merging main/MOD_SimpleOcean.F90
+CONFLICT (add/add): Merge conflict in main/MOD_Runoff.F90
+Auto-merging main/MOD_Runoff.F90
+CONFLICT (add/add): Merge conflict in main/MOD_PhaseChange.F90
+Auto-merging main/MOD_PhaseChange.F90
+CONFLICT (add/add): Merge conflict in main/MOD_Lake.F90
+Auto-merging main/MOD_Lake.F90
+CONFLICT (add/add): Merge conflict in main/MOD_HistGridded.F90
+Auto-merging main/MOD_HistGridded.F90
+CONFLICT (add/add): Merge conflict in main/MOD_Hist.F90
+Auto-merging main/MOD_Hist.F90
+CONFLICT (add/add): Merge conflict in main/MOD_GroundTemperature.F90
+Auto-merging main/MOD_GroundTemperature.F90
+CONFLICT (add/add): Merge conflict in main/MOD_Glacier.F90
+Auto-merging main/MOD_Glacier.F90
+CONFLICT (add/add): Merge conflict in main/MOD_Forcing.F90
+Auto-merging main/MOD_Forcing.F90
+CONFLICT (add/add): Merge conflict in main/HYDRO/MOD_Hydro_SoilWater.F90
+Auto-merging main/HYDRO/MOD_Hydro_SoilWater.F90
+CONFLICT (add/add): Merge conflict in main/HYDRO/MOD_Catch_SubsurfaceFlow.F90
+Auto-merging main/HYDRO/MOD_Catch_SubsurfaceFlow.F90
+CONFLICT (add/add): Merge conflict in main/HYDRO/MOD_Catch_RiverLakeFlow.F90
+Auto-merging main/HYDRO/MOD_Catch_RiverLakeFlow.F90
+CONFLICT (add/add): Merge conflict in main/HYDRO/MOD_Catch_LateralFlow.F90
+Auto-merging main/HYDRO/MOD_Catch_LateralFlow.F90
+CONFLICT (add/add): Merge conflict in main/CoLMMAIN.F90
+Auto-merging main/CoLMMAIN.F90
+CONFLICT (add/add): Merge conflict in main/CoLMDRIVER.F90
+Auto-merging main/CoLMDRIVER.F90
+CONFLICT (add/add): Merge conflict in main/CoLM.F90
+Auto-merging main/CoLM.F90
+CONFLICT (add/add): Merge conflict in main/BGC/MOD_BGC_driver.F90
+Auto-merging main/BGC/MOD_BGC_driver.F90
+CONFLICT (add/add): Merge conflict in main/BGC/MOD_BGC_Vars_TimeVariables.F90
+Auto-merging main/BGC/MOD_BGC_Vars_TimeVariables.F90
+CONFLICT (add/add): Merge conflict in main/BGC/MOD_BGC_Vars_1DFluxes.F90
+Auto-merging main/BGC/MOD_BGC_Vars_1DFluxes.F90
+CONFLICT (add/add): Merge conflict in main/BGC/MOD_BGC_CNZeroFluxes.F90
+Auto-merging main/BGC/MOD_BGC_CNZeroFluxes.F90
+CONFLICT (add/add): Merge conflict in main/BGC/MOD_BGC_CNSummary.F90
+Auto-merging main/BGC/MOD_BGC_CNSummary.F90
+CONFLICT (add/add): Merge conflict in main/BGC/MOD_BGC_CNBalanceCheck.F90
+Auto-merging main/BGC/MOD_BGC_CNBalanceCheck.F90
+Auto-merging include/define.h
+CONFLICT (content): Merge conflict in include/define.h
+CONFLICT (add/add): Merge conflict in include/Makeoptions.intel
+Auto-merging include/Makeoptions.intel
+Auto-merging include/Makeoptions
+CONFLICT (content): Merge conflict in include/Makeoptions
+CONFLICT (add/add): Merge conflict in Makefile
+Auto-merging Makefile
+CONFLICT (add/add): Merge conflict in .gitignore
+Auto-merging .gitignore
+Automatic merge failed; fix conflicts and then commit the result.

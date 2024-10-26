@@ -1141,7 +1141,6 @@ CONTAINS
    IMPLICIT NONE
 
    character(len=*), intent(in) :: file_restart
-   print*, "-------------------------------------------------5-------------------------------"
 
 ! bgc variables
       CALL ncio_read_vector (file_restart, 'totlitc              ', landpatch, totlitc              )
@@ -1268,7 +1267,6 @@ CONTAINS
 #endif
 
 #ifdef CH4
-print*, "-------------------------------------------------6-------------------------------"
       CALL ncio_read_vector (file_restart, 'annsum_npp         ' , landpatch, annsum_npp                   )
       
       ! CALL ncio_read_vector (file_restart, 'froot_mr          ' , landpatch, froot_mr                      )

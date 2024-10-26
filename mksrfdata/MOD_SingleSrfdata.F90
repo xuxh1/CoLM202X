@@ -172,11 +172,11 @@ CONTAINS
             CALL ncio_read_serial (fsrfdata, 'IGBP_classification', SITE_landtype)
 #endif
          ENDIF
-      ENDIF
          
-      IF (SITE_landtype < 0) THEN
-         write(*,*) 'Error! Please set namelist SITE_landtype first!'
-         CALL CoLM_stop()
+         IF (SITE_landtype < 0) THEN
+            write(*,*) 'Error! Please set namelist SITE_landtype first!'
+            CALL CoLM_stop()
+         ENDIF
       ENDIF
 
       DEF_domain%edges = floor(SITE_lat_location)
@@ -508,9 +508,9 @@ CONTAINS
       CALL ncio_define_dimension (fsrfdata, 'pft', numpft)
 #endif
 
-#ifdef CH4
-   CALL ncio_define_dimension (fsrfdata, 'species', 3)
-#endif
+! #ifdef CH4
+!    CALL ncio_define_dimension (fsrfdata, 'species', 3)
+! #endif
 
       CALL ncio_define_dimension (fsrfdata, 'LAI_year', size(SITE_LAI_year))
       IF (DEF_LAI_MONTHLY) THEN

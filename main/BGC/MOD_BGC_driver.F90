@@ -81,7 +81,6 @@
 
    integer :: ps, pe
    integer j
-
       ps = patch_pft_s(i)      
       pe = patch_pft_e(i)
       CALL BeginCNBalance(i)

@@ -13,7 +13,6 @@ NETCDF_INC = /share/home/dq013/software/netcdf_parallel_N/include     #wherry
 
 MOD_CMD = -module  
 
-#<<<<<<< HEAD
 #FOPTS = -qopenmp -g -traceback -r8 -free -check uninit 
        # -r8 -free -O0 -check uninit -check bounds -check pointers \
        # -traceback  -assume byterecl -pthread -heap-arrays #-nogen-interface

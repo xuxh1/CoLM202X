@@ -2,7 +2,7 @@
 # mpif90 - ifort 
 # 
 
- FF = mpiifort
+ FF = mpif90
 
  NETCDF_LIB = /opt/netcdf-c-4.9.2-fortran-4.6.0-intel/lib
  NETCDF_INC = /opt/netcdf-c-4.9.2-fortran-4.6.0-intel/include
