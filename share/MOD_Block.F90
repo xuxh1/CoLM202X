@@ -350,6 +350,8 @@ CONTAINS
             iblk = iblk_west
             DO WHILE (.true.)
 #ifdef USEMPI
+               print*, iproc
+               print*, p_np_io
                iproc = mod(iproc+1, p_np_io)
                this%pio(iblk,jblk) = p_address_io(iproc)
 #else
