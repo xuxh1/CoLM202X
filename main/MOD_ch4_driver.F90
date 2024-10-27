@@ -137,40 +137,40 @@
 		endif
 		
 
-		if (istep == 1 .or. istep == 48) then
-			print*, "dlon,dlat",dlon,dlat
+		! if (istep == 1 .or. istep == 48) then
+		! 	print*, "dlon,dlat",dlon,dlat
 
-			! print*, 'decomp_hr',decomp_hr(i)
-			! print*, 'decomp_hr_vr',sum(decomp_hr_vr(1:10,1:10,i), dim=2)
-			! print*, 'hr_vr',hr_vr
-			! print*, 'rootfr',rootfr
-			! print*, 'rr',rr
-			! print*, 'cellorg',cellorg
-			! print*, 'decomp_cpools_vr',sum(decomp_cpools_vr(:, 1:7, i), dim=2)
+		! 	! print*, 'decomp_hr',decomp_hr(i)
+		! 	! print*, 'decomp_hr_vr',sum(decomp_hr_vr(1:10,1:10,i), dim=2)
+		! 	! print*, 'hr_vr',hr_vr
+		! 	! print*, 'rootfr',rootfr
+		! 	! print*, 'rr',rr
+		! 	! print*, 'cellorg',cellorg
+		! 	! print*, 'decomp_cpools_vr',sum(decomp_cpools_vr(:, 1:7, i), dim=2)
 
-			! print*, 'annsum_npp',annsum_npp_tmp
-			! print*, 'froot_mr',froot_mr(i)
-			! print*, 'cpool_froot_gr',cpool_froot_gr(i)
-			! print*, 'cpool_froot_storage_gr',cpool_froot_storage_gr(i)
-			! print*, 'transfer_froot_gr',transfer_froot_gr(i)
+		! 	! print*, 'annsum_npp',annsum_npp_tmp
+		! 	! print*, 'froot_mr',froot_mr(i)
+		! 	! print*, 'cpool_froot_gr',cpool_froot_gr(i)
+		! 	! print*, 'cpool_froot_storage_gr',cpool_froot_storage_gr(i)
+		! 	! print*, 'transfer_froot_gr',transfer_froot_gr(i)
 
-			! print*, 'pot_f_nit_vr',pot_f_nit_vr(1:nl_soil,i)
-		endif
-		print*, 'decomp_hr',decomp_hr(i)
-		print*, 'decomp_hr_vr',sum(decomp_hr_vr(1:10,1:10,i), dim=2)
-		print*, 'hr_vr',hr_vr
-		print*, 'rootfr',rootfr
-		print*, 'rr',rr
-		print*, 'cellorg',cellorg
-		print*, 'decomp_cpools_vr',sum(decomp_cpools_vr(:, 1:7, i), dim=2)
+		! 	! print*, 'pot_f_nit_vr',pot_f_nit_vr(1:nl_soil,i)
+		! endif
+		! print*, 'decomp_hr',decomp_hr(i)
+		! print*, 'decomp_hr_vr',sum(decomp_hr_vr(1:10,1:10,i), dim=2)
+		! print*, 'hr_vr',hr_vr
+		! print*, 'rootfr',rootfr
+		! print*, 'rr',rr
+		! print*, 'cellorg',cellorg
+		! print*, 'decomp_cpools_vr',sum(decomp_cpools_vr(:, 1:7, i), dim=2)
 
-		print*, 'annsum_npp',annsum_npp_tmp
-		print*, 'froot_mr',froot_mr(i)
-		print*, 'cpool_froot_gr',cpool_froot_gr(i)
-		print*, 'cpool_froot_storage_gr',cpool_froot_storage_gr(i)
-		print*, 'transfer_froot_gr',transfer_froot_gr(i)
+		! print*, 'annsum_npp',annsum_npp_tmp
+		! print*, 'froot_mr',froot_mr(i)
+		! print*, 'cpool_froot_gr',cpool_froot_gr(i)
+		! print*, 'cpool_froot_storage_gr',cpool_froot_storage_gr(i)
+		! print*, 'transfer_froot_gr',transfer_froot_gr(i)
 
-		print*, 'pot_f_nit_vr',pot_f_nit_vr(1:nl_soil,i)
+		! print*, 'pot_f_nit_vr',pot_f_nit_vr(1:nl_soil,i)
 
 
 		CALL ch4 (i,idate(1:3),patchtype,lb,nl_soil,maxsnl,snl,dlon,dlat,deltim,&

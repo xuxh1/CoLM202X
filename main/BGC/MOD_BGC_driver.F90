@@ -84,6 +84,8 @@
       ps = patch_pft_s(i)      
       pe = patch_pft_e(i)
       CALL BeginCNBalance(i)
+      print*, "-------------------------BGC_driver      ps,pe",ps,pe
+
       CALL CNZeroFluxes(i, ps, pe, nl_soil, ndecomp_pools, ndecomp_transitions)
       CALL CNNFixation(i,idate)
       CALL CNMResp(i, ps, pe, nl_soil, npcropmin)

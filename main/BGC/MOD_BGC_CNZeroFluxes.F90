@@ -427,8 +427,10 @@ CONTAINS
 
    integer j,k, m
 
+      print*, "-------------------------CNZeroFluxes ps,pe",ps,pe
       DO m = ps , pe
       ! CNVegCarbonFluxes set zero
+         print*, "---------------------m_leafc_to_litter_p(m)=",m_leafc_to_litter_p(m)
          m_leafc_to_litter_p(m)  = 0._r8
          m_frootc_to_litter_p(m) = 0._r8
          m_leafc_storage_to_litter_p(m) = 0._r8

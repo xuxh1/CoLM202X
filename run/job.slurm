@@ -1,9 +1,27 @@
 #!/bin/bash
+#SBATCH -J Siberia_CH4_1
+#SBATCH -p first
+#SBATCH -w tms03
+#SBATCH -N 1 
+#SBATCH -n 48
+#SBATCH --ntasks-per-node=48
+##SBATCH --mem=1000G
+#SBATCH -o test_wa.%j
+#SBATCH -e test_wa.%j
+##SBATCH --exclusive
+#SBATCH -t 2-24:00
 
-#SBATCH -N 1 -n 40
+ulimit -s unlimited
 
-export LD_LIBRARY_PATH=/opt/netcdf-c-4.9.2-fortran-4.6.0-gnu/lib:/opt/hdf5-1.14.0-gnu/lib:$LD_LIBRARY_PATH
+# mpirun -n 48 ./mksrfdata.x test.nml
+# mpirun -n 48 ./mkinidata.x test.nml
+# mpirun -n 48 ./colm.x test.nml
 
-# mpirun -np 40 run/mksrfdata.x run/GreaterBay_Grid_10km_IGBP_VG.nml
-mpirun -np 40 run/mkinidata.x run/GreaterBay_Grid_10km_IGBP_VG.nml
-mpirun -np 40 run/colm.x      run/GreaterBay_Grid_10km_IGBP_VG.nml
+mpirun -n 48 ./mksrfdata.x test.nml
+mpirun -n 48 ./mkinidata.x test.nml
+mpirun -n 48 ./colm.x test.nml
+
+# mpirun -n 12 ./mksrfdata.x test_wa.nml
+# mpirun -n 12 ./mkinidata.x test_wa.nml
+# mpirun -n 12 ./colm.x test_wa.nml
+
