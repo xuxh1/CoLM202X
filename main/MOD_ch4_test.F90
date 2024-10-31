@@ -36,14 +36,14 @@ module MOD_ch4_test
 
 	type, private :: params_type
 		! ch4 production constants
-		real(r8) :: q10ch4 =2              ! additional Q10 for methane production ABOVE the soil decomposition temperature relationship (2+)
-		real(r8) :: q10ch4base = 295.15_r8 ! temperature at which the effective f_ch4 actually equals the constant f_ch4 (295+)
+		real(r8) :: q10ch4 =1.33              ! additional Q10 for methane production ABOVE the soil decomposition temperature relationship (2+)
+		real(r8) :: q10ch4base = 295._r8 ! temperature at which the effective f_ch4 actually equals the constant f_ch4 (295+)
 		real(r8) :: f_ch4 = 0.2            ! ratio of CH4 production to total C mineralization (0.2+?) -------- defination differ with documentation
 		! ! real(r8) :: rootlitfrac        ! Fraction of soil organic matter associated with roots
 		real(r8) :: cnscalefactor=1        ! scale factor on CN decomposition for assigning methane flux (?-)
 		real(r8) :: redoxlag =30           ! Number of days to lag in the calculation of finundated_lag (30+)
-		real(r8) :: lake_decomp_fact =1    ! Base decomposition rate (1/s) at 25C (1)
-		real(r8) :: redoxlag_vertical=30   ! time lag (days) to inhibit production for newly unsaturated layers (30+)
+		real(r8) :: lake_decomp_fact =9e-11    ! Base decomposition rate (1/s) at 25C (1)
+		real(r8) :: redoxlag_vertical=0   ! time lag (days) to inhibit production for newly unsaturated layers (30+)
 		real(r8) :: pHmax = 9._r8          ! maximum pH for methane production(= 9._r8)
 		real(r8) :: pHmin = 2.2_r8         ! minimum pH for methane production(= 2.2_r8)
 		real(r8) :: oxinhib = 400          ! inhibition of methane production by oxygen (m^3/mol) (400+?)
@@ -60,7 +60,7 @@ module MOD_ch4_test
 		real(r8) :: vmax_oxid_unsat = 45.e-6_r8 * 1000._r8 / 3600._r8 / 10._r8     ! (= 45.e-6_r8 * 1000._r8 / 3600._r8 / 10._r8) [mol/m3-w/s]
 
 		! ! ch4 aerenchyma constants
-		real(r8) :: aereoxid =1            ! fraction of methane flux entering aerenchyma rhizosphere that will be(?)
+		real(r8) :: aereoxid =0            ! fraction of methane flux entering aerenchyma rhizosphere that will be(?)
 
 		! ! oxidized rather than emitted
 		real(r8) :: scale_factor_aere = 1   ! scale factor on the aerenchyma area for sensitivity tests (1)
@@ -73,8 +73,8 @@ module MOD_ch4_test
 
 		! ! ch4 transport constants
 		real(r8) :: satpow  =2             ! exponent on watsat for saturated soil solute diffusion (2?)
-		real(r8) :: scale_factor_gasdiff = 2! For sensitivity tests; convection would allow this to be > 1(?)
-		real(r8) :: scale_factor_liqdiff = 2! For sensitivity tests; convection would allow this to be > 1(?)
+		real(r8) :: scale_factor_gasdiff = 1! For sensitivity tests; convection would allow this to be > 1(?)
+		real(r8) :: scale_factor_liqdiff = 1! For sensitivity tests; convection would allow this to be > 1(?)
 		real(r8) :: capthick = 100._r8            ! min thickness before assuming h2osfc is impermeable (mm) (= 100._r8)
 
 		! ! additional constants

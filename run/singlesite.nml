@@ -1,6 +1,6 @@
 &nl_colm
    
-   DEF_CASE_NAME = 'CN-Cng-1'         
+   DEF_CASE_NAME = 'CN-Cng-2'         
    
    ! surface data from SITE.
    SITE_fsrfdata = '/shr03/CoLM_Forcing/PLUMBER2/all/Srfdata/CN-Cng_2008-2009_FLUXNET2015_Srf.nc'
