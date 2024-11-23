@@ -150,7 +150,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
              ! End ozone stress variables
              ! WUE stomata model parameter
                lambda(m),                                                          &
-             ! End WUE model parameter 
+             ! End WUE model parameter
                zwt(i),          wdsrf(i),        wa(i),           wetwat(i),       &
                t_lake(1:,i),    lake_icefrac(1:,i),               savedtke1(i),    &
 
@@ -182,7 +182,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
 
              ! TUNABLE modle constants
                zlnd,            zsno,            csoilc,          dewmx,           &
-               ! 'wtfact' is updated to gridded 'fsatmax' data. 
+               ! 'wtfact' is updated to gridded 'fsatmax' data.
                capr,            cnfac,           ssi,             &
                wimp,            pondmx,          smpmax,          smpmin,          &
                trsmx0,          tcrit,                                             &
@@ -234,7 +234,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
             patchlonr(i)    ,patchlatr(i)    ,patchclass(i)   ,patchtype(i)    ,&
 
           ! URBAN PARAMETERS
-            froof(u)        ,flake(u)        ,hroof(u)        ,hwr(u)          ,&
+            froof(u)        ,flake(u)        ,hroof(u)        ,hlr(u)          ,&
             fgper(u)        ,em_roof(u)      ,em_wall(u)      ,em_gimp(u)      ,&
             em_gper(u)      ,cv_roof(:,u)    ,cv_wall(:,u)    ,cv_gimp(:,u)    ,&
             tk_roof(:,u)    ,tk_wall(:,u)    ,tk_gimp(:,u)    ,z_roof(:,u)     ,&
@@ -345,7 +345,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
 
           ! TUNABLE modle constants
             zlnd            ,zsno            ,csoilc          ,dewmx           ,&
-            ! 'wtfact' is updated to gridded 'fsatmax' data. 
+            ! 'wtfact' is updated to gridded 'fsatmax' data.
             capr            ,cnfac           ,ssi             ,&
             wimp            ,pondmx          ,smpmax          ,smpmin          ,&
             trsmx0          ,tcrit                                             ,&
