@@ -3,7 +3,7 @@
    DEF_CASE_NAME = 'CN-Cng-2'         
    
    ! surface data from SITE.
-   SITE_fsrfdata = '/shr03/CoLM_Forcing/PLUMBER2/all/Srfdata/CN-Cng_2008-2009_FLUXNET2015_Srf.nc'
+   SITE_fsrfdata = '/share/home/dq013/zhwei/colm/data/CoLM_Forcing/PLUMBER2/all/Srfdata/CN-Cng_2008-2009_FLUXNET2015_Srf.nc'
    ! true  : surface data from SITE
    ! false : surface data is retrieved from database.
    SITE_landtype            = 12
@@ -18,8 +18,8 @@
    USE_SITE_soilparameters  = .false.
    USE_SITE_dbedrock        = .false.
    USE_SITE_topography      = .false.
-   USE_SITE_topostd          = .false.
-   USE_SITE_BVIC             = .false.
+   !USE_SITE_topostd          = .false.
+   !USE_SITE_BVIC             = .false.
    USE_SITE_urban_paras      = .false.
    USE_SITE_thermal_paras    = .false.
    USE_SITE_urban_LAI        = .false.
@@ -43,9 +43,9 @@
 
    DEF_simulation_time%timestep     = 1800.
 
-   DEF_dir_rawdata = '/shr03/CoLMrawdata/'
-   DEF_dir_runtime = '/shr03/CoLMruntime/'
-   DEF_dir_output = '/tera11/zhwei/students/Xionghui/wetland/cases/'
+   DEF_dir_rawdata = '/share/home/dq013/zhwei/colm/data/CoLMrawdata/'
+   DEF_dir_runtime = '/share/home/dq013/zhwei/colm/data/CoLMruntime/'
+   DEF_dir_output = '/share/home/dq076/xuxh36/cases/'
    
    ! LAI setting
    DEF_LAI_MONTHLY = .false.
