@@ -371,7 +371,7 @@ contains
         
 		lon = patchlonr/deg2rad
 		lat = patchlatr/deg2rad
-		print*, lon,lat
+		! print*, lon,lat
 
 		!-----------------------------------------------------------------------
 		! Initialize local fluxes to zero: necessary for columns outside the filters because averaging up to gridcell will be done
@@ -826,7 +826,7 @@ contains
 		mino2lim         = params_inst%mino2lim
   
 		q10lake = q10ch4 * 1.5_r8
-		print*, 'q10lake',q10lake
+		! print*, 'q10lake',q10lake
 
 		! PATCH loop to calculate vertically resolved column-averaged root respiration
 		if (patchtype /= 4) then
@@ -839,14 +839,14 @@ contains
 			end if
 		  
 		end if
-		print*, rr_vr
+		! print*, rr_vr
   
 		partition_z = 1._r8
 		base_decomp = 0.0_r8
   
 		! column loop to partition decomposition_rate into each soil layer
 		do j=1,nl_soil
-			print*, '               j==              ',j
+			! print*, '               j==              ',j
 			if (patchtype /= 4) then
 				! Use soil heterotrophic respiration (based on Wania)
 				base_decomp = (somhr+lithr) / catomw
@@ -877,7 +877,7 @@ contains
 					q10lake**((t_soisno(j)-q10lakebase)/10._r8) / catomw
 				! convert from g C to mol C
 			end if
-			print*, 'base_decomp',base_decomp
+			! print*, 'base_decomp',base_decomp
   
 			! For all landunits, prevent production or oxygen consumption when soil is at or below freezing.
 			! If using VERTSOILC, it is OK to use base_decomp as given because liquid water stress will limit decomp.
@@ -893,7 +893,7 @@ contains
 			else ! lake
 				partition_z = 1._r8
 			endif
-			print*, 'partition_z',partition_z
+			! print*, 'partition_z',partition_z
 	
 			! Adjust f_ch4 to account for the fact that methanogens may have a higher Q10 than aerobic decomposers.
 			! Note this is crude and should ideally be applied to all anaerobic decomposition rather than just the
@@ -916,7 +916,7 @@ contains
 				f_ch4_adj = 0.5_r8 ! For lakes assume no redox limitation. Production only depends on temp, soil C, and
 				! lifetime parameter.
 			end if
-			print*, 'f_ch4_adj',f_ch4_adj
+			! print*, 'f_ch4_adj',f_ch4_adj
 	
 			! If switched on, use pH factor for production based on spatial pH data defined in surface data.
 			if ((patchtype /= 4) .and. usephfact )then 
@@ -943,7 +943,7 @@ contains
 			! so that the NEE is sensible. Even perfectly anaerobic conditions with no alternative
 			! electron acceptors would predict no more than 0.5 b/c some oxygen is present in organic matter.
 			! e.g. 2CH2O --> CH4 + CO2.
-			print*, 'f_ch4_adj',f_ch4_adj
+			! print*, 'f_ch4_adj',f_ch4_adj
 	
 	
 			! Decomposition uses 1 mol O2 per mol CO2 produced (happens below WT also, to deplete O2 below WT)
@@ -973,7 +973,7 @@ contains
 					! g N/m^3/s           mol O2 / g N
 				end if
 			end if
-			print*, 'o2_decomp_depth',j,'==',o2_decomp_depth(j)
+			! print*, 'o2_decomp_depth',j,'==',o2_decomp_depth(j)
 	
 			if (j  >  jwt) then ! Below the water table so anaerobic CH4 production can occur
 				! partition decomposition to layer
@@ -987,7 +987,7 @@ contains
 					ch4_prod_depth(j) = 0._r8 ! [mol/m3 total/s]
 				endif ! anoxicmicrosites
 			endif ! WT
-			print*, 'ch4_prod_depth',j,'==',ch4_prod_depth(j)
+			! print*, 'ch4_prod_depth',j,'==',ch4_prod_depth(j)
 	
 		end do ! nl_soil
 	

@@ -1310,7 +1310,6 @@ CONTAINS
       CALL ncio_read_vector (file_restart, 'tempavg_somhr      ' , landpatch,tempavg_somhr              )
       CALL ncio_read_vector (file_restart, 'tempavg_finrw      ' , landpatch, tempavg_finrw             )
 #endif
-print*, "-------------------------------------------------7-------------------------------"
 
 #ifdef RangeCheck
       CALL check_BGCTimeVariables
