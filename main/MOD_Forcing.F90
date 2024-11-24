@@ -826,7 +826,6 @@ CONTAINS
                forc_prl = forc_prc/3600*2/3._r8
                forc_prc = forc_prc/3600*1/3._r8
             ENDIF
-
             ! mapping forc_prl to forc_prl_part, forc_prc to forc_prc_part
             IF (p_is_worker) THEN
                DO np = 1, numpatch ! patches
@@ -848,7 +847,6 @@ CONTAINS
             CALL mg2p_forc%part2pset (forc_prc_part, forc_prc)
             CALL mg2p_forc%part2pset (forc_prl_part, forc_prl)
          ENDIF
-
          ! Conservation of short- and long- waves radiation in the grid of forcing
          CALL mg2p_forc%normalize (forc_xy_solarin, forc_swrad_part)
          CALL mg2p_forc%normalize (forc_xy_frl,     forc_frl_part  )

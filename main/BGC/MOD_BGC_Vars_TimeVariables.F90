@@ -251,7 +251,7 @@ MODULE MOD_BGC_Vars_TimeVariables
    real(r8), allocatable :: lag_npp             (:) !!! lagged net primary production (gC m-2)
 
 #ifdef CH4
-   real(r8), allocatable :: annsum_npp          (:) ! annual sum NPP (gC/m2/yr)
+   ! real(r8), allocatable :: annsum_npp          (:) ! annual sum NPP (gC/m2/yr)
 
    ! real(r8), allocatable :: froot_mr                 (:)     ! fine root maintenance respiration (gC m-2 s-1)
    ! real(r8), allocatable :: cpool_froot_gr           (:)     ! available C allocated to fine root display growth respiration (gC m-2 s-1)
@@ -565,7 +565,7 @@ CONTAINS
             allocate (lag_npp                      (numpatch))                            ; lag_npp               (:) = spval
 
 #ifdef CH4
-            allocate (annsum_npp                   (numpatch))                            ; annsum_npp            (:) = spval
+            ! allocate (annsum_npp                   (numpatch))                            ; annsum_npp            (:) = spval
 
             ! allocate (froot_mr                 (numpatch)) ; froot_mr                 (:) = spval
             ! allocate (cpool_froot_gr           (numpatch)) ; cpool_froot_gr           (:) = spval
@@ -861,7 +861,7 @@ CONTAINS
 #endif
 
 #ifdef CH4
-            deallocate (annsum_npp                  )
+            ! deallocate (annsum_npp                  )
 
             ! deallocate (froot_mr                 )
             ! deallocate (cpool_froot_gr           )
@@ -1076,7 +1076,7 @@ CONTAINS
 #endif
 
 #ifdef CH4
-      CALL ncio_write_vector (file_restart, 'annsum_npp          ' , 'patch', landpatch, annsum_npp              , compress    )
+      ! CALL ncio_write_vector (file_restart, 'annsum_npp          ' , 'patch', landpatch, annsum_npp              , compress    )
 
       ! CALL ncio_write_vector (file_restart, 'froot_mr            ' , 'patch', landpatch, froot_mr                , compress    )
       ! CALL ncio_write_vector (file_restart, 'cpool_froot_gr      ' , 'patch', landpatch, cpool_froot_gr           , compress   )
@@ -1267,7 +1267,7 @@ CONTAINS
 #endif
 
 #ifdef CH4
-      CALL ncio_read_vector (file_restart, 'annsum_npp         ' , landpatch, annsum_npp                   )
+      ! CALL ncio_read_vector (file_restart, 'annsum_npp         ' , landpatch, annsum_npp                   )
       
       ! CALL ncio_read_vector (file_restart, 'froot_mr          ' , landpatch, froot_mr                      )
       ! CALL ncio_read_vector (file_restart, 'cpool_froot_gr    ' , landpatch, cpool_froot_gr                )
@@ -1568,7 +1568,7 @@ CONTAINS
       CALL check_vector_data ('lag_npp    ' , lag_npp    )
 
 #ifdef CH4
-      CALL check_vector_data ('annsum_npp             ' , annsum_npp            )
+      ! CALL check_vector_data ('annsum_npp             ' , annsum_npp            )
 
       ! CALL check_vector_data ('froot_mr               ' , froot_mr              )
       ! CALL check_vector_data ('cpool_froot_gr         ' , cpool_froot_gr        )

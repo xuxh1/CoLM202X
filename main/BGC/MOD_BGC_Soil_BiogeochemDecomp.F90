@@ -25,13 +25,13 @@ MODULE MOD_BGC_Soil_BiogeochemDecomp
        decomp_cpools_vr, decomp_npools_vr, &
  
        ! other variables
-       cn_decomp_pools, fpi_vr
+       cn_decomp_pools, fpi_vr, w_scalar
  
    USE MOD_BGC_Vars_1DFluxes, only: &
        ! decomposition fluxes variables
        decomp_sminn_flux_vr, decomp_hr_vr, decomp_ctransfer_vr, decomp_ntransfer_vr, &
        pmnf_decomp, p_decomp_cpool_loss, sminn_to_denit_decomp_vr, &
-       net_nmin_vr, gross_nmin_vr, net_nmin, gross_nmin
+       net_nmin_vr, gross_nmin_vr, net_nmin, gross_nmin, phr_vr, fphr
  
  
    IMPLICIT NONE
@@ -47,6 +47,7 @@ CONTAINS
    integer ,intent(in) :: ndecomp_pools       ! number of total soil & litter pools in the decompositions
    integer ,intent(in) :: ndecomp_transitions ! number of total transfers between soil and litter pools in the decomposition
    real(r8),intent(in) :: dz_soi(1:nl_soil)   ! thicknesses of each soil layer
+   real(r8)            :: hrsum(1:nl_soil)
 
    integer j,k,l
       ! calculate c:n ratios of applicable pools
@@ -111,6 +112,23 @@ CONTAINS
          ENDDO
       ENDDO
   
+      DO j = 1, nl_soil
+         hrsum(j) = 0._r8
+      ENDDO
+      DO k = 1, ndecomp_transitions
+         DO j = 1, nl_soil
+            hrsum(j) = hrsum(j) + rf_decomp(j,k,i) * p_decomp_cpool_loss(j,k,i)
+         ENDDO
+      ENDDO
+      DO j = 1, nl_soil
+         IF(phr_vr(j,i) .gt. 0._r8) then
+            fphr(j,i) = hrsum(j) / phr_vr(j,i) * w_scalar(j,i)
+            fphr(j,i) = max(fphr(j,i), 0.01_r8)
+         ELSE
+            fphr(j,i) = 1._r8
+         ENDIF
+      ENDDO
+             
       DO j = 1,nl_soil
          net_nmin(i) = net_nmin(i) + net_nmin_vr(j,i) * dz_soi(j)
          gross_nmin(i) = gross_nmin(i) + gross_nmin_vr(j,i) * dz_soi(j)

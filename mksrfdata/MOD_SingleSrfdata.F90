@@ -162,7 +162,6 @@ CONTAINS
          ENDIF
          SITE_lon_location = lon_in
       ENDIF
-
       CALL normalize_longitude (SITE_lon_location)
 
       IF (USE_SITE_landtype) THEN
@@ -339,7 +338,6 @@ CONTAINS
          ENDIF
          SITE_lon_location = lon_in
       ENDIF
-
       CALL normalize_longitude (SITE_lon_location)
 
       IF (trim(fsrfdata) /= 'null') THEN
@@ -940,7 +938,6 @@ ENDIF
 #endif
       IF (allocated(SITE_soil_BA_alpha         )) deallocate(SITE_soil_BA_alpha         )
       IF (allocated(SITE_soil_BA_beta          )) deallocate(SITE_soil_BA_beta          )
-
       IF (allocated(SITE_sf_lut                )) deallocate(SITE_sf_lut                )
       IF (allocated(SITE_slp_type              )) deallocate(SITE_slp_type              )
       IF (allocated(SITE_asp_type              )) deallocate(SITE_asp_type              )

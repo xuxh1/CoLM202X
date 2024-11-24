@@ -162,6 +162,10 @@ MODULE MOD_BGC_Vars_1DPFTFluxes
    real(r8), allocatable :: transfer_grain_gr_p                  (:) ! pft level: allocation-associated flux: available C allocated to grain transfer growth respiration (gC m-2 s-1)
  
    real(r8), allocatable :: xsmrpool_to_atm_p                    (:) ! pft level: maintenance respiration storage C to atmosphere due to harvest (gC m-2 s-1)
+
+   real(r8), allocatable :: rr_p                                 (:)
+   real(r8), allocatable :: agnpp_p                              (:)
+   real(r8), allocatable :: bgnpp_p                              (:)
  
    real(r8), allocatable :: cropprod1c_loss_p                    (:) ! pft level: product loss (gC m-2 s-1)
  
@@ -493,6 +497,9 @@ CONTAINS
             allocate (transfer_grain_gr_p                  (numpft)) ; transfer_grain_gr_p                  (:) = spval
  
             allocate (xsmrpool_to_atm_p                    (numpft)) ; xsmrpool_to_atm_p                    (:) = spval
+            allocate (rr_p                                 (numpft)) ; rr_p                                 (:) = spval
+            allocate (agnpp_p                              (numpft)) ; agnpp_p                              (:) = spval
+            allocate (bgnpp_p                              (numpft)) ; bgnpp_p                              (:) = spval
  
             allocate (cropprod1c_loss_p                    (numpft)) ; cropprod1c_loss_p                    (:) = spval
  
@@ -815,6 +822,9 @@ CONTAINS
             deallocate (transfer_grain_gr_p                  )
  
             deallocate (xsmrpool_to_atm_p                    )
+            deallocate (rr_p                                 )
+            deallocate (agnpp_p                              )
+            deallocate (bgnpp_p                              )
  
             deallocate (cropprod1c_loss_p                    )
  
@@ -1141,6 +1151,9 @@ CONTAINS
             transfer_grain_gr_p                  (:) = Values
  
             xsmrpool_to_atm_p                    (:) = Values
+            rr_p                                 (:) = Values
+            agnpp_p                              (:) = Values
+            bgnpp_p                              (:) = Values
  
             cropprod1c_loss_p                    (:) = Values
  

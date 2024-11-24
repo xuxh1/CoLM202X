@@ -71,7 +71,6 @@ CONTAINS
             tempsum_npp_p(m) = 0._r8
 
          ENDDO
-
       ENDIF
 
    END SUBROUTINE CNAnnualUpdate

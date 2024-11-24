@@ -202,6 +202,12 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: a_leafc_c4grass      (:) !14
    real(r8), allocatable :: a_O2_DECOMP_DEPTH_UNSAT (:,:)
    real(r8), allocatable :: a_CONC_O2_UNSAT         (:,:)
+   real(r8), allocatable :: a_annsum_npp            (:)
+   real(r8), allocatable :: a_rr                    (:)
+   real(r8), allocatable :: a_agnpp                 (:)
+   real(r8), allocatable :: a_bgnpp                 (:)
+   real(r8), allocatable :: a_somhr                 (:)
+   real(r8), allocatable :: a_lithr                 (:)
 #ifdef CROP
    real(r8), allocatable :: a_pdcorn                (:)
    real(r8), allocatable :: a_pdswheat              (:)
@@ -326,6 +332,9 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: a_cwdn_vr     (:,:)
    real(r8), allocatable :: a_sminn_vr    (:,:)
    real(r8), allocatable :: decomp_vr_tmp (:,:)
+   real(r8), allocatable :: a_hr_vr       (:,:)
+   real(r8), allocatable :: a_fphr        (:,:)
+   real(r8), allocatable :: a_pot_f_nit_vr(:,:)
 #endif
 
    real(r8), allocatable :: a_ustar   (:)
@@ -582,6 +591,12 @@ CONTAINS
 
             allocate (a_O2_DECOMP_DEPTH_UNSAT (1:nl_soil,numpatch))
             allocate (a_CONC_O2_UNSAT         (1:nl_soil,numpatch))
+            allocate (a_annsum_npp            (numpatch))
+            allocate (a_rr                    (numpatch))
+            allocate (a_agnpp                 (numpatch))
+            allocate (a_bgnpp                 (numpatch))
+            allocate (a_somhr                 (numpatch))
+            allocate (a_lithr                 (numpatch))
 
 #ifdef CROP
             allocate (a_pdcorn             (numpatch))
@@ -713,6 +728,9 @@ CONTAINS
             allocate (a_cwdn_vr     (1:nl_soil,       numpatch))
             allocate (a_sminn_vr    (1:nl_soil,       numpatch))
             allocate (decomp_vr_tmp (1:nl_soil,       numpatch))
+            allocate (a_hr_vr       (1:nl_soil,       numpatch))
+            allocate (a_fphr        (1:nl_soil,       numpatch))
+            allocate (a_pot_f_nit_vr(1:nl_soil,       numpatch))
 #endif
 
             allocate (a_ustar     (numpatch))
@@ -968,6 +986,12 @@ CONTAINS
 
             deallocate (a_O2_DECOMP_DEPTH_UNSAT )
             deallocate (a_CONC_O2_UNSAT         )
+            deallocate (a_annsum_npp            )
+            deallocate (a_rr                    )
+            deallocate (a_agnpp                 )
+            deallocate (a_bgnpp                 )
+            deallocate (a_somhr                 )
+            deallocate (a_lithr                 )
 
 #ifdef CROP
             deallocate (a_pdcorn             )
@@ -1100,6 +1124,9 @@ CONTAINS
             deallocate (a_cwdn_vr     )
             deallocate (a_sminn_vr    )
             deallocate (decomp_vr_tmp )
+            deallocate (a_hr_vr       )
+            deallocate (a_fphr        )
+            deallocate (a_pot_f_nit_vr)
 #endif
 
             deallocate (a_ustar     )
@@ -1357,6 +1384,12 @@ CONTAINS
 
             a_O2_DECOMP_DEPTH_UNSAT (:,:) = spval
             a_CONC_O2_UNSAT         (:,:) = spval
+            a_annsum_npp            (:) = spval
+            a_rr                    (:) = spval
+            a_agnpp                 (:) = spval
+            a_bgnpp                 (:) = spval
+            a_somhr                 (:) = spval
+            a_lithr                 (:) = spval
 #ifdef CROP
             a_pdcorn             (:) = spval
             a_pdswheat           (:) = spval
@@ -1480,6 +1513,9 @@ CONTAINS
             a_soil3n_vr    (:,:) = spval
             a_cwdn_vr      (:,:) = spval
             a_sminn_vr     (:,:) = spval
+            a_hr_vr        (:,:) = spval
+            a_fphr         (:,:) = spval
+            a_pot_f_nit_vr (:,:) = spval
 #endif
 
             a_ustar (:) = spval
@@ -1828,8 +1864,13 @@ CONTAINS
                CALL acc2d (to2_decomp_depth_unsat, a_O2_DECOMP_DEPTH_UNSAT)
                CALL acc2d (tconc_o2_unsat        , a_CONC_O2_UNSAT        )
             ENDIF
+            CALL acc1d (annsum_npp         , a_annsum_npp          )
+            CALL acc1d (rr                 , a_rr                  )
+            CALL acc1d (agnpp              , a_agnpp               )
+            CALL acc1d (bgnpp              , a_bgnpp               )
+            CALL acc1d (somhr              , a_somhr               )
+            CALL acc1d (lithr              , a_lithr               )
 #ifdef CROP
-            CALL acc1d (ndep             ,   a_pdcorn             )
             CALL acc1d (pdcorn             ,   a_pdcorn             )
             CALL acc1d (pdswheat           ,   a_pdswheat           )
             CALL acc1d (pdwwheat           ,   a_pdwwheat           )
@@ -2034,6 +2075,9 @@ CONTAINS
             ENDDO
             CALL acc2d (decomp_vr_tmp, a_cwdn_vr     )
             CALL acc2d (sminn_vr     , a_sminn_vr    )
+            CALL acc2d (hr_vr        , a_hr_vr       )
+            CALL acc2d (fphr         , a_fphr        )
+            CALL acc2d (pot_f_nit_vr , a_pot_f_nit_vr)
 #endif
             allocate (r_ustar  (numpatch));  r_ustar (:) = spval
             allocate (r_ustar2 (numpatch));  r_ustar2(:) = spval !Shaofeng, 2023.05.20

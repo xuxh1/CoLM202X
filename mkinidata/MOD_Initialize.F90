@@ -227,7 +227,6 @@ CONTAINS
 
    integer  :: txt_id
    real(r8) :: vic_b_infilt_, vic_Dsmax_, vic_Ds_, vic_Ws_, vic_c_
-
    ! for SimTop model parameters
    character(len=256) :: file_simtop_para
    logical            :: fexist
@@ -477,7 +476,6 @@ CONTAINS
 #ifdef USEMPI
             CALL mpi_bcast (filval, 1, MPI_REAL8, p_address_master, p_comm_glb, p_err)
 #endif
-
             CALL map_simtop_para%build_arealweighted (g_simtop_para, landpatch)
             CALL map_simtop_para%set_missing_value   (fsatmax_grid, filval)
 

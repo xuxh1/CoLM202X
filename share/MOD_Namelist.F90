@@ -58,7 +58,6 @@ MODULE MOD_Namelist
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    character(len=256) :: SITE_fsrfdata   = 'null'
-
    real(r8) :: SITE_lon_location = 113.5897
    real(r8) :: SITE_lat_location = 22.3507
 
@@ -591,6 +590,15 @@ MODULE MOD_Namelist
       logical :: hr                               = .true.
       logical :: fpg                              = .true.
       logical :: fpi                              = .true.
+      logical :: annsum_npp                       = .false. 
+      logical :: rr                               = .false. 
+      logical :: agnpp                            = .false. 
+      logical :: bgnpp                            = .false. 
+      logical :: somhr                            = .false. 
+      logical :: lithr                            = .false. 
+      logical :: hr_vr                            = .false. 
+      logical :: fphr                             = .false. 
+      logical :: pot_f_nit_vr                     = .false. 
       logical :: gpp_enftemp                      = .false. !1
       logical :: gpp_enfboreal                    = .false. !2
       logical :: gpp_dnfboreal                    = .false. !3

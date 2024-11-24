@@ -17,7 +17,6 @@
    DEF_forcing%dtime             = 3600 3600 3600 3600 3600 3600 3600 3600
    DEF_forcing%offset            = 1800 1800 1800 1800 1800 1800 1800 1800
    DEF_forcing%nlands            = 1        ! land grid number in 1d
-
    DEF_forcing%leapyear          = .true.   ! leapyear calendar
    DEF_forcing%data2d            = .true.   ! data in 2 dimension (lon, lat)
    DEF_forcing%hightdim          = .false.  ! have "z" dimension

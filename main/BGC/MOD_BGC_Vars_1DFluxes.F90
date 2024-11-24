@@ -135,6 +135,8 @@ MODULE MOD_BGC_Vars_1DFluxes
    real(r8), allocatable :: pot_f_nit_vr             (:,:)   ! vertical resolved: potential N nitrification (gN m-3 s-1)
    real(r8), allocatable :: pot_f_denit_vr           (:,:)   ! vertical resolved: potential N denitrification (gN m-3 s-1)
    real(r8), allocatable :: n2_n2o_ratio_denit_vr    (:,:)   ! vertical resolved: ratio of N2 to N2O production by denitrification (gN gN-1)
+   real(r8), allocatable :: hr_vr                    (:,:)
+   real(r8), allocatable :: fphr                     (:,:)
    real(r8), allocatable :: ndep_to_sminn            (:)     ! atmospheric N deposition to soil mineral N (gN m-2 s-1)
    real(r8), allocatable :: ffix_to_sminn            (:)     ! free living N fixation to soil mineral N (gN m-2 s-1)
    real(r8), allocatable :: nfix_to_sminn            (:)     ! N fixation to soil mineral N (gN m-2 s-1)
@@ -162,8 +164,14 @@ MODULE MOD_BGC_Vars_1DFluxes
    real(r8), allocatable :: transfer_froot_gr        (:)     ! available C allocated to fine root transfer growth respiration (gC m-2 s-1)
    real(r8), allocatable :: transfer_livecroot_gr              (:) ! pft level: allocation-associated flux: available C allocated to live coarse transfer growth respiration (gC m-2 s-1)
    real(r8), allocatable :: transfer_deadcroot_gr              (:) ! pft level: allocation-associated flux: available C allocated to dead coarse transfer growth respiration (gC m-2 s-1)
-
+   real(r8), allocatable :: annsum_npp               (:)
+   real(r8), allocatable :: rr                       (:)
+   real(r8), allocatable :: agnpp                    (:)
+   real(r8), allocatable :: bgnpp                    (:)
+   real(r8), allocatable :: somhr                    (:)
+   real(r8), allocatable :: lithr                    (:)
 #endif 
+
  ! PUBLIC MEMBER FUNCTIONS:
    PUBLIC :: allocate_1D_BGCFluxes
    PUBLIC :: deallocate_1D_BGCFluxes
@@ -314,6 +322,8 @@ CONTAINS
             allocate (pot_f_nit_vr             (nl_soil,numpatch)); pot_f_nit_vr             (:,:) = spval
             allocate (pot_f_denit_vr           (nl_soil,numpatch)); pot_f_denit_vr           (:,:) = spval
             allocate (n2_n2o_ratio_denit_vr    (nl_soil,numpatch)); n2_n2o_ratio_denit_vr    (:,:) = spval
+            allocate (hr_vr                    (nl_soil,numpatch)); hr_vr                    (:,:) = spval
+            allocate (fphr                     (nl_soil,numpatch)); fphr                     (:,:) = spval
             allocate (ndep_to_sminn            (numpatch)) ; ndep_to_sminn            (:) = spval
             allocate (ffix_to_sminn            (numpatch)) ; ffix_to_sminn            (:) = spval
             allocate (nfix_to_sminn            (numpatch)) ; nfix_to_sminn            (:) = spval
@@ -338,7 +348,12 @@ CONTAINS
             allocate (transfer_froot_gr        (numpatch)) ; transfer_froot_gr        (:) = spval
             allocate (transfer_livecroot_gr              (numpatch)) ; transfer_livecroot_gr              (:) = spval
             allocate (transfer_deadcroot_gr              (numpatch)) ; transfer_deadcroot_gr              (:) = spval
-
+            allocate (annsum_npp               (numpatch)) ; annsum_npp               (:) = spval 
+            allocate (rr                       (numpatch)) ; rr                       (:) = spval 
+            allocate (agnpp                    (numpatch)) ; agnpp                    (:) = spval 
+            allocate (bgnpp                    (numpatch)) ; bgnpp                    (:) = spval 
+            allocate (somhr                    (numpatch)) ; somhr                    (:) = spval 
+            allocate (lithr                    (numpatch)) ; lithr                    (:) = spval 
 #endif
          ENDIF
       ENDIF
@@ -477,7 +492,10 @@ CONTAINS
             deallocate (f_n2o_nit_vr             )
             deallocate (f_n2o_denit_vr           )
             deallocate (pot_f_nit_vr             )
+            deallocate (pot_f_denit_vr           )
             deallocate (n2_n2o_ratio_denit_vr    )
+            deallocate (hr_vr                    )
+            deallocate (fphr                     )
             deallocate (ndep_to_sminn            )
             deallocate (ffix_to_sminn            )
             deallocate (nfix_to_sminn            )
@@ -502,7 +520,12 @@ CONTAINS
             deallocate (transfer_froot_gr        )
             deallocate (transfer_livecroot_gr              )
             deallocate (transfer_deadcroot_gr              )
-
+            deallocate (annsum_npp               )
+            deallocate (rr                       )
+            deallocate (agnpp                    )
+            deallocate (bgnpp                    )
+            deallocate (somhr                    )
+            deallocate (lithr                    )
 #endif
          ENDIF
       ENDIF
@@ -648,6 +671,8 @@ SUBROUTINE set_1D_BGCFluxes(Values, Nan)
             pot_f_nit_vr             (:,:)   = Values
             pot_f_denit_vr           (:,:)   = Values
             n2_n2o_ratio_denit_vr    (:,:)   = Values
+            hr_vr                    (:,:)   = Values
+            fphr                     (:,:)   = Values
             ndep_to_sminn            (:)     = Values
             ffix_to_sminn            (:)     = Values
             nfix_to_sminn            (:)     = Values
@@ -672,7 +697,12 @@ SUBROUTINE set_1D_BGCFluxes(Values, Nan)
             transfer_froot_gr        (:)   = Values
             transfer_livecroot_gr              (:) = Values
             transfer_deadcroot_gr              (:) = Values
-
+            annsum_npp               (:)     = Values
+            rr                       (:)     = Values
+            agnpp                    (:)     = Values
+            bgnpp                    (:)     = Values
+            somhr                    (:)     = Values
+            lithr                    (:)     = Values
 
 #endif
          ENDIF

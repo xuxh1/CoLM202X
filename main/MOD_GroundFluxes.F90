@@ -45,7 +45,6 @@ CONTAINS
    USE MOD_FrictionVelocity
    USE mod_namelist, only: DEF_USE_CBL_HEIGHT,DEF_RSS_SCHEME
    USE MOD_TurbulenceLEddy
-
    IMPLICIT NONE
 
 !----------------------- Dummy argument --------------------------------

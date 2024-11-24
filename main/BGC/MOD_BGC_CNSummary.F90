@@ -33,14 +33,14 @@ MODULE MOD_BGC_CNSummary
        fertnitro_cotton, fertnitro_rice1, fertnitro_rice2, fertnitro_sugarcane, &
        grainn, grainn_storage, grainn_xfer, plantdate, &
 #endif
-#ifdef CH4
-       annsum_npp, &
-#endif
+! #ifdef CH4
+!        annsum_npp, &
+! #endif
        leafn, frootn, livestemn, deadstemn, livecrootn, deadcrootn, leafn_storage, frootn_storage, livestemn_storage, &
        deadstemn_storage, livecrootn_storage, deadcrootn_storage, leafn_xfer, frootn_xfer, livestemn_xfer, &
        deadstemn_xfer, livecrootn_xfer, deadcrootn_xfer, retransn, downreg, lag_npp
    USE MOD_BGC_Vars_TimeInvariants, only: &
-       is_litter, is_soil, is_cwd, nfix_timeconst
+           is_litter, is_soil, is_cwd, nfix_timeconst, donor_pool, i_soil1, i_soil2, i_soil3
    USE MOD_BGC_Vars_PFTimeVariables, only: &
        leafc_p, frootc_p, livestemc_p, deadstemc_p, livecrootc_p, deadcrootc_p, &
        leafc_storage_p, frootc_storage_p, livestemc_storage_p, &
@@ -57,9 +57,9 @@ MODULE MOD_BGC_CNSummary
        grainn_p, grainn_storage_p, grainn_xfer_p, cropseedn_deficit_p, & 
 #endif
 #ifdef CH4
-       annsum_npp_p, &
+       annsum_npp_p, tempsum_npp_p, &
 #endif
-      leafn_p, frootn_p, livestemn_p, deadstemn_p, livecrootn_p, deadcrootn_p, &
+       leafn_p, frootn_p, livestemn_p, deadstemn_p, livecrootn_p, deadcrootn_p, &
        leafn_storage_p, frootn_storage_p, livestemn_storage_p, &
        deadstemn_storage_p, livecrootn_storage_p, deadcrootn_storage_p, &
        leafn_xfer_p, frootn_xfer_p, livestemn_xfer_p, &
@@ -79,6 +79,7 @@ MODULE MOD_BGC_CNSummary
        froot_mr, cpool_froot_gr, cpool_livecroot_gr, cpool_deadcroot_gr, &
        cpool_froot_storage_gr, cpool_livecroot_storage_gr, cpool_deadcroot_storage_gr, &
        transfer_froot_gr, transfer_livecroot_gr, transfer_deadcroot_gr, &
+       somhr, lithr, hr_vr, rr, agnpp, bgnpp, annsum_npp, &
 #endif
        sminn_leached, sminn_leached_vr, smin_no3_leached, smin_no3_leached_vr, smin_no3_runoff, smin_no3_runoff_vr, &
        f_n2o_nit, f_n2o_nit_vr, decomp_cpools_transport_tendency, decomp_npools_transport_tendency, &
@@ -95,7 +96,11 @@ MODULE MOD_BGC_CNSummary
        cpool_livecroot_storage_gr_p, cpool_deadcroot_storage_gr_p, &
        grain_mr_p, xsmrpool_to_atm_p, cpool_grain_gr_p, &
        transfer_grain_gr_p, cpool_grain_storage_gr_p, soil_change_p, &
-       fire_closs_p, hrv_xsmrpool_to_atm_p, &
+       fire_closs_p, hrv_xsmrpool_to_atm_p, deadstemc_xfer_to_deadstemc_p, &
+       cpool_to_leafc_p, leafc_xfer_to_leafc_p, cpool_to_livestemc_p, &
+       livestemc_xfer_to_livestemc_p, cpool_to_deadcrootc_p, cpool_to_deadstemc_p, &
+       livestemc_xfer_to_livestemc_p, cpool_to_frootc_p, frootc_xfer_to_frootc_p, &
+       cpool_to_livecrootc_p, livecrootc_xfer_to_livecrootc_p, deadcrootc_xfer_to_deadcrootc_p, &
 #ifdef CROP
        cropprod1c_loss_p, grainc_to_seed_p, grainc_to_food_p, grainn_to_food_p, &
 #endif
@@ -105,7 +110,7 @@ MODULE MOD_BGC_CNSummary
        m_deadstemc_to_fire_p, m_deadstemc_storage_to_fire_p, m_deadstemc_xfer_to_fire_p, &
        m_livecrootc_to_fire_p, m_livecrootc_storage_to_fire_p, m_livecrootc_xfer_to_fire_p, &
        m_deadcrootc_to_fire_p, m_deadcrootc_storage_to_fire_p, m_deadcrootc_xfer_to_fire_p, &
-       m_gresp_storage_to_fire_p, m_gresp_xfer_to_fire_p
+       m_gresp_storage_to_fire_p, m_gresp_xfer_to_fire_p,rr_p, agnpp_p, bgnpp_p 
    USE MOD_Vars_TimeVariables, only: &
        irrig_method_corn  , irrig_method_swheat, irrig_method_wwheat, irrig_method_soybean  , &
        irrig_method_cotton, irrig_method_rice1 , irrig_method_rice2 , irrig_method_sugarcane
@@ -345,9 +350,6 @@ CONTAINS
       fertnitro_rice2(i) = 0._r8
       fertnitro_sugarcane(i) = 0._r8
 #endif
-#ifdef CH4
-      annsum_npp(i)               = sum(annsum_npp_p(ps:pe)              * pftfrac(ps:pe))
-#endif
       DO m = ps, pe
          totvegc_p(m) = leafc_p(m)             + frootc_p(m)             + livestemc_p(m) &
                       + deadstemc_p(m)         + livecrootc_p(m)         + deadcrootc_p(m) &
@@ -528,6 +530,12 @@ CONTAINS
          DO j = 1, nl_soil
             decomp_hr(i) = decomp_hr(i) &
                          + decomp_hr_vr(j,k,i) * dz_soi(j)
+            hr_vr(j,i) = hr_vr(j,i) + decomp_hr_vr(j,k,i)
+            IF(donor_pool(k) .eq. i_soil1 .or. donor_pool(k) .eq. i_soil2 .or. donor_pool(k) .eq. i_soil3)THEN
+               somhr(i)  = somhr(i) + decomp_hr_vr(j,k,i) * dz_soi(j)
+            ELSE
+               lithr(i)  = lithr(i) + decomp_hr_vr(j,k,i) * dz_soi(j)
+            ENDIF
          ENDDO
       ENDDO
   
@@ -664,9 +672,39 @@ CONTAINS
          ELSE IF(pftclass (m) .eq. 14)THEN
             gpp_c4grass   (i) = psn_to_cpool_p(m)
          ENDIF
+
+         rr_p(m) = froot_mr_p (m) + cpool_froot_gr_p(m) + cpool_livecroot_gr_p(m) + cpool_deadcroot_gr_p(m) &
+                 + transfer_froot_gr_p(m) + transfer_livecroot_gr_p(m) + transfer_deadcroot_gr_p(m) &
+                 + cpool_froot_storage_gr_p(m) + cpool_livecroot_storage_gr_p(m) + cpool_deadcroot_storage_gr_p(m)
+
+         agnpp_p(m) = cpool_to_leafc_p(m) + leafc_xfer_to_leafc_p(m) + cpool_to_livestemc_p(m) &
+                    + livestemc_xfer_to_livestemc_p(m) + cpool_to_deadstemc_p(m) + deadstemc_xfer_to_deadstemc_p(m)  
+
+         bgnpp_p(m) = cpool_to_frootc_p(m) + frootc_xfer_to_frootc_p(m) + cpool_to_livecrootc_p(m) &
+                    + livecrootc_xfer_to_livecrootc_p(m) + cpool_to_deadcrootc_p(m) + deadcrootc_xfer_to_deadcrootc_p(m)
+
+         tempsum_npp_p(m) = tempsum_npp_p(m) + psn_to_cpool_p(m) &
+                          - (leaf_mr_p(m)                   + froot_mr_p(m) &
+                          + livestem_mr_p(m)                + livecroot_mr_p(m) &
+                          + cpool_leaf_gr_p(m)              + cpool_froot_gr_p(m) &
+                          + cpool_livestem_gr_p(m)          + cpool_deadstem_gr_p(m) &
+                          + cpool_livecroot_gr_p(m)         + cpool_deadcroot_gr_p(m) &
+                          + transfer_leaf_gr_p(m)           + transfer_froot_gr_p(m) &
+                          + transfer_livestem_gr_p(m)       + transfer_deadstem_gr_p(m) &
+                          + transfer_livecroot_gr_p(m)      + transfer_deadcroot_gr_p(m) &
+                          + cpool_leaf_storage_gr_p(m)      + cpool_froot_storage_gr_p(m) &
+                          + cpool_livestem_storage_gr_p(m)  + cpool_deadstem_storage_gr_p(m) &
+                          + cpool_livecroot_storage_gr_p(m) + cpool_deadcroot_storage_gr_p(m) &
+                          + grain_mr_p(m)                   + xsmrpool_to_atm_p(m) &
+                          + cpool_grain_gr_p(m)             + transfer_grain_gr_p(m) &
+                          + cpool_grain_storage_gr_p(m))
       ENDDO
 
-   
+       rr(i)         = sum(rr_p   (ps:pe) * pftfrac(ps:pe))  
+       agnpp(i)      = sum(agnpp_p(ps:pe) * pftfrac(ps:pe))  
+       bgnpp(i)      = sum(bgnpp_p(ps:pe) * pftfrac(ps:pe))  
+       annsum_npp(i) = sum(annsum_npp_p(ps:pe) * pftfrac(ps:pe))
+
 #ifdef FUN
       ar(i) = ar(i) + sum(soil_change_p(ps:pe) * pftfrac(ps:pe))
 #endif
