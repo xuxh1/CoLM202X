@@ -9,3 +9,4 @@ __pycache__
 .bld
 *-e.*
 *-o.*
+*.txt
