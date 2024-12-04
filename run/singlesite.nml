@@ -68,8 +68,8 @@
    DEF_REST_CompressLevel = 0
    DEF_HIST_CompressLevel = 0
    
-   DEF_hist_vars_namelist = './history_1.nml'
-   DEF_hist_vars_out_default = .false.
+   !DEF_hist_vars_namelist = './history_1.nml'
+   DEF_hist_vars_out_default = .true.
 
 /
 

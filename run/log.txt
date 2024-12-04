@@ -11,3 +11,15 @@ start:  Mon Nov 4 12:21:33 CST 2024
 end:    Mon Nov 4 14:23:32 CST 2024
 start:  Mon Nov 4 16:59:44 CST 2024
 end:    Wed Nov 6 08:03:50 CST 2024
+start:  Sun Nov 24 22:26:04 CST 2024
+end:    Mon Nov 25 00:28:43 CST 2024
+start:  Mon Nov 25 01:21:42 CST 2024
+end:    Mon Nov 25 01:22:06 CST 2024
+start:  Mon Nov 25 01:26:56 CST 2024
+end:    Mon Nov 25 19:24:43 CST 2024
+start:  Tue Nov 26 02:09:48 CST 2024
+end:    Tue Nov 26 03:26:35 CST 2024
+start:  Tue Nov 26 09:43:04 CST 2024
+end:    Tue Nov 26 09:43:25 CST 2024
+start:  Tue Nov 26 09:57:02 CST 2024
+end:    Wed Nov 27 22:51:19 CST 2024

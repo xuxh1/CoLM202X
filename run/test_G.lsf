@@ -1,8 +1,8 @@
 #!/bin/bash
-#BSUB -J test_G_1
+#BSUB -J G_4
 #BSUB -q normal
-#BSUB -o test_G-o.%J
-#BSUB -e test_G-e.%J
+#BSUB -o test_G_4-o.%J
+#BSUB -e test_G_4-e.%J
 #BSUB -n 480
 #BSUB -R rusage[mem=150G]
 #BSUB -R span[ptile=48]

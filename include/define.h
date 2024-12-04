@@ -1,9 +1,9 @@
 ! 1. Spatial structure:
 !    Select one of the following options.
-#undef GRIDBASED
+#define GRIDBASED
 #undef CATCHMENT
 #undef UNSTRUCTURED
-#define SinglePoint
+#undef SinglePoint
 
 ! 2. Land subgrid type classification:
 !    Select one of the following options.
@@ -16,9 +16,9 @@
 #undef URBAN_MODEL
 
 ! 3. If defined, debug information is output.
-#define CoLMDEBUG
+#undef CoLMDEBUG
 ! 3.1 If defined, range of variables is checked.
-#define RangeCheck
+#undef RangeCheck
 ! 3.1 If defined, surface data in vector is mapped to gridded data for checking.
 #undef SrfdataDiag
 
