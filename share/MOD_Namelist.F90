@@ -341,6 +341,9 @@ MODULE MOD_Namelist
    !Dynamic Lake model
    logical            :: DEF_USE_Dynamic_Lake    = .false.
 
+   !
+   logical            :: DEF_CheckEquilibrium    = .false.
+
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! ----- Part 12: forcing -----
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -416,7 +419,8 @@ MODULE MOD_Namelist
    character(len=20) :: DEF_Forcing_Interp_Method = 'arealweight' ! 'arealweight' (default) or 'bilinear'
 
    logical           :: DEF_USE_Forcing_Downscaling        = .false.
-   character(len=5)  :: DEF_DS_precipitation_adjust_scheme = 'II'
+   character(len=256):: DEF_DS_HiresTopographyDataDir      = 'null'
+   character(len=5)  :: DEF_DS_precipitation_adjust_scheme = 'I'
    character(len=5)  :: DEF_DS_longwave_adjust_scheme      = 'II'
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -952,6 +956,7 @@ CONTAINS
       DEF_USE_FIRE,                           & !add by Xingjie Lu @ sysu 2023/06/27
 
       DEF_USE_Dynamic_Lake,                   & !add by Shupeng Zhang @ sysu 2024/09/12
+      DEF_CheckEquilibrium,                   & !add by Shupeng Zhang @ sysu 2024/11/26
 
       DEF_LANDONLY,                           &
       DEF_USE_DOMINANT_PATCHTYPE,             &
@@ -987,6 +992,7 @@ CONTAINS
       DEF_Forcing_Interp_Method,              &
 
       DEF_USE_Forcing_Downscaling,            &
+      DEF_DS_HiresTopographyDataDir,          & 
       DEF_DS_precipitation_adjust_scheme,     &
       DEF_DS_longwave_adjust_scheme,          &
 
@@ -1430,6 +1436,7 @@ CONTAINS
       CALL mpi_bcast (DEF_USE_FIRE                           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_USE_Dynamic_Lake                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_CheckEquilibrium                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_LANDONLY                           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_USE_DOMINANT_PATCHTYPE             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
@@ -1479,6 +1486,7 @@ CONTAINS
 
       CALL mpi_bcast (DEF_Forcing_Interp_Method              ,20  ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_USE_Forcing_Downscaling            ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_DS_HiresTopographyDataDir          ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_DS_precipitation_adjust_scheme     ,5   ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_DS_longwave_adjust_scheme          ,5   ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
 
