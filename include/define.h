@@ -16,9 +16,9 @@
 #undef URBAN_MODEL
 
 ! 3. If defined, debug information is output.
-#undef CoLMDEBUG
+#define CoLMDEBUG
 ! 3.1 If defined, range of variables is checked.
-#undef RangeCheck
+#define RangeCheck
 ! 3.1 If defined, surface data in vector is mapped to gridded data for checking.
 #undef SrfdataDiag
 
@@ -51,7 +51,7 @@
 #undef BGC
 #endif
 ! 7.1 If defined, CROP model is used
-#undef CROP
+#define CROP
 !    Conflicts : only used when BGC is defined
 #ifndef BGC
 #undef CROP

@@ -1,0 +1,37 @@
+#!/bin/bash
+#BSUB -J exp5_R1_test
+#BSUB -q normal
+#BSUB -o exp5_R1-o.%J
+#BSUB -e exp5_R1-e.%J
+#BSUB -n 480
+#BSUB -R rusage[mem=150G]
+#BSUB -R span[ptile=48]
+
+#export OMP_NUM_THREADS=45
+
+echo job start time is `date`
+echo `hostname`
+
+echo "start: ${SYEAR}" `date`  >> log.txt
+
+mpirun  -np 480 ./mksrfdata.x exp5_R1.nml
+mpirun  -np 480 ./mkinidata.x exp5_R1.nml
+#mpirun  -np 480 ./colm.x exp5_R1.nml
+
+
+echo "end:   ${SYEAR}" `date`  >> log.txt
+
+# mv ${LOGOUT} log_CaMa-${CYR}.txt
+
+#================================================
+# (6) manage spin up
+
+# if curent spinup time $ISP < required spinup time $NSP
+#   copy the restart file restart$(IYR+1) to restart${IYR}
+#   copy the outputs to directory "${IYR}-sp1"
+
+
+
+exit 0
+echo job end time is `date`
+

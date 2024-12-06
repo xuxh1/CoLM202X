@@ -1,6 +1,6 @@
 &nl_colm
 
-   DEF_CASE_NAME = 'G_CH4_4'
+   DEF_CASE_NAME = 'G_CH4_5'
 
    ! DEF_domain%edges = 58.0
    ! DEF_domain%edgen = 65.0
