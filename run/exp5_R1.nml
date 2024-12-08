@@ -1,6 +1,6 @@
 &nl_colm
 
-   DEF_CASE_NAME = 'CH4_exp5_R_test'
+   DEF_CASE_NAME = 'CH4_exp5_R_test_CRUJRA'
 
    DEF_domain%edges = 58.0
    DEF_domain%edgen = 65.0
@@ -58,7 +58,7 @@
    ! Options :
    ! PRINCETON | GSWP3   | QIAN  | CRUNCEPV4 | CRUNCEPV7 | ERA5LAND | ERA5  |  MSWX
    ! WFDE5     | CRUJRA  | WFDEI | JRA55     | GDAS      | CMFD     | POINT |  JRA3Q
-   DEF_forcing_namelist = './forcing/ERA5.nml'
+   DEF_forcing_namelist = './forcing/CRUJRA.nml'
    
    ! ----- history -----
    DEF_HIST_lon_res = 0.5

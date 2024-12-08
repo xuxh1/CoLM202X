@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -J exp5_R1_test
+#BSUB -J exp5_R1_test_CRUJRA
 #BSUB -q normal
 #BSUB -o exp5_R1-o.%J
 #BSUB -e exp5_R1-e.%J
@@ -16,7 +16,7 @@ echo "start: ${SYEAR}" `date`  >> log.txt
 
 mpirun  -np 480 ./mksrfdata.x exp5_R1.nml
 mpirun  -np 480 ./mkinidata.x exp5_R1.nml
-#mpirun  -np 480 ./colm.x exp5_R1.nml
+mpirun  -np 480 ./colm.x exp5_R1.nml
 
 
 echo "end:   ${SYEAR}" `date`  >> log.txt

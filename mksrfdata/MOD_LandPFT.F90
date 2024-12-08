@@ -87,6 +87,10 @@ CONTAINS
          ELSEIF (landpatch%settyp(1) == CROPLAND) THEN
             numpft = numpatch
 #endif
+#ifdef CH4
+         ELSEIF (landpatch%settyp(1) == WETLAND) THEN
+            numpft = numpatch
+#endif
          ELSE
             numpft = 0
          ENDIF
@@ -127,6 +131,17 @@ CONTAINS
             ELSEIF (landpatch%settyp(1) == CROPLAND) THEN
                DO ipft = 1, numpft
                   landpft%settyp(ipft) = cropclass(ipft)
+                  pft2patch   (ipft) = ipft
+                  patch_pft_s (ipft) = ipft
+                  patch_pft_e (ipft) = ipft
+               ENDDO
+               
+               landpft%pctshared = landpatch%pctshared 
+#endif
+#ifdef CH4
+            ELSEIF (landpatch%settyp(1) == WETLAND) THEN
+               DO ipft = 1, numpft
+                  landpft%settyp(ipft) = wetlandclass(ipft)
                   pft2patch   (ipft) = ipft
                   patch_pft_s (ipft) = ipft
                   patch_pft_e (ipft) = ipft
@@ -213,6 +228,9 @@ CONTAINS
 #ifdef CROP
             numpft = numpft + count(landpatch%settyp == CROPLAND)
 #endif
+#ifdef CH4
+            numpft = numpft + count(landpatch%settyp == WETLAND)
+#endif
             IF (npatch > 0) THEN
                allocate (patch_pft_s (npatch))
                allocate (patch_pft_e (npatch))
@@ -274,6 +292,22 @@ CONTAINS
                      landpft%ipxstt(npft) = landpatch%ipxstt(ipatch)
                      landpft%ipxend(npft) = landpatch%ipxend(ipatch)
                      landpft%settyp(npft) = cropclass(ipatch)
+                           
+                     landpft%pctshared(npft) = landpatch%pctshared(ipatch)
+
+                     pft2patch(npft) = npatch
+#endif
+#ifdef CH4
+                  ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
+                     npft = npft + 1
+                     patch_pft_s(npatch) = npft
+                     patch_pft_e(npatch) = npft
+
+                     landpft%ielm  (npft) = landpatch%ielm  (ipatch)
+                     landpft%eindex(npft) = landpatch%eindex(ipatch)
+                     landpft%ipxstt(npft) = landpatch%ipxstt(ipatch)
+                     landpft%ipxend(npft) = landpatch%ipxend(ipatch)
+                     landpft%settyp(npft) = wetlandclass(ipatch)
                            
                      landpft%pctshared(npft) = landpatch%pctshared(ipatch)
 
@@ -365,6 +399,13 @@ CONTAINS
                ENDDO
 #ifdef CROP
             ELSEIF (landpatch%settyp(ipatch) == CROPLAND) THEN
+               patch_pft_s(ipatch) = ipft
+               patch_pft_e(ipatch) = ipft
+               pft2patch  (ipft  ) = ipatch
+               ipft = ipft + 1
+#endif
+#ifdef CH4
+            ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
                patch_pft_s(ipatch) = ipft
                patch_pft_e(ipatch) = ipft
                pft2patch  (ipft  ) = ipatch

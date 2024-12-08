@@ -23,6 +23,7 @@ MODULE MOD_Vars_Global
    integer, parameter :: URBAN     = 1
    integer, parameter :: WATERBODY = 16
    integer, parameter :: WETLAND   = 17
+   ! integer, parameter :: WETLAND(2)   = [17,18]
 #else
    ! MODIS IGBP number of land cover category
    integer, parameter :: N_land_classification = 17
@@ -41,6 +42,12 @@ MODULE MOD_Vars_Global
 #else
    integer, parameter :: N_PFT     = 15
    integer, parameter :: N_CFT     = 64
+#endif
+
+#ifndef CH4
+   integer, parameter :: N_WFT     = 0
+#else
+   integer, parameter :: N_WFT     = 1
 #endif
 
    ! urban type number

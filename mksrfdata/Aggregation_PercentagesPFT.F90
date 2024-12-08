@@ -21,6 +21,9 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
 #ifdef CROP
    USE MOD_LandCrop
 #endif
+#ifdef CH4
+   USE MOD_LandWetland
+#endif
    USE MOD_NetCDFBlock
    USE MOD_NetCDFVector
 #ifdef RangeCheck

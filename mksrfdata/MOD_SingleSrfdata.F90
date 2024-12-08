@@ -28,6 +28,11 @@ MODULE MOD_SingleSrfdata
    real(r8), allocatable :: SITE_pctcrop (:)
 #endif
 
+#ifdef CH4
+   integer,  allocatable :: SITE_wetlandtyp (:)
+   real(r8), allocatable :: SITE_pctwetland (:)
+#endif
+
    real(r8) :: SITE_htop
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
    real(r8), allocatable :: SITE_htop_pfts (:)
@@ -205,6 +210,14 @@ CONTAINS
       IF ((.not. mksrfdata) .or. USE_SITE_pctcrop) THEN
          CALL ncio_read_serial (fsrfdata, 'croptyp', SITE_croptyp)
          CALL ncio_read_serial (fsrfdata, 'pctcrop', SITE_pctcrop)
+         ! otherwise, retrieve from database by MOD_LandPatch.F90
+      ENDIF
+#endif
+
+#ifdef CH4
+      IF ((.not. mksrfdata) .or. USE_SITE_pctwetland) THEN
+         CALL ncio_read_serial (fsrfdata, 'wetlandtyp', SITE_wetlandtyp)
+         CALL ncio_read_serial (fsrfdata, 'pctwetland', SITE_pctwetland)
          ! otherwise, retrieve from database by MOD_LandPatch.F90
       ENDIF
 #endif
@@ -547,6 +560,14 @@ ENDIF
          CALL ncio_write_serial (fsrfdata, 'pctcrop', SITE_pctcrop, 'patch')
          CALL ncio_put_attr     (fsrfdata, 'croptyp', 'source', datasource(USE_SITE_pctcrop))
          CALL ncio_put_attr     (fsrfdata, 'pctcrop', 'source', datasource(USE_SITE_pctcrop))
+      ENDIF
+#endif
+#if (defined CH4)
+      IF (SITE_landtype == WETLAND) THEN
+         CALL ncio_write_serial (fsrfdata, 'wetlandtyp', SITE_wetlandtyp, 'patch')
+         CALL ncio_write_serial (fsrfdata, 'pctwetland', SITE_pctwetland, 'patch')
+         CALL ncio_put_attr     (fsrfdata, 'wetlandtyp', 'source', datasource(USE_SITE_pctwetland))
+         CALL ncio_put_attr     (fsrfdata, 'pctwetland', 'source', datasource(USE_SITE_pctwetland))
       ENDIF
 #endif
 
@@ -897,6 +918,11 @@ ENDIF
 #ifdef CROP
       IF (allocated(SITE_croptyp)) deallocate(SITE_croptyp)
       IF (allocated(SITE_pctcrop)) deallocate(SITE_pctcrop)
+#endif
+
+#ifdef CH4
+      IF (allocated(SITE_wetlandtyp)) deallocate(SITE_wetlandtyp)
+      IF (allocated(SITE_pctwetland)) deallocate(SITE_pctwetland)
 #endif
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)

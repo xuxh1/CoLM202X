@@ -70,6 +70,9 @@ PROGRAM MKSRFDATA
 #ifdef CROP
    USE MOD_LandCrop
 #endif
+#ifdef CH4
+   USE MOD_LandWetland
+#endif
    USE MOD_RegionClip
 #ifdef SrfdataDiag
    USE MOD_SrfdataDiag, only : gdiag, srfdata_diag_init
@@ -91,6 +94,7 @@ PROGRAM MKSRFDATA
 
    type (grid_type) :: gsoil, gridlai, gtopo, grid_topo_factor
    type (grid_type) :: grid_urban_5km, grid_urban_500m
+   type (grid_type) :: grid_wetland_5km, grid_wetland_500m
 
    integer   :: lc_year
    integer*8 :: start_time, end_time, c_per_sec, time_used
@@ -199,6 +203,12 @@ PROGRAM MKSRFDATA
    ! define grid for crop parameters
    CALL gcrop%define_from_file (trim(DEF_dir_rawdata)//'/global_CFT_surface_data.nc', 'lat', 'lon')
 #endif
+   ! add by Xu, only test for making wetland data
+#ifdef CH4
+   CALL gwetland%define_by_name          ('colm_500m')
+   CALL grid_wetland_500m%define_by_name ('colm_500m')
+   CALL grid_wetland_5km%define_by_name  ('colm_5km' )
+#endif
 
    ! define grid for soil parameters raw data
    CALL gsoil%define_by_name ('colm_500m')
@@ -245,6 +255,11 @@ PROGRAM MKSRFDATA
 #if (defined CROP)
    CALL pixel%assimilate_grid (gcrop )
 #endif
+#ifdef CH4
+   CALL pixel%assimilate_grid (gwetland         )
+   CALL pixel%assimilate_grid (grid_wetland_500m)
+   CALL pixel%assimilate_grid (grid_wetland_5km )
+#endif
 
    CALL pixel%assimilate_grid (gtopo)
 
@@ -273,6 +288,11 @@ PROGRAM MKSRFDATA
 #endif
 #if (defined CROP)
    CALL pixel%map_to_grid (gcrop )
+#endif
+#ifdef CH4
+   CALL pixel%map_to_grid (gwetland         )
+   CALL pixel%map_to_grid (grid_wetland_500m)
+   CALL pixel%map_to_grid (grid_wetland_5km )
 #endif
 
    CALL pixel%map_to_grid (gtopo)
@@ -316,6 +336,10 @@ PROGRAM MKSRFDATA
    CALL landcrop_build (lc_year)
 #endif
 
+#ifdef CH4
+   CALL landwetland_build (lc_year)
+#endif
+
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
    CALL landpft_build  (lc_year)
 #endif
@@ -344,6 +368,10 @@ PROGRAM MKSRFDATA
 
 #ifdef URBAN_MODEL
    CALL pixelset_save_to_file  (dir_landdata, 'landurban', landurban, lc_year)
+#endif
+
+#ifdef CH4
+   CALL pixelset_save_to_file  (dir_landdata, 'landwetland', landwetland, lc_year)
 #endif
 
 ! ................................................................
