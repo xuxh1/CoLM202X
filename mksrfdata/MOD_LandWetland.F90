@@ -145,7 +145,7 @@ CONTAINS
       IF (p_is_io) THEN
          file_patch = trim(DEF_dir_rawdata) // '/global_WFT_surface_data.nc'
          CALL allocate_block_data (gwetland, wetlanddata, N_WFT)
-         CALL ncio_read_block (file_patch, 'PCT_CFT', gwetland, N_WFT, wetlanddata)
+         CALL ncio_read_block (file_patch, 'PCT_WFT', gwetland, N_WFT, wetlanddata)
       ENDIF
 
       wetlandfilter = (/ WETLAND /)
@@ -153,7 +153,7 @@ CONTAINS
       CALL pixelsetshared_build (landpatch, gwetland, wetlanddata, N_WFT, wetlandfilter, &
          pctshrpch, wetlandclass, fracin = pctshared)
 
-      wetlandclass = wetlandclass + N_PFT - 1
+      wetlandclass = wetlandclass + N_PFT
       
       numpatch = landpatch%nset
 

@@ -297,7 +297,7 @@ CONTAINS
          IF (allocated(msk)) deallocate(msk)
       ENDIF
 
-#if (!defined(URBAN_MODEL) && !defined(CROP))
+#if (!defined(URBAN_MODEL) && !defined(CROP) && !defined(CH4))
 #ifdef USEMPI
       IF (p_is_worker) THEN
          CALL mpi_reduce (numpatch, npatch_glb, 1, MPI_INTEGER, MPI_SUM, p_root, p_comm_worker, p_err)
