@@ -220,12 +220,12 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
       lndname = trim(landdir)//'/pct_wetlands.nc'
       CALL ncio_create_file_vector (lndname, landpatch)
       CALL ncio_define_dimension_vector (lndname, landpatch, 'patch')
-      CALL ncio_write_vector (lndname, 'pct_wetlands', 'patch', landpatch, pctshrpch, DEF_Srfdata_CompressLevel)
+      CALL ncio_write_vector (lndname, 'pct_wetlands', 'patch', landpatch, pctshrpwh, DEF_Srfdata_CompressLevel)
 
 #ifdef SrfdataDiag
       typcrop = (/(ityp, ityp = 1, N_WFT)/)
       lndname = trim(dir_model_landdata) // '/diag/pct_wetland_patch_' // trim(cyear) // '.nc'
-      CALL srfdata_map_and_write (pctshrpch, wetlandclass, typwetland, m_patch2diag, &
+      CALL srfdata_map_and_write (pctshrpwh, wetlandclass, typwetland, m_patch2diag, &
          -1.0e36_r8, lndname, 'pct_wetland_patch', compress = 1, write_mode = 'one')
 #endif
 #else
@@ -233,7 +233,7 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
          allocate (SITE_wetlandtyp(numpatch))
          allocate (SITE_pctwetland(numpatch))
          SITE_wetlandtyp = wetlandclass
-         SITE_pctwetland = pctshrpch
+         SITE_pctwetland = pctshrpwh
       ENDIF
 #endif
 #endif

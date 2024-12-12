@@ -201,7 +201,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
         !  endif
 
 #if(defined BGC)
-         IF(patchtype(i) .eq. 0)THEN
+         IF((patchtype(i) .eq. 0) .or. (patchtype(i) .eq. 2))THEN
             !
             !                ***** Call CoLM BGC model *****
             !

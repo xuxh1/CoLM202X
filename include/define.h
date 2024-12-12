@@ -59,6 +59,10 @@
 
 ! 7.2 If defined, CH4 model is used
 #define CH4
+!    Conflicts : only used when BGC is defined
+#ifndef BGC
+#undef CH4
+#endif
 
 ! 8. If defined, open Land use and land cover change mode.
 #undef LULCC

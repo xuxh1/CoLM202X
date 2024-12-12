@@ -19,9 +19,9 @@ MODULE MOD_LandWetland
    ! ---- Instance ----
    type(grid_type) :: gwetland
 
-   type(pixelset_type) :: landwetland
+   ! type(pixelset_type) :: landwetland
    integer,  allocatable :: wetlandclass (:)
-   real(r8), allocatable :: pctshrpch (:)
+   real(r8), allocatable :: pctshrpwh (:)
 
 CONTAINS
 
@@ -69,12 +69,12 @@ CONTAINS
 
          numpatch = count(SITE_pctwetland > 0.)
 
-         allocate (pctshrpch(numpatch))
+         allocate (pctshrpwh(numpatch))
          allocate (wetlandclass(numpatch))
          wetlandclass = pack(SITE_wetlandtyp, SITE_pctwetland > 0.)
-         pctshrpch = pack(SITE_pctwetland, SITE_pctwetland > 0.)
+         pctshrpwh = pack(SITE_pctwetland, SITE_pctwetland > 0.)
 
-         pctshrpch = pctshrpch / sum(pctshrpch)
+         pctshrpwh = pctshrpwh / sum(pctshrpwh)
 
          IF (allocated(landpatch%eindex))  deallocate(landpatch%eindex)
          IF (allocated(landpatch%ipxstt))  deallocate(landpatch%ipxstt)
@@ -96,7 +96,7 @@ CONTAINS
          
          landpatch%has_shared = .true.
          allocate (landpatch%pctshared(numpatch))
-         landpatch%pctshared = pctshrpch
+         landpatch%pctshared = pctshrpwh
 
          landpatch%nset = numpatch
          CALL landpatch%set_vecgs
@@ -151,7 +151,7 @@ CONTAINS
       wetlandfilter = (/ WETLAND /)
       
       CALL pixelsetshared_build (landpatch, gwetland, wetlanddata, N_WFT, wetlandfilter, &
-         pctshrpch, wetlandclass, fracin = pctshared)
+         pctshrpwh, wetlandclass, fracin = pctshared)
 
       wetlandclass = wetlandclass + N_PFT
       
@@ -165,7 +165,7 @@ CONTAINS
             ENDIF
 
             allocate(landpatch%pctshared(numpatch))
-            landpatch%pctshared = pctshrpch
+            landpatch%pctshared = pctshrpwh
          ENDIF
       ENDIF
 
