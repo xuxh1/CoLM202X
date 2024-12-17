@@ -149,6 +149,8 @@ CONTAINS
 
             allocate (fracout    (nsetshared))
             allocate (sharedclass(nsetshared))
+            print*, "-------------------1 nsetshared-----------------",nsetshared 
+            print*, "-------------------2 behind filter sharedclass-----------------",sharedclass
 
             fracout(:) = 1.0
 
@@ -194,6 +196,7 @@ CONTAINS
             ENDDO
 
             pixelset%nset = nsetshared
+            print*, "-------------------3 sharedclass-----------------",sharedclass
 
             deallocate (eindex1)
             deallocate (ipxstt1)

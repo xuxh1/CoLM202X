@@ -147,9 +147,13 @@ CONTAINS
       ENDIF
 
       cropfilter = (/ CROPLAND /)
+      print*, "-------------------4 behind pixelsetshared cropclass-----------------",cropclass   
       
       CALL pixelsetshared_build (landpatch, gcrop, cropdata, N_CFT, cropfilter, &
          pctshrpch, cropclass, fracin = pctshared)
+
+      
+      print*, "-------------------5 cropclass-----------------",cropclass   
 
       cropclass = cropclass + N_PFT - 1
       

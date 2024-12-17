@@ -1,107 +1,239 @@
-Performing inexact rename detection: 100% (55473/55473), done.
-Auto-merging share/MOD_Precision.F90
-CONFLICT (add/add): Merge conflict in share/MOD_NetCDFSerial.F90
-Auto-merging share/MOD_NetCDFSerial.F90
-CONFLICT (add/add): Merge conflict in share/MOD_Namelist.F90
-Auto-merging share/MOD_Namelist.F90
-CONFLICT (add/add): Merge conflict in share/MOD_Block.F90
-Auto-merging share/MOD_Block.F90
-CONFLICT (add/add): Merge conflict in run/forcing/POINT.nml
-Auto-merging run/forcing/POINT.nml
-CONFLICT (add/add): Merge conflict in run/forcing/ERA5.nml
-Auto-merging run/forcing/ERA5.nml
-CONFLICT (add/add): Merge conflict in run/forcing/CRUJRA.nml
-Auto-merging run/forcing/CRUJRA.nml
-CONFLICT (add/add): Merge conflict in run/SiteSYSUAtmos_IGBP_VG.nml
-Auto-merging run/SiteSYSUAtmos_IGBP_VG.nml
-Auto-merging preprocess/rd_land_types.F90
-Auto-merging preprocess/aggregation_landtypes.F90
-CONFLICT (add/add): Merge conflict in postprocess/HistConcatenate.F90
-Auto-merging postprocess/HistConcatenate.F90
-CONFLICT (add/add): Merge conflict in mksrfdata/MOD_SingleSrfdata.F90
-Auto-merging mksrfdata/MOD_SingleSrfdata.F90
-CONFLICT (add/add): Merge conflict in mksrfdata/MOD_LandCrop.F90
-Auto-merging mksrfdata/MOD_LandCrop.F90
-CONFLICT (add/add): Merge conflict in mkinidata/MOD_LakeDepthReadin.F90
-Auto-merging mkinidata/MOD_LakeDepthReadin.F90
-CONFLICT (add/add): Merge conflict in mkinidata/MOD_Initialize.F90
-Auto-merging mkinidata/MOD_Initialize.F90
-CONFLICT (add/add): Merge conflict in mkinidata/MOD_IniTimeVariable.F90
-Auto-merging mkinidata/MOD_IniTimeVariable.F90
-CONFLICT (add/add): Merge conflict in main/URBAN/MOD_Urban_PerviousTemperature.F90
-Auto-merging main/URBAN/MOD_Urban_PerviousTemperature.F90
-CONFLICT (add/add): Merge conflict in main/URBAN/MOD_Urban_Hydrology.F90
-Auto-merging main/URBAN/MOD_Urban_Hydrology.F90
-CONFLICT (add/add): Merge conflict in main/URBAN/CoLMMAIN_Urban.F90
-Auto-merging main/URBAN/CoLMMAIN_Urban.F90
-Auto-merging main/MOD_WetBulb.F90
-CONFLICT (add/add): Merge conflict in main/MOD_Vars_TimeVariables.F90
-Auto-merging main/MOD_Vars_TimeVariables.F90
-CONFLICT (add/add): Merge conflict in main/MOD_Vars_TimeInvariants.F90
-Auto-merging main/MOD_Vars_TimeInvariants.F90
-CONFLICT (add/add): Merge conflict in main/MOD_Vars_Global.F90
-Auto-merging main/MOD_Vars_Global.F90
-CONFLICT (add/add): Merge conflict in main/MOD_Vars_1DFluxes.F90
-Auto-merging main/MOD_Vars_1DFluxes.F90
-CONFLICT (add/add): Merge conflict in main/MOD_Vars_1DAccFluxes.F90
-Auto-merging main/MOD_Vars_1DAccFluxes.F90
-CONFLICT (add/add): Merge conflict in main/MOD_UserSpecifiedForcing.F90
-Auto-merging main/MOD_UserSpecifiedForcing.F90
-CONFLICT (add/add): Merge conflict in main/MOD_Thermal.F90
-Auto-merging main/MOD_Thermal.F90
-CONFLICT (add/add): Merge conflict in main/MOD_SoilSnowHydrology.F90
-Auto-merging main/MOD_SoilSnowHydrology.F90
-Auto-merging main/MOD_SimpleOcean.F90
-CONFLICT (add/add): Merge conflict in main/MOD_Runoff.F90
-Auto-merging main/MOD_Runoff.F90
-CONFLICT (add/add): Merge conflict in main/MOD_PhaseChange.F90
-Auto-merging main/MOD_PhaseChange.F90
-CONFLICT (add/add): Merge conflict in main/MOD_Lake.F90
-Auto-merging main/MOD_Lake.F90
-CONFLICT (add/add): Merge conflict in main/MOD_HistGridded.F90
-Auto-merging main/MOD_HistGridded.F90
-CONFLICT (add/add): Merge conflict in main/MOD_Hist.F90
-Auto-merging main/MOD_Hist.F90
-CONFLICT (add/add): Merge conflict in main/MOD_GroundTemperature.F90
-Auto-merging main/MOD_GroundTemperature.F90
-CONFLICT (add/add): Merge conflict in main/MOD_Glacier.F90
-Auto-merging main/MOD_Glacier.F90
-CONFLICT (add/add): Merge conflict in main/MOD_Forcing.F90
-Auto-merging main/MOD_Forcing.F90
-CONFLICT (add/add): Merge conflict in main/HYDRO/MOD_Hydro_SoilWater.F90
-Auto-merging main/HYDRO/MOD_Hydro_SoilWater.F90
-CONFLICT (add/add): Merge conflict in main/HYDRO/MOD_Catch_SubsurfaceFlow.F90
-Auto-merging main/HYDRO/MOD_Catch_SubsurfaceFlow.F90
-CONFLICT (add/add): Merge conflict in main/HYDRO/MOD_Catch_RiverLakeFlow.F90
-Auto-merging main/HYDRO/MOD_Catch_RiverLakeFlow.F90
-CONFLICT (add/add): Merge conflict in main/HYDRO/MOD_Catch_LateralFlow.F90
-Auto-merging main/HYDRO/MOD_Catch_LateralFlow.F90
-CONFLICT (add/add): Merge conflict in main/CoLMMAIN.F90
-Auto-merging main/CoLMMAIN.F90
-CONFLICT (add/add): Merge conflict in main/CoLMDRIVER.F90
-Auto-merging main/CoLMDRIVER.F90
-CONFLICT (add/add): Merge conflict in main/CoLM.F90
-Auto-merging main/CoLM.F90
-CONFLICT (add/add): Merge conflict in main/BGC/MOD_BGC_driver.F90
-Auto-merging main/BGC/MOD_BGC_driver.F90
-CONFLICT (add/add): Merge conflict in main/BGC/MOD_BGC_Vars_TimeVariables.F90
-Auto-merging main/BGC/MOD_BGC_Vars_TimeVariables.F90
-CONFLICT (add/add): Merge conflict in main/BGC/MOD_BGC_Vars_1DFluxes.F90
-Auto-merging main/BGC/MOD_BGC_Vars_1DFluxes.F90
-CONFLICT (add/add): Merge conflict in main/BGC/MOD_BGC_CNZeroFluxes.F90
-Auto-merging main/BGC/MOD_BGC_CNZeroFluxes.F90
-CONFLICT (add/add): Merge conflict in main/BGC/MOD_BGC_CNSummary.F90
-Auto-merging main/BGC/MOD_BGC_CNSummary.F90
-CONFLICT (add/add): Merge conflict in main/BGC/MOD_BGC_CNBalanceCheck.F90
-Auto-merging main/BGC/MOD_BGC_CNBalanceCheck.F90
-Auto-merging include/define.h
-CONFLICT (content): Merge conflict in include/define.h
-CONFLICT (add/add): Merge conflict in include/Makeoptions.intel
-Auto-merging include/Makeoptions.intel
-Auto-merging include/Makeoptions
-CONFLICT (content): Merge conflict in include/Makeoptions
-CONFLICT (add/add): Merge conflict in Makefile
-Auto-merging Makefile
-CONFLICT (add/add): Merge conflict in .gitignore
-Auto-merging .gitignore
-Automatic merge failed; fix conflicts and then commit the result.
+                   *****                  
+ Note: DEF_USE_VariablySaturatedFlow is automaticlly set to .true.  
+ when using vanGenuchten_Mualem_SOIL_MODEL. 
+                   *****                  
+ Warning: 8-day LAI data is not supported for 
+ LULC_IGBP_PFT and LULC_IGBP_PC.
+ Changed to monthly data, set DEF_LAI_MONTHLY = .true.
+                   *****                  
+ Warning: DEF_Aerosol_Readin is not needed for DEF_USE_SNICAR off. 
+ DEF_Aerosol_Readin is set to false automatically.
+Block information:
+  72 blocks in longitude,  36 blocks in latitude.
+
+----- MPI information -----
+ Master is <11>
+ Group 0 includes IO <0> and workers:
+    1    2    3    4    5    6    7    8    9   10
+
+          -1
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+           0
+           1
+Region information:
+ (south,north,west,east) = (   58.0000,   59.0000,   65.0000,   66.0000)
+
+
+Mesh Filter not used: file path/to/mesh/filter
+Making mesh elements :
+                  4 elements on IO      0
+Total   :            4 elements.
+Maximum :            4 elements in one block (More than 3600 is recommended).
+Making land elements:
+Total:            4 elements.
+
+Filtering pixels ...
+Making land elements:
+Total:            4 elements.
+Total:            4 elements after mesh filtering.
+Making land patches :
+Making patches (crop shared) :
+ -------------------1 nsetshared-----------------           3
+ -------------------2 behind filter sharedclass----------------- -1400452128        5264 -1400452128
+ -------------------3 sharedclass-----------------           1           0           0
+ -------------------1 nsetshared-----------------           4
+ -------------------2 behind filter sharedclass----------------- -1314534432        5432 -1314534432        5432
+ -------------------3 sharedclass-----------------           1           0           0           0
+ -------------------1 nsetshared-----------------           3
+ -------------------2 behind filter sharedclass----------------- -1247974432        5328 -1247974432
+ -------------------3 sharedclass-----------------           1           0           0
+ -------------------1 nsetshared-----------------           3
+ -------------------2 behind filter sharedclass-----------------   562969584        5368   444103040
+ -------------------3 sharedclass-----------------           1           0           0
+ -------------------4 behind pixelsetshared cropclass-----------------
+ -------------------4 behind pixelsetshared cropclass-----------------
+ -------------------4 behind pixelsetshared cropclass-----------------
+ -------------------4 behind pixelsetshared cropclass-----------------
+ -------------------4 behind pixelsetshared cropclass-----------------
+ -------------------4 behind pixelsetshared cropclass-----------------
+ -------------------4 behind pixelsetshared cropclass-----------------
+ -------------------4 behind pixelsetshared cropclass-----------------
+ -------------------4 behind pixelsetshared cropclass-----------------
+ -------------------4 behind pixelsetshared cropclass-----------------
+ -------------------4 behind pixelsetshared cropclass-----------------
+ -------------------4 behind pixelsetshared cropclass-----------------
+ -------------------1 nsetshared-----------------           3
+ -------------------2 behind filter sharedclass----------------- -1247974432        5328 -1247974432
+ -------------------3 sharedclass-----------------           0           0           0
+ -------------------1 nsetshared-----------------           3
+ -------------------2 behind filter sharedclass----------------- -1400452128        5264 -1400452128
+ -------------------3 sharedclass-----------------           0           0           0
+ -------------------1 nsetshared-----------------           4
+ -------------------2 behind filter sharedclass----------------- -1314534256        5432 -1314534256        5432
+ -------------------3 sharedclass-----------------           0           0           0           0
+ -------------------1 nsetshared-----------------           3
+ -------------------2 behind filter sharedclass-----------------   443877040       21950           0
+ -------------------3 sharedclass-----------------           0           0           0
+ -------------------5 cropclass-----------------
+ -------------------5 cropclass-----------------           0           0           0
+ -------------------5 cropclass-----------------           0           0           0
+ -------------------5 cropclass-----------------           0           0           0           0
+ -------------------5 cropclass-----------------           0           0           0
+ -------------------5 cropclass-----------------
+ -------------------5 cropclass-----------------
+ -------------------5 cropclass-----------------
+ -------------------5 cropclass-----------------
+ -------------------5 cropclass-----------------
+ -------------------5 cropclass-----------------
+ -------------------5 cropclass-----------------
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 2426666 RUNNING AT tms15
+=   EXIT CODE: 9
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions

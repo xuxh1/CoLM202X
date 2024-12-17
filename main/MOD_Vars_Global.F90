@@ -22,7 +22,7 @@ MODULE MOD_Vars_Global
    ! GLCC USGS land cover named index (could be added IF needed)
    integer, parameter :: URBAN     = 1
    integer, parameter :: WATERBODY = 16
-   integer, parameter :: WETLAND   = 17
+   ! integer, parameter :: WETLAND   = 17
    ! integer, parameter :: WETLAND(2)   = [17,18]
 #else
    ! MODIS IGBP number of land cover category

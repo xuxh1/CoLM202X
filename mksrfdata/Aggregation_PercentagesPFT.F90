@@ -70,9 +70,22 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
    integer  :: ipatch, ipc, ipft, p
    real(r8) :: sumarea
 #ifdef SrfdataDiag
-#ifdef CROP
+! #ifdef CROP
+!    integer :: typcrop(N_CFT), ityp
+!    integer :: typpft(0:N_PFT+N_CFT-1)
+! #else
+!    integer :: typpft(0:N_PFT-1)
+! #endif
+#if (defined CROP && defined CH4)
+   integer :: typcrop(N_CFT), ityp
+   integer :: typwetland(N_WFT)
+   integer :: typpft(0:N_PFT+N_CFT+N_WFT-1)
+#elif (defined CROP && !defined CH4)
    integer :: typcrop(N_CFT), ityp
    integer :: typpft(0:N_PFT+N_CFT-1)
+#elif (!defined CROP && defined CH4)
+   integer :: typwetland(N_WFT), ityp
+   integer :: typpft(0:N_PFT+N_WFT-1)
 #else
    integer :: typpft(0:N_PFT-1)
 #endif
@@ -148,6 +161,10 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
             ELSEIF (landpatch%settyp(ipatch) == CROPLAND) THEN
                pct_pfts(patch_pft_s(ipatch):patch_pft_e(ipatch)) = 1.
 #endif
+#ifdef CH4
+            ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
+               pct_pfts(patch_pft_s(ipatch):patch_pft_e(ipatch)) = 1.
+#endif
             ENDIF
          ENDDO
 
@@ -172,9 +189,9 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
       CALL ncio_write_vector (lndname, 'pct_pfts', 'pft', landpft, pct_pfts, DEF_Srfdata_CompressLevel)
 #ifdef SrfdataDiag
 #ifdef CROP
-      typpft = (/(ipft, ipft = 0, N_PFT+N_CFT-1)/)
+      typpft = (/(ipft, ipft = 0, N_PFT+N_CFT+N_WFT-1)/)
 #else
-      typpft = (/(ipft, ipft = 0, N_PFT-1)/)
+      typpft = (/(ipft, ipft = 0, N_PFT+N_WFT-1)/)
 #endif
       lndname = trim(dir_model_landdata)//'/diag/pct_pfts_'//trim(cyear)//'.nc'
       CALL srfdata_map_and_write (pct_pfts, landpft%settyp, typpft, m_pft2diag, &
@@ -223,7 +240,7 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
       CALL ncio_write_vector (lndname, 'pct_wetlands', 'patch', landpatch, pctshrpwh, DEF_Srfdata_CompressLevel)
 
 #ifdef SrfdataDiag
-      typcrop = (/(ityp, ityp = 1, N_WFT)/)
+      typwetland = (/(ityp, ityp = 1, N_WFT)/)
       lndname = trim(dir_model_landdata) // '/diag/pct_wetland_patch_' // trim(cyear) // '.nc'
       CALL srfdata_map_and_write (pctshrpwh, wetlandclass, typwetland, m_patch2diag, &
          -1.0e36_r8, lndname, 'pct_wetland_patch', compress = 1, write_mode = 'one')

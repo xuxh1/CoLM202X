@@ -206,7 +206,8 @@ PROGRAM MKSRFDATA
    ! add by Xu, only test for making wetland data
 #if (defined CH4)
    ! define grid for wetland parameters
-   CALL gwetland%define_from_file (trim(DEF_dir_rawdata)//'/global_WFT_surface_data.nc', 'lat', 'lon')
+   ! CALL gwetland%define_from_file (trim(DEF_dir_rawdata)//'/global_WFT_surface_data.nc', 'lat', 'lon')
+   CALL gwetland%define_from_file ('/home/xuxh22/stu01/Mode/data/global_WFT_surface_data.nc', 'lat', 'lon')
 #endif
 ! #ifdef CH4
 !    CALL gwetland%define_by_name          ('colm_500m')

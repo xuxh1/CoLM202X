@@ -126,24 +126,25 @@ CONTAINS
          ENDDO
       ENDIF
       
-      sharedfilter = (/ 1 /)
+      ! sharedfilter = (/ 1 /)
 
-      IF (landpatch%has_shared) then
-         CALL pixelsetshared_build (landpatch, gpatch, pctshared_xy, 2, sharedfilter, &
-            pctshared, classshared, fracin = landpatch%pctshared)
-      ELSE
-         CALL pixelsetshared_build (landpatch, gpatch, pctshared_xy, 2, sharedfilter, &
-            pctshared, classshared)
-      ENDIF
+      ! IF (landpatch%has_shared) then
+      !    CALL pixelsetshared_build (landpatch, gpatch, pctshared_xy, 2, sharedfilter, &
+      !       pctshared, classshared, fracin = landpatch%pctshared)
+      ! ELSE
+      !    CALL pixelsetshared_build (landpatch, gpatch, pctshared_xy, 2, sharedfilter, &
+      !       pctshared, classshared)
+      ! ENDIF
 
-      IF (p_is_worker) THEN
-         IF (landpatch%nset > 0) THEN
-            WHERE (classshared == 2) landpatch%settyp = WETLAND
-         ENDIF
-      ENDIF
+      ! IF (p_is_worker) THEN
+      !    IF (landpatch%nset > 0) THEN
+      !       WHERE (classshared == 2) landpatch%settyp = WETLAND
+      !    ENDIF
+      ! ENDIF
 
       IF (p_is_io) THEN
-         file_patch = trim(DEF_dir_rawdata) // '/global_WFT_surface_data.nc'
+         ! file_patch = trim(DEF_dir_rawdata) // '/global_WFT_surface_data.nc'
+         file_patch = '/home/xuxh22/stu01/Mode/data/global_WFT_surface_data.nc'
          CALL allocate_block_data (gwetland, wetlanddata, N_WFT)
          CALL ncio_read_block (file_patch, 'PCT_WFT', gwetland, N_WFT, wetlanddata)
       ENDIF
@@ -153,7 +154,15 @@ CONTAINS
       CALL pixelsetshared_build (landpatch, gwetland, wetlanddata, N_WFT, wetlandfilter, &
          pctshrpwh, wetlandclass, fracin = pctshared)
 
-      wetlandclass = wetlandclass + N_PFT
+         print*, "-------------------wetlandclass-----------------",wetlandclass
+         print*, "-------------------N_PFT-----------------",N_PFT
+         print*, "-------------------N_CFT-----------------",N_CFT
+
+#ifdef CROP
+      wetlandclass = wetlandclass + N_PFT + N_CFT - 1 
+#else
+      wetlandclass = wetlandclass + N_PFT - 1
+#endif
       
       numpatch = landpatch%nset
 
