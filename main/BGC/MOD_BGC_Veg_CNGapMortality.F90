@@ -78,13 +78,14 @@ MODULE MOD_BGC_Veg_CNGapMortality
 
 CONTAINS
 
-   SUBROUTINE CNGapMortality(i, ps, pe, nl_soil, npcropmin)
+   SUBROUTINE CNGapMortality(i, ps, pe, nl_soil, npcropmin, npcropmax)
 
    integer ,intent(in) :: i        ! patch index
    integer ,intent(in) :: ps       ! start pft index
    integer ,intent(in) :: pe       ! end pft index
    integer ,intent(in) :: nl_soil  ! number of total soil layers
    integer ,intent(in) :: npcropmin! first crop pft index
+   integer ,intent(in) :: npcropmax! last crop pft index
 
    real(r8):: mort             ! rate for fractional mortality (1/s)
    integer :: ivt, m
@@ -137,7 +138,7 @@ CONTAINS
          m_deadstemn_to_litter_p         (m) = deadstemn_p         (m) * mort
          m_deadcrootn_to_litter_p        (m) = deadcrootn_p        (m) * mort
   
-         IF (ivt < npcropmin) THEN
+         IF (ivt < npcropmin .or. ivt > npcropmax) THEN
             m_retransn_to_litter_p       (m) = retransn_p          (m) * mort
          ENDIF
   

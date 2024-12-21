@@ -154,16 +154,8 @@ CONTAINS
       CALL pixelsetshared_build (landpatch, gwetland, wetlanddata, N_WFT, wetlandfilter, &
          pctshrpwh, wetlandclass, fracin = pctshared)
 
-         print*, "-------------------wetlandclass-----------------",wetlandclass
-         print*, "-------------------N_PFT-----------------",N_PFT
-         print*, "-------------------N_CFT-----------------",N_CFT
+      ! wetlandclass = wetlandclass + N_PFT + N_CFT - 1 
 
-#ifdef CROP
-      wetlandclass = wetlandclass + N_PFT + N_CFT - 1 
-#else
-      wetlandclass = wetlandclass + N_PFT - 1
-#endif
-      
       numpatch = landpatch%nset
 
       landpatch%has_shared = .true.

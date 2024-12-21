@@ -987,7 +987,7 @@ CONTAINS
                      smin_no3_vr     (nsl, i)            = min_no3_vr(nsl,i)
                      sminn_vr        (nsl, i)            = min_nh4_vr(nsl,i)+min_no3_vr(nsl,i)
                   ENDDO
-                  IF (patchtype(i) == 0)THEN
+                  IF (patchtype(i) == 0 .or. patchtype(i) == 2)THEN
                      DO m = ps, pe
                         ivt = pftclass(m)
                         IF(isevg(ivt))THEN
@@ -1172,7 +1172,7 @@ CONTAINS
                   pe = patch_pft_e(i)
                   DO m = ps, pe
                      ivt = pftclass(m)
-                     IF(ivt >= npcropmin)THEN
+                     IF(ivt >= npcropmin .and. ivt <= npcropmax)THEN
                        leafc_p (m) = 0._r8
                        frootc_p(m) = 0._r8
                        tlai    (i) = 0._r8
@@ -1292,7 +1292,6 @@ CONTAINS
                ,AKX_soil1_exit_n_vr_acc    (:,i), AKX_soil2_exit_n_vr_acc    (:,i), AKX_soil3_exit_n_vr_acc    (:,i) &
                ,diagVX_n_vr_acc          (:,:,i), upperVX_n_vr_acc         (:,:,i), lowerVX_n_vr_acc         (:,:,i) &
    !------------------------------------------------------------
-#endif
 #ifdef CH4
                ,c_atm                (:,i), ch4_surf_flux_tot      (i), net_methane            (i), &
                annavg_agnpp           (i), annavg_bgnpp           (i), annavg_somhr           (i), &
@@ -1305,7 +1304,7 @@ CONTAINS
                conc_o2              (:,i), conc_ch4             (:,i), layer_sat_lag        (:,i), &
                lake_soilc           (:,i), tempavg_agnpp          (i), tempavg_bgnpp          (i), &
                annsum_counter         (i), tempavg_somhr          (i),tempavg_finrw           (i)  &
-
+#endif
 #endif
                ! for SOIL INIT of water, temperature, snow depth
                ,use_soilini, nl_soil_ini, soil_z, soil_t(1:,i), soil_w(1:,i), use_snowini, snow_d(i) &

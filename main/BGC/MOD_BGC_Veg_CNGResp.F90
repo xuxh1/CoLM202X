@@ -45,12 +45,13 @@ MODULE MOD_BGC_Veg_CNGResp
 
 CONTAINS
 
-   SUBROUTINE CNGResp(i, ps, pe, npcropmin)
+   SUBROUTINE CNGResp(i, ps, pe, npcropmin, npcropmax)
 
    integer ,intent(in) :: i         ! patch index
    integer ,intent(in) :: ps        ! start pft index
    integer ,intent(in) :: pe        ! end pft index
    integer ,intent(in) :: npcropmin ! first crop pft index
+   integer ,intent(in) :: npcropmax ! last crop pft index
 
    ! !LOCAL VARIABLES:
    real(r8):: respfact_leaf
@@ -79,7 +80,7 @@ CONTAINS
          respfact_livecroot_storage = 1.0_r8
          respfact_livestem_storage  = 1.0_r8
   
-         IF (ivt >= npcropmin) THEN ! skip 2 generic crops
+         IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! skip 2 generic crops
             cpool_livestem_gr_p         (m) = cpool_to_livestemc_p           (m) * grperc(ivt) * respfact_livestem
      
             cpool_livestem_storage_gr_p (m) = cpool_to_livestemc_storage_p   (m) * grperc(ivt) * grpnow(ivt) * respfact_livestem_storage

@@ -13,8 +13,8 @@
   ! DEF_domain%edgee = 65.5
 
    !DEF_PIO_groupsize = 12
-   !DEF_nx_blocks = 6
-   !DEF_ny_blocks = 3
+   DEF_nx_blocks = 1
+   DEF_ny_blocks = 1
 
    DEF_simulation_time%greenwich    = .TRUE.
    DEF_simulation_time%start_year   = 2008

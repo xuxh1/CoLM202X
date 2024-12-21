@@ -64,7 +64,7 @@
    USE MOD_Irrigation, only: CalIrrigationNeeded
 #endif
    USE MOD_TimeManager
-   USE MOD_Vars_Global, only: nl_soil, nl_soil_full, ndecomp_pools, ndecomp_pools_vr, ndecomp_transitions, npcropmin, &
+   USE MOD_Vars_Global, only: nl_soil, nl_soil_full, ndecomp_pools, ndecomp_pools_vr, ndecomp_transitions, npcropmin, npcropmax, &
                        z_soi,dz_soi,zi_soi,nbedrock,zmin_bedrock
 
    USE MOD_BGC_Vars_TimeVariables, only: sminn_vr, col_begnb, skip_balance_check, decomp_cpools_vr
@@ -86,19 +86,19 @@
       CALL BeginCNBalance(i)
       CALL CNZeroFluxes(i, ps, pe, nl_soil, ndecomp_pools, ndecomp_transitions)
       CALL CNNFixation(i,idate)
-      CALL CNMResp(i, ps, pe, nl_soil, npcropmin)
+      CALL CNMResp(i, ps, pe, nl_soil, npcropmin, npcropmax)
       CALL decomp_rate_constants_bgc(i,nl_soil,z_soi)
       CALL SoilBiogeochemPotential(i,nl_soil,ndecomp_pools,ndecomp_transitions)
       CALL SoilBiogeochemVerticalProfile(i,ps,pe,nl_soil,nl_soil_full,nbedrock,zmin_bedrock,z_soi,dz_soi)
       IF(DEF_USE_NITRIF)THEN
          CALL SoilBiogeochemNitrifDenitrif(i,nl_soil,dz_soi)
       ENDIF
-      CALL calc_plant_nutrient_demand_CLM45_default(i,ps,pe,deltim,npcropmin)
+      CALL calc_plant_nutrient_demand_CLM45_default(i,ps,pe,deltim,npcropmin,npcropmax)
     
       plant_ndemand(i) = sum( plant_ndemand_p(ps:pe)*pftfrac(ps:pe) )
   
       CALL SoilBiogeochemCompetition(i,deltim,nl_soil,dz_soi)
-      CALL calc_plant_nutrient_competition_CLM45_default(i,ps,pe,npcropmin)
+      CALL calc_plant_nutrient_competition_CLM45_default(i,ps,pe,npcropmin,npcropmax)
 #ifdef CROP
       IF(DEF_USE_CNSOYFIXN)THEN
          CALL CNSoyfix (i, ps, pe, nl_soil)
@@ -106,28 +106,28 @@
 #endif
   
       CALL SoilBiogeochemDecomp(i,nl_soil,ndecomp_pools,ndecomp_transitions, dz_soi)
-      CALL CNPhenology(i,ps,pe,nl_soil,idate(1:3),dz_soi,deltim,dlat,npcropmin,phase=1)
-      CALL CNPhenology(i,ps,pe,nl_soil,idate(1:3),dz_soi,deltim,dlat,npcropmin,phase=2)
+      CALL CNPhenology(i,ps,pe,nl_soil,idate(1:3),dz_soi,deltim,dlat,npcropmin,npcropmax,phase=1)
+      CALL CNPhenology(i,ps,pe,nl_soil,idate(1:3),dz_soi,deltim,dlat,npcropmin,npcropmax,phase=2)
 #ifdef CROP
       CALL CNNFert(i, ps, pe)
 #endif
-      CALL CNGResp(i, ps, pe, npcropmin)
+      CALL CNGResp(i, ps, pe, npcropmin,npcropmax)
 #ifdef CROP
       IF(DEF_USE_IRRIGATION)THEN
-         CALL CalIrrigationNeeded(i,ps,pe,idate,nl_soil,nbedrock,z_soi,dz_soi,deltim,dlon,npcropmin)
+         CALL CalIrrigationNeeded(i,ps,pe,idate,nl_soil,nbedrock,z_soi,dz_soi,deltim,dlon,npcropmin,npcropmax)
       ENDIF
 #endif
       ! update vegetation pools from phenology, allocation and nitrogen uptake
       ! update soil N pools from decomposition and nitrogen competition
-      CALL CStateUpdate1(i, ps, pe, deltim, nl_soil, ndecomp_transitions, npcropmin)
-      CALL NStateUpdate1(i, ps, pe, deltim, nl_soil, ndecomp_transitions, npcropmin,dz_soi)
+      CALL CStateUpdate1(i, ps, pe, deltim, nl_soil, ndecomp_transitions, npcropmin,npcropmax)
+      CALL NStateUpdate1(i, ps, pe, deltim, nl_soil, ndecomp_transitions, npcropmin,npcropmax,dz_soi)
       CALL SoilBiogeochemNStateUpdate1(i,deltim,nl_soil,ndecomp_transitions,dz_soi)
   
       ! update soil pools from soil vertical mixing
       CALL SoilBiogeochemLittVertTransp(i,deltim,nl_soil,nl_soil_full,ndecomp_pools,nbedrock,z_soi,zi_soi,dz_soi)
   
       ! update vegetation pools from gap mortality
-      CALL CNGapMortality(i, ps, pe, nl_soil,npcropmin)
+      CALL CNGapMortality(i, ps, pe, nl_soil,npcropmin,npcropmax)
       CALL CStateUpdate2(i, ps, pe, deltim, nl_soil)
       CALL NStateUpdate2(i, ps, pe, deltim, nl_soil, dz_soi)
   
@@ -159,7 +159,7 @@
          skip_balance_check(i) = .false.
       ENDIF
   
-      CALL CNVegStructUpdate(i,ps,pe,deltim,npcropmin)
+      CALL CNVegStructUpdate(i,ps,pe,deltim,npcropmin,npcropmax)
 
    END SUBROUTINE bgc_driver
 

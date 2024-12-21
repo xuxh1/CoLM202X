@@ -17,7 +17,7 @@ MODULE MOD_BGC_Veg_CNVegStructUpdate
    USE MOD_Precision
    USE MOD_Namelist, only: DEF_USE_LAIFEEDBACK, DEF_USE_Fire
    USE MOD_Vars_Global, only: nc3crop, nc3irrig, nbrdlf_evr_shrub, nbrdlf_dcd_brl_shrub, &
-                                 npcropmin, ntmp_corn, nirrig_tmp_corn, ntrp_corn, nirrig_trp_corn, &
+                                 npcropmin, npcropmax, ntmp_corn, nirrig_tmp_corn, ntrp_corn, nirrig_trp_corn, &
                                  nsugarcane, nirrig_sugarcane, nmiscanthus, nirrig_miscanthus, &
                                  nswitchgrass, nirrig_switchgrass, noveg
  
@@ -36,13 +36,14 @@ MODULE MOD_BGC_Veg_CNVegStructUpdate
 CONTAINS
 
   !-----------------------------------------------------------------------
-   SUBROUTINE CNVegStructUpdate(i,ps,pe,deltim,npcropmin)
+   SUBROUTINE CNVegStructUpdate(i,ps,pe,deltim,npcropmin,npcropmax)
           
    integer,intent(in)  :: i         ! patch index
    integer,intent(in)  :: ps        ! start pft index
    integer,intent(in)  :: pe        ! END pft index
    real(r8),intent(in) :: deltim    ! time step in seconds
    integer,intent(in)  :: npcropmin ! first crop pft index
+   integer ,intent(in) :: npcropmax ! last crop pft index
    
    ! !LOCAL VARIABLES:
    integer  :: p,c,g      ! indices
@@ -112,7 +113,7 @@ CONTAINS
    
                ! trees and shrubs for now have a very simple allometry, with hard-wired
                ! stem taper (height:radius) and nstem from PFT parameter file
-            ELSE IF (ivt >= npcropmin) THEN ! prognostic crops
+            ELSE IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! prognostic crops
 #ifdef CROP
                IF (tlai_p(m) >= laimx(ivt)) peaklai_p(m) = 1 ! used in CNAllocation
   

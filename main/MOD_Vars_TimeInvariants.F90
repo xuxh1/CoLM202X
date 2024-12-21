@@ -26,6 +26,9 @@ MODULE MOD_Vars_PFTimeInvariants
 #ifdef CROP
    real(r8), allocatable :: cropfrac    (:)    !Crop fractional cover
 #endif
+#ifdef CH4
+   real(r8), allocatable :: wetlandfrac    (:)    !Wetland fractional cover
+#endif
 
 ! PUBLIC MEMBER FUNCTIONS:
    PUBLIC :: allocate_PFTimeInvariants
@@ -64,6 +67,9 @@ CONTAINS
 #ifdef CROP
             allocate (cropfrac    (numpatch))
 #endif
+#ifdef CH4
+            allocate (wetlandfrac    (numpatch))
+#endif
          ENDIF
       ENDIF
 
@@ -85,7 +91,9 @@ CONTAINS
 #ifdef CROP
       CALL ncio_read_vector (file_restart, 'cropfrac ', landpatch, cropfrac) !
 #endif
-
+#ifdef CH4
+      CALL ncio_read_vector (file_restart, 'wetlandfrac ', landpatch, wetlandfrac) !
+#endif
    END SUBROUTINE READ_PFTimeInvariants
 
    SUBROUTINE WRITE_PFTimeInvariants (file_restart)
@@ -115,7 +123,10 @@ CONTAINS
       CALL ncio_define_dimension_vector (file_restart, landpatch, 'patch')
       CALL ncio_write_vector (file_restart, 'cropfrac', 'patch', landpatch, cropfrac, compress) !
 #endif
-
+#ifdef CH4
+      CALL ncio_define_dimension_vector (file_restart, landpatch, 'patch')
+      CALL ncio_write_vector (file_restart, 'wetlandfrac', 'patch', landpatch, wetlandfrac, compress) !
+#endif
    END SUBROUTINE WRITE_PFTimeInvariants
 
    SUBROUTINE deallocate_PFTimeInvariants
@@ -134,6 +145,9 @@ CONTAINS
 #ifdef CROP
             deallocate (cropfrac)
 #endif
+#ifdef CH4
+            deallocate (wetlandfrac)
+#endif
          ENDIF
       ENDIF
 
@@ -151,7 +165,9 @@ CONTAINS
 #ifdef CROP
       CALL check_vector_data ('cropfrac', cropfrac) !
 #endif
-
+#ifdef CH4
+      CALL check_vector_data ('wetlandfrac', wetlandfrac) !
+#endif
    END SUBROUTINE check_PFTimeInvariants
 #endif
 

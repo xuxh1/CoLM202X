@@ -22,8 +22,6 @@ MODULE MOD_Vars_Global
    ! GLCC USGS land cover named index (could be added IF needed)
    integer, parameter :: URBAN     = 1
    integer, parameter :: WATERBODY = 16
-   ! integer, parameter :: WETLAND   = 17
-   ! integer, parameter :: WETLAND(2)   = [17,18]
 #else
    ! MODIS IGBP number of land cover category
    integer, parameter :: N_land_classification = 17
@@ -73,6 +71,7 @@ MODULE MOD_Vars_Global
    integer, parameter :: ndecomp_pools        = 7
    integer, parameter :: ndecomp_transitions  = 10
    integer, parameter :: npcropmin            = 17
+   integer, parameter :: npcropmax            = 78
    real(r8),parameter :: zmin_bedrock         = 0.4
    integer, parameter :: nbedrock             = 10
    integer, parameter :: ndecomp_pools_vr     = ndecomp_pools * nl_soil

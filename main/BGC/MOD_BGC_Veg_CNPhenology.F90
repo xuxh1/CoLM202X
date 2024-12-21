@@ -142,7 +142,7 @@ MODULE MOD_BGC_Veg_CNPhenology
 
 CONTAINS
 
-   SUBROUTINE CNPhenology(i,ps,pe,nl_soil,idate,dz_soi,deltim,dlat,npcropmin,phase)
+   SUBROUTINE CNPhenology(i,ps,pe,nl_soil,idate,dz_soi,deltim,dlat,npcropmin,npcropmax,phase)
 
 ! !DESCRIPTION:
 ! The main driver of phenology model. Two phases are included:
@@ -169,6 +169,7 @@ CONTAINS
    real(r8),intent(in) :: deltim         ! time step in seconds
    real(r8),intent(in) :: dlat           ! latitude (degrees)
    integer ,intent(in) :: npcropmin      ! first crop pft index
+   integer ,intent(in) :: npcropmax      ! last crop pft index
    real(r8),intent(in) :: dz_soi(nl_soil)! thicknesses of each soil layer
    integer ,intent(in) :: phase          ! indicator of the SUBROUTINE options (see DESCRIPTION above)
 
@@ -182,7 +183,7 @@ CONTAINS
       ENDIF
   
       IF ( phase == 1 ) THEN
-         CALL CNPhenologyClimate    (i,ps,pe,idate(1:3),deltim,dayspyr,npcropmin,nl_soil,dz_soi,dlat)
+         CALL CNPhenologyClimate    (i,ps,pe,idate(1:3),deltim,dayspyr,npcropmin,npcropmax,nl_soil,dz_soi,dlat)
   
          CALL CNEvergreenPhenology  (i,ps,pe,deltim,dayspyr)
   
@@ -196,7 +197,7 @@ CONTAINS
          ELSE
             h = 2
          ENDIF
-         CALL CropPhenology(i,ps,pe,idate(1:3),h,deltim,dayspyr,npcropmin)
+         CALL CropPhenology(i,ps,pe,idate(1:3),h,deltim,dayspyr,npcropmin,npcropmax)
 #endif
       ELSE IF ( phase == 2 ) THEN
       ! the same onset and offset routines are called regardless of
@@ -204,20 +205,20 @@ CONTAINS
   
          CALL CNOnsetGrowth(i,ps,pe,deltim)
   
-         CALL CNOffsetLitterfall(i,ps,pe,deltim,npcropmin)
+         CALL CNOffsetLitterfall(i,ps,pe,deltim,npcropmin,npcropmax)
   
          CALL CNBackgroundLitterfall(i,ps,pe)
   
          CALL CNLivewoodTurnover(i,ps,pe)
   
-         CALL CNLitterToColumn(i,ps,pe,nl_soil,npcropmin)
+         CALL CNLitterToColumn(i,ps,pe,nl_soil,npcropmin,npcropmax)
       ELSE
          write(*,*) 'bad phenology phase'
       ENDIF
 
    END SUBROUTINE CNPhenology
 
-   SUBROUTINE CNPhenologyClimate (i,ps,pe,idate,deltim,dayspyr,npcropmin,nl_soil,dz_soi,dlat)
+   SUBROUTINE CNPhenologyClimate (i,ps,pe,idate,deltim,dayspyr,npcropmin,npcropmax,nl_soil,dz_soi,dlat)
 
 ! !DESCRIPTION:
 ! This SUBROUTINE summaries climate statistics, such as annual averaged temperature,
@@ -239,6 +240,7 @@ CONTAINS
    real(r8),intent(in) :: deltim   ! time step in seconds
    real(r8),intent(in) :: dayspyr  ! days per year (days)
    integer ,intent(in) :: npcropmin! first crop pft index
+   integer ,intent(in) :: npcropmax! last crop pft index
    integer ,intent(in) :: nl_soil  ! number of total soil layers
    real(r8),intent(in) :: dz_soi(nl_soil) ! thicknesses of each soil layer
    real(r8),intent(in) :: dlat            ! latitude (degrees)
@@ -988,7 +990,7 @@ CONTAINS
    END SUBROUTINE CNStressDecidPhenology
 
 #ifdef CROP
-   SUBROUTINE CropPhenology(i,ps,pe,idate,h,deltim,dayspyr,npcropmin)
+   SUBROUTINE CropPhenology(i,ps,pe,idate,h,deltim,dayspyr,npcropmin,npcropmax)
 
 ! !DESCRIPTION:
 ! GPAM crop phenology and code from CN to
@@ -1006,6 +1008,7 @@ CONTAINS
    real(r8),intent(in) :: deltim    ! timestep in seconds
    real(r8),intent(in) :: dayspyr   ! days per year
    integer ,intent(in) :: npcropmin ! first crop pft index
+   integer ,intent(in) :: npcropmax ! last crop pft index
 
    ! LOCAL VARAIBLES:
    integer kyr       ! current year
@@ -1036,7 +1039,7 @@ CONTAINS
            ! background litterfall and transfer rates; long growing season factor
       DO m = ps, pe
          ivt = pftclass(m)
-         IF(ivt >= npcropmin)THEN
+         IF(ivt >= npcropmin .and. ivt <= npcropmax)THEN
             bglfr_p(m) = 0._r8 ! this value changes later in a crop's life CYCLE
             bgtr_p(m)  = 0._r8
             lgsf_p(m)  = 0._r8
@@ -1299,7 +1302,7 @@ CONTAINS
 
    END SUBROUTINE CNOnsetGrowth
 
-   SUBROUTINE CNOffsetLitterfall(i,ps,pe,deltim,npcropmin)
+   SUBROUTINE CNOffsetLitterfall(i,ps,pe,deltim,npcropmin,npcropmax)
 ! !DESCRIPTION:
 ! Calculates flux from display CN to litter CN during offset period.
 ! DISPLAY CN -> litter CN
@@ -1315,6 +1318,7 @@ CONTAINS
    integer, intent(in) :: pe         ! END pft index
    real(r8),intent(in) :: deltim     ! time step in seconds
    integer ,intent(in) :: npcropmin  ! first crop pft index
+   integer ,intent(in) :: npcropmax  ! last crop pft index
 
    real(r8) :: t1           ! temporary variable
    real(r8) :: denom        ! temporary variable for divisor
@@ -1333,7 +1337,7 @@ CONTAINS
                frootc_to_litter_p(m) = t1 * frootc_p(m) + cpool_to_frootc_p(m)
             ! this assumes that offset_counter == dt for crops
             ! IF this were ever changed, we'd need to add code to the "ELSE"
-               IF (ivt >= npcropmin) THEN
+               IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN
                ! Replenish the seed deficits from grain, IF there is enough
                ! available grain. (IF there is not enough available grain, the seed
                ! deficits will accumulate until there is eventually enough grain to
@@ -1360,7 +1364,7 @@ CONTAINS
          ! calculate fine root N litterfall (no retranslocation of fine root N)
             frootn_to_litter_p(m) = frootc_to_litter_p(m) / frootcn(ivt)
   
-            IF (ivt >= npcropmin) THEN
+            IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN
             ! NOTE(slevis, 2014-12) results in -ve livestemn and -ve totpftn
             !X! livestemn_to_litter(p) = livestemc_to_litter(p) / livewdcn(ivt(p))
             ! NOTE(slevis, 2014-12) Beth Drewniak suggested this instead
@@ -1489,7 +1493,7 @@ CONTAINS
 
    END SUBROUTINE CNGrainToProductPools
 
-   SUBROUTINE CNLitterToColumn(i,ps,pe,nl_soil,npcropmin)
+   SUBROUTINE CNLitterToColumn(i,ps,pe,nl_soil,npcropmin,npcropmax)
 
 ! !DESCRIPTION:
 ! Calculate column level litterfall flux from pft level litterfall.
@@ -1505,6 +1509,7 @@ CONTAINS
    integer ,intent(in) :: ps          ! start pft index
    integer ,intent(in) :: pe          ! END pft index
    integer ,intent(in) :: npcropmin   ! first crop pft index
+   integer ,intent(in) :: npcropmax   ! last crop pft index
 
    integer j
    integer ivt,m
@@ -1551,7 +1556,7 @@ CONTAINS
            ! new ones for now (slevis)
            ! also for simplicity I've put "food" into the litter pools
   
-            IF (ivt >= npcropmin) THEN ! add livestemc to litter
+            IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! add livestemc to litter
               ! stem litter carbon fluxes
                phenology_to_met_c(j,i) = phenology_to_met_c(j,i) &
                     + livestemc_to_litter_p(m) * lf_flab(ivt) * wtcol * leaf_prof_p(j,m)

@@ -65,7 +65,7 @@ MODULE MOD_BGC_Veg_NutrientCompetition
 
 CONTAINS
 
-   SUBROUTINE calc_plant_nutrient_competition_CLM45_default(i,ps,pe,npcropmin)
+   SUBROUTINE calc_plant_nutrient_competition_CLM45_default(i,ps,pe,npcropmin,npcropmax)
 
 !----------------------------------------------------------------------------
 ! !DESCRIPTION
@@ -83,6 +83,7 @@ CONTAINS
    integer ,intent(in) :: ps
    integer ,intent(in) :: pe
    integer ,intent(in) :: npcropmin
+   integer ,intent(in) :: npcropmax
 
    ! !LOCAL VARIABLES:
    real(r8):: f1,f2,f3,f4,g1,g2  ! allocation parameters
@@ -123,7 +124,7 @@ CONTAINS
          fcur = fcur2(ivt)
 
 #ifdef CROP
-         IF (ivt >= npcropmin) THEN ! skip 2 generic crops
+         IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! skip 2 generic crops
             IF (croplive_p(m)) THEN
                f1 = aroot_p(m) / aleaf_p(m)
                f3 = astem_p(m) / aleaf_p(m)
@@ -176,7 +177,7 @@ CONTAINS
             cpool_to_deadcrootc_storage_p(m) = nlc * f2 * f3 * (1._r8 - f4) * (1._r8 - fcur)
          ENDIF
 #ifdef CROP
-         IF (ivt >= npcropmin) THEN ! skip 2 generic crops
+         IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! skip 2 generic crops
             cpool_to_livestemc_p(m)          = nlc * f3 * f4 * fcur
             cpool_to_livestemc_storage_p(m)  = nlc * f3 * f4 * (1._r8 - fcur)
             cpool_to_deadstemc_p(m)          = nlc * f3 * (1._r8 - f4) * fcur
@@ -206,7 +207,7 @@ CONTAINS
             npool_to_deadcrootn_storage_p(m) = (nlc * f2 * f3 * (1._r8 - f4) / cndw) * (1._r8 - fcur)
          ENDIF
 #ifdef CROP
-         IF (ivt >= npcropmin) THEN ! skip 2 generic crops
+         IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! skip 2 generic crops
             cng = graincn(ivt)
             npool_to_livestemn_p(m)          = (nlc * f3 * f4 / cnlw) * fcur
             npool_to_livestemn_storage_p(m)  = (nlc * f3 * f4 / cnlw) * (1._r8 - fcur)
@@ -238,7 +239,7 @@ CONTAINS
             gresp_storage = gresp_storage + cpool_to_livecrootc_storage_p(m)
             gresp_storage = gresp_storage + cpool_to_deadcrootc_storage_p(m)
          ENDIF
-         IF (ivt >= npcropmin) THEN ! skip 2 generic crops
+         IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! skip 2 generic crops
             gresp_storage = gresp_storage + cpool_to_livestemc_storage_p(m)
             gresp_storage = gresp_storage + cpool_to_grainc_storage_p(m)
          ENDIF
@@ -248,7 +249,7 @@ CONTAINS
 
    END SUBROUTINE calc_plant_nutrient_competition_CLM45_default
 
-   SUBROUTINE calc_plant_nutrient_demand_CLM45_default(i,ps,pe,deltim,npcropmin)
+   SUBROUTINE calc_plant_nutrient_demand_CLM45_default(i,ps,pe,deltim,npcropmin,npcropmax)
 
 !----------------------------------------------------------------------------
 ! !DESCRIPTION
@@ -267,6 +268,7 @@ CONTAINS
    integer ,intent(in) :: pe
    real(r8),intent(in) :: deltim
    integer ,intent(in) :: npcropmin
+   integer ,intent(in) :: npcropmax
 
    ! !LOCAL VARIABLES:
    integer :: j            ! indices
@@ -294,7 +296,7 @@ CONTAINS
          mr = leaf_mr_p(m) + froot_mr_p(m)
          IF (woody(ivt) == 1.0_r8) THEN
             mr = mr + livestem_mr_p(m) + livecroot_mr_p(m)
-         ELSE IF (ivt >= npcropmin) THEN
+         ELSE IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN
 #ifdef CROP
             IF (croplive_p(m)) mr = mr + livestem_mr_p(m) + grain_mr_p(m)
 #endif
@@ -371,7 +373,7 @@ CONTAINS
    
          f5 = 0._r8 ! continued intializations from above
 #ifdef CROP
-         IF (ivt >= npcropmin) THEN ! skip 2 generic crops
+         IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! skip 2 generic crops
     
             IF (croplive_p(m)) THEN
              ! same phases appear in SUBROUTINE CropPhenology
@@ -477,7 +479,7 @@ CONTAINS
             c_allometry_p(m) = (1._r8+g1)*(1._r8+f1+f3*(1._r8+f2))
             n_allometry_p(m) = 1._r8/cnl + f1/cnfr + (f3*f4*(1._r8+f2))/cnlw + &
                   (f3*(1._r8-f4)*(1._r8+f2))/cndw
-         ELSE IF (ivt >= npcropmin) THEN ! skip generic crops
+         ELSE IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! skip generic crops
 #ifdef CROP
             cng = graincn(ivt)
             c_allometry_p(m) = (1._r8+g1)*(1._r8+f1+f5+f3*(1._r8+f2))
@@ -503,9 +505,9 @@ CONTAINS
        !              retransn pool has N from leaves, stems, and roots for
        !              retranslocation
              
-         IF (ivt >= npcropmin .and. grain_flag_p(m) == 1._r8) THEN
+         IF ((ivt >= npcropmin .and. ivt <= npcropmax) .and. grain_flag_p(m) == 1._r8) THEN
             avail_retransn_p(m) = plant_ndemand_p(m)
-         ELSE IF (ivt < npcropmin .and. annsum_potential_gpp_p(m) > 0._r8) THEN
+         ELSE IF ((ivt < npcropmin .or. ivt > npcropmax) .and. annsum_potential_gpp_p(m) > 0._r8) THEN
             avail_retransn_p(m) = (annmax_retransn_p(m)/2._r8)*(gpp_p(m)/annsum_potential_gpp_p(m))/deltim
          ELSE
             avail_retransn_p(m) = 0.0_r8

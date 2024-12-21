@@ -122,7 +122,7 @@ MODULE MOD_BGC_CNNStateUpdate1
 
 CONTAINS
 
-   SUBROUTINE NStateUpdate1 (i, ps, pe, deltim, nl_soil, ndecomp_transitions, npcropmin,dz_soi)
+   SUBROUTINE NStateUpdate1 (i, ps, pe, deltim, nl_soil, ndecomp_transitions, npcropmin, npcropmax,dz_soi)
 
    integer ,intent(in) :: i                   ! patch index
    integer ,intent(in) :: ps                  ! start pft index
@@ -131,6 +131,8 @@ CONTAINS
    integer ,intent(in) :: nl_soil             ! number of total soil layers
    integer ,intent(in) :: ndecomp_transitions ! number of total transitions among different litter & soil bgc pools 
    integer ,intent(in) :: npcropmin           ! index of first crop pft
+   integer ,intent(in) :: npcropmax           ! index of last crop pft
+
    real(r8),intent(in) :: dz_soi(1:nl_soil)   ! thicknesses of each soil layer
 
    integer j,k
@@ -177,7 +179,7 @@ CONTAINS
             deadcrootn_xfer_p(m) = deadcrootn_xfer_p(m) - deadcrootn_xfer_to_deadcrootn_p(m)*deltim
          ENDIF
   
-         IF (ivt >= npcropmin) THEN ! skip 2 generic crops
+         IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! skip 2 generic crops
             ! lines here for consistency; the transfer terms are zero
             livestemn_p(m)       = livestemn_p(m)      + livestemn_xfer_to_livestemn_p(m)*deltim
             livestemn_xfer_p(m)  = livestemn_xfer_p(m) - livestemn_xfer_to_livestemn_p(m)*deltim
@@ -199,7 +201,7 @@ CONTAINS
                AKX_deadcrootn_xf_to_deadcrootn_p_acc(m) = AKX_deadcrootn_xf_to_deadcrootn_p_acc(m) + deadcrootn_xfer_to_deadcrootn_p(m) * deltim
                AKX_deadcrootn_xf_exit_p_acc         (m) = AKX_deadcrootn_xf_exit_p_acc         (m) + deadcrootn_xfer_to_deadcrootn_p(m) * deltim
             ENDIF
-            IF(ivt >= npcropmin) THEN
+            IF(ivt >= npcropmin .and. ivt <= npcropmax) THEN
                AKX_livestemn_xf_to_livestemn_p_acc(m) = AKX_livestemn_xf_to_livestemn_p_acc(m) + livestemn_xfer_to_livestemn_p(m) * deltim
                AKX_livestemn_xf_exit_p_acc        (m) = AKX_livestemn_xf_exit_p_acc        (m) + livestemn_xfer_to_livestemn_p(m) * deltim
                AKX_grainn_xf_to_grainn_p_acc      (m) = AKX_grainn_xf_to_grainn_p_acc      (m) + grainn_xfer_to_grainn_p      (m) * deltim
@@ -225,7 +227,7 @@ CONTAINS
             livecrootn_p(m)   = livecrootn_p(m) - livecrootn_to_retransn_p(m)*deltim
             retransn_p(m)     = retransn_p(m)   + livecrootn_to_retransn_p(m)*deltim
          ENDIF 
-         IF (ivt >= npcropmin) THEN 
+         IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN 
             frootn_p(m)       = frootn_p(m)     - frootn_to_retransn_p(m)*deltim
             retransn_p(m)     = retransn_p(m)   + frootn_to_retransn_p(m)*deltim
             livestemn_p(m)    = livestemn_p(m)  - livestemn_to_litter_p(m)*deltim
@@ -253,7 +255,7 @@ CONTAINS
                AKX_livecrootn_to_retransn_p_acc  (m) = AKX_livecrootn_to_retransn_p_acc  (m) + livecrootn_to_retransn_p  (m) * deltim
                AKX_livecrootn_exit_p_acc         (m) = AKX_livecrootn_exit_p_acc         (m) + livecrootn_to_retransn_p  (m) * deltim
             ENDIF
-            IF(ivt >= npcropmin) THEN
+            IF(ivt >= npcropmin .and. ivt <= npcropmax) THEN
                AKX_frootn_to_retransn_p_acc      (m) = AKX_frootn_to_retransn_p_acc      (m) + frootn_to_retransn_p      (m) * deltim
                AKX_frootn_exit_p_acc             (m) = AKX_frootn_exit_p_acc             (m) + frootn_to_retransn_p      (m) * deltim
                AKX_livestemn_exit_p_acc          (m) = AKX_livestemn_exit_p_acc          (m) + livestemn_to_litter_p     (m) * deltim
@@ -282,7 +284,7 @@ CONTAINS
             deadcrootn_storage_p(m) = deadcrootn_storage_p(m) + npool_to_deadcrootn_storage_p(m)*deltim
          ENDIF
   
-         IF (ivt >= npcropmin) THEN ! skip 2 generic crops
+         IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! skip 2 generic crops
             livestemn_p(m)          = livestemn_p(m)          + npool_to_livestemn_p(m)*deltim
             livestemn_storage_p(m)  = livestemn_storage_p(m)  + npool_to_livestemn_storage_p(m)*deltim
             grainn_p(m)             = grainn_p(m)             + npool_to_grainn_p(m)*deltim
@@ -335,7 +337,7 @@ CONTAINS
                   AKX_retransn_to_deadcrootn_st_p_acc(m) = AKX_retransn_to_deadcrootn_st_p_acc(m) &
                                                          + npool_to_deadcrootn_storage_p  (m) * f_retr_in_nall           * deltim
                ENDIF
-               IF (ivt >= npcropmin) THEN ! skip 2 generic crops
+               IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! skip 2 generic crops
                   I_livestemn_p_acc                  (m) = I_livestemn_p_acc              (m) &
                                                          + npool_to_livestemn_p           (m) * (1._r8 - f_retr_in_nall) * deltim
                   AKX_retransn_to_livestemn_p_acc    (m) = AKX_retransn_to_livestemn_p_acc(m) &
@@ -372,7 +374,7 @@ CONTAINS
             deadcrootn_xfer_p(m)    = deadcrootn_xfer_p(m)    + deadcrootn_storage_to_xfer_p(m)*deltim
          ENDIF
   
-         IF (ivt >= npcropmin) THEN ! skip 2 generic crops
+         IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN ! skip 2 generic crops
          ! lines here for consistency; the transfer terms are zero
             livestemn_storage_p(m)  = livestemn_storage_p(m) - livestemn_storage_to_xfer_p(m)*deltim
             livestemn_xfer_p(m)     = livestemn_xfer_p(m)    + livestemn_storage_to_xfer_p(m)*deltim
@@ -395,7 +397,7 @@ CONTAINS
                AKX_deadcrootn_st_to_deadcrootn_xf_p_acc(m) = AKX_deadcrootn_st_to_deadcrootn_xf_p_acc(m) + deadcrootn_storage_to_xfer_p(m) * deltim
                AKX_deadcrootn_st_exit_p_acc            (m) = AKX_deadcrootn_st_exit_p_acc            (m) + deadcrootn_storage_to_xfer_p(m) * deltim
             ENDIF
-            IF( ivt >= npcropmin) THEN
+            IF( ivt >= npcropmin .and. ivt <= npcropmax) THEN
                AKX_livestemn_st_to_livestemn_xf_p_acc  (m) = AKX_livestemn_st_to_livestemn_xf_p_acc  (m) + livestemn_storage_to_xfer_p (m) * deltim
                AKX_livestemn_st_exit_p_acc             (m) = AKX_livestemn_st_exit_p_acc             (m) + livestemn_storage_to_xfer_p (m) * deltim
                AKX_grainn_st_to_grainn_xf_p_acc        (m) = AKX_grainn_st_to_grainn_xf_p_acc        (m) + grainn_storage_to_xfer_p    (m) * deltim

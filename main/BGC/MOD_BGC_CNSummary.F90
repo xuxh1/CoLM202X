@@ -362,6 +362,17 @@ CONTAINS
                       + cropseedc_deficit_p(m) &
 #endif
                       + gresp_storage_p(m)     + gresp_xfer_p(m)         + xsmrpool_p(m) + cpool_p(m)
+         ! print*, "------------------------m is ",m
+         ! print*, "------------------------leafc_p(",m,") ",leafc_p(m)
+         ! print*, "------------------------frootc_p(",m,") ",frootc_p(m)
+         ! print*, "------------------------livestemc_p(",m,") ",livestemc_p(m)
+         ! print*, "------------------------deadstemc_p(",m,") ",deadstemc_p(m)
+         ! print*, "------------------------livecrootc_p(",m,") ",livecrootc_p(m)
+         ! print*, "------------------------deadcrootc_p(",m,") ",deadcrootc_p(m)
+         ! print*, "------------------------leafc_storage_p(",m,") ",leafc_storage_p(m)
+         ! print*, "------------------------frootc_storage_p(",m,") ",frootc_storage_p(m)
+
+
 
 #ifdef CROP
          IF(     pftclass(m) .eq. 17 .or. pftclass(m) .eq. 18 .or. pftclass(m) .eq. 63 .or. pftclass(m) .eq. 64)THEN
@@ -438,9 +449,24 @@ CONTAINS
             ENDIF
          ENDDO
       ENDIF
+      ! print*, "------------------------ps,pe is ",ps,pe
+
+      ! print*, "------------------------totvegc_p(ps:pe) is ",totvegc_p
+      ! print*, "------------------------pftfrac(ps:pe) is ",pftfrac
+
       totvegc(i) = sum(totvegc_p(ps:pe)*pftfrac(ps:pe))
       ctrunc_veg(i) = sum(ctrunc_p(ps:pe) *pftfrac(ps:pe))
+      ! print*, "------------------------totcolc is ",totcolc(i)
       totcolc(i) = totvegc(i) + totcwdc(i) + totlitc(i) + totsomc(i) + ctrunc_veg(i) +ctrunc_soil(i)
+      ! print*, "------------------------after totcolc is ",totcolc(i)
+      ! print*, "------------------------after totvegc(i) is ",totvegc(i)
+      ! print*, "------------------------after totcwdc(i) is ",totcwdc(i)
+      ! print*, "------------------------after totlitc(i) is ",totlitc(i)
+      ! print*, "------------------------after totsomc(i) is ",totsomc(i)
+      ! print*, "------------------------after ctrunc_veg(i) is ",ctrunc_veg(i)
+      ! print*, "------------------------after ctrunc_soil(i) is ",ctrunc_soil(i)
+
+
 
 
    END SUBROUTINE cnveg_carbonstate_summary

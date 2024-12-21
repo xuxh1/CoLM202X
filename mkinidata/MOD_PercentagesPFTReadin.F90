@@ -63,8 +63,22 @@ CONTAINS
 #endif
 #endif
 
+#if (defined CH4)
+#ifndef SinglePoint
+      lndname = trim(dir_landdata)//'/pctpft/'//trim(cyear)//'/pct_wetlands.nc'
+      CALL ncio_read_vector (lndname, 'pct_wetlands', landpatch, wetlandfrac)
+#else
+      IF (SITE_landtype == WETLAND) THEN
+         wetlandfrac = pack(SITE_pctwetland, SITE_pctwetland > 0.)
+      ELSE
+         wetlandfrac = 0.
+      ENDIF
+#endif
+#endif
+
 #ifdef RangeCheck
       IF (p_is_worker) THEN
+         
          npatch = count(patchtypes(landpatch%settyp) == 0)
          allocate (sumpct (npatch))
 
@@ -81,6 +95,9 @@ CONTAINS
       CALL check_vector_data ('Sum PFT pct', sumpct)
 #if (defined CROP)
       CALL check_vector_data ('CROP pct', cropfrac)
+#endif
+#if (defined CH4)
+      CALL check_vector_data ('WETLAND pct', wetlandfrac)
 #endif
 #endif
 

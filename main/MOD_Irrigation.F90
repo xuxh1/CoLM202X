@@ -39,7 +39,7 @@ MODULE MOD_Irrigation
 
 CONTAINS
 
-   SUBROUTINE CalIrrigationNeeded(i,ps,pe,idate,nl_soil,nbedrock,z_soi,dz_soi,deltim,dlon,npcropmin)
+   SUBROUTINE CalIrrigationNeeded(i,ps,pe,idate,nl_soil,nbedrock,z_soi,dz_soi,deltim,dlon,npcropmin,npcropmax)
 
    !   DESCRIPTION:
    !   This SUBROUTINE is used to calculate how much irrigation needed in each irrigated crop patch
@@ -53,6 +53,7 @@ CONTAINS
    real(r8), intent(in) :: deltim
    real(r8), intent(in) :: dlon
    integer , intent(in) :: npcropmin
+   integer , intent(in) :: npcropmax
 
    ! local
    integer :: m
@@ -63,7 +64,7 @@ CONTAINS
       ! CALL CalPotentialEvapotranspiration(i,idate,dlon,deltim)
 
       !   calculate whether irrigation needed
-      CALL PointNeedsCheckForIrrig(i,ps,pe,idate,deltim,dlon,npcropmin,check_for_irrig)
+      CALL PointNeedsCheckForIrrig(i,ps,pe,idate,deltim,dlon,npcropmin,npcropmax,check_for_irrig)
 
       !   calculate irrigation needed
       IF (check_for_irrig) THEN
@@ -251,7 +252,7 @@ CONTAINS
       ENDDO
    END SUBROUTINE CalIrrigationApplicationFluxes
 
-   SUBROUTINE PointNeedsCheckForIrrig(i,ps,pe,idate,deltim,dlon,npcropmin,check_for_irrig)
+   SUBROUTINE PointNeedsCheckForIrrig(i,ps,pe,idate,deltim,dlon,npcropmin,npcropmax,check_for_irrig)
    !   DESCRIPTION:
    !   This SUBROUTINE is used to calculate whether irrigation needed in each patch
    integer , intent(in) :: i
@@ -260,6 +261,7 @@ CONTAINS
    real(r8), intent(in) :: deltim
    real(r8), intent(in) :: dlon
    integer , intent(in) :: npcropmin
+   integer , intent(in) :: npcropmax
    logical , intent(out):: check_for_irrig
 
    !   local variable
@@ -269,7 +271,7 @@ CONTAINS
 
       DO m = ps, pe
          ivt = pftclass(m)
-         IF ((ivt >= npcropmin) .and. (irrig_crop(ivt)) .and. &
+         IF ((ivt >= npcropmin .and. ivt <= npcropmax) .and. (irrig_crop(ivt)) .and. &
             (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m)<irrig_max_cphase)) THEN
             IF (DEF_simulation_time%greenwich) THEN
                 CALL gmt2local(idate, dlon, ldate)

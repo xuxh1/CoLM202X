@@ -66,6 +66,7 @@ MODULE MOD_Namelist
    logical  :: USE_SITE_landtype         = .false.
    logical  :: USE_SITE_pctpfts          = .true.
    logical  :: USE_SITE_pctcrop          = .true.
+   logical  :: USE_SITE_pctwetland       = .true.
    logical  :: USE_SITE_htop             = .true.
    logical  :: USE_SITE_LAI              = .true.
    logical  :: USE_SITE_lakedepth        = .true.

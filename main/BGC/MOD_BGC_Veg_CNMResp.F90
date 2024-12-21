@@ -39,13 +39,14 @@ MODULE MOD_BGC_Veg_CNMResp
 
 CONTAINS
 
-   SUBROUTINE CNMResp(i, ps, pe, nl_soil, npcropmin)
+   SUBROUTINE CNMResp(i, ps, pe, nl_soil, npcropmin, npcropmax)
 
    integer ,intent(in) :: i         ! patch index
    integer ,intent(in) :: ps        ! start pft index
    integer ,intent(in) :: pe        ! END pft index
    integer ,intent(in) :: nl_soil   ! number of total soil layers
    integer ,intent(in) :: npcropmin ! first crop pft index
+   integer ,intent(in) :: npcropmax ! last crop pft index
 
    ! !LOCAL VARIABLES:
    integer :: j   ! indices
@@ -95,7 +96,7 @@ CONTAINS
          IF (woody(ivt) == 1) THEN
             livestem_mr_p (m) = livestemn_p (m)*br*tc
             livecroot_mr_p(m) = livecrootn_p(m)*br_root*tc
-         ELSE IF (ivt >= npcropmin) THEN
+         ELSE IF (ivt >= npcropmin .and. ivt <= npcropmax) THEN
             livestem_mr_p (m) = livestemn_p (m)*br*tc
             grain_mr_p    (m) = grainn_p    (m)*br*tc
          ENDIF

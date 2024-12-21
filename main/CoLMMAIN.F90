@@ -668,7 +668,7 @@ SUBROUTINE CoLMMAIN ( &
 !----------------------------------------------------------------------
          qflx_irrig_sprinkler = 0._r8
 
-         IF (patchtype == 0) THEN
+         IF (patchtype == 0 .or. patchtype == 2) THEN
 
 #if(defined LULC_USGS || defined LULC_IGBP)
             CALL LEAF_interception_wrap (deltim,dewmx,forc_us,forc_vs,chil,sigf,lai,sai,forc_t, tleaf,&

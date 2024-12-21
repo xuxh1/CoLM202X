@@ -419,7 +419,7 @@ MODULE MOD_Const_PFT
          , 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0  &
 #endif
 #ifdef CH4
-        ,  57.0&
+        ,  26.0&
 #endif  
          /) * 1.e-6 * 0.6
 #else
@@ -437,7 +437,7 @@ MODULE MOD_Const_PFT
          , 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0  &
 #endif
 #ifdef CH4
-         , 57.0&
+         , 26.0&
 #endif  
          /) * 1.e-6
 #endif
@@ -636,7 +636,7 @@ MODULE MOD_Const_PFT
         ,22.0,  22.0,  22.0,  22.0,  22.0,  22.0,  22.0   &
 #endif
 #ifdef CH4
-        ,22.0&
+        ,7.0&
 #endif  
          /)
 
@@ -655,7 +655,7 @@ MODULE MOD_Const_PFT
        , -1.796, -1.796, -1.796, -1.796, -1.796, -1.796, -1.796  &
 #endif
 #ifdef CH4
-       , -1.796&
+       , -1.176&
 #endif  
          /)
 
@@ -688,7 +688,7 @@ MODULE MOD_Const_PFT
         ,  6.0,   6.0,   6.0,   6.0,   6.0,   6.0,   6.0       &
 #endif
 #ifdef CH4
-        ,  6.0&
+        , 11.0&
 #endif  
          /)
 
@@ -706,7 +706,7 @@ MODULE MOD_Const_PFT
         ,  3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0       &
 #endif
 #ifdef CH4
-        ,  3.0&
+        ,  2.0&
 #endif  
          /)
 
@@ -859,7 +859,7 @@ MODULE MOD_Const_PFT
        , .False., .False., .False., .False., .False., .False., .False.      &
 #endif
 #ifdef CH4
-       , .False.&
+       , .True.&
 #endif  
          /)
 
@@ -977,7 +977,7 @@ MODULE MOD_Const_PFT
        ,              25.,              20.,              20.             &
 #endif
 #ifdef CH4
-       , 35.3606789250354&
+       , 28.0269058295964&
 #endif  
          /)
 
@@ -1095,7 +1095,7 @@ MODULE MOD_Const_PFT
     ,                1.,               1.,               1.      &
 #endif
 #ifdef CH4
-    ,              0.14&
+    ,  0.32083333333333&
 #endif  
          /)
 
@@ -1401,7 +1401,7 @@ MODULE MOD_Const_PFT
       ,  0.035,   0.035,   0.035,    0.05,    0.05,   0.035,   0.035      &
 #endif
 #ifdef CH4
-      , 0.03846&
+      , 0.04024&
 #endif  
          /)
 !--- crop variables ---

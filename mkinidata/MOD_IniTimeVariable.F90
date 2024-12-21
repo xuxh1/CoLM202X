@@ -57,7 +57,6 @@ CONTAINS
                      ,AKX_soil1_exit_n_vr_acc    , AKX_soil2_exit_n_vr_acc    , AKX_soil3_exit_n_vr_acc     &
                      ,diagVX_n_vr_acc            , upperVX_n_vr_acc           , lowerVX_n_vr_acc           &
 !------------------------------------------------------------
-#endif
 #ifdef CH4
                      ,c_atm,ch4_surf_flux_tot,net_methane,&
                      annavg_agnpp,annavg_bgnpp,annavg_somhr,annavg_finrw,&
@@ -69,6 +68,7 @@ CONTAINS
                      totcolch4,forc_pch4m,grnd_ch4_cond,conc_o2,conc_ch4,layer_sat_lag,lake_soilc,&!inout
                      tempavg_agnpp,tempavg_bgnpp,annsum_counter,&
                      tempavg_somhr,tempavg_finrw&
+#endif
 #endif
                      ,use_soilini, nl_soil_ini, soil_z,   soil_t,   soil_w, use_snowini, snow_d &
                      ,use_wtd,     zwtmm,       zc_soimm, zi_soimm, vliq_r, nprms, prms)
@@ -330,72 +330,72 @@ CONTAINS
    logical, intent(out) :: &
         skip_balance_check
 
-#endif
-
 #ifdef CH4
    real(r8), intent(out) :: &
-   c_atm      (1:3)             , &! CH4, O2, CO2 atmospheric conc  (mol/m3)         
-   ch4_surf_flux_tot            , &! CH4 flux to atm. (kg C/m**2/s)
-   net_methane                     ! average net methane correction to CO2 flux (g C/m^2/s)
-
+        c_atm      (1:3)             , &! CH4, O2, CO2 atmospheric conc  (mol/m3)         
+        ch4_surf_flux_tot            , &! CH4 flux to atm. (kg C/m**2/s)
+        net_methane                     ! average net methane correction to CO2 flux (g C/m^2/s)
+     
    !------------------- ch4_annualupdate ------------------------------
    real(r8), intent(out) :: &
-   annavg_agnpp            , &! annual average above-ground NPP (gC/m2/s)         
-   annavg_bgnpp            , &! annual average below-ground NPP (gC/m2/s)         
-   annavg_somhr            , &! annual average SOM heterotrophic resp. (gC/m2/s)  
-   annavg_finrw               ! respiration-weighted annual average of finundated 
-
+        annavg_agnpp            , &! annual average above-ground NPP (gC/m2/s)         
+        annavg_bgnpp            , &! annual average below-ground NPP (gC/m2/s)         
+        annavg_somhr            , &! annual average SOM heterotrophic resp. (gC/m2/s)  
+        annavg_finrw               ! respiration-weighted annual average of finundated 
+     
    !------------------- ch4_prod ------------------------------
    real(r8), intent(out) :: &            
-   ch4_prod_depth    (1:nl_soil)         , &! production of CH4 in each soil layer  (mol/m3/s)
-   o2_decomp_depth   (1:nl_soil)            ! O2 consumption during decomposition in each soil layer (mol/m3/s)
-
+        ch4_prod_depth    (1:nl_soil)         , &! production of CH4 in each soil layer  (mol/m3/s)
+        o2_decomp_depth   (1:nl_soil)            ! O2 consumption during decomposition in each soil layer (mol/m3/s)
+     
    !------------------- ch4_oxid ------------------------------
    real(r8), intent(out) :: &
-   ch4_oxid_depth (1:nl_soil)       , &! CH4 consumption rate via oxidation in each soil layer (mol/m3/s) 
-   o2_oxid_depth  (1:nl_soil)          ! O2 consumption rate via oxidation in each soil layer (mol/m3/s) 
-
+        ch4_oxid_depth (1:nl_soil)       , &! CH4 consumption rate via oxidation in each soil layer (mol/m3/s) 
+        o2_oxid_depth  (1:nl_soil)          ! O2 consumption rate via oxidation in each soil layer (mol/m3/s) 
+     
    !------------------- ch4_aere ------------------------------
    real(r8), intent(out) :: &
-   ch4_aere_depth  (1:nl_soil)  , &! CH4 loss rate via aerenchyma in each soil layer (mol/m3/s) 
-   ch4_tran_depth  (1:nl_soil)  , &! CH4 loss rate via transpiration in each soil layer (mol/m3/s) 
-   o2_aere_depth   (1:nl_soil)     ! O2 gain rate via aerenchyma in each soil layer (mol/m3/s) 
-
+        ch4_aere_depth  (1:nl_soil)  , &! CH4 loss rate via aerenchyma in each soil layer (mol/m3/s) 
+        ch4_tran_depth  (1:nl_soil)  , &! CH4 loss rate via transpiration in each soil layer (mol/m3/s) 
+        o2_aere_depth   (1:nl_soil)     ! O2 gain rate via aerenchyma in each soil layer (mol/m3/s) 
+     
    !------------------- ch4_ebul ------------------------------
    real(r8), intent(out) :: &
-   ch4_ebul_depth (1:nl_soil)      ! CH4 loss rate via ebullition in each soil layer (mol/m3/s)
-
+        ch4_ebul_depth (1:nl_soil)      ! CH4 loss rate via ebullition in each soil layer (mol/m3/s)
+     
    !------------------- ch4_tran ------------------------------
    real(r8), intent(out) :: &
-   o2stress          (1:nl_soil)  , &! Output: Ratio of oxygen available to that demanded by roots, aerobes, & methanotrophs
-   ch4stress         (1:nl_soil)  , &! Output: Ratio of methane available to the total per-timestep methane sinks 
-   ch4_surf_aere                  , &! Output: Total column CH4 aerenchyma (mol/m2/s)
-   ch4_surf_ebul                  , &! Output: CH4 ebullition to atmosphere (mol/m2/s)
-   ch4_surf_diff                  , &! Output: CH4 surface flux (mol/m2/s)
-   ch4_ebul_total                    ! Output: Total column CH4 ebullition (mol/m2/s)
-
-
+        o2stress          (1:nl_soil)  , &! Output: Ratio of oxygen available to that demanded by roots, aerobes, & methanotrophs
+        ch4stress         (1:nl_soil)  , &! Output: Ratio of methane available to the total per-timestep methane sinks 
+        ch4_surf_aere                  , &! Output: Total column CH4 aerenchyma (mol/m2/s)
+        ch4_surf_ebul                  , &! Output: CH4 ebullition to atmosphere (mol/m2/s)
+        ch4_surf_diff                  , &! Output: CH4 surface flux (mol/m2/s)
+        ch4_ebul_total                    ! Output: Total column CH4 ebullition (mol/m2/s)
+     
+     
    !=================== inout ============================================
    ! logical, intent(inout) ::&
-   ! ch4_first_time
-
+        ! ch4_first_time
+     
    real(r8), intent(inout) :: &
-   totcolch4               , &! total methane in soil column, start of timestep (g C / m^2)
-   forc_pch4m              , &! CH4 concentration in atmos. (pascals)
-   grnd_ch4_cond           , &! tracer conductance for boundary layer [m/s]
-   conc_o2  (1:nl_soil)    , &! O2 conc in each soil layer (mol/m3) 
-   conc_ch4   (1:nl_soil)  , &! CH4 conc in each soil layer (mol/m3) 
-   layer_sat_lag(1:nl_soil), &
-   lake_soilc  (1:nl_soil)    ! total soil organic matter found in level (g C / m^3) (nl_soil)
-
+        totcolch4               , &! total methane in soil column, start of timestep (g C / m^2)
+        forc_pch4m              , &! CH4 concentration in atmos. (pascals)
+        grnd_ch4_cond           , &! tracer conductance for boundary layer [m/s]
+        conc_o2  (1:nl_soil)    , &! O2 conc in each soil layer (mol/m3) 
+        conc_ch4   (1:nl_soil)  , &! CH4 conc in each soil layer (mol/m3) 
+        layer_sat_lag(1:nl_soil), &
+        lake_soilc  (1:nl_soil)    ! total soil organic matter found in level (g C / m^3) (nl_soil)
+     
    !------------------- ch4_annualupdate ------------------------------
    real(r8), intent(inout) :: &
-   tempavg_agnpp           , &! temporary average above-ground NPP (gC/m2/s)      
-   tempavg_bgnpp           , &! temporary average below-ground NPP (gC/m2/s)      
-   annsum_counter          , &! seconds since last annual accumulator turnover    
-   tempavg_somhr           , &! temporary average SOM heterotrophic resp. (gC/m2/s)
-   tempavg_finrw              ! respiration-weighted annual average of finundated 
+        tempavg_agnpp           , &! temporary average above-ground NPP (gC/m2/s)      
+        tempavg_bgnpp           , &! temporary average below-ground NPP (gC/m2/s)      
+        annsum_counter          , &! seconds since last annual accumulator turnover    
+        tempavg_somhr           , &! temporary average SOM heterotrophic resp. (gC/m2/s)
+        tempavg_finrw              ! respiration-weighted annual average of finundated 
 #endif
+#endif
+
    integer j, snl, m, ivt
    real(r8) wet(nl_soil), zi_soi_a(0:nl_soil), psi, vliq, wt, ssw, oro, rhosno_ini, a
 
@@ -543,7 +543,7 @@ CONTAINS
          !     variables: snowdp, sag, scv, fsno, snl, z_soisno, dz_soisno
          z0m = htop * z0mr
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-         IF(patchtype==0)THEN
+         IF(patchtype==0 .or. patchtype==2)THEN
             ps = patch_pft_s(ipatch)
             pe = patch_pft_e(ipatch)
             IF (ps>0 .and. pe>0) THEN
@@ -567,7 +567,7 @@ CONTAINS
             lai = tlai(ipatch)
             sai = tsai(ipatch) * sigf
 
-            IF (patchtype == 0) THEN
+            IF (patchtype == 0 .or. patchtype == 2) THEN
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
                ps = patch_pft_s(ipatch)
                pe = patch_pft_e(ipatch)
@@ -643,7 +643,7 @@ CONTAINS
             gs0sha = 1.0e4
          ENDIF
 
-         IF (patchtype == 0) THEN
+         IF (patchtype == 0 .or. patchtype == 2) THEN
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
             ps = patch_pft_s(ipatch)
             pe = patch_pft_e(ipatch)
@@ -670,7 +670,7 @@ CONTAINS
          ! Variables: sigf, lai, sai
 
          IF (.not. use_snowini) THEN
-            IF (patchtype == 0) THEN
+            IF (patchtype == 0 .or. patchtype == 2) THEN
 #if (defined LULC_USGS || defined LULC_IGBP)
                sigf = fveg
                lai  = tlai(ipatch)
@@ -827,7 +827,7 @@ CONTAINS
          skip_balance_check              = .false.
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-         IF (patchtype == 0) THEN
+         IF (patchtype == 0 .or. patchtype == 2) THEN
             DO m = ps, pe
                ivt = pftclass(m)
                IF(ivt .eq.  0)THEN  !no vegetation
@@ -847,7 +847,7 @@ CONTAINS
                      ENDIF
                      leafc_storage_p       (m) = 0.0
                      frootc_storage_p      (m) = 0.0
-                  ELSE IF(ivt >= npcropmin) THEN
+                  ELSE IF(ivt >= npcropmin .and. ivt <= npcropmax) THEN
                      leafc_p               (m) = 0.0
                      leafc_storage_p       (m) = 0.0
                      frootc_p              (m) = 0.0
