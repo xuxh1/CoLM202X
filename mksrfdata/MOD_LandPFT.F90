@@ -144,7 +144,6 @@ CONTAINS
             ELSEIF (landpatch%settyp(1) == WETLAND) THEN
                DO ipft = 1, numpft
                   landpft%settyp(ipft) = wetlandclass(ipft) + N_PFT + N_CFT - 1
-                  print*, "landpft%settyp(ipft)",landpft%settyp(ipft),ipft
                   pft2patch   (ipft) = ipft
                   patch_pft_s (ipft) = ipft
                   patch_pft_e (ipft) = ipft
@@ -295,7 +294,6 @@ CONTAINS
                      landpft%ipxstt(npft) = landpatch%ipxstt(ipatch)
                      landpft%ipxend(npft) = landpatch%ipxend(ipatch)
                      landpft%settyp(npft) = cropclass(ipatch) + N_PFT - 1
-                     print*, "landpft%settyp(npft),npft,npatch,ipatch",landpft%settyp(npft),npft,npatch,ipatch
                      
                      landpft%pctshared(npft) = landpatch%pctshared(ipatch)
 
@@ -312,7 +310,6 @@ CONTAINS
                      landpft%ipxstt(npft) = landpatch%ipxstt(ipatch)
                      landpft%ipxend(npft) = landpatch%ipxend(ipatch)
                      landpft%settyp(npft) = wetlandclass(ipatch) + N_PFT + N_CFT - 1
-                     print*, "landpft%settyp(npft),npft,npatch,ipatch",landpft%settyp(npft),npft,npatch,ipatch
                      
                      landpft%pctshared(npft) = landpatch%pctshared(ipatch)
 

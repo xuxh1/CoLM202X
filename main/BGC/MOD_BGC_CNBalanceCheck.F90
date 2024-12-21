@@ -140,7 +140,6 @@ CONTAINS
          write(*,*)'wood_harvestc            = ',wood_harvestc(i)*deltim
          write(*,*)'grainc_to_cropprodc      = ',grainc_to_cropprodc(i)*deltim, grainc_to_food_p(ps)*deltim
          write(*,*)'-1*som_c_leached         = ',som_c_leached(i)*deltim
-      ! IF(abs(col_errcb) > cerror) THEN
 #ifdef USEMPI
          CALL mpi_abort (p_comm_glb, p_err)
 #else
