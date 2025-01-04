@@ -333,6 +333,11 @@ CONTAINS
                file_out = trim(dir_landdata_out) // '/pctpft/pct_crops.nc'
                CALL clip_vector (file_in, file_out, iblk, jblk, 'pct_crops', patchmask)
 #endif
+#ifdef CROP
+               file_in  = trim(dir_landdata_in)  // '/pctpft/pct_wetlands.nc'
+               file_out = trim(dir_landdata_out) // '/pctpft/pct_wetlandps.nc'
+               CALL clip_vector (file_in, file_out, iblk, jblk, 'pct_wetlands', patchmask)
+#endif
 #endif
 
                ! soil

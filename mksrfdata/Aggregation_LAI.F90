@@ -83,9 +83,9 @@ SUBROUTINE Aggregation_LAI (gridlai, dir_rawdata, dir_model_landdata, lc_year)
 #ifdef SrfdataDiag
    integer :: typpatch(N_land_classification+1), ityp
 #ifndef CROP
-   integer :: typpft  (N_PFT)
+   integer :: typpft  (N_PFT+N_WFT)
 #else
-   integer :: typpft  (N_PFT+N_CFT)
+   integer :: typpft  (N_PFT+N_CFT+N_WFT)
 #endif
    character(len=256) :: varname
 #endif
@@ -487,6 +487,11 @@ SUBROUTINE Aggregation_LAI (gridlai, dir_rawdata, dir_model_landdata, lc_year)
                         ip = patch_pft_s(ipatch)
                         LAI_pfts(ip) = LAI_patches(ipatch)
 #endif
+#ifdef CH4
+                     ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
+                        ip = patch_pft_s(ipatch)
+                        LAI_pfts(ip) = LAI_patches(ipatch)
+#endif
                      ENDIF
                   ENDDO
 
@@ -523,15 +528,16 @@ SUBROUTINE Aggregation_LAI (gridlai, dir_rawdata, dir_model_landdata, lc_year)
 #endif
 
                lndname = trim(landdir)//trim(cyear)//'/LAI_pfts'//trim(c2)//'.nc'
+
                CALL ncio_create_file_vector (lndname, landpft)
                CALL ncio_define_dimension_vector (lndname, landpft, 'pft')
                CALL ncio_write_vector (lndname, 'LAI_pfts', 'pft', landpft, LAI_pfts, DEF_Srfdata_CompressLevel)
 
 #ifdef SrfdataDiag
 #ifndef CROP
-               typpft  = (/(ityp, ityp = 0, N_PFT-1)/)
+               typpft  = (/(ityp, ityp = 0, N_PFT+N_WFT-1)/)
 #else
-               typpft  = (/(ityp, ityp = 0, N_PFT+N_CFT-1)/)
+               typpft  = (/(ityp, ityp = 0, N_PFT+N_CFT+N_WFT-1)/)
 #endif
                lndname = trim(dir_model_landdata) // '/diag/LAI_pft_'// trim(cyear) // '.nc'
                varname = 'LAI_pft'
@@ -602,6 +608,11 @@ SUBROUTINE Aggregation_LAI (gridlai, dir_rawdata, dir_model_landdata, lc_year)
                      ip = patch_pft_s(ipatch)
                      SAI_pfts(ip) = SAI_patches(ipatch)
 #endif
+#ifdef CH4
+                  ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
+                     ip = patch_pft_s(ipatch)
+                     SAI_pfts(ip) = SAI_patches(ipatch)
+#endif
                   ENDIF
                ENDDO
 
@@ -644,9 +655,9 @@ SUBROUTINE Aggregation_LAI (gridlai, dir_rawdata, dir_model_landdata, lc_year)
 
 #ifdef SrfdataDiag
 #ifndef CROP
-            typpft  = (/(ityp, ityp = 0, N_PFT-1)/)
+            typpft  = (/(ityp, ityp = 0, N_PFT+N_WFT-1)/)
 #else
-            typpft  = (/(ityp, ityp = 0, N_PFT+N_CFT-1)/)
+            typpft  = (/(ityp, ityp = 0, N_PFT+N_CFT+N_WFT-1)/)
 #endif
             lndname = trim(dir_model_landdata) // '/diag/SAI_pft_'// trim(cyear) // '.nc'
             varname = 'SAI_pft'

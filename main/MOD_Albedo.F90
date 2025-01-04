@@ -247,7 +247,11 @@ CONTAINS
       ssno      (:,:) = 0. !set initial snow absorption
       ssno_lyr(:,:,:) = 0. !set initial snow layer absorption
 
-IF (patchtype == 0) THEN
+#ifndef CH4
+   IF (patchtype == 0) THEN
+#else
+   IF (patchtype == 0 .or. patchtype == 2) THEN
+#endif
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
       ps = patch_pft_s(ipatch)
       pe = patch_pft_e(ipatch)
@@ -259,7 +263,7 @@ IF (patchtype == 0) THEN
       extkb_p(ps:pe)    = 1.
       extkd_p(ps:pe)    = 0.718
 #endif
-ENDIF
+   ENDIF
 
 ! ----------------------------------------------------------------------
 !  Calculate column-integrated aerosol masses, and
@@ -398,6 +402,8 @@ ENDIF
       albg(:,:) = (1.-fsno)*albg(:,:) + fsno*albsno(:,:)
       alb (:,:) = albg(:,:)
 
+      print*, "405 thermk",thermk
+      print*, "406 patchtype",patchtype
 ! ----------------------------------------------------------------------
 ! 4. canopy albedos: two stream approximation or 3D canopy radiation transfer
 ! ----------------------------------------------------------------------
@@ -405,8 +411,12 @@ ENDIF
 
          ! initialization
          albv(:,:) = albg(:,:)
-
-         IF (patchtype == 0) THEN  !soil patches
+         print*, "412 thermk",thermk
+#ifndef CH4
+         IF (patchtype == 0) THEN
+#else
+         IF (patchtype == 0 .or. patchtype == 2) THEN
+#endif
 
 #if (defined LULC_USGS || defined LULC_IGBP)
             CALL twostream (chil,rho,tau,green,lai,sai,fwet_snow,&
@@ -417,6 +427,7 @@ ENDIF
             !alb (:,:) = (1.-fveg)*albg(:,:) + fveg*albv(:,:)
             alb(:,:) = albv(:,:)
 #endif
+            print*, "428 thermk",thermk
          ELSE  !other patchtypes (/=0)
             CALL twostream (chil,rho,tau,green,lai,sai,fwet_snow,&
                             czen,albg,albv,tran,thermk,extkb,extkd,ssun,ssha)
@@ -425,12 +436,17 @@ ENDIF
             !albv(:,:) = (1.-  wt)*albv(:,:) + wt*albsno(:,:)
             !alb (:,:) = (1.-fveg)*albg(:,:) + fveg*albv(:,:)
             alb(:,:) = albv(:,:)
+            print*, "437 thermk",thermk
 
          ENDIF
       ENDIF
 
-
+#ifndef CH4
       IF (patchtype == 0) THEN
+#else
+      IF (patchtype == 0 .or. patchtype == 2) THEN
+#endif
+
 #ifdef LULC_IGBP_PFT
          CALL twostream_wrap (ipatch, czen, albg, albv, tran, ssun, ssha)
          alb(:,:) = albv(:,:)
@@ -607,7 +623,7 @@ ENDIF
       power3 = min( 50., power3 )
       power3 = max( 1.e-5, power3 )
       thermk = exp(-power3)
-
+      print*, "626 thermk",thermk
       IF (lsai <= 1e-6) RETURN
 
       DO iw = 1, 2    ! WAVE_BAND_LOOP

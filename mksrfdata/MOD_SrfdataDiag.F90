@@ -56,6 +56,9 @@ CONTAINS
 #ifdef CROP
    USE MOD_LandCrop
 #endif
+#ifdef CH4
+   USE MOD_LandWetland
+#endif
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
    USE MOD_LandPFT
 #endif

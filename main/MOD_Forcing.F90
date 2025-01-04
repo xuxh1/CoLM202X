@@ -113,6 +113,9 @@ CONTAINS
 #ifdef CROP
    USE MOD_LandCrop
 #endif
+#ifdef CH4
+   USE MOD_LandWetland
+#endif
    USE MOD_UserSpecifiedForcing
    USE MOD_NetCDFSerial
    USE MOD_NetCDFVector

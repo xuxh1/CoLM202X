@@ -40,6 +40,9 @@ CONTAINS
 #ifdef CROP
    USE MOD_LandCrop
 #endif
+#ifdef CH4
+   USE MOD_LandWetland
+#endif
    IMPLICIT NONE
 
    ! Local Variables

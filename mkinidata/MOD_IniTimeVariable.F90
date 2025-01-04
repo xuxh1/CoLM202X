@@ -567,7 +567,11 @@ CONTAINS
             lai = tlai(ipatch)
             sai = tsai(ipatch) * sigf
 
+#ifndef CH4
+            IF (patchtype == 0) THEN
+#else
             IF (patchtype == 0 .or. patchtype == 2) THEN
+#endif
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
                ps = patch_pft_s(ipatch)
                pe = patch_pft_e(ipatch)
@@ -643,7 +647,11 @@ CONTAINS
             gs0sha = 1.0e4
          ENDIF
 
+#ifndef CH4
+         IF (patchtype == 0) THEN
+#else
          IF (patchtype == 0 .or. patchtype == 2) THEN
+#endif
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
             ps = patch_pft_s(ipatch)
             pe = patch_pft_e(ipatch)
@@ -670,7 +678,11 @@ CONTAINS
          ! Variables: sigf, lai, sai
 
          IF (.not. use_snowini) THEN
+#ifndef CH4
+            IF (patchtype == 0) THEN
+#else
             IF (patchtype == 0 .or. patchtype == 2) THEN
+#endif
 #if (defined LULC_USGS || defined LULC_IGBP)
                sigf = fveg
                lai  = tlai(ipatch)
@@ -827,7 +839,11 @@ CONTAINS
          skip_balance_check              = .false.
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
+#ifndef CH4
+         IF (patchtype == 0) THEN
+#else
          IF (patchtype == 0 .or. patchtype == 2) THEN
+#endif
             DO m = ps, pe
                ivt = pftclass(m)
                IF(ivt .eq.  0)THEN  !no vegetation

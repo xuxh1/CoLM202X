@@ -577,6 +577,8 @@ SUBROUTINE CoLMMAIN ( &
    real(r8) :: fh_fld      ! integral of profile function for heat
    real(r8) :: fq_fld      ! integral of profile function for moisture
 #endif
+      ! print*, "580 thermk",thermk
+      ! print*, "581 patchtype,i",patchtype,ipatch
 
       z_soisno (maxsnl+1:0) = z_sno (maxsnl+1:0)
       z_soisno (1:nl_soil ) = z_soi (1:nl_soil )
@@ -668,7 +670,11 @@ SUBROUTINE CoLMMAIN ( &
 !----------------------------------------------------------------------
          qflx_irrig_sprinkler = 0._r8
 
+#ifndef CH4
+         IF (patchtype == 0) THEN
+#else
          IF (patchtype == 0 .or. patchtype == 2) THEN
+#endif
 
 #if(defined LULC_USGS || defined LULC_IGBP)
             CALL LEAF_interception_wrap (deltim,dewmx,forc_us,forc_vs,chil,sigf,lai,sai,forc_t, tleaf,&
@@ -706,6 +712,8 @@ SUBROUTINE CoLMMAIN ( &
          lb  = snl + 1           !lower bound of array
          lbsn = min(lb,0)
 
+         ! print*, "715 thermk",thermk
+         ! print*, "716 patchtype,i",patchtype,ipatch
          CALL THERMAL (ipatch,patchtype,is_dry_lake,lb                ,deltim            ,&
               trsmx0            ,zlnd              ,zsno              ,csoilc            ,&
               dewmx             ,capr              ,cnfac             ,vf_quartz         ,&
@@ -931,6 +939,8 @@ SUBROUTINE CoLMMAIN ( &
          ENDIF
 
          xerr=errorw/deltim
+
+         ! IF (patchtype==2) write(6,*) 'Warning: water balance violation in CoLMMAIN (wetland) ', errorw, patchtype
 
 #if(defined CoLMDEBUG)
          IF (abs(errorw) > 1.e-3) THEN
@@ -1387,8 +1397,11 @@ SUBROUTINE CoLMMAIN ( &
 
 !NOTE: IF account for snow on vegetation:
 !        1) should use snow-free LAI data and 2) update LAI and SAI according to snowdp
-
+#ifndef CH4
          IF (patchtype == 0) THEN
+#else
+         IF (patchtype == 0 .or. patchtype == 2) THEN
+#endif
 
 #if(defined LULC_USGS || defined LULC_IGBP)
             CALL snowfraction (tlai(ipatch),tsai(ipatch),z0m,zlnd,scv,snowdp,wt,sigf,fsno)

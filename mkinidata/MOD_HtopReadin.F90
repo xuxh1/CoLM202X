@@ -111,7 +111,11 @@ CONTAINS
             t = patchtype(npatch)
             m = patchclass(npatch)
 
+#ifndef CH4
             IF (t == 0) THEN
+#else
+            IF (t == 0 .or. t == 2) THEN
+#endif
                ps = patch_pft_s(npatch)
                pe = patch_pft_e(npatch)
 

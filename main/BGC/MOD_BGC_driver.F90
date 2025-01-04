@@ -150,6 +150,7 @@
       CALL CNDriverSummarizeStates(i,ps,pe,nl_soil,dz_soi,ndecomp_pools, .false.)
       CALL CNDriverSummarizeFluxes(i,ps,pe,nl_soil,dz_soi,ndecomp_transitions,ndecomp_pools,deltim)
   
+      ! skip_balance_check(i) = .true.
       IF( .not. skip_balance_check(i) )THEN
          CALL CBalanceCheck(i,ps,pe,deltim,dlat,dlon)
          CALL NBalanceCheck(i,deltim,dlat,dlon)

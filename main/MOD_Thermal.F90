@@ -466,6 +466,8 @@ CONTAINS
 !=======================================================================
 ! [1] Initial set and propositional variables
 !=======================================================================
+   ! print*, "469 thermk",thermk
+   ! print*, "470 patchtype,i",patchtype,ipatch
 
       ! emissivity
       emg = 0.96
@@ -632,7 +634,11 @@ ENDIF
 ! [4] Canopy temperature, fluxes from the canopy
 !=======================================================================
 
-IF ( patchtype==0.and.DEF_USE_LCT .or. patchtype>0 ) THEN
+#ifndef CH4
+IF ( patchtype==0 .and. DEF_USE_LCT .or. patchtype>0 ) THEN
+#else
+IF (((patchtype == 0 .or. patchtype == 2) .and. DEF_USE_LCT) .or. (patchtype /= 0 .and. patchtype /= 2)) THEN
+#endif
 
       sabv = sabvsun + sabvsha
 
@@ -657,7 +663,8 @@ IF ( patchtype==0.and.DEF_USE_LCT .or. patchtype>0 ) THEN
          laisha = lai*(1-fsun)
          rstfacsun_out = rstfac
          rstfacsha_out = rstfac
-
+         ! print*, "666 thermk",thermk
+         ! print*, "667 patchtype,i",patchtype,ipatch
          CALL LeafTemperature(ipatch,1,deltim,csoilc   ,dewmx       ,htvp        ,&
                  lai         ,sai         ,htop        ,hbot        ,sqrtdi      ,&
                  effcon      ,vmax25      ,slti        ,hlti        ,shti        ,&
@@ -713,8 +720,12 @@ ENDIF
 
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-IF (patchtype == 0) THEN
 
+#ifndef CH4
+IF (patchtype == 0) THEN
+#else
+IF (patchtype == 0 .or. patchtype == 2) THEN
+#endif   
       ps = patch_pft_s(ipatch)
       pe = patch_pft_e(ipatch)
 
@@ -728,7 +739,7 @@ IF (patchtype == 0) THEN
       allocate ( gssha_p          (ps:pe) )
       allocate ( fsun_p           (ps:pe) )
       allocate ( sabv_p           (ps:pe) )
-IF (DEF_USE_PFT .or. patchclass(ipatch)==CROPLAND) THEN
+IF (DEF_USE_PFT .or. patchclass(ipatch)==CROPLAND .or. patchclass(ipatch)==WETLAND) THEN
       allocate ( fseng_soil_p     (ps:pe) )
       allocate ( fseng_snow_p     (ps:pe) )
       allocate ( fevpg_soil_p     (ps:pe) )
@@ -798,12 +809,17 @@ ENDIF
       ENDDO
 
 
-IF (DEF_USE_PFT .or. patchclass(ipatch)==CROPLAND) THEN
+IF (DEF_USE_PFT .or. patchclass(ipatch)==CROPLAND .or. patchclass(ipatch)==WETLAND) THEN
 
       DO i = ps, pe
          p = pftclass(i)
+         ! print*, "816 thermk",thermk
+         ! print*, "817 patchtype,i",patchtype,ipatch
+         ! print*, "818 pftclass,i",pftclass(i),i
          IF (lai_p(i)+sai_p(i) > 1e-6) THEN
-
+            ! print*, "820 thermk",thermk_p(i)
+            ! print*, "821 patchtype,i",patchtype,ipatch
+            ! print*, "822 pftclass,i",pftclass(i),i
             CALL LeafTemperature(ipatch,p,deltim  ,csoilc          ,dewmx           ,htvp           ,&
                  lai_p(i)        ,sai_p(i)        ,htop_p(i)       ,hbot_p(i)       ,sqrtdi_p(p)    ,&
                  effcon_p(p)     ,vmax25_p(p)     ,slti_p(p)       ,hlti_p(p)       ,shti_p(p)      ,&
@@ -885,7 +901,8 @@ ENDIF
 ENDIF
 
 
-IF (DEF_USE_PC .and. patchclass(ipatch)/=CROPLAND) THEN
+IF (DEF_USE_PC .and. patchclass(ipatch)/=CROPLAND .and. patchclass(ipatch)/=WETLAND) THEN
+      ! print*, "898 thermk",thermk
 
       ! initialization
       rst_p   (ps:pe) = 2.0e4
@@ -946,7 +963,7 @@ ENDIF
       fsenl         = sum( fsenl_p     (ps:pe)*pftfrac(ps:pe) )
       fevpl         = sum( fevpl_p     (ps:pe)*pftfrac(ps:pe) )
       etr           = sum( etr_p       (ps:pe)*pftfrac(ps:pe) )
-IF (DEF_USE_PFT .or. patchclass(ipatch)==CROPLAND) THEN
+IF (DEF_USE_PFT .or. patchclass(ipatch)==CROPLAND .or. patchclass(ipatch)==WETLAND) THEN
       dlrad         = sum( dlrad_p     (ps:pe)*pftfrac(ps:pe) )
       ulrad         = sum( ulrad_p     (ps:pe)*pftfrac(ps:pe) )
       tref          = sum( tref_p      (ps:pe)*pftfrac(ps:pe) )
@@ -1010,7 +1027,7 @@ ENDIF
       deallocate ( gssha_p     )
       deallocate ( fsun_p      )
       deallocate ( sabv_p      )
-IF (DEF_USE_PFT .or. patchclass(ipatch)==CROPLAND) THEN
+IF (DEF_USE_PFT .or. patchclass(ipatch)==CROPLAND .or. patchclass(ipatch)==WETLAND) THEN
       deallocate ( fseng_soil_p)
       deallocate ( fseng_snow_p)
       deallocate ( fevpg_soil_p)

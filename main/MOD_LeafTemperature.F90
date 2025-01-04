@@ -416,7 +416,9 @@ CONTAINS
    integer,  parameter :: rd_opt = 3             ! rd with vertical profile consideration
 
 !-----------------------End Variable List-------------------------------
-
+! print*, "419 thermk",thermk
+! print*, "420 i",ipatch
+! print*, "421 pftclass",ivt
 ! initialization of errors and  iteration parameters
       it     = 1    !counter for leaf temperature iteration
       del    = 0.0  !change in leaf temperature from previous iteration
@@ -471,18 +473,28 @@ CONTAINS
       zii  = 1000.   !m (pbl height)
       beta = 1.      !- (in computing W_*)
       z0mg = (1.-fsno)*zlnd + fsno*zsno
+      ! print*, "z0mg,fsno,zlnd,zsno",z0mg,fsno,zlnd,zsno
       z0hg = z0mg
       z0qg = z0mg
 
       z0m    = htop * z0mr(patchclass(ipatch))
+      ! print*, "z0mv,htop,z0mr(patchclass(ipatch))",z0m,htop,z0mr(patchclass(ipatch))
+
+
       displa = htop * displar(patchclass(ipatch))
 
       z0mv = z0m; z0hv = z0m; z0qv = z0m
+      ! if (z0mv==0) then
+      !    z0mv=1
+      ! endif
+      ! print*, "log(z0mv),log(z0mg)",log(z0mv),log(z0mg)
 
       ! Modify aerodynamic parameters for sparse/dense canopy (X. Zeng)
       lt     = min(lai+sai, 2.)
+      ! print*, "lt,lai,sai",lt,lai,sai
       egvf   = (1._r8 - exp(-lt)) / (1._r8 - exp(-2.))
       displa = egvf * displa
+      ! print*, "egvf,1-egvf,displa",egvf,1-egvf,displa
       z0mv   = exp(egvf * log(z0mv) + (1._r8 - egvf) * log(z0mg))
 
       z0hv   = z0mv
@@ -788,11 +800,13 @@ CONTAINS
 IF (.not.DEF_SPLIT_SOILSNOW) THEN
          irab = (frl - 2. * stefnc * tl**4 + emg*stefnc*tg**4 ) * fac &
               + (1-emg)*thermk*fac*frl + (1-emg)*(1-thermk)*fac*stefnc*tl**4
+            !   print*, "791: frl,stefnc,tl,emg,tg,fac,thermk",frl,stefnc,tl,emg,tg,fac,thermk
 ELSE
          irab = (frl - 2. * stefnc * tl**4 &
               + (1.-fsno)*emg*stefnc*t_soil**4 &
               + fsno*emg*stefnc*t_snow**4 ) * fac &
               + (1-emg)*thermk*fac*frl + (1-emg)*(1-thermk)*fac*stefnc*tl**4
+            !   print*, "797: frl,stefnc,tl,fsno,emg,t_soil,t_snow,tg,fac,thermk",frl,stefnc,tl,fsno,emg,t_soil,t_snow,tg,fac,thermk
 ENDIF
          dirab_dtl = - 8. * stefnc * tl**3 * fac &
                    + 4.*(1-emg)*(1-thermk)*fac*stefnc*tl**3

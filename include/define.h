@@ -18,7 +18,7 @@
 ! 3. If defined, debug information is output.
 #define CoLMDEBUG
 ! 3.1 If defined, range of variables is checked.
-#undef RangeCheck
+#define RangeCheck
 ! 3.1 If defined, surface data in vector is mapped to gridded data for checking.
 #define SrfdataDiag
 
@@ -31,8 +31,8 @@
 
 ! 5. Hydrological process options.
 ! 5.1 Two soil hydraulic models can be used.
-#undef   Campbell_SOIL_MODEL
-#define  vanGenuchten_Mualem_SOIL_MODEL
+#define   Campbell_SOIL_MODEL
+#undef  vanGenuchten_Mualem_SOIL_MODEL
 ! 5.2 If defined, lateral flow is modeled.
 #undef CatchLateralFlow
 !    Conflicts :

@@ -139,7 +139,11 @@ CONTAINS
       sabg_snow = 0.
       sabg_snow_lyr(:) = 0.
 
+#ifndef CH4
       IF (patchtype == 0) THEN
+#else
+      IF (patchtype == 0 .or. patchtype == 2) THEN
+#endif
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
          ps = patch_pft_s(ipatch)
          pe = patch_pft_e(ipatch)
@@ -181,7 +185,11 @@ CONTAINS
                     + forc_soll *(1.-alb(2,1)) + forc_solld*(1.-alb(2,2))
             sabg    = sabvg - sabvsun - sabvsha
 
+#ifndef CH4
             IF (patchtype == 0) THEN
+#else
+            IF (patchtype == 0 .or. patchtype == 2) THEN
+#endif
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
 
