@@ -144,7 +144,7 @@ CONTAINS
 
       IF (p_is_io) THEN
          ! file_patch = trim(DEF_dir_rawdata) // '/global_WFT_surface_data.nc'
-         file_patch = '/home/xuxh22/stu01/Mode/data/global_WFT_surface_data.nc'
+         file_patch = '/share/home/dq076/xuxh36/global_WFT_surface_data.nc'
          CALL allocate_block_data (gwetland, wetlanddata, N_WFT)
          CALL ncio_read_block (file_patch, 'PCT_WFT', gwetland, N_WFT, wetlanddata)
       ENDIF

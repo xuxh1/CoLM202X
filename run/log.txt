@@ -39,3 +39,17 @@ start:  Fri Dec 6 15:43:25 CST 2024
 end:    Fri Dec 6 15:50:28 CST 2024
 start:  Fri Dec 6 16:14:40 CST 2024
 start:  Fri Dec 6 18:54:51 CST 2024
+start:  Tue Jan 21 01:47:49 CST 2025
+end:    Tue Jan 21 01:47:59 CST 2025
+start:  Wed Jan 22 09:09:14 CST 2025
+end:    Wed Jan 22 09:09:24 CST 2025
+start:  Wed Jan 22 15:00:32 CST 2025
+end:    Wed Jan 22 21:04:00 CST 2025
+start:  Thu Jan 23 02:59:52 CST 2025
+end:    Thu Jan 23 08:39:03 CST 2025
+start:  Sat Jan 25 16:27:23 CST 2025
+end:    Sat Jan 25 21:07:08 CST 2025
+start:  Mon Jan 27 03:53:21 CST 2025
+end:    Mon Jan 27 08:30:51 CST 2025
+start:  Thu Jan 30 03:44:27 CST 2025
+end:    Thu Jan 30 05:13:24 CST 2025

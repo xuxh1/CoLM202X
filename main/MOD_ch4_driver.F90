@@ -17,7 +17,7 @@
 		use MOD_ch4varcon, only : ch4frzout
 		use MOD_Namelist, only : DEF_USE_VariablySaturatedFlow
 		use MOD_Vars_Global, only : maxsnl,nl_soil,nl_lake,spval,PI,deg2rad,z_soi,zi_soi,dz_soi
-		use MOD_ch4_test
+		use MOD_ch4
 		use MOD_SPMD_Task
 		USE MOD_LandPFT, only: patch_pft_s, patch_pft_e
 		USE MOD_Vars_PFTimeInvariants,  only: pftfrac

@@ -1,11 +1,11 @@
 &nl_colm
 
-   DEF_CASE_NAME = 'exp6_R2'
+   DEF_CASE_NAME = 'ch4_g_1'
 
-   DEF_domain%edges = 58.0
-   DEF_domain%edgen = 60.0
-   DEF_domain%edgew = 65.0
-   DEF_domain%edgee = 67.0
+   DEF_domain%edges = -90.0
+   DEF_domain%edgen = 90.0
+   DEF_domain%edgew = -180.0
+   DEF_domain%edgee = 180.0
 
   ! DEF_domain%edges = 58.0
   ! DEF_domain%edgen = 58.5
@@ -13,19 +13,19 @@
   ! DEF_domain%edgee = 65.5
 
    ! DEF_PIO_groupsize = 12
-   DEF_nx_blocks = 1
-   DEF_ny_blocks = 1
+   DEF_nx_blocks = 24
+   DEF_ny_blocks = 12
 
    DEF_simulation_time%greenwich    = .TRUE.
-   DEF_simulation_time%start_year   = 2008
+   DEF_simulation_time%start_year   = 1995
    DEF_simulation_time%start_month  = 1
    DEF_simulation_time%start_day    = 1
    DEF_simulation_time%start_sec    = 0
-   DEF_simulation_time%end_year     = 2008
+   DEF_simulation_time%end_year     = 2021
    DEF_simulation_time%end_month    = 12
    DEF_simulation_time%end_day      = 31
    DEF_simulation_time%end_sec      = 86400
-   DEF_simulation_time%spinup_year  = 2005
+   DEF_simulation_time%spinup_year  = 1990
    DEF_simulation_time%spinup_month = 1
    DEF_simulation_time%spinup_day   = 1
    DEF_simulation_time%spinup_sec   = 0
@@ -33,9 +33,9 @@
 
    DEF_simulation_time%timestep     = 1800.
 
-   DEF_dir_rawdata = '/shr03/CoLMrawdata/'
-   DEF_dir_runtime = '/shr03/CoLMruntime/'
-   DEF_dir_output  = '/tera11/zhwei/students/Xionghui/wetland/cases/'
+   DEF_dir_rawdata = '/share/home/dq013/zhwei/colm/data/CoLMrawdata/'
+   DEF_dir_runtime = '/share/home/dq013/zhwei/colm/data/CoLMruntime/'
+   DEF_dir_output  = '/share/home/dq076/xuxh36/cases/'
 
    ! ----- land units and land sets -----
    ! for GRIDBASED
@@ -44,27 +44,27 @@
 
    ! soil state init
    DEF_USE_SoilInit  = .true.
-   DEF_file_SoilInit = '/shr03/CoLMruntime/soilstate.nc' 
+   DEF_file_SoilInit = '/share/home/dq013/zhwei/colm/data/soilstate/soilstate.nc' 
 
    ! LAI setting
    DEF_LAI_MONTHLY = .false.
    DEF_LAI_CHANGE_YEARLY = .false.
 
    ! DEF_USE_BEDROCK = .true.
-   
+   DEF_USE_VariablySaturatedFlow = .false.
    ! DEF_Runoff_SCHEME = 0
 
    ! ----- forcing -----
    ! Options :
    ! PRINCETON | GSWP3   | QIAN  | CRUNCEPV4 | CRUNCEPV7 | ERA5LAND | ERA5  |  MSWX
    ! WFDE5     | CRUJRA  | WFDEI | JRA55     | GDAS      | CMFD     | POINT |  JRA3Q
-   DEF_forcing_namelist = './forcing/CRUJRA.nml'
+   DEF_forcing_namelist = './forcing/ERA5.nml'
    
    ! ----- history -----
    DEF_HIST_lon_res = 0.5
    DEF_HIST_lat_res = 0.5
    DEF_WRST_FREQ = 'YEARLY' ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
-   DEF_HIST_FREQ = 'DAILY' ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+   DEF_HIST_FREQ = 'MONTHLY' ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
    DEF_HIST_groupby = 'MONTH' ! history in one file: DAY/MONTH/YEAR
    DEF_HIST_mode = 'one' ! history in one or block
    DEF_REST_CompressLevel = 1
