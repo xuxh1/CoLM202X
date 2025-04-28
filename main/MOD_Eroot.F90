@@ -31,21 +31,21 @@ CONTAINS
 ! !DESCRIPTION:
 !  effective root fraction and maximum possible transpiration rate
 !
-!  Original author : Yongjiu Dai, 08/30/2002
+!  Original author: Yongjiu Dai, 08/30/2002
 !
-! !HISTORY:
+! !REVISIONS:
 !  09/2021, Shupeng Zhang and Xingjie Lu: add vanGenuchten scheme to
 !           calculate soil water potential.
 !=======================================================================
 
    USE MOD_Precision
-   USE MOD_Const_Physical, only : tfrz
+   USE MOD_Const_Physical, only: tfrz
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
-   USE MOD_Hydro_SoilFunction, only : soil_psi_from_vliq
+   USE MOD_Hydro_SoilFunction, only: soil_psi_from_vliq
 #endif
    IMPLICIT NONE
 
-  !-----------------------Argument--------------------------------------
+!-------------------------- Dummy Arguments ----------------------------
 
    integer, intent(in) :: nl_soil                  ! upper bound of array
 
@@ -72,7 +72,7 @@ CONTAINS
    real(r8), intent(out) :: etrc                   ! maximum possible transpiration rate (mm h2o/s)
    real(r8), intent(out) :: rstfac                 ! factor of soil water stress for photosynthesis
 
-  !-----------------------Local Variables-------------------------------
+!-------------------------- Local Variables ----------------------------
 
    real(r8) roota             ! accumulates root resistance factors
    real(r8) rresis(1:nl_soil) ! soil water contribution to root resistance
@@ -82,11 +82,11 @@ CONTAINS
 
    integer i                  ! loop counter
 
-  !-----------------------End Variables list----------------------------
+!-----------------------------------------------------------------------
 
       ! transpiration potential(etrc) and root resistance factors (rstfac)
 
-      roota = 1.e-10         ! must be non-zero to begin
+      roota = 1.e-10          ! must be non-zero to begin
       DO i = 1, nl_soil
 
          IF(t_soisno(i)>tfrz .and. porsl(i)>=1.e-6)THEN

@@ -4,8 +4,8 @@
 
 MODULE MOD_LandPFT
 
-!------------------------------------------------------------------------------------
-! DESCRIPTION:
+!-----------------------------------------------------------------------
+! !DESCRIPTION:
 !
 !    Build pixelset "landpft" (Plant Function Type).
 !
@@ -19,9 +19,9 @@ MODULE MOD_LandPFT
 !
 !    "landpft" refers to pixelset PFT.
 !
-! Created by Shupeng Zhang, May 2023
+!  Created by Shupeng Zhang, May 2023
 !    porting codes from Hua Yuan's OpenMP version to MPI parallel version.
-!------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
    USE MOD_Namelist
    USE MOD_Pixelset
@@ -67,11 +67,10 @@ CONTAINS
    character(len=256) :: dir_5x5, suffix, cyear
    type (block_data_real8_3d) :: pctpft
    real(r8), allocatable :: pctpft_patch(:,:), pctpft_one(:,:)
-   real(r8), allocatable :: area_one(:)
-   integer  :: ipatch, ipft, npatch, npft
+   real(r8), allocatable :: area_one  (:)
+   logical,  allocatable :: patchmask (:)
+   integer  :: ipatch, ipft, npatch, npft, npft_glb
    real(r8) :: sumarea
-   logical, allocatable :: patchmask (:)
-   integer  :: npft_glb
 
       IF (p_is_master) THEN
          write(*,'(A)') 'Making land plant function type tiles :'
@@ -168,22 +167,22 @@ CONTAINS
 #ifdef USEMPI
       CALL mpi_barrier (p_comm_glb, p_err)
 #endif
-   
+
       landpft%has_shared = .true.
 
       IF (p_is_io) THEN
 
-         CALL allocate_block_data (gpatch, pctpft, N_PFT_modis, lb1 = 0)
+         CALL allocate_block_data (grid_patch, pctpft, N_PFT_modis, lb1 = 0)
          CALL flush_block_data (pctpft, 1.0)
 
          dir_5x5 = trim(DEF_dir_rawdata) // '/plant_15s'
          ! add parameter input for time year
          write(cyear,'(i4.4)') lc_year
          suffix  = 'MOD'//trim(cyear)
-         CALL read_5x5_data_pft (dir_5x5, suffix, gpatch, 'PCT_PFT', pctpft)
+         CALL read_5x5_data_pft (dir_5x5, suffix, grid_patch, 'PCT_PFT', pctpft)
 
 #ifdef USEMPI
-         CALL aggregation_data_daemon (gpatch, data_r8_3d_in1 = pctpft, n1_r8_3d_in1 = N_PFT_modis)
+         CALL aggregation_data_daemon (grid_patch, data_r8_3d_in1 = pctpft, n1_r8_3d_in1 = N_PFT_modis)
 #endif
       ENDIF
 
@@ -204,7 +203,7 @@ CONTAINS
 #else
             IF (patchtypes(landpatch%settyp(ipatch)) == 0 .and. landpatch%settyp(ipatch)/=CROPLAND) THEN
 #endif
-               CALL aggregation_request_data (landpatch, ipatch, gpatch, zip = .false., area = area_one, &
+               CALL aggregation_request_data (landpatch, ipatch, grid_patch, zip = .false., area = area_one, &
                   data_r8_3d_in1 = pctpft, data_r8_3d_out1 = pctpft_one, n1_r8_3d_in1 = N_PFT_modis, lb1_r8_3d_in1 = 0)
 
                sumarea = sum(area_one * sum(pctpft_one(0:N_PFT-1,:),dim=1))
@@ -342,11 +341,6 @@ CONTAINS
       CALL mpi_barrier (p_comm_glb, p_err)
 #else
       write(*,'(A,I12,A)') 'Total: ', numpft, ' plant function type tiles.'
-#endif
-
-#ifdef SinglePoint
-      allocate  (SITE_pfttyp(numpft))
-      SITE_pfttyp(:) = landpft%settyp
 #endif
 
       IF (allocated(pctpft_patch)) deallocate (pctpft_patch)

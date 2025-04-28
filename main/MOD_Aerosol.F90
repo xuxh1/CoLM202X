@@ -11,13 +11,13 @@ MODULE MOD_Aerosol
    IMPLICIT NONE
    SAVE
 
-! !PUBLIC MEMBER FUNCTIONS:
+! PUBLIC MEMBER FUNCTIONS:
    PUBLIC :: AerosolMasses
    PUBLIC :: AerosolFluxes
    PUBLIC :: AerosolDepInit
    PUBLIC :: AerosolDepReadin
-!
-! !PUBLIC DATA MEMBERS:
+
+! PUBLIC DATA MEMBERS:
 !-----------------------------------------------------------------------
 
    logical,  parameter :: use_extrasnowlayers = .false.
@@ -37,7 +37,6 @@ MODULE MOD_Aerosol
 
 CONTAINS
 
-   !-----------------------------------------------------------------------
    SUBROUTINE AerosolMasses( dtime         ,snl            ,do_capsnow    ,&
               h2osno_ice    ,h2osno_liq    ,qflx_snwcp_ice ,snw_rds       ,&
 
@@ -47,19 +46,20 @@ CONTAINS
               mss_cnc_bcphi ,mss_cnc_bcpho ,mss_cnc_ocphi  ,mss_cnc_ocpho ,&
               mss_cnc_dst1  ,mss_cnc_dst2  ,mss_cnc_dst3   ,mss_cnc_dst4  )
 
-   !
-   ! !DESCRIPTION:
-   ! Calculate column-integrated aerosol masses, and
-   ! mass concentrations for radiative calculations and output
-   ! (based on new snow level state, after SnowFilter is rebuilt.
-   ! NEEDS TO BE AFTER SnowFiler is rebuilt in Hydrology2, otherwise there
-   ! can be zero snow layers but an active column in filter)
+!-----------------------------------------------------------------------
+! !DESCRIPTION:
+!  Calculate column-integrated aerosol masses, and
+!  mass concentrations for radiative calculations and output
+!  (based on new snow level state, after SnowFilter is rebuilt.
+!  NEEDS TO BE AFTER SnowFiler is rebuilt in Hydrology2, otherwise there
+!  can be zero snow layers but an active column in filter)
+!-----------------------------------------------------------------------
 
    IMPLICIT NONE
 
    ! !ARGUMENTS:
    !
-   real(r8),intent(in)     ::  dtime            !seconds in a time step [second]
+   real(r8),intent(in)     ::  dtime            !  seconds in a time step [second]
    integer, intent(in)     ::  snl              !  number of snow layers
 
    logical,  intent(in)    ::  do_capsnow       !  true => do snow capping
@@ -102,7 +102,7 @@ CONTAINS
          IF (.not. use_extrasnowlayers) THEN
             ! Correct the top layer aerosol mass to account for snow capping.
             ! This approach conserves the aerosol mass concentration
-            ! (but not the aerosol amss) when snow-capping is invoked
+            ! (but not the aerosol mass) when snow-capping is invoked
 
             IF (j == snl+1) THEN
                IF (do_capsnow) THEN
@@ -165,19 +165,20 @@ CONTAINS
 
 
 
-   !-----------------------------------------------------------------------
    SUBROUTINE AerosolFluxes( dtime, snl, forc_aer, &
                              mss_bcphi  ,mss_bcpho  ,mss_ocphi  ,mss_ocpho ,&
                              mss_dst1   ,mss_dst2   ,mss_dst3   ,mss_dst4   )
-   !
-   ! !DESCRIPTION:
-   ! Compute aerosol fluxes through snowpack and aerosol deposition fluxes into top layere
-   !
+!-----------------------------------------------------------------------
+! !DESCRIPTION:
+!  Compute aerosol fluxes through snowpack and aerosol deposition fluxes
+!  into top layer
+!
+!-----------------------------------------------------------------------
    IMPLICIT NONE
    !
    !-----------------------------------------------------------------------
    ! !ARGUMENTS:
-   real(r8),intent(in)  :: dtime           !seconds in a time step [second]
+   real(r8),intent(in)  :: dtime           ! seconds in a time step [second]
    integer, intent(in)  :: snl             ! number of snow layers
 
    real(r8), intent(in) :: forc_aer (14 )  ! aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]

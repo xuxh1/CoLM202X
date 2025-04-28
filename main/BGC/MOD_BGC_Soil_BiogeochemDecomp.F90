@@ -4,10 +4,10 @@ MODULE MOD_BGC_Soil_BiogeochemDecomp
 
 !-----------------------------------------------------------------------------------------------------------
 ! !DESCRIPTION:
-! This MODULE caluclates the CN transfer fluxes between different soil and litter pools,
+! This MODULE calculates the CN transfer fluxes between different soil and litter pools,
 ! which includes CN transfer fluxes (decomp_ctransfer or decomp_ntransfer), heterotrophic respiration (decomp_hr),
-! net mineralisation and gross mineralisation. Denitrification flux will be also calculated when nitrification model 
-! is activated. 
+! net mineralisation and gross mineralisation. Denitrification flux will be also calculated when nitrification model
+! is activated.
 !
 ! !ORIGINAL:
 ! The Community Land Model version 5.0 (CLM5.0)
@@ -16,14 +16,14 @@ MODULE MOD_BGC_Soil_BiogeochemDecomp
 ! Xingjie Lu, 2021, revised original CLM5 code to be compatible with CoLM code structure.
 
    USE MOD_Precision
-   USE MOD_Namelist, only : DEF_USE_NITRIF
+   USE MOD_Namelist, only: DEF_USE_NITRIF
    USE MOD_BGC_Vars_TimeInvariants, only: &
-       floating_cn_ratio, initial_cn_ratio, dnp, rf_decomp, receiver_pool, donor_pool, i_atm 
- 
+       floating_cn_ratio, initial_cn_ratio, dnp, rf_decomp, receiver_pool, donor_pool, i_atm
+
    USE MOD_BGC_Vars_TimeVariables, only: &
        ! decomposition carbon & nitrogen pools
        decomp_cpools_vr, decomp_npools_vr, &
- 
+
        ! other variables
        cn_decomp_pools, fpi_vr, w_scalar
  
@@ -35,7 +35,7 @@ MODULE MOD_BGC_Soil_BiogeochemDecomp
  
  
    IMPLICIT NONE
- 
+
    PUBLIC SoilBiogeochemDecomp
 
 CONTAINS
@@ -64,16 +64,16 @@ CONTAINS
             ENDDO
          ENDIF
       ENDDO
-  
+
       ! column loop to calculate actual immobilization and decomp rates, following
       ! resolution of plant/heterotroph  competition for mineral N
-  
+
       ! upon RETURN from SoilBiogeochemCompetition, the fraction of potential immobilization
       ! has been set (soilbiogeochem_state_inst%fpi_vr_col). now finish the decomp calculations.
       ! only the immobilization steps are limited by fpi_vr (pmnf > 0)
       ! Also calculate denitrification losses as a simple proportion
       ! of mineralization flux.
-  
+
       DO k = 1, ndecomp_transitions
          DO j = 1,nl_soil
             IF (decomp_cpools_vr(j,donor_pool(k),i) > 0._r8) THEN
@@ -108,7 +108,7 @@ CONTAINS
                ENDIF
                decomp_sminn_flux_vr(j,k,i) = 0._r8
             ENDIF
-  
+
          ENDDO
       ENDDO
   

@@ -44,36 +44,36 @@ MODULE MOD_UserSpecifiedForcing
 
    character(len=256) :: dataset
 
-   logical  :: solarin_all_band   ! whether solar radiation in all bands is available
+   logical  :: solarin_all_band      ! whether solar radiation in all bands is available
 
    character(len=256) :: HEIGHT_mode ! observation height mode
-   real(r8) :: HEIGHT_V           ! observation height of wind speed
-   real(r8) :: HEIGHT_T           ! observation height of air temperature
-   real(r8) :: HEIGHT_Q           ! observation height of specific humidity
+   real(r8) :: HEIGHT_V              ! observation height of wind speed
+   real(r8) :: HEIGHT_T              ! observation height of air temperature
+   real(r8) :: HEIGHT_Q              ! observation height of specific humidity
 
-   integer  :: NVAR      ! variable number of forcing data
-   integer  :: startyr   ! start year of forcing data        <MARK #1>
-   integer  :: startmo   ! start month of forcing data
-   integer  :: endyr     ! END year of forcing data
-   integer  :: endmo     ! END month of forcing data
+   integer  :: NVAR                  ! variable number of forcing data
+   integer  :: startyr               ! start year of forcing data
+   integer  :: startmo               ! start month of forcing data
+   integer  :: endyr                 ! END year of forcing data
+   integer  :: endmo                 ! END month of forcing data
 
-   integer, allocatable :: dtime(:)          ! time interval of forcing data
-   integer, allocatable :: offset(:)         ! offset of forcing data
+   integer, allocatable :: dtime(:)  ! time interval of forcing data
+   integer, allocatable :: offset(:) ! offset of forcing data
 
-   logical :: leapyear   ! leapyear calendar
-   logical :: data2d     ! data in 2 dimension (lon, lat)
-   logical :: hightdim   ! have "z" dimension
-   logical :: dim2d      ! lat/lon value in 2 dimension (lon, lat)
+   logical :: leapyear               ! leapyear calendar
+   logical :: data2d                 ! data in 2 dimension (lon, lat)
+   logical :: hightdim               ! have "z" dimension
+   logical :: dim2d                  ! lat/lon value in 2 dimension (lon, lat)
 
-   character(len=256) :: latname                   ! dimension name of latitude
-   character(len=256) :: lonname                   ! dimension name of longitude
+   character(len=256) :: latname                  ! dimension name of latitude
+   character(len=256) :: lonname                  ! dimension name of longitude
 
-   character(len=256) :: groupby                   ! file grouped by year/month
+   character(len=256) :: groupby                  ! file grouped by year/month
 
-   character(len=256), allocatable :: fprefix(:)   ! file prefix
-   character(len=256), allocatable :: vname(:)     ! variable name
-   character(len=256), allocatable :: timelog(:)   ! variable time log info
-   character(len=256), allocatable :: tintalgo(:)  ! interpolation algorithm
+   character(len=256), allocatable :: fprefix(:)  ! file prefix
+   character(len=256), allocatable :: vname(:)    ! variable name
+   character(len=256), allocatable :: timelog(:)  ! variable time log info
+   character(len=256), allocatable :: tintalgo(:) ! interpolation algorithm
 
    ! ----- public subroutines -----
    PUBLIC :: init_user_specified_forcing ! initialization of the selected forcing dataset
@@ -139,7 +139,7 @@ CONTAINS
          vname   (ivar) = DEF_forcing%vname(ivar)     ! variable name
          timelog (ivar) = DEF_forcing%timelog(ivar)   ! variable name
          tintalgo(ivar) = DEF_forcing%tintalgo(ivar)  ! interpolation algorithm
-      END DO
+      ENDDO
       IF (DEF_USE_CBL_HEIGHT) THEN
          fprefix (NVAR) = DEF_forcing%CBL_fprefix
          vname   (NVAR) = DEF_forcing%CBL_vname
@@ -201,7 +201,7 @@ CONTAINS
       !-------------------
          !---Dirmeyer, P. A., Gao, X., Zhao, M., Guo, Z., Oki, T. and Hanasaki, N. (2006) GSWP-2:
          !   Multimodel Analysis and Implications for Our Perception of the Land Surface. Bulletin
-         !   of the American Meteorological Society, 87(10), 1381–98.
+         !   of the American Meteorological Society, 87(10), 1381-98.
 
       !REVISION HISTORY
       !----------------
@@ -519,7 +519,7 @@ CONTAINS
       !-------------------
          !---Xia, Y.L.; Hao, Z.C.; Shi, C.X.; Li, Y.H.; Meng, J.; Xu, T.R.; Wu, X.Y.; Zhang, B.Q.
          !    Regional and global land data assimilation systems: Innovations, challenges, and
-         !    prospects. J. Meteorol. Res. 2019, 33, 159–189.
+         !    prospects. J. Meteorol. Res. 2019, 33, 159-189.
 
       !REVISION HISTORY
       !----------------
@@ -570,7 +570,7 @@ CONTAINS
       CASE ('CRA40')
          !DESCRIPTION
          !===========
-            !---CMA’s first-generation global atmospheric reanalysis (RA) covering 1979–2018 (CRA-40)
+            !---CMA’s first-generation global atmospheric reanalysis (RA) covering 1979-2018 (CRA-40)
 
          !data source:
          !-------------------
@@ -578,8 +578,8 @@ CONTAINS
 
          !References:
          !-------------------
-            !---Liu, Z., Jiang, L., Shi, C. et al. CRA-40/Atmosphere—The First-Generation Chinese Atmospheric Reanalysis (1979–2018):
-            !   System Description and Performance Evaluation. J Meteorol Res 37, 1–19 (2023). https://doi.org/10.1007/s13351-023-2086-x
+            !---Liu, Z., Jiang, L., Shi, C. et al. CRA-40/Atmosphere—The First-Generation Chinese Atmospheric Reanalysis (1979-2018):
+            !   System Description and Performance Evaluation. J Meteorol Res 37, 1-19 (2023). https://doi.org/10.1007/s13351-023-2086-x
 
 
 
@@ -860,12 +860,12 @@ CONTAINS
                      IF (forcn(4)%blk(ib,jb)%val(i,j) < 0.0)   forcn(4)%blk(ib,jb)%val(i,j) = 0.0
                   END select
 
-               END DO
-            END DO
-         END DO
-      END IF
+               ENDDO
+            ENDDO
+         ENDDO
+      ENDIF
 
    END SUBROUTINE metpreprocess
 
 END MODULE MOD_UserSpecifiedForcing
-! ----------- EOP ---------------
+! ---------- EOP ------------

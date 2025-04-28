@@ -10,3 +10,6 @@ __pycache__
 *-e.*
 *-o.*
 *.txt
+lib
+*.a
+*.x

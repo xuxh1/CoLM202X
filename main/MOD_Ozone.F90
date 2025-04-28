@@ -2,18 +2,19 @@
 
 Module MOD_Ozone
 
- !-----------------------------------------------------------------------
- ! !DESCRIPTION:
- ! This module hold the plant physiological response to the ozone, including vcmax response and stomata response.
- ! Ozone concentration can be either readin through Mod_OzoneData module or set to constant.
- !
- ! !ORIGINAL:
- ! The Community Land Model version 5.0 (CLM5.0)
- !
- ! !REVISION:
- ! Xingjie Lu 2022, revised the CLM5 code to be compatible with CoLM code structure.
-
-
+!-----------------------------------------------------------------------
+! !DESCRIPTION:
+!  This module hold the plant physiological response to the ozone,
+!  including vcmax response and stomata response.  Ozone concentration
+!  can be either readin through Mod_OzoneData module or set to constant.
+!
+!  Original:
+!  The Community Land Model version 5.0 (CLM5.0)
+!
+! !REVISIONS:
+!  2022, Xingjie Lu: revised the CLM5 code to be compatible with CoLM
+!        code structure.
+!-----------------------------------------------------------------------
 
    USE MOD_Precision
    USE MOD_Const_Physical, only: rgas
@@ -43,11 +44,12 @@ CONTAINS
 
    SUBROUTINE CalcOzoneStress (o3coefv,o3coefg, forc_ozone, forc_psrf, th, ram, &
                               rs, rb, lai, lai_old, ivt, o3uptake, deltim)
-   !-------------------------------------------------
-   ! DESCRIPTION:
-   ! Calculate Ozone Stress on both vcmax and stomata conductance.
-   !
-   ! convert o3 from mol/mol to nmol m^-3
+!-----------------------------------------------------------------------
+! !DESCRIPTION:
+!  Calculate Ozone Stress on both vcmax and stomata conductance.
+!
+!  convert o3 from mol/mol to nmol m^-3
+!-----------------------------------------------------------------------
    real(r8), intent(out)   :: o3coefv
    real(r8), intent(out)   :: o3coefg
    real(r8), intent(inout) :: forc_ozone
@@ -184,10 +186,11 @@ CONTAINS
 
    SUBROUTINE init_ozone_data (idate)
 
-   !----------------------
-   ! DESCTIPTION:
-   ! open ozone netcdf file from DEF_dir_rawdata, read latitude and longitude info.
-   ! Initialize Ozone data read in.
+!-----------------------------------------------------------------------
+! !DESCRIPTION:
+!  open ozone netcdf file from DEF_dir_rawdata, read latitude and
+!  longitude info.  Initialize Ozone data read in.
+!-----------------------------------------------------------------------
 
    USE MOD_SPMD_Task
    USE MOD_Namelist
@@ -233,12 +236,12 @@ CONTAINS
 
    END SUBROUTINE init_ozone_data
 
-   ! ----------
    SUBROUTINE update_ozone_data (time, deltim)
 
-   !----------------------
-   ! DESCTIPTION:
-   ! read ozone data during simulation
+!-----------------------------------------------------------------------
+! !DESCRIPTION:
+!  read ozone data during simulation
+!-----------------------------------------------------------------------
 
    USE MOD_TimeManager
    USE MOD_Namelist
@@ -289,3 +292,4 @@ CONTAINS
    END SUBROUTINE update_ozone_data
 
 END MODULE MOD_Ozone
+! ---------- EOP ------------
