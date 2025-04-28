@@ -44,6 +44,7 @@ MODULE MOD_Urban_Flux
 !
 !-----------------------------------------------------------------------
    USE MOD_Precision
+   USE MOD_SPMD_Task
    USE MOD_Namelist, only: DEF_RSS_SCHEME, DEF_VEG_SNOW
    USE MOD_Vars_Global
    USE MOD_Qsadv, only: qsadv
@@ -55,23 +56,24 @@ MODULE MOD_Urban_Flux
    PUBLIC :: UrbanVegFlux
    PUBLIC :: dewfraction
 
-! Exponential extinction factor (alpha) options:
-!   1. Masson, 2000; Oleson et al., 2008
-!   2. Swaid, 1993; Kusaka, 2001; Lee and Park, 2008
-!   3. Macdonald, 2000
+   ! Exponential extinction factor (alpha) options:
+   !   1. Masson, 2000; Oleson et al., 2008
+   !   2. Swaid, 1993; Kusaka, 2001; Lee and Park, 2008
+   !   3. Macdonald, 2000
    integer,  parameter :: alpha_opt = 3
 
-! Layer number setting, default is false, i.e., 2 layers
+   ! Layer number setting, default is false, i.e., 2 layers
    logical,  parameter :: run_three_layer = .false.
 
-! Percent of sensible/latent to AHE (only for Fhac, Fwst, vehc now),
-! 92% heat release as SH, 8% heat release as LH, Pigeon et al., 2007
+   ! Percent of sensible/latent to AHE (only for Fhac, Fwst, vehc now),
+   ! 92% heat release as SH, 8% heat release as LH, Pigeon et al., 2007
    real(r8), parameter :: fsh = 0.92
    real(r8), parameter :: flh = 0.08
 
-! A simple urban irrigation scheme accounts for soil water stress of trees
+   ! A simple urban irrigation scheme accounts for soil water stress of trees
    logical,  parameter :: DEF_URBAN_Irrigation = .true.
    real(r8), parameter :: rstfac_irrig = 1.
+
 !-----------------------------------------------------------------------
 
 CONTAINS
@@ -114,7 +116,7 @@ CONTAINS
    USE MOD_UserSpecifiedForcing, only: HEIGHT_mode
    IMPLICIT NONE
 
-!----------------------- Dummy argument --------------------------------
+!-------------------------- Dummy Arguments ----------------------------
    integer, intent(in) :: &
         ipatch,       &! patch index [-]
         lbr,          &! lower bound of array
@@ -188,12 +190,12 @@ CONTAINS
         taux,         &! wind stress: E-W [kg/m/s**2]
         tauy,         &! wind stress: N-S [kg/m/s**2]
         fsenroof,     &! sensible heat flux from roof [W/m2]
-        fsenwsun,     &! sensible heat flux from snulit wall [W/m2]
+        fsenwsun,     &! sensible heat flux from sunlit wall [W/m2]
         fsenwsha,     &! sensible heat flux from shaded wall [W/m2]
         fsengimp,     &! sensible heat flux from impervious road [W/m2]
         fsengper,     &! sensible heat flux from pervious ground [W/m2]
-        fevproof,     &! evaperation heat flux from roof [W/m2]
-        fevpgimp,     &! evaperation heat flux from impervious road [W/m2]
+        fevproof,     &! evaporation heat flux from roof [W/m2]
+        fevpgimp,     &! evaporation heat flux from impervious road [W/m2]
         fevpgper,     &! evaporation heat flux from pervious ground [mm/s]
 
         croofs,       &! deriv of roof sensible heat flux wrt soil temp [w/m**2/k]
@@ -221,14 +223,14 @@ CONTAINS
         fq,           &! integral of profile function for moisture
         tafu           ! effective urban air temperature (2nd layer, walls)
 
-!------------------------ LOCAL VARIABLES ------------------------------
+!-------------------------- Local Variables ----------------------------
    integer :: &
         niters,       &! maximum number of iterations for surface temperature
         iter,         &! iteration index
         nmozsgn        ! number of times moz changes sign
 
    real(r8) :: &
-        beta,         &! coefficient of conective velocity [-]
+        beta,         &! coefficient of convective velocity [-]
         dth,          &! diff of virtual temp. between ref. height and surface
         dqh,          &! diff of humidity between ref. height and surface
         dthv,         &! diff of vir. poten. temp. between ref. height and surface
@@ -241,20 +243,20 @@ CONTAINS
         fq2m,         &! relation for specific humidity at 2m
         fm10m,        &! integral of profile function for momentum at 10m
         thvstar,      &! virtual potential temperature scaling parameter
-        um,           &! wind speed including the stablity effect [m/s]
+        um,           &! wind speed including the stability effect [m/s]
         ur,           &! wind speed at reference height [m/s]
         wc,           &! convective velocity [m/s]
         wc2,          &! wc**2
         zeta,         &! dimensionless height used in Monin-Obukhov theory
         zii,          &! convective boundary height [m]
-        zldis,        &! reference height "minus" zero displacement heght [m]
+        zldis,        &! reference height "minus" zero displacement height [m]
         z0mg,         &! roughness length over ground, momentum [m]
         z0hg,         &! roughness length over ground, sensible heat [m]
         z0qg           ! roughness length over ground, latent heat [m]
 
    real(r8) evplwet, evplwet_dtl, elwmax, elwdif
 
-!----------------------- defination for 3d run -------------------------
+!----------------------- definition for 3d run -------------------------
 
    integer, parameter :: nlay = 3  ! potential layer number
 
@@ -274,9 +276,9 @@ CONTAINS
         phih,         &! phi(h), similarity function for sensible heat
         displa,       &! displacement height for urban
         displau,      &! displacement height for urban building
-        z0mu,         &! roughless length for urban building only
-        z0h,          &! roughless length for sensible heat
-        z0q,          &! roughless length for latent heat
+        z0mu,         &! roughness length for urban building only
+        z0h,          &! roughness length for sensible heat
+        z0q,          &! roughness length for latent heat
         tg,           &! ground temperature
         qg             ! ground specific humidity
 
@@ -293,7 +295,7 @@ CONTAINS
         alpha          ! exponential extinction factor for u/k decline within urban
 
    real(r8), dimension(0:nurb) :: &
-        tu,           &! termperature array
+        tu,           &! temperature array
         fc,           &! fractional cover array
         canlev,       &! urban canopy layer lookup table
         rb,           &! leaf boundary layer resistance [s/m]
@@ -347,7 +349,7 @@ CONTAINS
    real(r8) fwet_roof, fwet_roof_, fwet_gimp, fwet_gimp_, rss_
    real(r8) fwetfac
 
-!-----------------------End Variable List-------------------------------
+!-----------------------------------------------------------------------
 
 ! initialization
       tu(0) = troof; tu(1) = twsun; tu(2) = twsha
@@ -492,7 +494,7 @@ CONTAINS
 
 !-----------------------------------------------------------------------
 ! first guess for taf and qaf for each layer
-! a large differece from previous schemes
+! a large difference from previous schemes
 !-----------------------------------------------------------------------
 
       IF (numlay .eq. 2) THEN
@@ -513,12 +515,25 @@ CONTAINS
       hu_ = hu; ht_ = ht; hq_ = hq;
 
       IF (trim(HEIGHT_mode) == 'absolute') THEN
-#ifndef SingPoint
-         ! to ensure the obs height >= hroof+10.
-         hu_ = max(hroof+10., hu)
-         ht_ = max(hroof+10., ht)
-         hq_ = max(hroof+10., hq)
-#endif
+
+         IF (hu <= hroof+1) THEN
+            hu_ = hroof + 1.
+            IF (taux == spval) & ! only print warning for the first time-step
+               write(6,*) 'Warning: the obs height of u less than hroof+1, set it to hroof+1.'
+         ENDIF
+
+         IF (ht <= hroof+1) THEN
+            ht_ = hroof + 1.
+            IF (taux == spval) & ! only print warning for the first time-step
+               write(6,*) 'Warning: the obs height of t less than hroof+1, set it to hroof+1.'
+         ENDIF
+
+         IF (hq <= hroof+1) THEN
+            hq_ = hroof + 1.
+            IF (taux == spval) & ! only print warning for the first time-step
+               write(6,*) 'Warning: the obs height of q less than hroof+1, set it to hroof+1.'
+         ENDIF
+
       ELSE ! relative height
          hu_ = hroof + hu
          ht_ = hroof + ht
@@ -794,7 +809,7 @@ CONTAINS
       croof  = croofs + croofl*htvp_roof
 
 
-#if(defined CoLMDEBUG)
+#if (defined CoLMDEBUG)
 #endif
 
       tafu = taf(2)
@@ -899,7 +914,7 @@ CONTAINS
    USE MOD_UserSpecifiedForcing, only: HEIGHT_mode
    IMPLICIT NONE
 
-!-----------------------Arguments---------------------------------------
+!-------------------------- Dummy Arguments ----------------------------
    integer,  intent(in) :: &
         ipatch,       &! patch index [-]
         lbr,          &! lower bound of array
@@ -925,7 +940,7 @@ CONTAINS
         frl,          &! atmospheric infrared (longwave) radiation [W/m2]
         par,          &! par absorbed per unit sunlit lai [w/m**2]
         sabv,         &! solar radiation absorbed by vegetation [W/m2]
-        rstfac,       &! factor of soil water stress to plant physiologocal processes
+        rstfac,       &! factor of soil water stress to plant physiological processes
 
         po2m,         &! atmospheric partial pressure  o2 (pa)
         pco2m,        &! atmospheric partial pressure co2 (pa)
@@ -1026,9 +1041,9 @@ CONTAINS
    real(r8), intent(in)    :: Ainv(5,5)  !Inverse of Radiation transfer matrix
    real(r8), intent(in)    :: SkyVF (5)  !View factor to sky
    real(r8), intent(in)    :: VegVF (5)  !View factor to veg
-   real(r8), intent(inout) :: B     (5)  !Vectors of incident radition on each surface
-   real(r8), intent(inout) :: B1    (5)  !Vectors of incident radition on each surface
-   real(r8), intent(inout) :: dBdT  (5)  !Vectors of incident radition on each surface
+   real(r8), intent(inout) :: B     (5)  !Vectors of incident radiation on each surface
+   real(r8), intent(inout) :: B1    (5)  !Vectors of incident radiation on each surface
+   real(r8), intent(inout) :: dBdT  (5)  !Vectors of incident radiation on each surface
 
    real(r8), intent(out) :: &
         taux,         &! wind stress: E-W [kg/m/s**2]
@@ -1048,7 +1063,7 @@ CONTAINS
         cgrnds,       &! deriv of ground latent heat flux wrt soil temp [w/m**2/k]
         croofl,       &! deriv of roof latent heat flux wrt soil temp [w/m**2/k]
         cgimpl,       &! deriv of impervious latent heat flux wrt soil temp [w/m**2/k]
-        cgperl,       &! deriv of soil atent heat flux wrt soil temp [w/m**2/k]
+        cgperl,       &! deriv of soil latent heat flux wrt soil temp [w/m**2/k]
         croof,        &! deriv of roof total flux wrt soil temp [w/m**2/k]
         cgimp,        &! deriv of impervious total heat flux wrt soil temp [w/m**2/k]
         cgper,        &! deriv of soil total heat flux wrt soil temp [w/m**2/k]
@@ -1098,21 +1113,21 @@ CONTAINS
    real(r8) dtl(0:itmax+1)             !difference of tl between two iterative step
 
    real(r8) :: &
-        zldis,        &! reference height "minus" zero displacement heght [m]
+        zldis,        &! reference height "minus" zero displacement height [m]
         zii,          &! convective boundary layer height [m]
         z0mv,         &! roughness length of vegetation only, momentum [m]
         z0mu,         &! roughness length of building only, momentum [m]
         z0h,          &! roughness length, sensible heat [m]
         z0q,          &! roughness length, latent heat [m]
         zeta,         &! dimensionless height used in Monin-Obukhov theory
-        beta,         &! coefficient of conective velocity [-]
+        beta,         &! coefficient of convective velocity [-]
         wc,           &! convective velocity [m/s]
         wc2,          &! wc**2
         dth,          &! diff of virtual temp. between ref. height and surface
         dthv,         &! diff of vir. poten. temp. between ref. height and surface
         dqh,          &! diff of humidity between ref. height and surface
         obu,          &! monin-obukhov length (m)
-        um,           &! wind speed including the stablity effect [m/s]
+        um,           &! wind speed including the stability effect [m/s]
         ur,           &! wind speed at reference height [m/s]
         uaf,          &! velocity of air within foliage [m/s]
         fh2m,         &! relation for temperature at 2m
@@ -1152,13 +1167,13 @@ CONTAINS
    real(r8) fevpl_bef, fevpl_noadj, dtl_noadj, erre
    real(r8) qevpl, qdewl, qsubl, qfrol, qmelt, qfrz
 
-!----------------------- defination for 3d run ------------------------ !
+!----------------------- definition for 3d run ------------------------
    integer, parameter :: nlay = 3
    integer, parameter :: uvec(5) = (/0,0,0,0,1/) !unit vector
 
    integer :: &
         clev,         &! current layer index
-        botlay,       &! botom layer index
+        botlay,       &! bottom layer index
         numlay         ! available layer number
 
    real(r8) :: &
@@ -1175,7 +1190,7 @@ CONTAINS
         displau,      &! displacement height for urban building
         displav,      &! displacement height for urban vegetation
         displav_lay,  &! displacement height for urban vegetation layer
-        z0mv_lay,     &! roughless length for vegetation
+        z0mv_lay,     &! roughness length for vegetation
         ueff_veg,     &! effective wind speed within canopy layer [m/s]
         tg,           &! ground temperature
         qg             ! ground specific humidity
@@ -1204,7 +1219,7 @@ CONTAINS
         dlveg          ! change of lw for the last time
 
    real(r8), dimension(0:nurb) :: &
-        tu,           &! termperature array
+        tu,           &! temperature array
         fc,           &! fractional cover array
         canlev,       &! urban canopy layer lookup table
         rb,           &! leaf boundary layer resistance [s/m]
@@ -1262,7 +1277,7 @@ CONTAINS
    ! for interface
    real(r8) o3coefv, o3coefg, assim_RuBP, assim_Rubisco, ci, vpd, gammas
 
-!-----------------------End Variable List-------------------------------
+!-----------------------------------------------------------------------
 
 ! initialization of errors and  iteration parameters
       it    = 1    !counter for leaf temperature iteration
@@ -1502,12 +1517,25 @@ CONTAINS
       hu_ = hu; ht_ = ht; hq_ = hq;
 
       IF (trim(HEIGHT_mode) == 'absolute') THEN
-#ifndef SingPoint
-         ! to ensure the obs height >= hroof+10.
-         hu_ = max(hroof+10., hu)
-         ht_ = max(hroof+10., ht)
-         hq_ = max(hroof+10., hq)
-#endif
+
+         IF (hu <= hroof+1) THEN
+            hu_ = hroof + 1.
+            IF (taux == spval) & ! only print warning for the first time-step
+               write(6,*) 'Warning: the obs height of u less than hroof+1, set it to hroof+1.'
+         ENDIF
+
+         IF (ht <= hroof+1) THEN
+            ht_ = hroof + 1.
+            IF (taux == spval) & ! only print warning for the first time-step
+               write(6,*) 'Warning: the obs height of t less than hroof+1, set it to hroof+1.'
+         ENDIF
+
+         IF (hq <= hroof+1) THEN
+            hq_ = hroof + 1.
+            IF (taux == spval) & ! only print warning for the first time-step
+               write(6,*) 'Warning: the obs height of q less than hroof+1, set it to hroof+1.'
+         ENDIF
+
       ELSE ! relative height
          hu_ = hroof + hu
          ht_ = hroof + ht
@@ -1663,7 +1691,7 @@ CONTAINS
             clev = canlev(i)
             rb(i) = rhoair * cpair / ( 11.8 + 4.2*ueff_lay(clev) )
 
-            ! Cole & Sturrock (1977) Building and Environment, 12, 207–214.
+            ! Cole & Sturrock (1977) Building and Environment, 12, 207-214.
             ! rb(i) = rhoair * cpair / ( 5.8 + 4.1*ueff_lay(clev) )
             ! IF (ueff_lay(clev) > 5.) THEN
             !    rb(i) = rhoair * cpair / (7.51*ueff_lay(clev)**0.78)
@@ -1852,7 +1880,7 @@ ENDIF
 ! IR radiation, sensible and latent heat fluxes and their derivatives
 !-----------------------------------------------------------------------
 ! the partial derivatives of areodynamical resistance are ignored
-! which cannot be determined analtically
+! which cannot be determined analytically
 
          !NOTE: ONLY for vegetation
          i = 3
@@ -2212,13 +2240,13 @@ IF ( DEF_URBAN_Irrigation ) THEN
       etr_deficit = max(0., etr - etr_)
 ENDIF
 
-! canopy fluxes and total assimilation amd respiration
+! canopy fluxes and total assimilation and respiration
 
       fsenl = fsenl + fsenl_dtl*dtl(it-1) &
-         ! add the imbalanced energy below due to T adjustment to sensibel heat
+         ! add the imbalanced energy below due to T adjustment to sensible heat
          + (dtl_noadj-dtl(it-1)) * (clai/deltim - dirab_dtl &
          + fsenl_dtl + hvap*fevpl_dtl) &
-         ! add the imbalanced energy below due to q adjustment to sensibel heat
+         ! add the imbalanced energy below due to q adjustment to sensible heat
          + hvap*erre
 
       etr     = etr     +     etr_dtl*dtl(it-1)
@@ -2314,7 +2342,7 @@ ENDIF
       err = sabv + irab + dirab_dtl*dtl(it-1) &
           - fsenl - hvap*fevpl - dheatl
 
-#if(defined CLMDEBUG)
+#if (defined CoLMDEBUG)
       IF (abs(err) .gt. .2) THEN
          write(6,*) 'energy imbalance in UrbanVegFlux.F90', &
          i,it-1,err,sabv,irab,fsenl,hvap*fevpl,dheatl
@@ -2495,16 +2523,15 @@ ENDIF
 
    SUBROUTINE dewfraction (sigf,lai,sai,dewmx,ldew,ldew_rain,ldew_snow,fwet,fdry)
 !=======================================================================
-! Original author: Yongjiu Dai, September 15, 1999
+!  Original author: Yongjiu Dai, September 15, 1999
 !
-! determine fraction of foliage covered by water and
-! fraction of foliage that is dry and transpiring
+!  determine fraction of foliage covered by water and
+!  fraction of foliage that is dry and transpiring
 !
+! !REVISIONS:
 !
-! REVISIONS:
-!
-! 2024.04.16   Hua Yuan: add option to account for vegetation snow process
-! 2018.06      Hua Yuan: remove sigf, to compatible with PFT
+!  2024.04.16, Hua Yuan: add option to account for vegetation snow process
+!  2018.06   , Hua Yuan: remove sigf, to compatible with PFT
 !=======================================================================
 
    USE MOD_Precision
@@ -2570,3 +2597,4 @@ ENDIF
    END SUBROUTINE dewfraction
 
 END MODULE MOD_Urban_Flux
+! ---------- EOP ------------

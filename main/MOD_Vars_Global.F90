@@ -1,15 +1,16 @@
 #include <define.h>
 
 MODULE MOD_Vars_Global
-!-------------------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
 ! !DESCRIPTION:
-! Define some global variables
+!  Define some global variables
 !
-! REVISIONS:
-! Hua Yuan, 08/2019: initial version partly adapted from CoLM2014
-! TODO ...
+! !REVISIONS:
+!  Hua Yuan, 08/2019: initial version partly adapted from CoLM2014
+!  TODO ...
 !
+!-----------------------------------------------------------------------
 ! !USES:
    USE MOD_Precision
    USE MOD_Namelist
