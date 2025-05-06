@@ -54,5 +54,59 @@ MODULE MOD_Const_ch4
 
 	real(r8), public, parameter :: secspday = 86400._r8 ! Seconds per day
 
+   ! should set in const_ch4
+   type, public :: params_type
+      ! ch4 production constants
+      real(r8) :: q10ch4 =1.33              ! additional Q10 for methane production ABOVE the soil decomposition temperature relationship (2+)
+      real(r8) :: q10ch4base = 295._r8 ! temperature at which the effective f_ch4 actually equals the constant f_ch4 (295+)
+      real(r8) :: f_ch4 = 0.2            ! ratio of CH4 production to total C mineralization (0.2+?) -------- defination differ with documentation
+      ! ! real(r8) :: rootlitfrac        ! Fraction of soil organic matter associated with roots
+      real(r8) :: cnscalefactor=1        ! scale factor on CN decomposition for assigning methane flux (?-)
+      real(r8) :: redoxlag =30           ! Number of days to lag in the calculation of finundated_lag (30+)
+      real(r8) :: lake_decomp_fact =9e-11    ! Base decomposition rate (1/s) at 25C (1)
+      real(r8) :: redoxlag_vertical=0   ! time lag (days) to inhibit production for newly unsaturated layers (30+)
+      real(r8) :: pHmax = 9._r8          ! maximum pH for methane production(= 9._r8)
+      real(r8) :: pHmin = 2.2_r8         ! minimum pH for methane production(= 2.2_r8)
+      real(r8) :: oxinhib = 400          ! inhibition of methane production by oxygen (m^3/mol) (400+?)
+
+      real(r8) :: mino2lim = 0.2         ! minimum anaerobic decomposition rate as a fraction of potential aerobic rate (0.2+)
+
+      ! ! ch4 oxidation constants
+      real(r8) :: vmax_ch4_oxid = 45.e-6_r8 * 1000._r8 / 3600._r8       ! oxidation rate constant (= 45.e-6_r8 * 1000._r8 / 3600._r8) [mol/m3-w/s];
+      real(r8) :: k_m = 5.e-6_r8 * 1000._r8                 ! Michaelis-Menten oxidation rate constant for CH4 concentration 
+      real(r8) :: q10_ch4_oxid = 1         ! Q10 oxidation constant (?)
+      real(r8) :: smp_crit =-2.4e5_r8            ! Critical soil moisture potential(mm)
+      real(r8) :: k_m_o2 =20.e-6_r8 * 1000._r8              ! Michaelis-Menten oxidation rate constant for O2 concentration
+      real(r8) :: k_m_unsat = 5.e-6_r8 * 1000._r8 / 10._r8           ! Michaelis-Menten oxidation rate constant for CH4 concentration
+      real(r8) :: vmax_oxid_unsat = 45.e-6_r8 * 1000._r8 / 3600._r8 / 10._r8     ! (= 45.e-6_r8 * 1000._r8 / 3600._r8 / 10._r8) [mol/m3-w/s]
+
+      ! ! ch4 aerenchyma constants
+      real(r8) :: aereoxid =0            ! fraction of methane flux entering aerenchyma rhizosphere that will be(?)
+
+      ! ! oxidized rather than emitted
+      real(r8) :: scale_factor_aere = 1   ! scale factor on the aerenchyma area for sensitivity tests (1)
+      ! real(r8) :: nongrassporosratio = 1/3   ! Ratio of root porosity in non-grass to grass, used for aerenchyma transport
+      real(r8) :: unsat_aere_ratio = 0.05_r8 / 0.3_r8    ! Ratio to multiply upland vegetation aerenchyma porosity by compared to inundated systems (= 0.05_r8 / 0.3_r8)
+      real(r8) :: porosmin = 0.05_r8            ! minimum aerenchyma porosity (unitless)(= 0.05_r8) 
+
+      ! ! ch4 ebbulition constants
+      real(r8) :: vgc_max  =0.15            ! ratio of saturation pressure triggering ebullition (0.15)
+
+      ! ! ch4 transport constants
+      real(r8) :: satpow  =2             ! exponent on watsat for saturated soil solute diffusion (2?)
+      real(r8) :: scale_factor_gasdiff = 1! For sensitivity tests; convection would allow this to be > 1(?)
+      real(r8) :: scale_factor_liqdiff = 1! For sensitivity tests; convection would allow this to be > 1(?)
+      real(r8) :: capthick = 100._r8            ! min thickness before assuming h2osfc is impermeable (mm) (= 100._r8)
+
+      ! ! additional constants
+      ! real(r8) :: f_sat =0.95               ! volumetric soil water defining top of water table or where production is allowed (=0.95)
+      real(r8) :: qflxlagd  = 30._r8          ! days to lag qflx_surf_lag in the tropics (days) ( = 30._r8)
+      real(r8) :: highlatfact = 2._r8         ! multiple of qflxlagd for high latitudes	(= 2._r8)	
+      real(r8) :: q10lakebase = 298._r8         ! (K) base temperature for lake CH4 production (= 298._r8)
+      real(r8) :: atmch4  = 1.7e-6_r8           ! Atmospheric CH4 mixing ratio to prescribe if not provided by the atmospheric model (= 1.7e-6_r8) (mol/mol)
+      real(r8) :: rob = 3._r8                 ! ratio of root length to vertical depth ("root obliquity") (= 3._r8)
+      real(r8) :: om_frac_sf = 1           ! Scale factor for organic matter fraction (unitless)(?)
+   end type params_type
+
 END MODULE MOD_Const_ch4
     

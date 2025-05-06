@@ -106,7 +106,7 @@ MODULE MOD_Const_PFT
 !79  permanent wetlands
 
 
-   character(len=256) :: pftclassname (0:N_PFT+N_CFT-1) = &
+   character(len=256) :: pftclassname (0:N_PFT+N_CFT+N_WFT-1) = &
       (/'0  not vegetated                       ', '1  needleleaf evergreen temperate tree ', &
         '2  needleleaf evergreen boreal tree    ', '3  needleleaf deciduous boreal tree    ', &
         '4  broadleaf evergreen tropical tree   ', '5  broadleaf evergreen temperate tree  ', &
@@ -149,6 +149,9 @@ MODULE MOD_Const_PFT
         '76  irrigated_tropical_corn            ', '77  tropical_soybean                   ', &
         '78  irrigated_tropical_soybean         '  &
 #endif
+#ifdef CH4
+      ,'79  permanent wetlands                  '  &
+#endif
         /)
 
    ! canopy layer number
@@ -166,7 +169,7 @@ MODULE MOD_Const_PFT
         , 1, 1, 1, 1, 1, 1, 1    &
 #endif
 #ifdef CH4
-        , 1&
+        , 1 &
 #endif         
          /)
 
@@ -659,13 +662,8 @@ MODULE MOD_Const_PFT
    real(r8), parameter :: extkn_p(0:N_PFT+N_CFT+N_WFT-1) = 0.5
 
    real(r8) :: &
-#ifndef CROP
-      rho_p(2,2,0:N_PFT+N_WFT-1), &!leaf reflectance
-      tau_p(2,2,0:N_PFT+N_WFT-1)   !leaf transmittance
-#else
       rho_p(2,2,0:N_PFT+N_CFT+N_WFT-1), &!leaf reflectance
       tau_p(2,2,0:N_PFT+N_CFT+N_WFT-1)   !leaf transmittance
-#endif
 
    ! depth at 50% roots
    real(r8), parameter, dimension(0:N_PFT+N_CFT+N_WFT-1) :: d50_p &
@@ -2003,16 +2001,10 @@ MODULE MOD_Const_PFT
    integer, PRIVATE :: ROOTFR_SCHEME = 1
 
    !fraction of roots in each soil layer
-#ifdef CROP
    real(r8), dimension(nl_soil,N_PFT+N_CFT+N_WFT) :: &
       rootfr_p(1:nl_soil, 0:N_PFT+N_CFT+N_WFT-1)
-#else
-   real(r8), dimension(nl_soil,N_PFT+N_WFT) :: &
-      rootfr_p(1:nl_soil, 0:N_PFT+N_WFT-1)
-#endif
 
    integer, PRIVATE :: i, nsl
-
 
    ! PUBLIC MEMBER FUNCTIONS:
    PUBLIC :: Init_PFT_Const
@@ -2032,44 +2024,36 @@ CONTAINS
       tau_p(1,2,:) = taus_vis_p(:)
       tau_p(2,2,:) = taus_nir_p(:)
 
-IF (ROOTFR_SCHEME == 1) THEN
-#ifdef CROP
-      DO i = 0, N_PFT+N_CFT+N_WFT-1
-#else
-      DO i = 0, N_PFT+N_WFT-1
-#endif
-         rootfr_p(1,i)=1./(1.+(zi_soi(1)*100./d50_p(i))**beta_p(i))
-         rootfr_p(nl_soil,i)=1.-1./(1.+(zi_soi(nl_soil-1)*100./d50_p(i))**beta_p(i))
+		IF (ROOTFR_SCHEME == 1) THEN
+			DO i = 0, N_PFT+N_CFT+N_WFT-1
+				rootfr_p(1,i)=1./(1.+(zi_soi(1)*100./d50_p(i))**beta_p(i))
+				rootfr_p(nl_soil,i)=1.-1./(1.+(zi_soi(nl_soil-1)*100./d50_p(i))**beta_p(i))
 
-         DO nsl=2,nl_soil-1
-            rootfr_p(nsl,i)=1./(1.+(zi_soi(nsl)*100./d50_p(i))**beta_p(i)) &
-               -1./(1.+(zi_soi(nsl-1)*100./d50_p(i))**beta_p(i))
-         ENDDO
-      ENDDO
-ELSE
-      ! PFT rootfr_p (Zeng, 2001)
-#ifdef CROP
-      DO i = 0, N_PFT+N_CFT+N_WFT-1
-#else
-      DO i = 0, N_PFT+N_WFT-1
-#endif
-         rootfr_p(1,i) = 1. - 0.5*( &
-              exp(-roota(i) * zi_soi(1)) &
-            + exp(-rootb(i) * zi_soi(1)) )
+				DO nsl=2,nl_soil-1
+					rootfr_p(nsl,i)=1./(1.+(zi_soi(nsl)*100./d50_p(i))**beta_p(i)) &
+						-1./(1.+(zi_soi(nsl-1)*100./d50_p(i))**beta_p(i))
+				ENDDO
+			ENDDO
+		ELSE
+			! PFT rootfr_p (Zeng, 2001)
+			DO i = 0, N_PFT+N_CFT+N_WFT-1
+				rootfr_p(1,i) = 1. - 0.5*( &
+						exp(-roota(i) * zi_soi(1)) &
+					+ exp(-rootb(i) * zi_soi(1)) )
 
-         rootfr_p(nl_soil,i) = 0.5*( &
-              exp(-roota(i) * zi_soi(nl_soil)) &
-            + exp(-rootb(i) * zi_soi(nl_soil)) )
+				rootfr_p(nl_soil,i) = 0.5*( &
+						exp(-roota(i) * zi_soi(nl_soil)) &
+					+ exp(-rootb(i) * zi_soi(nl_soil)) )
 
-         DO nsl = 2, nl_soil-1
-            rootfr_p(nsl,i) = 0.5*( &
-                 exp(-roota(i) * zi_soi(nsl-1)) &
-               + exp(-rootb(i) * zi_soi(nsl-1)) &
-               - exp(-roota(i) * zi_soi(nsl)) &
-               - exp(-rootb(i) * zi_soi(nsl)) )
-         ENDDO
-      ENDDO
-ENDIF
+				DO nsl = 2, nl_soil-1
+					rootfr_p(nsl,i) = 0.5*( &
+							exp(-roota(i) * zi_soi(nsl-1)) &
+						+ exp(-rootb(i) * zi_soi(nsl-1)) &
+						- exp(-roota(i) * zi_soi(nsl)) &
+						- exp(-rootb(i) * zi_soi(nsl)) )
+				ENDDO
+			ENDDO
+		ENDIF
 
 
    END SUBROUTINE Init_PFT_Const

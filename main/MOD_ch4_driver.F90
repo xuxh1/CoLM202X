@@ -140,7 +140,7 @@
 			ch4_first_time = .true.
 		endif
 
-		CALL ch4 (i,idate(1:3),patchtype,lb,nl_soil,maxsnl,snl,dlon,dlat,deltim,&
+		CALL ch4 (i,idate(1:3),patchtype,lb,snl,dlon,dlat,deltim,&
 		z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:),&
 		t_grnd,wliq_soisno(maxsnl+1:),wice_soisno(maxsnl+1:),&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&

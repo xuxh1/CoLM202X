@@ -6,6 +6,18 @@ module MOD_ch4
 	! Module holding routines to calculate methane fluxes
 	! The driver averages up to gridcell, weighting by finundated, and checks for balance errors.
 	! Sources, sinks, "competition" for CH4 & O2, & transport are resolved in ch4_tran.
+
+	! !ORIGINAL:
+	! The Community Land Model version 5.0 (CLM5.0)
+
+	! !REFERENCES:
+	! Lawrence, D.M., Fisher, R.A., Koven, C.D., Oleson, K.W., Swenson, S.C., Bonan, G., Collier, N., 
+	! Ghimire, B., van Kampenhout, L., Kennedy, D. and Kluzek, E., 2019. 
+	! The Community Land Model version 5: Description of new features, benchmarking,
+	! and impact of forcing uncertainty. Journal of Advances in Modeling Earth Systems, 11(12), 4245-4287.
+
+	! !REVISION:
+	! Xionghui Xu, 2025, modify original CLM5 to be compatible with CoLM code structure.
 	!=======================================================================
 	! !USES:
 	use MOD_Precision
@@ -34,6 +46,7 @@ module MOD_ch4
 	private :: ch4_ebul
 	private :: ch4_tran
 
+   ! should set in const_ch4
 	type, private :: params_type
 		! ch4 production constants
 		real(r8) :: q10ch4 =1.33              ! additional Q10 for methane production ABOVE the soil decomposition temperature relationship (2+)
@@ -92,7 +105,7 @@ contains
 
 	!-----------------------------------------------------------------------
 	subroutine ch4 (ipatch,idate,patchtype,&!input
-		lb,nl_soil,maxsnl,snl,&
+		lb,snl,&
 		dlon,dlat,&
 		deltim,&
 		z_soisno,dz_soisno,zi_soisno,t_soisno,t_grnd,wliq_soisno,wice_soisno,&
@@ -117,9 +130,6 @@ contains
 		! !DESCRIPTION:
 		! Driver for the methane emissions model
 		!=======================================================================
-		! !USES:
-		use MOD_Precision
-		implicit none
 
 		!===================== input ===========================================
 		integer, intent(in) :: &
@@ -132,8 +142,6 @@ contains
 
 		integer, intent(in) :: &
 			lb               , &! lower bound of array (snl+1)
-			nl_soil          , &! upper bound of array (10)
-			maxsnl			  , &!  max number of snow layers (-5)
 			snl				    !  number of snow layers     (-5~-1)
 
 		real(r8), intent(in) :: &
@@ -337,17 +345,14 @@ contains
 			end if
 		end do
 
-		if(jwt==0) then
+		if (jwt==0) then
 			sat = 1
 		else
 			sat = 0
 		end if
 	
 		finundated = sat
-		! print*, 'sat',sat
-		! print*, 'jwt',jwt
-		jwt = 0
-		! print*, 'jwt',jwt
+		! jwt = 0
 
 
 		do j= 1, nl_soil
@@ -413,7 +418,7 @@ contains
 		end if ! saturated no change
 
 		! calculate CH4 production in each soil layer
-		call ch4_prod (patchtype,sat,finundated,jwt,nl_soil,rr,deltim,& !input
+		call ch4_prod (patchtype,sat,finundated,jwt,rr,deltim,& !input
 			z_soisno,dz_soisno,zi_soisno,t_soisno,&
 			lai,conc_o2,rootfr,annavg_finrw,&
 			crootfr,somhr,lithr,hr_vr,o_scalar,fphr,pot_f_nit_vr,&
@@ -422,19 +427,19 @@ contains
 			layer_sat_lag)!inout
 
 		! calculate CH4 oxidation in each soil layer
-		call ch4_oxid (nl_soil,  jwt,  sat,  deltim,  z_soisno,  dz_soisno,  zi_soisno, &
+		call ch4_oxid (jwt,  sat,  deltim,  z_soisno,  dz_soisno,  zi_soisno, &
 			t_soisno,      smp,      vol_liq,    porsl,   conc_o2,   conc_ch4,              &
 			ch4_oxid_depth,          o2_oxid_depth) 
 
 		! calculate CH4 aerenchyma losses in each soil layer
-		call ch4_aere (patchtype, nl_soil, jwt, sat, lai,     deltim, &
+		call ch4_aere (patchtype, jwt, sat, lai,     deltim, &
 			z_soisno, dz_soisno,  zi_soisno,     t_soisno, vol_liq, porsl,  &
 			rootfr,   rootr, etr, grnd_ch4_cond, c_atm,    annsum_npp,      &
 			annavg_agnpp,    annavg_bgnpp, conc_o2, conc_ch4, ch4_prod_depth,&
 			ch4_aere_depth, ch4_tran_depth, o2_aere_depth)
 
 		! calculate CH4 ebullition losses in each soil layer
-		call ch4_ebul (patchtype, nl_soil, jwt, sat, deltim, &
+		call ch4_ebul (patchtype, jwt, sat, deltim, &
 			z_soisno, dz_soisno, zi_soisno, lakedepth, forc_pbot,&
 			t_soisno, lake_icefrac, porsl, wdsrf, conc_ch4,&
 			ch4_ebul_depth)
@@ -442,7 +447,7 @@ contains
 		! Solve CH4 reaction/diffusion equation 
 		! Competition for oxygen will occur here.
 		call ch4_tran (patchtype,&
-			lb, nl_soil, snl, maxsnl,jwt, sat,&
+			lb, snl, jwt, sat,&
 			lon,lat,deltim, z_soisno, dz_soisno, zi_soisno,  t_soisno, t_grnd, &
 			vol_liq, porsl, wliq_soisno, wice_soisno, wdsrf,bsw, c_atm, ch4_prod_depth, o2_aere_depth,&
 			cellorg,t_h2osfc, organic_max, &
@@ -458,7 +463,7 @@ contains
 			jwt = 0
 	
 			! calculate CH4 production in each soil layer
-			call ch4_prod (patchtype,sat,finundated,jwt,nl_soil,rr,deltim,& !input
+			call ch4_prod (patchtype,sat,finundated,jwt,rr,deltim,& !input
 				z_soisno,dz_soisno,zi_soisno,t_soisno,&
 				lai,conc_o2,rootfr,annavg_finrw,&
 				crootfr,somhr,lithr,hr_vr,o_scalar,fphr,pot_f_nit_vr,&
@@ -472,14 +477,14 @@ contains
 				ch4_oxid_depth,          o2_oxid_depth) 
 
 			! calculate CH4 aerenchyma losses in each soil layer
-			call ch4_aere (patchtype, nl_soil, jwt, sat, lai,     deltim, &
+			call ch4_aere (patchtype, jwt, sat, lai,     deltim, &
 				z_soisno, dz_soisno,  zi_soisno,     t_soisno, vol_liq, porsl,  &
 				rootfr,   rootr, etr, grnd_ch4_cond, c_atm,    annsum_npp,      &
 				annavg_agnpp,    annavg_bgnpp, conc_o2, conc_ch4, ch4_prod_depth,&
 				ch4_aere_depth, ch4_tran_depth, o2_aere_depth)
 
 			! calculate CH4 ebullition losses in each soil layer
-			call ch4_ebul (patchtype, nl_soil, jwt, sat, deltim, &
+			call ch4_ebul (patchtype, jwt, sat, deltim, &
 				z_soisno, dz_soisno, zi_soisno, lakedepth, forc_pbot,&
 				t_soisno, lake_icefrac, porsl, wdsrf, conc_ch4,&
 				ch4_ebul_depth)
@@ -487,7 +492,7 @@ contains
 			! Solve CH4 reaction/diffusion equation 
 			! Competition for oxygen will occur here.
 			call ch4_tran (patchtype,&
-				lb, nl_soil, snl, maxsnl,jwt, sat,&
+				lb, snl,jwt, sat,&
 				lon,lat,deltim, z_soisno, dz_soisno, zi_soisno,  t_soisno, t_grnd, &
 				vol_liq, porsl, wliq_soisno, wice_soisno, wdsrf,bsw, c_atm, ch4_prod_depth, o2_aere_depth,&
 				cellorg,t_h2osfc, organic_max, &
@@ -705,7 +710,7 @@ contains
 
 
 	!-----------------------------------------------------------------------
-	subroutine ch4_prod (patchtype,sat,finundated,jwt,nl_soil,rr,deltim,& !input
+	subroutine ch4_prod (patchtype,sat,finundated,jwt,rr,deltim,& !input
 		z_soisno,dz_soisno,zi_soisno,t_soisno,&
 		lai,conc_o2,rootfr,annavg_finrw,&
 		crootfr,somhr,lithr,hr_vr,o_scalar,fphr,pot_f_nit_vr,&
@@ -728,8 +733,7 @@ contains
 		integer , intent(in) :: &
 			sat                     , &! 0 = unsaturated; 1 = saturated 
 			finundated              , &! fractional inundated area in soil column 
-			jwt                     , &! index of the soil layer right above the water table (-) 
-		  	nl_soil                    ! number of soil layers
+			jwt                        ! index of the soil layer right above the water table (-) 
   
 		real(r8), intent(in) :: &
 			rr                      , &! root respiration (fine root MR + total root GR) (gC/m2/s)
@@ -990,7 +994,7 @@ contains
 	end subroutine ch4_prod
 
 	!---------------------------------------------------------------------------
-	subroutine ch4_oxid (nl_soil,  jwt,  sat,  deltim,  z_soisno,  dz_soisno,  zi_soisno, &
+	subroutine ch4_oxid (jwt,  sat,  deltim,  z_soisno,  dz_soisno,  zi_soisno, &
 		t_soisno,      smp,      vol_liq,    porsl,   conc_o2,   conc_ch4,              &
 		ch4_oxid_depth,          o2_oxid_depth) 
 		!-----------------------------------------------------------------------
@@ -1001,7 +1005,6 @@ contains
 
 		!-----------------------Argument---------- -----------------------------
 		integer , intent(in) :: &
-			nl_soil                , &! number of soil layers
 			jwt                    , &! index of the soil layer right above the water table (-) 
 			sat                       ! 0 = unsaturated; 1 = saturated 
 
@@ -1107,7 +1110,7 @@ contains
 
 
 	!---------------------------------------------------------------------------
-	subroutine ch4_aere (patchtype, nl_soil, jwt, sat, lai,     deltim, &
+	subroutine ch4_aere (patchtype, jwt, sat, lai,     deltim, &
 		z_soisno, dz_soisno,  zi_soisno,     t_soisno, vol_liq, porsl,  &
 		rootfr,   rootr, etr, grnd_ch4_cond, c_atm,    annsum_npp,      &
 		annavg_agnpp,    annavg_bgnpp, conc_o2, conc_ch4, ch4_prod_depth,&
@@ -1127,7 +1130,6 @@ contains
 							! 3=land ice, 4=land water bodies, 99=ocean
 
 		integer , intent(in) :: &
-			nl_soil                , &! number of soil layers
 			jwt                    , &! index of the soil layer right above the water table (-) 
 			sat                       ! 0 = unsatured, 1 = saturated 
 
@@ -1213,7 +1215,7 @@ contains
 
 
 	!--------------------------------------------------------------------------- 
-	subroutine SiteOxAere(nl_soil,  jwt,  sat, lai,    z_soisno, dz_soisno,  zi_soisno,  t_soisno,  &
+	subroutine SiteOxAere(jwt,  sat, lai,    z_soisno, dz_soisno,  zi_soisno,  t_soisno,  &
 		vol_liq,  porsl,  rootfr,   rootr,  poros_tiller,grnd_ch4_cond, etr,   &
 		annsum_npp, annavg_agnpp,   annavg_bgnpp,  c_atm,      conc_o2, conc_ch4,        &
 		tranloss, aere,   oxaere)
@@ -1225,7 +1227,6 @@ contains
 
 		!-----------------------Argument----------------------------------------
 		integer , intent(in) :: &
-			nl_soil                , &! number of soil layers
 			jwt                    , &! index of the soil layer right above the water table (-) 
 			sat                       ! 0 = unsatured, 1 = saturated 
 
@@ -1376,7 +1377,7 @@ contains
 
 	
 	!---------------------------------------------------------------------------
-	subroutine ch4_ebul (patchtype, nl_soil, jwt, sat, deltim, &
+	subroutine ch4_ebul (patchtype, jwt, sat, deltim, &
 		z_soisno, dz_soisno, zi_soisno, lakedepth, forc_pbot,&
 		t_soisno, lake_icefrac, porsl, wdsrf, conc_ch4,&
 		ch4_ebul_depth)
@@ -1394,7 +1395,6 @@ contains
 									  ! 3=land ice, 4=land water bodies, 99=ocean
 
 		integer , intent(in) :: &
-			nl_soil                 , &! number of soil layers
 			jwt                     , &! index of the soil layer right above the water table (-) 
 			sat                        ! 0 = unsaturated; 1 = saturated 
 
@@ -1483,7 +1483,7 @@ contains
 
 	!---------------------------------------------------------------------------
 	subroutine ch4_tran (patchtype, &
-		lb, nl_soil, snl, maxsnl,jwt, sat,&
+		lb, snl, jwt, sat,&
 		lon, lat, deltim, z_soisno, dz_soisno, zi_soisno,  t_soisno, t_grnd, &
 		vol_liq, porsl, wliq_soisno, wice_soisno, wdsrf, bsw, c_atm, ch4_prod_depth, o2_aere_depth,&
 		cellorg,t_h2osfc, organic_max, &
@@ -1513,9 +1513,7 @@ contains
 
 		integer , intent(in) :: &
 			lb               , &! lower bound of array (snl+1)
-			nl_soil          , &! upper bound of array (10)
 			snl				  , &!  number of snow layers     (-5~-1)
-			maxsnl			  , &!  max number of snow layers (-5)
 			jwt              , &! index of the soil layer right above the water table (-) 
 			sat                 ! 0 = unsaturated; 1 = saturated 
 
