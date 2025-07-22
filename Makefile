@@ -31,6 +31,7 @@ OBJS_SHARED =    \
 				  MOD_Const_Physical.o         \
 				  MOD_Const_LC.o               \
 				  MOD_Utils.o                  \
+				  MOD_IncompleteGamma.o        \
 				  MOD_UserDefFun.o             \
 				  MOD_TimeManager.o            \
 				  MOD_Const_PFT.o              \
@@ -79,9 +80,11 @@ OBJS_MKSRFDATA = \
 				  Aggregation_SoilParameters.o      \
 				  Aggregation_DBedrock.o            \
 				  Aggregation_Topography.o          \
+				  Aggregation_TopoWetness.o         \
 				  Aggregation_TopographyFactors.o   \
 				  Aggregation_Urban.o               \
 				  Aggregation_SoilTexture.o         \
+				  MOD_Lulcc_TransferTrace.o         \
 				  MKSRFDATA.o
 
 $(OBJS_MKSRFDATA) : %.o : %.F90 ${HEADER} ${OBJS_SHARED}
@@ -317,9 +320,9 @@ OBJS_MAIN = \
 				CoLMMAIN_Urban.o                          \
 				MOD_Lulcc_Vars_TimeInvariants.o           \
 				MOD_Lulcc_Vars_TimeVariables.o            \
-				MOD_Lulcc_Initialize.o                    \
-				MOD_Lulcc_TransferTrace.o                 \
+				MOD_Lulcc_TransferTraceReadin.o           \
 				MOD_Lulcc_MassEnergyConserve.o            \
+				MOD_Lulcc_Initialize.o                    \
 				MOD_Lulcc_Driver.o                        \
 				CoLMDRIVER.o                              \
 				CoLMMAIN.o                                \
