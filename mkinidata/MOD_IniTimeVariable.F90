@@ -59,7 +59,7 @@ CONTAINS
 !------------------------------------------------------------
 #ifdef CH4
                      ,c_atm,ch4_surf_flux_tot,net_methane,&
-                     annavg_agnpp,annavg_bgnpp,annavg_somhr,annavg_finrw,&
+                     ! annavg_agnpp,annavg_bgnpp,annavg_somhr,annavg_finrw,&
                      ch4_prod_depth,o2_decomp_depth,&
                      ch4_oxid_depth,o2_oxid_depth,&
                      ch4_aere_depth,ch4_tran_depth,o2_aere_depth,&
@@ -337,11 +337,11 @@ CONTAINS
         net_methane                     ! average net methane correction to CO2 flux (g C/m^2/s)
      
    !------------------- ch4_annualupdate ------------------------------
-   real(r8), intent(out) :: &
-        annavg_agnpp            , &! annual average above-ground NPP (gC/m2/s)         
-        annavg_bgnpp            , &! annual average below-ground NPP (gC/m2/s)         
-        annavg_somhr            , &! annual average SOM heterotrophic resp. (gC/m2/s)  
-        annavg_finrw               ! respiration-weighted annual average of finundated 
+   ! real(r8), intent(out) :: &
+   !      annavg_agnpp            , &! annual average above-ground NPP (gC/m2/s)         
+   !      annavg_bgnpp            , &! annual average below-ground NPP (gC/m2/s)         
+   !      annavg_somhr            , &! annual average SOM heterotrophic resp. (gC/m2/s)  
+   !      annavg_finrw               ! respiration-weighted annual average of finundated 
      
    !------------------- ch4_prod ------------------------------
    real(r8), intent(out) :: &            
@@ -1025,10 +1025,10 @@ CONTAINS
             c_atm                (:) = 0
             ch4_surf_flux_tot       = 0
             net_methane             = 0
-            annavg_agnpp            = 0
-            annavg_bgnpp            = 0
-            annavg_somhr            = 0
-            annavg_finrw            = 0
+            ! annavg_agnpp            = 0
+            ! annavg_bgnpp            = 0
+            ! annavg_somhr            = 0
+            ! annavg_finrw            = 0
             ch4_prod_depth       (:) = 0
             o2_decomp_depth      (:) = 0
             ch4_oxid_depth       (:) = 0
@@ -1049,7 +1049,7 @@ CONTAINS
             grnd_ch4_cond           = 0
             conc_o2              (:) = 0
             conc_ch4             (:) = 0
-            layer_sat_lag        (:) = 0
+            layer_sat_lag        (:) = 1
             lake_soilc           (:) = 0
             tempavg_agnpp           = 0
             tempavg_bgnpp           = 0

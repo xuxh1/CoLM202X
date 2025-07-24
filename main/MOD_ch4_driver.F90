@@ -71,19 +71,19 @@
 				forc_po2m                     , &! partial pressure of O2 at observational height [pa]
 				forc_pco2m                    , &! partial pressure of CO2 at observational height [pa]
 				zwt                           , &! the depth to water table [m]
-				rootfr     (1:nl_soil)          , &! fraction of roots in each soil layer
+				rootfr     (1:nl_soil)        , &! fraction of roots in each soil layer
 				snowdp                        , &! snow depth (m)
 				wat                           , &! total water storage
 				rsur                          , &! surface runoff (mm h2o/s)
 				etr                           , &! transpiration rate [mm/s]
 				lakedepth                     , &! lake depth (m)
-				lake_icefrac(1:nl_lake)         , &! lake mass fraction of lake layer that is frozen
+				lake_icefrac(1:nl_lake)       , &! lake mass fraction of lake layer that is frozen
 				wdsrf                         , &! depth of surface water [mm]
-				bsw         (1:nl_soil)         , &! clapp and hornbereger "b" parameter [-]
-				smp         (1:nl_soil)         , &! soil matrix potential [mm]
-				porsl       (1:nl_soil)         , &! fraction of soil that is voids [-]
+				bsw         (1:nl_soil)       , &! clapp and hornbereger "b" parameter [-]
+				smp         (1:nl_soil)       , &! soil matrix potential [mm]
+				porsl       (1:nl_soil)       , &! fraction of soil that is voids [-]
 				lai                           , &! leaf area index
-				rootr       (1:nl_soil)            ! water exchange between soil and root. Positive: soil->root [?]
+				rootr       (1:nl_soil)          ! water exchange between soil and root. Positive: soil->root [?]
 
 		integer :: ps, pe
 		integer j
@@ -100,14 +100,14 @@
 				! rr                      , &! root respiration (fine root MR + total root GR) (gC/m2/s)
 				! somhr                   , &! (gC/m2/s) soil organic matter heterotrophic respiration
 				! lithr                   , &! (gC/m2/s) litter heterotrophic respiration        
-				! hr_vr    (1:nl_soil)      , &! total vertically-resolved het. resp. from decomposing C pools (gC/m3/s)
-				crootfr  (1:nl_soil)      , &! fraction of roots for carbon in each soil layer
-				! o_scalar (1:nl_soil)      , &! fraction by which decomposition is limited by anoxia
-				! fphr     (1:nl_soil)      , &! fraction of potential heterotrophic respiration 
-				pH                      , &! soil water pH                                     
-				cellorg  (1:nl_soil)      , &! column 3D org (kg/m3 organic matter)
-				t_h2osfc               	     ! surface water temperature               
-				! organic_max                ! organic matter content (kg/m3) where soil is assumed to act like peat
+				! hr_vr    (1:nl_soil)    , &! total vertically-resolved het. resp. from decomposing C pools (gC/m3/s)
+				crootfr  (1:nl_soil)     , &! fraction of roots for carbon in each soil layer
+				! o_scalar (1:nl_soil)    , &! fraction by which decomposition is limited by anoxia
+				! fphr     (1:nl_soil)    , &! fraction of potential heterotrophic respiration 
+				pH                       , &! soil water pH                                     
+				cellorg  (1:nl_soil)     , &! column 3D org (kg/m3 organic matter)
+				t_h2osfc             	    ! surface water temperature               
+				! organic_max               ! organic matter content (kg/m3) where soil is assumed to act like peat
 
 		ps = patch_pft_s(i)      
 		pe = patch_pft_e(i)
@@ -132,8 +132,8 @@
 		pH = 7
 
 		cellorg = 0.
-		cellorg(:) = cellorg(:) + sum(decomp_cpools_vr(1:10, 1:7, i), dim=2)
-		t_h2osfc = (t_grnd+forc_t)/2
+		cellorg(:) = (cellorg(:) + sum(decomp_cpools_vr(1:10, 1:7, i), dim=2))*1000
+		t_h2osfc = t_grnd
 		! organic_max = cellorg(1)
 
 		if (istep == 1) then

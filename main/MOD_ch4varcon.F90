@@ -78,10 +78,11 @@ module MOD_ch4varcon
     logical, public :: use_cn              = .false.
     logical, public :: use_lch4            = .true.
     logical, public :: use_nitrif_denitrif = .true.
-    logical, public :: use_fates_bgc = .false.                 ! true => use FATES along with CLM soil biogeochemistry
+    logical, public :: use_fates_bgc = .false.  ! true => use FATES along with CLM soil biogeochemistry
 
-    ! true => anoxia is applied to heterotrophic respiration also considered in CH4 model
-    ! default value reset in controlMod
-    logical, public :: anoxia  = .true. 
+    logical, public :: anoxia  = .true. ! true => anoxia is applied to heterotrophic respiration also considered in CH4 model
+                                        ! default value reset in controlMod
+                                        ! Whether to enable the anoxia for the seasonally induatded zones
+    logical, public :: use_vertical_redoxlag = .false. ! Whether to enable the vertical redox lag effect
 
 end module MOD_ch4varcon
