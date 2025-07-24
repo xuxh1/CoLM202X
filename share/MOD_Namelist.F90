@@ -272,6 +272,8 @@ MODULE MOD_Namelist
    integer :: DEF_Runoff_SCHEME = 3
    character(len=256) :: DEF_file_VIC_para = 'null'
 
+   integer :: DEF_SimTOP_method = 0
+
    ! ----- Treat exposed soil and snow surface separately -----
    ! including solar absorption, sensible/latent heat, ground temperature,
    ! ground heat flux and ground evp/dew/subl/fros. Corresponding vars are
@@ -517,6 +519,7 @@ MODULE MOD_Namelist
       logical :: scv                              = .true.
       logical :: snowdp                           = .true.
       logical :: fsno                             = .true.
+      logical :: frcsat                           = .true.
       logical :: sigf                             = .true.
       logical :: green                            = .true.
       logical :: lai                              = .true.
@@ -556,6 +559,9 @@ MODULE MOD_Namelist
       logical :: assimsha                         = .true.
       logical :: etrsun                           = .true.
       logical :: etrsha                           = .true.
+
+      logical :: o3uptakesun                      = .true.
+      logical :: o3uptakesha                      = .true.
 
       logical :: leafc                            = .true.
       logical :: leafc_storage                    = .true.
@@ -709,14 +715,14 @@ MODULE MOD_Namelist
       logical :: fert_to_sminn                    = .true.
 
       logical :: huiswheat                        = .true.
-      logical :: pdcorn                           = .true.
-      logical :: pdswheat                         = .true.
-      logical :: pdwwheat                         = .true.
-      logical :: pdsoybean                        = .true.
-      logical :: pdcotton                         = .true.
-      logical :: pdrice1                          = .true.
-      logical :: pdrice2                          = .true.
-      logical :: pdsugarcane                      = .true.
+      logical :: pdcorn                           = .false.
+      logical :: pdswheat                         = .false.
+      logical :: pdwwheat                         = .false.
+      logical :: pdsoybean                        = .false.
+      logical :: pdcotton                         = .false.
+      logical :: pdrice1                          = .false.
+      logical :: pdrice2                          = .false.
+      logical :: pdsugarcane                      = .false.
       logical :: fertnitro_corn                   = .true.
       logical :: fertnitro_swheat                 = .true.
       logical :: fertnitro_wwheat                 = .true.
@@ -1017,6 +1023,7 @@ CONTAINS
       DEF_SOIL_REFL_SCHEME,                   &
       DEF_RSS_SCHEME,                         &
       DEF_Runoff_SCHEME,                      &
+      DEF_SimTOP_method,                      &
       DEF_SPLIT_SOILSNOW,                     &
       DEF_VEG_SNOW,                           &
       DEF_file_VIC_para,                      &
@@ -1160,6 +1167,12 @@ CONTAINS
          write(*,*) 'Note: DEF_USE_VariablySaturatedFlow is automaticlly set to .true.  '
          write(*,*) 'when defined CatchLateralFlow. '
          DEF_USE_VariablySaturatedFlow = .true.
+#endif
+#ifdef SinglePoint
+         IF (DEF_Runoff_SCHEME = 0) THEN
+            write(*,*) 'Note: DEF_SimTOP_method is set to 0 in SinglePoint.'
+            DEF_SimTOP_method = 0
+         ENDIF
 #endif
 
 
@@ -1537,6 +1550,7 @@ CONTAINS
       ! 02/2024, added by Shupeng Zhang
       CALL mpi_bcast (DEF_Runoff_SCHEME                      ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_file_VIC_para                      ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SimTOP_method                      ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
       ! 08/2023, added by hua yuan
       CALL mpi_bcast (DEF_SPLIT_SOILSNOW                     ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_VEG_SNOW                           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
@@ -1798,6 +1812,7 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%scv         , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%snowdp      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%fsno        , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%frcsat      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%sigf        , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%green       , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%lai         , set_defaults)
@@ -1930,15 +1945,14 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%leafc_c4grass      , set_defaults)
 #ifdef CROP
       CALL sync_hist_vars_one (DEF_hist_vars%cphase                          , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%gddmaturity                     , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%gddplant                        , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%vf                              , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%hui                             , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%cropprod1c                      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%cropprod1c_loss                 , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%cropseedc_deficit               , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%grainc_to_cropprodc             , set_defaults)
-      CALL sync_hist_vars_one (DEF_hist_vars%grainc_to_seed                  , set_defaults)
-      CALL sync_hist_vars_one (DEF_hist_vars%hui                             , set_defaults)
-      CALL sync_hist_vars_one (DEF_hist_vars%vf                              , set_defaults)
-      CALL sync_hist_vars_one (DEF_hist_vars%gddmaturity                     , set_defaults)
-      CALL sync_hist_vars_one (DEF_hist_vars%gddplant                        , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%plantdate_rainfed_temp_corn     , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%plantdate_irrigated_temp_corn   , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%plantdate_rainfed_spwheat       , set_defaults)
@@ -1977,7 +1991,10 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%cropprodc_rainfed_trop_soybean  , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%cropprodc_irrigated_trop_soybean, set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%cropprodc_unmanagedcrop         , set_defaults)
+
+      CALL sync_hist_vars_one (DEF_hist_vars%grainc_to_seed                  , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%fert_to_sminn                   , set_defaults)
+
       IF(DEF_USE_IRRIGATION)THEN
          CALL sync_hist_vars_one (DEF_hist_vars%irrig_rate                   , set_defaults)
          CALL sync_hist_vars_one (DEF_hist_vars%deficit_irrig                , set_defaults)
@@ -2089,6 +2106,10 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%soil3nCap_vr                    , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%cwdnCap_vr                      , set_defaults)
 #endif
+      IF(DEF_USE_OZONESTRESS)THEN
+         CALL sync_hist_vars_one (DEF_hist_vars%o3uptakesun                  , set_defaults)
+         CALL sync_hist_vars_one (DEF_hist_vars%o3uptakesha                  , set_defaults)
+      ENDIF
 
       CALL sync_hist_vars_one (DEF_hist_vars%t_soisno    , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%wliq_soisno , set_defaults)

@@ -937,7 +937,7 @@ CONTAINS
 
 
    !---------------------------------------
-   FUNCTION save_to_restart (idate, deltim, itstamp, ptstamp) result(rwrite)
+   FUNCTION save_to_restart (idate, deltim, itstamp, ptstamp, etstamp) result(rwrite)
 
    USE MOD_Namelist
    IMPLICIT NONE
@@ -946,7 +946,7 @@ CONTAINS
 
    integer,  intent(in) :: idate(3)
    real(r8), intent(in) :: deltim
-   type(timestamp), intent(in) :: itstamp, ptstamp
+   type(timestamp), intent(in) :: itstamp, ptstamp, etstamp
 
 
       ! added by yuan, 08/31/2014
@@ -970,6 +970,8 @@ CONTAINS
       IF (rwrite) THEN
          rwrite = ((ptstamp <= itstamp) .or. isendofyear(idate,deltim))
       ENDIF
+
+      rwrite = rwrite .or. (.not. (itstamp < etstamp))
 
    END FUNCTION save_to_restart
 
@@ -1168,7 +1170,7 @@ ENDIF
 #endif
 
 #ifdef EXTERNAL_LAKE
-      CALL WRITE_LakeTimeVars (idate, lc_year, site, dir_restart) 
+      CALL WRITE_LakeTimeVars (idate, lc_year, site, dir_restart)
 #endif
 
    END SUBROUTINE WRITE_TimeVariables
@@ -1207,7 +1209,7 @@ ENDIF
 #endif
 
       IF (p_is_master) THEN
-         write(*,'(/,A26)') 'Loading Time Variables ...'
+         write(*,*) 'Loading Time Variables ...'
       ENDIF
 
       ! land cover type year
@@ -1229,11 +1231,6 @@ IF(DEF_USE_PLANTHYDRAULICS)THEN
       CALL ncio_read_vector (file_restart, 'gs0sun  ',    landpatch, gs0sun     ) ! working copy of sunlit stomata conductance
       CALL ncio_read_vector (file_restart, 'gs0sha  ',    landpatch, gs0sha     ) ! working copy of shaded stomata conductance
 ENDIF
-IF(DEF_USE_OZONESTRESS)THEN
-      CALL ncio_read_vector (file_restart, 'lai_old    ', landpatch, lai_old    )
-      CALL ncio_read_vector (file_restart, 'o3uptakesun', landpatch, o3uptakesun)
-      CALL ncio_read_vector (file_restart, 'o3uptakesha', landpatch, o3uptakesha)
-ENDIF
       CALL ncio_read_vector (file_restart, 't_grnd  '   , landpatch, t_grnd     ) ! ground surface temperature [K]
       CALL ncio_read_vector (file_restart, 'tleaf   '   , landpatch, tleaf      ) ! leaf temperature [K]
       CALL ncio_read_vector (file_restart, 'ldew    '   , landpatch, ldew       ) ! depth of water on foliage [mm]
@@ -1252,6 +1249,11 @@ ENDIF
       CALL ncio_read_vector (file_restart, 'sai     '   , landpatch, sai        ) ! stem area index
       CALL ncio_read_vector (file_restart, 'tsai    '   , landpatch, tsai       ) ! stem area index
       CALL ncio_read_vector (file_restart, 'coszen  '   , landpatch, coszen     ) ! cosine of solar zenith angle
+IF(DEF_USE_OZONESTRESS)THEN
+      CALL ncio_read_vector (file_restart, 'lai_old    ', landpatch, lai_old    )
+      CALL ncio_read_vector (file_restart, 'o3uptakesun', landpatch, o3uptakesun)
+      CALL ncio_read_vector (file_restart, 'o3uptakesha', landpatch, o3uptakesha)
+ENDIF
       CALL ncio_read_vector (file_restart, 'alb     '   , 2, 2, landpatch, alb  ) ! averaged albedo [-]
       CALL ncio_read_vector (file_restart, 'ssun    '   , 2, 2, landpatch, ssun ) ! sunlit canopy absorption for solar radiation (0-1)
       CALL ncio_read_vector (file_restart, 'ssha    '   , 2, 2, landpatch, ssha ) ! shaded canopy absorption for solar radiation (0-1)

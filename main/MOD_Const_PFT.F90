@@ -470,7 +470,7 @@ MODULE MOD_Const_PFT
 #ifdef CH4
         ,  26.0&
 #endif  
-         /) * 1.e-6 * 0.6
+         /) * 1.e-6 * 0.7
 #else
    real(r8), parameter :: vmax25_p(0:N_PFT+N_CFT+N_WFT-1) &
       = (/ 52.0, 55.0, 42.0, 29.0, 41.0, 51.0, 36.0, 30.0&
@@ -1997,7 +1997,7 @@ MODULE MOD_Const_PFT
             /)
 
 
-   ! scheme 1: Zeng 2001, 2: Schenk and Jackson, 2002
+   ! scheme 1: Schenk and Jackson, 2002, 2: Zeng 2001
    integer, PRIVATE :: ROOTFR_SCHEME = 1
 
    !fraction of roots in each soil layer

@@ -923,8 +923,6 @@ IF (DEF_USE_PC .and. patchclass(ipatch)/=CROPLAND .and. patchclass(ipatch)/=WETL
       etrsha_p   (ps:pe) = 0.
       gssun_p    (ps:pe) = 0.
       gssha_p    (ps:pe) = 0.
-      rstfacsun_p(ps:pe) = 0.
-      rstfacsha_p(ps:pe) = 0.
       z0m_p      (ps:pe) = (1.-fsno)*zlnd + fsno*zsno
       z0m                = sum( z0m_p (ps:pe)*pftfrac(ps:pe) )
 
@@ -1013,6 +1011,10 @@ ENDIF
       etrsha_out    = sum( etrsha_p    (ps:pe)*pftfrac(ps:pe) )
       hprl          = sum( hprl_p      (ps:pe)*pftfrac(ps:pe) )
       dheatl        = sum( dheatl_p    (ps:pe)*pftfrac(ps:pe) )
+IF (DEF_USE_OZONESTRESS)THEN
+      o3uptakesun   = sum(o3uptakesun_p(ps:pe)*pftfrac(ps:pe) )
+      o3uptakesha   = sum(o3uptakesha_p(ps:pe)*pftfrac(ps:pe) )
+END IF
 
       IF(DEF_USE_PLANTHYDRAULICS)THEN
          DO j = 1, nvegwcs

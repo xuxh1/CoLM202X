@@ -69,7 +69,7 @@
            em_gper      ,cv_roof      ,cv_wall      ,cv_gimp      ,&
            tk_roof      ,tk_wall      ,tk_gimp      ,z_roof       ,&
            z_wall       ,dz_roof      ,dz_wall      ,lakedepth    ,&
-           dz_lake      ,topostd      ,BVIC                       ,&
+           dz_lake      ,elvstd       ,BVIC                       ,&
 
          ! LUCY model input parameters
            fix_holiday  ,week_holiday ,hum_prof     ,pop_den      ,&
@@ -261,10 +261,10 @@
         fsatdcf               ,&! decay factor in calculation of saturated area fraction [1/m]
 
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
-        alpha_vgm (1:nl_soil) ,&! the parameter corresponding approximately to the inverse of the air-entry value
+        alpha_vgm (1:nl_soil) ,&! parameter correspond approximately to inverse of air-entry value
         n_vgm     (1:nl_soil) ,&! a shape parameter
         L_vgm     (1:nl_soil) ,&! pore-connectivity parameter
-        sc_vgm    (1:nl_soil) ,&! saturation at the air entry value in the classical vanGenuchten model [-]
+        sc_vgm    (1:nl_soil) ,&! saturation at air entry value in classical vanGenuchten model [-]
         fc_vgm    (1:nl_soil) ,&! a scaling factor by using air entry value in the Mualem model [-]
 #endif
         hksati      (nl_soil) ,&! hydraulic conductivity at saturation [mm h2o/s]
@@ -309,7 +309,8 @@
         zsno                  ,&! roughness length for snow [m]
         csoilc                ,&! drag coefficient for soil under canopy [-]
         dewmx                 ,&! maximum dew
-        ! wtfact              ,&! (updated to gridded 'fsatmax' data) fraction of model area with high water table
+        ! wtfact              ,&! fraction of model area with high water table
+                                ! (updated to gridded 'fsatmax')
         capr                  ,&! tuning factor to turn first layer T into surface T
         cnfac                 ,&! Crank Nicholson factor between 0 and 1
         ssi                   ,&! irreducible water saturation of snow
@@ -346,8 +347,10 @@
         forc_rhoair             ! density air [kg/m3]
 
 #if (defined CaMa_Flood)
-   real(r8), intent(in)    :: fldfrc    !inundation fraction--> allow re-evaporation and infiltration![0-1]
-   real(r8), intent(inout) :: flddepth  !inundation depth--> allow re-evaporation and infiltration![mm]
+   real(r8), intent(in)    :: fldfrc    !inundation fraction
+                                        !--> allow re-evaporation and infiltration![0-1]
+   real(r8), intent(inout) :: flddepth  !inundation depth
+                                        !--> allow re-evaporation and infiltration![mm]
    real(r8), intent(out)   :: fevpg_fld !effective evaporation from inundation [mm/s]
    real(r8), intent(out)   :: qinfl_fld !effective re-infiltration from inundation [mm/s]
 #endif
@@ -396,8 +399,8 @@
         lake_icefrac (nl_lake)          ,&! lake mass fraction of lake layer that is frozen
         savedtke1                       ,&! top level eddy conductivity (W/m K)
 
-        topostd               ,&! standard deviation of elevation [m]
-        BVIC                  ,&! b parameter in Fraction of saturated soil in a grid calculated by VIC
+        elvstd                ,&! standard deviation of elevation [m]
+        BVIC                  ,&! b parameter in Fraction of saturated soil calculated by VIC
 
         t_grnd                ,&! ground surface temperature [k]
         tleaf                 ,&! sunlit leaf temperature [K]
@@ -716,8 +719,8 @@
                            solvd,solvi,solnd,solni,srvd,srvi,srnd,srni,&
                            solvdln,solviln,solndln,solniln,srvdln,srviln,srndln,srniln)
 
-      CALL rain_snow_temp (patchtype,forc_t,forc_q,forc_psrf,forc_prc,forc_prl,forc_us,forc_vs,tcrit,&
-                           prc_rain,prc_snow,prl_rain,prl_snow,t_precip,bifall)
+      CALL rain_snow_temp (patchtype,forc_t,forc_q,forc_psrf,forc_prc,forc_prl,forc_us,forc_vs,&
+                           tcrit,prc_rain,prc_snow,prl_rain,prl_snow,t_precip,bifall)
 
       forc_rain = prc_rain + prl_rain
       forc_snow = prc_snow + prl_snow
@@ -1059,7 +1062,7 @@
          froof              ,fgper              ,flake              ,bsw                ,&
          porsl              ,psi0               ,hksati             ,pondmx             ,&
          ssi                ,wimp               ,smpmin             ,theta_r            ,&
-         fsatmax            ,fsatdcf            ,topostd            ,BVIC               ,&
+         fsatmax            ,fsatdcf            ,elvstd             ,BVIC               ,&
          rootr,rootflux     ,etrgper            ,fseng              ,fgrnd              ,&
          t_gpersno(lbp:)    ,t_lakesno(:)       ,t_lake             ,dz_lake            ,&
          z_gpersno(lbp:)    ,z_lakesno(:)       ,zi_gpersno(lbp-1:) ,zi_lakesno(:)      ,&
