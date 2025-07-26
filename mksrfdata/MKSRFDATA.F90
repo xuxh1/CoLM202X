@@ -251,11 +251,15 @@ PROGRAM MKSRFDATA
    ! add by Xu, only test for making wetland data
 #if (defined CH4)
    ! define grid for wetland parameters
-   ! CALL gwetland%define_from_file (trim(DEF_dir_rawdata)//'/global_WFT_surface_data.nc', 'lat', 'lon')
-   CALL gwetland%define_from_file ('/share/home/dq076/xuxh36/global_WFT_surface_data.nc', 'lat', 'lon')
+   ! CALL grid_wetland%define_from_file (trim(DEF_dir_rawdata)//'/global_WFT_surface_data.nc', 'lat', 'lon')
+#ifndef CROP
+   CALL grid_wetland%define_from_file ('/share/home/dq076/xuxh36/global_WFT_surface_data.nc', 'lat', 'lon')
+#else
+   CALL grid_wetland%define_from_file ('/share/home/dq076/xuxh36/global_WFT_surface_data_CROP.nc', 'lat', 'lon')
+#endif
 #endif
 ! #ifdef CH4
-!    CALL gwetland%define_by_name          ('colm_500m')
+!    CALL grid_wetland%define_by_name          ('colm_500m')
 !    CALL grid_wetland_500m%define_by_name ('colm_500m')
 !    CALL grid_wetland_5km%define_by_name  ('colm_5km' )
 ! #endif
@@ -303,7 +307,7 @@ PROGRAM MKSRFDATA
       CALL pixel%assimilate_grid (grid_crop )
 #endif
 #ifdef CH4
-   CALL pixel%assimilate_grid (gwetland         )
+   CALL pixel%assimilate_grid (grid_wetland         )
    ! CALL pixel%assimilate_grid (grid_wetland_500m)
    ! CALL pixel%assimilate_grid (grid_wetland_5km )
 #endif
@@ -343,7 +347,7 @@ PROGRAM MKSRFDATA
       CALL pixel%map_to_grid (grid_crop )
 #endif
 #ifdef CH4
-   CALL pixel%map_to_grid (gwetland         )
+   CALL pixel%map_to_grid (grid_wetland         )
    ! CALL pixel%map_to_grid (grid_wetland_500m)
    ! CALL pixel%map_to_grid (grid_wetland_5km )
 #endif

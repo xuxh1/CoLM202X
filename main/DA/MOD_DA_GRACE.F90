@@ -67,6 +67,9 @@ CONTAINS
 #ifdef CROP 
    USE MOD_LandCrop
 #endif
+#ifdef CH4 
+   USE MOD_LandWetland
+#endif
    USE MOD_Pixelset
    USE MOD_Vars_TimeInvariants, only: patchtype
    USE MOD_Forcing, only: forcmask_pch

@@ -17,11 +17,10 @@ MODULE MOD_LandWetland
    IMPLICIT NONE
 
    ! ---- Instance ----
-   type(grid_type) :: gwetland
-
+   type(grid_type) :: grid_wetland
    ! type(pixelset_type) :: landwetland
    integer,  allocatable :: wetlandclass (:)
-   real(r8), allocatable :: pctshrpwh (:)
+   real(r8), allocatable :: wetlandfrac (:)
 
 CONTAINS
 
@@ -64,46 +63,46 @@ CONTAINS
          write(*,'(A)') 'Making patches (wetland shared) :'
       ENDIF
 
-#if (defined SinglePoint && defined CH4)
-      IF ((SITE_landtype == WETLAND) .and. (USE_SITE_pctwetland)) THEN
+! #if (defined SinglePoint && defined CH4)
+!       IF ((SITE_landtype == WETLAND) .and. (USE_SITE_pctwetland)) THEN
 
-         numpatch = count(SITE_pctwetland > 0.)
+!          numpatch = count(SITE_pctwetland > 0.)
 
-         allocate (pctshrpwh(numpatch))
-         allocate (wetlandclass(numpatch))
-         wetlandclass = pack(SITE_wetlandtyp, SITE_pctwetland > 0.)
-         pctshrpwh = pack(SITE_pctwetland, SITE_pctwetland > 0.)
+!          allocate (wetlandfrac(numpatch))
+!          allocate (wetlandclass(numpatch))
+!          wetlandclass = pack(SITE_wetlandtyp, SITE_pctwetland > 0.)
+!          wetlandfrac = pack(SITE_pctwetland, SITE_pctwetland > 0.)
 
-         pctshrpwh = pctshrpwh / sum(pctshrpwh)
+!          wetlandfrac = wetlandfrac / sum(wetlandfrac)
 
-         IF (allocated(landpatch%eindex))  deallocate(landpatch%eindex)
-         IF (allocated(landpatch%ipxstt))  deallocate(landpatch%ipxstt)
-         IF (allocated(landpatch%ipxend))  deallocate(landpatch%ipxend)
-         IF (allocated(landpatch%settyp))  deallocate(landpatch%settyp)
-         IF (allocated(landpatch%ielm  ))  deallocate(landpatch%ielm  )
+!          IF (allocated(landpatch%eindex))  deallocate(landpatch%eindex)
+!          IF (allocated(landpatch%ipxstt))  deallocate(landpatch%ipxstt)
+!          IF (allocated(landpatch%ipxend))  deallocate(landpatch%ipxend)
+!          IF (allocated(landpatch%settyp))  deallocate(landpatch%settyp)
+!          IF (allocated(landpatch%ielm  ))  deallocate(landpatch%ielm  )
 
-         allocate (landpatch%eindex (numpatch))
-         allocate (landpatch%ipxstt (numpatch))
-         allocate (landpatch%ipxend (numpatch))
-         allocate (landpatch%settyp (numpatch))
-         allocate (landpatch%ielm   (numpatch))
+!          allocate (landpatch%eindex (numpatch))
+!          allocate (landpatch%ipxstt (numpatch))
+!          allocate (landpatch%ipxend (numpatch))
+!          allocate (landpatch%settyp (numpatch))
+!          allocate (landpatch%ielm   (numpatch))
 
-         landpatch%eindex(:) = 1
-         landpatch%ielm  (:) = 1
-         landpatch%ipxstt(:) = 1
-         landpatch%ipxend(:) = 1
-         landpatch%settyp(:) = WETLAND
+!          landpatch%eindex(:) = 1
+!          landpatch%ielm  (:) = 1
+!          landpatch%ipxstt(:) = 1
+!          landpatch%ipxend(:) = 1
+!          landpatch%settyp(:) = WETLAND
          
-         landpatch%has_shared = .true.
-         allocate (landpatch%pctshared(numpatch))
-         landpatch%pctshared = pctshrpwh
+!          landpatch%has_shared = .true.
+!          allocate (landpatch%pctshared(numpatch))
+!          landpatch%pctshared = wetlandfrac
 
-         landpatch%nset = numpatch
-         CALL landpatch%set_vecgs
+!          landpatch%nset = numpatch
+!          CALL landpatch%set_vecgs
 
-         RETURN
-      ENDIF
-#endif
+!          RETURN
+!       ENDIF
+! #endif
 
 #ifdef USEMPI
       CALL mpi_barrier (p_comm_glb, p_err)
@@ -114,10 +113,10 @@ CONTAINS
          dir_5x5 = trim(DEF_dir_rawdata) // '/plant_15s'
          suffix  = 'MOD'//trim(cyear)
 
-         CALL allocate_block_data (gpatch, pctwetland_xy)
-         CALL read_5x5_data (dir_5x5, suffix, gpatch, 'PCT_WETLAND', pctwetland_xy)
+         CALL allocate_block_data (grid_patch, pctwetland_xy)
+         CALL read_5x5_data (dir_5x5, suffix, grid_patch, 'PCT_WETLAND', pctwetland_xy)
          
-         CALL allocate_block_data (gpatch, pctshared_xy, 2)
+         CALL allocate_block_data (grid_patch, pctshared_xy, 2)
          DO iblkme = 1, gblock%nblkme
             ib = gblock%xblkme(iblkme)
             jb = gblock%yblkme(iblkme)
@@ -126,33 +125,37 @@ CONTAINS
          ENDDO
       ENDIF
       
-      ! sharedfilter = (/ 1 /)
+      sharedfilter = (/ 1 /)
 
-      ! IF (landpatch%has_shared) then
-      !    CALL pixelsetshared_build (landpatch, gpatch, pctshared_xy, 2, sharedfilter, &
-      !       pctshared, classshared, fracin = landpatch%pctshared)
-      ! ELSE
-      !    CALL pixelsetshared_build (landpatch, gpatch, pctshared_xy, 2, sharedfilter, &
-      !       pctshared, classshared)
-      ! ENDIF
+      IF (landpatch%has_shared) then
+         CALL pixelsetshared_build (landpatch, grid_patch, pctshared_xy, 2, sharedfilter, &
+            pctshared, classshared, fracin = landpatch%pctshared)
+      ELSE
+         CALL pixelsetshared_build (landpatch, grid_patch, pctshared_xy, 2, sharedfilter, &
+            pctshared, classshared)
+      ENDIF
 
-      ! IF (p_is_worker) THEN
-      !    IF (landpatch%nset > 0) THEN
-      !       WHERE (classshared == 2) landpatch%settyp = WETLAND
-      !    ENDIF
-      ! ENDIF
+      IF (p_is_worker) THEN
+         IF (landpatch%nset > 0) THEN
+            WHERE (classshared == 2) landpatch%settyp = WETLAND
+         ENDIF
+      ENDIF
 
       IF (p_is_io) THEN
          ! file_patch = trim(DEF_dir_rawdata) // '/global_WFT_surface_data.nc'
+#ifndef CROP
          file_patch = '/share/home/dq076/xuxh36/global_WFT_surface_data.nc'
-         CALL allocate_block_data (gwetland, wetlanddata, N_WFT)
-         CALL ncio_read_block (file_patch, 'PCT_WFT', gwetland, N_WFT, wetlanddata)
+#else
+         file_patch = '/share/home/dq076/xuxh36/global_WFT_surface_data_CROP.nc'
+#endif
+         CALL allocate_block_data (grid_wetland, wetlanddata, N_WFT)
+         CALL ncio_read_block (file_patch, 'PCT_WFT', grid_wetland, N_WFT, wetlanddata)
       ENDIF
 
       wetlandfilter = (/ WETLAND /)
       
-      CALL pixelsetshared_build (landpatch, gwetland, wetlanddata, N_WFT, wetlandfilter, &
-         pctshrpwh, wetlandclass, fracin = pctshared)
+      CALL pixelsetshared_build (landpatch, grid_wetland, wetlanddata, N_WFT, wetlandfilter, &
+         wetlandfrac, wetlandclass, fracin = pctshared)
 
       ! wetlandclass = wetlandclass + N_PFT + N_CFT - 1 
 
@@ -166,7 +169,7 @@ CONTAINS
             ENDIF
 
             allocate(landpatch%pctshared(numpatch))
-            landpatch%pctshared = pctshrpwh
+            landpatch%pctshared = wetlandfrac
          ENDIF
       ENDIF
 

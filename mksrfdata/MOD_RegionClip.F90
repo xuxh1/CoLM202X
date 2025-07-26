@@ -336,7 +336,7 @@ CONTAINS
 #endif
 #ifdef CH4
                file_in  = trim(dir_landdata_in)  // '/pctpft/pct_wetlands.nc'
-               file_out = trim(dir_landdata_out) // '/pctpft/pct_wetlandps.nc'
+               file_out = trim(dir_landdata_out) // '/pctpft/pct_wetlands.nc'
                CALL clip_vector (file_in, file_out, iblk, jblk, 'pct_wetlands', patchmask)
 #endif
 #endif

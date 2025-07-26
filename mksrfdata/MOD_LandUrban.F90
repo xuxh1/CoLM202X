@@ -335,7 +335,7 @@ ENDIF
       write(*,'(A,I12,A)') 'Total: ', numurban, ' urban tiles.'
 #endif
 
-#ifndef CROP
+#if (!defined CROP && !defined CH4)
 #ifdef USEMPI
       IF (p_is_worker) THEN
          CALL mpi_reduce (numpatch, npatch_glb, 1, MPI_INTEGER, MPI_SUM, p_root, p_comm_worker, p_err)

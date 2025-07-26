@@ -370,8 +370,55 @@ CONTAINS
       ENDIF
 #endif
 
+      ! (3) build/read "land wetland" by using wetland data
+#ifdef CH4
+      IF (SITE_landtype == WETLAND) THEN
 
-      ! (3) build/read "land pft" or "land pc" by using plant functional type data
+         readflag = ((.not. mksrfdata) .or. USE_SITE_pctwetland)
+         u_site_wetland = readflag &
+            .and. ncio_var_exist(fsrfdata,'wetlandtyp',readflag) .and. ncio_var_exist(fsrfdata,'pctwetland',readflag)
+
+         IF (u_site_wetland) THEN
+            CALL ncio_read_serial (fsrfdata, 'wetlandtyp', wetlandtyp)
+            CALL ncio_read_serial (fsrfdata, 'pctwetland', pctwetland)
+         ELSE
+            allocate (wetlandtyp (N_WFT))
+            wetlandtyp = (/(i, i = 1, N_WFT)/)
+
+            ! filename = trim(DEF_dir_rawdata) // '/global_WFT_surface_data.nc'
+#ifndef CROP
+            filename = '/share/home/dq076/xuxh36/global_WFT_surface_data.nc'
+#else
+            filename = '/share/home/dq076/xuxh36/global_WFT_surface_data_CROP.nc'
+#endif
+            CALL gridwetland%define_from_file (filename, 'lat', 'lon')
+            CALL read_point_var_3d_first_real8 (gridwetland, filename, 'PCT_WFT', &
+               SITE_lon_location, SITE_lat_location, N_WFT, pctwetland)
+         ENDIF
+
+         numpatch = count(pctwetland > 0.)
+
+         IF (numpatch == 0) THEN
+            write(*,*) 'There is no wetland at this point!'
+            CALL CoLM_stop()
+         ENDIF
+
+         allocate (SITE_wetlandtyp (numpatch))
+         allocate (SITE_pctwetland (numpatch))
+
+         SITE_wetlandtyp = pack(wetlandtyp, pctwetland > 0.)
+         SITE_pctwetland = pack(pctwetland, pctwetland > 0.) / sum(pctwetland)
+
+         IF (mksrfdata) THEN
+            write(c,'(I0)') numpatch
+            write(*,'(A,'//trim(c)//'I5,3A)')   'wetland type : ', SITE_wetlandtyp, ' (from ',trim(datasource(u_site_wetland)),')'
+            write(*,'(A,'//trim(c)//'F5.2,3A)') 'wetland frac : ', SITE_pctwetland, ' (from ',trim(datasource(u_site_wetland)),')'
+         ENDIF
+
+      ENDIF
+#endif
+
+      ! (4) build/read "land pft" or "land pc" by using plant functional type data
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
 #ifndef CROP
       IF (patchtypes(SITE_landtype) == 0) THEN
@@ -414,6 +461,15 @@ CONTAINS
          SITE_pfttyp  = SITE_croptyp + N_PFT - 1
          SITE_pctpfts = 1.
 #endif
+#ifdef CH4
+      ELSEIF (SITE_landtype == WETLAND) THEN
+         u_site_pfts = .false.
+         numpft = numpatch
+         allocate (SITE_pfttyp  (numpft))
+         allocate (SITE_pctpfts (numpft))
+         SITE_pfttyp  = SITE_wetlandtyp + N_PFT + N_CFT - 1
+         SITE_pctpfts = 1.
+#endif
       ELSE
          numpft = 0
       ENDIF
@@ -435,7 +491,7 @@ CONTAINS
 #endif
 
 
-      ! (4) forest height
+      ! (5) forest height
       readflag = (.not. mksrfdata) .or. USE_SITE_htop
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
       IF (patchtypes(SITE_landtype) == 0) THEN
@@ -496,7 +552,7 @@ CONTAINS
       ENDIF
 
 
-      ! (5) LAI
+      ! (6) LAI
       readflag = ((.not. mksrfdata) .or. USE_SITE_LAI)
       readflag = readflag .and. ncio_var_exist(fsrfdata,'LAI_year',readflag)
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
@@ -624,6 +680,13 @@ CONTAINS
                   SITE_LAI_pfts_monthly(:,itime,iyear) = sum(pftLAI * pctpfts) / sum(pctpfts)
                   SITE_SAI_pfts_monthly(:,itime,iyear) = sum(pftSAI * pctpfts) / sum(pctpfts)
 #endif
+#ifdef CH4
+               ELSEIF (SITE_landtype == WETLAND) THEN
+                  CALL read_point_5x5_var_3d_real8 (gridlai, dir_5x5, 'MOD'//trim(cyear), 'PCT_PFT', &
+                     SITE_lon_location, SITE_lat_location, N_PFT_modis, pctpfts)
+                  SITE_LAI_pfts_monthly(:,itime,iyear) = sum(pftLAI * pctpfts) / sum(pctpfts)
+                  SITE_SAI_pfts_monthly(:,itime,iyear) = sum(pftSAI * pctpfts) / sum(pctpfts)
+#endif
                ELSE
                   dir_5x5 = trim(DEF_dir_rawdata) // '/plant_15s'
                   CALL read_point_5x5_var_2d_time_real8 (gridlai, dir_5x5, 'MOD'//trim(cyear), &
@@ -688,7 +751,7 @@ CONTAINS
       ENDIF
 
 
-      ! (6) lake depth
+      ! (7) lake depth
       readflag = ((.not. mksrfdata) .or. USE_SITE_lakedepth)
       u_site_lakedepth = readflag .and. ncio_var_exist(fsrfdata,'lakedepth',readflag)
 
@@ -707,7 +770,7 @@ CONTAINS
       ENDIF
 
 
-      ! (7) soil brightness parameters
+      ! (8) soil brightness parameters
       readflag = ((.not. mksrfdata) .or. USE_SITE_soilreflectance)
       u_site_soil_bright = readflag &
          .and. ncio_var_exist(fsrfdata,'soil_s_v_alb',readflag) &
@@ -753,7 +816,7 @@ CONTAINS
       ENDIF
 
 
-      ! (8) soil parameters
+      ! (9) soil parameters
 
       CALL gridsoil%define_by_name ('colm_500m')
 
@@ -1162,7 +1225,7 @@ CONTAINS
       ENDIF
 
 
-      ! (9) depth to bedrock
+      ! (10) depth to bedrock
       IF (DEF_USE_BEDROCK) THEN
          readflag = ((.not. mksrfdata) .or. USE_SITE_dbedrock)
          u_site_dbedrock = readflag &
@@ -1182,7 +1245,7 @@ CONTAINS
 
       ENDIF
 
-      ! (10) topography
+      ! (11) topography
       readflag = ((.not. mksrfdata) .or. USE_SITE_topography)
 
       u_site_elevation = readflag &
@@ -1381,8 +1444,16 @@ CONTAINS
             allocate (patch_pft_s (numpatch))
             allocate (patch_pft_e (numpatch))
             allocate (pft2patch   (numpft  ))
+            
+#if (defined CROP || defined CH4)
+            IF (.FALSE. &
 #ifdef CROP
-            IF (SITE_landtype == CROPLAND) THEN
+               .OR. SITE_landtype == CROPLAND &
+#endif
+#ifdef CH4
+               .OR. SITE_landtype == WETLAND &
+#endif
+               ) THEN
                patch_pft_s = (/(i, i = 1, numpatch)/)
                patch_pft_e = (/(i, i = 1, numpatch)/)
                pft2patch   = (/(i, i = 1, numpatch)/)
@@ -2844,9 +2915,12 @@ ENDIF
 #if (defined CH4)
       IF (SITE_landtype == WETLAND) THEN
          CALL ncio_write_serial (fsrfdata, 'wetlandtyp', SITE_wetlandtyp, 'patch')
+         CALL ncio_put_attr     (fsrfdata, 'wetlandtyp', 'source', trim(datasource(u_site_wetland)))
+         CALL ncio_put_attr     (fsrfdata, 'wetlandtyp', 'long_name', 'wetland type')
+
          CALL ncio_write_serial (fsrfdata, 'pctwetland', SITE_pctwetland, 'patch')
-         CALL ncio_put_attr     (fsrfdata, 'wetlandtyp', 'source', datasource(USE_SITE_pctwetland))
-         CALL ncio_put_attr     (fsrfdata, 'pctwetland', 'source', datasource(USE_SITE_pctwetland))
+         CALL ncio_put_attr     (fsrfdata, 'pctwetland', 'source', trim(datasource(u_site_wetland)))
+         CALL ncio_put_attr     (fsrfdata, 'pctwetland', 'long_name', 'fraction of wetland type')
       ENDIF
 #endif
 

@@ -72,7 +72,9 @@ CONTAINS
          ENDIF
 #endif
 #ifdef CH4
+         IF (numpatch > 0) THEN
             allocate (wetlandfrac    (numpatch))
+         ENDIF
 #endif
       ENDIF
 

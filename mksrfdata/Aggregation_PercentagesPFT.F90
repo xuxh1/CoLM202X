@@ -81,7 +81,7 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
    integer :: typpft(0:N_PFT+N_CFT-1)
 #elif (!defined CROP && defined CH4)
    integer :: typwetland(N_WFT), ityp
-   integer :: typpft(0:N_PFT+N_WFT-1)
+   integer :: typpft(0:N_PFT-1)
 #else
    integer :: typpft(0:N_PFT-1)
 #endif
@@ -213,25 +213,18 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
 #endif
 
 #if (defined CH4)
-#ifndef SinglePoint
       lndname = trim(landdir)//'/pct_wetlands.nc'
       CALL ncio_create_file_vector (lndname, landpatch)
       CALL ncio_define_dimension_vector (lndname, landpatch, 'patch')
-      CALL ncio_write_vector (lndname, 'pct_wetlands', 'patch', landpatch, pctshrpwh, DEF_Srfdata_CompressLevel)
+      CALL ncio_write_vector (lndname, 'pct_wetlands', 'patch', &
+         landpatch, wetlandfrac, DEF_Srfdata_CompressLevel) 
 
 #ifdef SrfdataDiag
       typwetland = (/(ityp, ityp = 1, N_WFT)/)
-      lndname = trim(dir_model_landdata) // '/diag/pct_wetland_patch_' // trim(cyear) // '.nc'
-      CALL srfdata_map_and_write (pctshrpwh, wetlandclass, typwetland, m_patch2diag, &
-         -1.0e36_r8, lndname, 'pct_wetland_patch', compress = 1, write_mode = 'one')
-#endif
-#else
-      IF (.not. USE_SITE_pctwetland) THEN
-         allocate (SITE_wetlandtyp(numpatch))
-         allocate (SITE_pctwetland(numpatch))
-         SITE_wetlandtyp = wetlandclass
-         SITE_pctwetland = pctshrpwh
-      ENDIF
+      lndname = trim(dir_model_landdata) // '/diag/wetlandfrac_elm_' // trim(cyear) // '.nc'
+      CALL srfdata_map_and_write (wetlandfrac, wetlandclass, typwetland, m_patch2diag, &
+         -1.0e36_r8, lndname, 'wetlandfrac_elm', compress = 1, write_mode = 'one', &
+         stat_mode = 'fraction', pctshared = landpatch%pctshared)
 #endif
 #endif
 
