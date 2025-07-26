@@ -81,7 +81,7 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
    integer :: typpft(0:N_PFT+N_CFT-1)
 #elif (!defined CROP && defined CH4)
    integer :: typwetland(N_WFT), ityp
-   integer :: typpft(0:N_PFT-1)
+   integer :: typpft(0:N_PFT+N_WFT-1)
 #else
    integer :: typpft(0:N_PFT-1)
 #endif
@@ -182,7 +182,7 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
          landpft, pct_pfts, DEF_Srfdata_CompressLevel)
 
 #ifdef SrfdataDiag
-      typpft = (/(ipft, ipft = 0, N_PFT-1)/)
+      typpft = (/(ipft, ipft = 0, N_PFT+N_CFT+N_WFT-1)/)
       lndname = trim(dir_model_landdata)//'/diag/pftfrac_elm_'//trim(cyear)//'.nc'
       CALL srfdata_map_and_write (pct_pfts, landpft%settyp, typpft, m_pft2diag, &
          -1.0e36_r8, lndname, 'pftfrac_elm', compress = 1, write_mode = 'one',  &

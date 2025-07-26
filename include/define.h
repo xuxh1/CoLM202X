@@ -61,7 +61,7 @@
 #endif
 #endif
 ! 7.1 If defined, CROP model is used
-#undef CROP
+#define CROP
 !    Conflicts : only used when BGC is defined
 #ifndef BGC
 #undef CROP
