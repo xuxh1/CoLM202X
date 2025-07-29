@@ -423,7 +423,9 @@ PROGRAM MKSRFDATA
 
       CALL gblock%save_to_file    (dir_landdata)
 
+      write(*,*) "426: test1: pixel running"
       CALL pixel%save_to_file     (dir_landdata)
+      write(*,*) "428: test2: pixel save to file"
 
       CALL mesh_save_to_file      (dir_landdata, lc_year)
 

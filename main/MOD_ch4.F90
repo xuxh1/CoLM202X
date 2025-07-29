@@ -23,11 +23,12 @@ module MOD_ch4
 	use MOD_Precision
 	use MOD_Const_ch4
 	use MOD_Const_Physical, only: rgas, denh2o, denice, tfrz, grav
-	use MOD_ch4varcon, only : replenishlakec, allowlakeprod, ch4offline
-	use MOD_ch4varcon, only : usephfact, anoxicmicrosites, ch4rmcnlim 
-	use MOD_ch4varcon, only : iulog, use_cn, use_nitrif_denitrif, use_lch4, use_fates_bgc, anoxia
-	use MOD_ch4varcon, only : transpirationloss, use_aereoxid_prog
-	use MOD_ch4varcon, only : ch4frzout
+	! use MOD_ch4varcon, only : replenishlakec, allowlakeprod, ch4offline
+	! use MOD_ch4varcon, only : usephfact, anoxicmicrosites, ch4rmcnlim 
+	! use MOD_ch4varcon, only : iulog, use_cn, use_nitrif_denitrif, use_lch4, use_fates_bgc, anoxia
+	! use MOD_ch4varcon, only : transpirationloss, use_aereoxid_prog
+	! use MOD_ch4varcon, only : ch4frzout
+	use MOD_ch4varcon
 	use MOD_Namelist, only : DEF_USE_VariablySaturatedFlow
 	use MOD_Vars_Global, only : maxsnl,nl_soil,nl_lake,spval,PI,deg2rad
 	use MOD_SPMD_Task
@@ -1068,7 +1069,7 @@ contains
 
 			poros_tiller = 0.3
 
-			call SiteOxAere(nl_soil,  jwt,  sat,lai,    z_soisno, dz_soisno,  zi_soisno,  t_soisno,  &
+			call SiteOxAere(jwt,  sat,lai,    z_soisno, dz_soisno,  zi_soisno,  t_soisno,  &
 			vol_liq,  porsl,  rootfr,   rootr,  poros_tiller,grnd_ch4_cond, etr,   &
 			annsum_npp, annavg_agnpp,   annavg_bgnpp,  c_atm,      conc_o2, conc_ch4,        &
 			tranloss, aere,   oxaere)

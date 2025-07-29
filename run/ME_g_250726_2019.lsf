@@ -14,7 +14,7 @@ echo `hostname`
 
 echo "start: ${SYEAR}" `date`  >> log.txt
 
-mpirun  -np 960 ./mksrfdata.x ME_g_250726_2019.nml
+# mpirun  -np 960 ./mksrfdata.x ME_g_250726_2019.nml
 mpirun  -np 960 ./mkinidata.x ME_g_250726_2019.nml
 #mpirun  -np 480 ./colm.x ME_g_250726_2019.nml
 

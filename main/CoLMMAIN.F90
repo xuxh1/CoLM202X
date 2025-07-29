@@ -549,8 +549,7 @@ SUBROUTINE CoLMMAIN ( &
         qintr_rain  ,&! rainfall interception (mm h2o/s)
         qintr_snow    ! snowfall interception (mm h2o/s)
 
-   integer snl      ,&! number of snow layers
-        imelt(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happened=0
+   integer imelt(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happened=0
         lbsn    ,&! lower bound of arrays
         j             ! do looping index
 

@@ -1,6 +1,6 @@
 &nl_colm
 
-   DEF_CASE_NAME = 'ch4_r_1'
+   DEF_CASE_NAME = 'ME_r_250728_2214'
 
    DEF_domain%edges = 58.0
    DEF_domain%edgen = 60.0
@@ -13,8 +13,8 @@
   ! DEF_domain%edgee = 65.5
 
    ! DEF_PIO_groupsize = 12
-   DEF_nx_blocks = 1
-   DEF_ny_blocks = 1
+   ! DEF_nx_blocks = 1
+   ! DEF_ny_blocks = 1
 
    DEF_simulation_time%greenwich    = .TRUE.
    DEF_simulation_time%start_year   = 2020
@@ -33,9 +33,9 @@
 
    DEF_simulation_time%timestep     = 1800.
 
-   DEF_dir_rawdata = '/shr03/CoLMrawdata/'
-   DEF_dir_runtime = '/shr03/CoLMruntime/'
-   DEF_dir_output  = '/tera11/zhwei/students/Xionghui/wetland/cases/'
+   DEF_dir_rawdata = '/share/home/dq013/zhwei/colm/data/CoLMrawdata/'
+   DEF_dir_runtime = '/share/home/dq013/zhwei/colm/data/CoLMruntime/'
+   DEF_dir_output  = '/share/home/dq076/xuxh36/cases/'
 
    ! ----- land units and land sets -----
    ! for GRIDBASED
@@ -44,7 +44,7 @@
 
    ! soil state init
    DEF_USE_SoilInit  = .true.
-   DEF_file_SoilInit = '/shr03/CoLMruntime/soilstate.nc' 
+   DEF_file_SoilInit = '/share/home/dq013/zhwei/colm/data/soilstate/soilstate.nc' 
 
    ! LAI setting
    DEF_LAI_MONTHLY = .false.

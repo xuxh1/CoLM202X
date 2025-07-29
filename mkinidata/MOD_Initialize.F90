@@ -1304,8 +1304,9 @@ CONTAINS
    !------------------------------------------------------------
 #ifdef CH4
                ,c_atm                (:,i), ch4_surf_flux_tot      (i), net_methane            (i), &
-               annavg_agnpp           (i), annavg_bgnpp           (i), annavg_somhr           (i), &
-               annavg_finrw           (i), ch4_prod_depth       (:,i), o2_decomp_depth      (:,i), &
+               ! annavg_agnpp           (i), annavg_bgnpp           (i), annavg_somhr           (i), &
+               ! annavg_finrw           (i), &
+               ch4_prod_depth       (:,i), o2_decomp_depth      (:,i), &
                ch4_oxid_depth       (:,i), o2_oxid_depth        (:,i), ch4_aere_depth       (:,i), &
                ch4_tran_depth       (:,i), o2_aere_depth        (:,i), ch4_ebul_depth       (:,i), &
                o2stress             (:,i), ch4stress            (:,i), ch4_surf_aere          (i), &

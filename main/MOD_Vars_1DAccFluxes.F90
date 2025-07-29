@@ -307,12 +307,6 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: a_tempavg_somhr         (:)
    real(r8), allocatable :: a_tempavg_finrw         (:)
 #endif
-   real(r8), allocatable :: a_ndep_to_sminn      (:)
-   real(r8), allocatable :: a_abm                (:)
-   real(r8), allocatable :: a_gdp                (:)
-   real(r8), allocatable :: a_peatf              (:)
-   real(r8), allocatable :: a_hdm                (:)
-   real(r8), allocatable :: a_lnfm               (:)
    real(r8), allocatable :: a_ndep_to_sminn         (:)
    real(r8), allocatable :: a_abm                   (:)
    real(r8), allocatable :: a_gdp                   (:)
