@@ -152,7 +152,11 @@ CONTAINS
 
 #ifndef URBAN_MODEL
       IF (.not. DEF_USE_LAIFEEDBACK)THEN
+#ifndef CH4
          IF (patchtypes(SITE_landtype) == 0) THEN
+#else
+         IF ((patchtypes(SITE_landtype) == 0) .or. (patchtypes(SITE_landtype) == 2)) THEN
+#endif
             tlai_p(:) = pack(SITE_LAI_pfts_monthly(:,time,iyear), SITE_pctpfts > 0.)
             tsai_p(:) = pack(SITE_SAI_pfts_monthly(:,time,iyear), SITE_pctpfts > 0.)
             tlai(:)   = sum (SITE_LAI_pfts_monthly(:,time,iyear) * SITE_pctpfts)
@@ -162,7 +166,11 @@ CONTAINS
             tsai(:) = SITE_SAI_monthly(time,iyear)
          ENDIF
       ELSE
+#ifndef CH4
          IF (patchtypes(SITE_landtype) == 0) THEN
+#else
+         IF ((patchtypes(SITE_landtype) == 0) .or. (patchtypes(SITE_landtype) == 2)) THEN
+#endif
             tsai_p(:) = pack(SITE_SAI_pfts_monthly(:,time,iyear), SITE_pctpfts > 0.)
             tsai(:)   = sum (SITE_SAI_pfts_monthly(:,time,iyear) * SITE_pctpfts)
          ELSE

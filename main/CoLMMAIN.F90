@@ -588,8 +588,6 @@ SUBROUTINE CoLMMAIN ( &
    real(r8) :: fh_fld      ! integral of profile function for heat
    real(r8) :: fq_fld      ! integral of profile function for moisture
 #endif
-      ! print*, "580 thermk",thermk
-      ! print*, "581 patchtype,i",patchtype,ipatch
 
 !-----------------------------------------------------------------------
 
@@ -726,8 +724,6 @@ SUBROUTINE CoLMMAIN ( &
          lb   = snl + 1           !lower bound of array
          lbsn = min(lb,0)
 
-         ! print*, "715 thermk",thermk
-         ! print*, "716 patchtype,i",patchtype,ipatch
          CALL THERMAL (ipatch,patchtype,is_dry_lake,lb                ,deltim            ,&
               trsmx0            ,zlnd              ,zsno              ,csoilc            ,&
               dewmx             ,capr              ,cnfac             ,vf_quartz         ,&

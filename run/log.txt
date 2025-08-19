@@ -59,3 +59,7 @@ start:  Mon Jul 28 22:21:26 CST 2025
 end:    Tue Jul 29 01:50:15 CST 2025
 start:  Tue Jul 29 03:02:33 CST 2025
 end:    Tue Jul 29 03:02:46 CST 2025
+start:  Sun Aug 10 08:17:28 CST 2025
+end:    Sun Aug 10 12:12:36 CST 2025
+start:  Sun Aug 10 12:25:37 CST 2025
+end:    Sun Aug 10 16:17:26 CST 2025

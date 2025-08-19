@@ -207,13 +207,13 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
             CALL bgc_driver (i,idate(1:3),deltim, patchlatr(i)*180/PI,patchlonr(i)*180/PI)
 #if(defined CH4)
             IF (patchtype(i) .eq. 2) THEN
-               CALL ch4_driver(istep,i,idate(1:3),patchtype(i),deltim,lb,snl,&!input
-               patchlonr(i)*180/PI,patchlatr(i)*180/PI,&
-               z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:,i),&
-               t_grnd(i),wliq_soisno(maxsnl+1:,i),wice_soisno(maxsnl+1:,i),&
-               forc_t(i),forc_pbot(i),forc_po2m(i),forc_pco2m(i),&
-               zwt(i),rootfr(1:,m),snowdp(i),wat(i),rsur(i),etr(i),lakedepth(i),lake_icefrac(1:,i),wdsrf(i),bsw(1:,i),&
-               smp(1:,i),porsl(1:,i),lai(i),rootr(1:,i))
+              CALL ch4_driver(istep,i,idate(1:3),patchtype(i),deltim,lb,snl,&!input
+              patchlonr(i)*180/PI,patchlatr(i)*180/PI,&
+              z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:,i),&
+              t_grnd(i),wliq_soisno(maxsnl+1:,i),wice_soisno(maxsnl+1:,i),&
+              forc_t(i),forc_pbot(i),forc_po2m(i),forc_pco2m(i),&
+              zwt(i),rootfr(1:,m),snowdp(i),wat(i),rsur(i),etr(i),lakedepth(i),lake_icefrac(1:,i),wdsrf(i),bsw(1:,i),&
+              smp(1:,i),porsl(1:,i),lai(i),rootr(1:,i))
             ENDIF
 #endif
          ENDIF

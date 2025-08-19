@@ -404,8 +404,6 @@ ENDIF
       albg(:,:) = (1.-fsno)*albg(:,:) + fsno*albsno(:,:)
       alb (:,:) = albg(:,:)
 
-      print*, "405 thermk",thermk
-      print*, "406 patchtype",patchtype
 ! ----------------------------------------------------------------------
 ! 4. canopy albedos: two stream approximation or 3D canopy radiation transfer
 ! ----------------------------------------------------------------------
@@ -413,7 +411,6 @@ ENDIF
 
          ! initialization
          albv(:,:) = albg(:,:)
-         print*, "412 thermk",thermk
 #ifndef CH4
          IF (patchtype == 0) THEN
 #else
@@ -427,15 +424,12 @@ ENDIF
             ! 08/31/2023, yuan: to be consistent with PFT and PC
             alb(:,:) = albv(:,:)
 #endif
-            print*, "428 thermk",thermk
          ELSE  !other patchtypes (/=0)
             CALL twostream (chil,rho,tau,green,lai,sai,fwet_snow,&
                             czen,albg,albv,tran,thermk,extkb,extkd,ssun,ssha)
 
             ! 08/31/2023, yuan: to be consistent with PFT and PC
             alb(:,:) = albv(:,:)
-            print*, "437 thermk",thermk
-
          ENDIF
       ENDIF
 

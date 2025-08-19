@@ -544,7 +544,11 @@ CONTAINS
          !     variables: snowdp, sag, scv, fsno, snl, z_soisno, dz_soisno
          z0m = htop * z0mr
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
+#ifndef CH4
+         IF(patchtype==0)THEN
+#else
          IF(patchtype==0 .or. patchtype==2)THEN
+#endif
             ps = patch_pft_s(ipatch)
             pe = patch_pft_e(ipatch)
             IF (ps>0 .and. pe>0) THEN

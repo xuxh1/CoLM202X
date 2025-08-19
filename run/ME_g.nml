@@ -1,6 +1,6 @@
 &nl_colm
 
-   DEF_CASE_NAME = 'ME_g_250726_2019'
+   DEF_CASE_NAME = 'ME_g_250808_1608'
 
    DEF_domain%edges = -90.0
    DEF_domain%edgen = 90.0
@@ -40,8 +40,8 @@
 
    ! ----- land units and land sets -----
    ! for GRIDBASED
-   DEF_GRIDBASED_lon_res = 0.25  
-   DEF_GRIDBASED_lat_res = 0.25
+   DEF_GRIDBASED_lon_res = 0.5  
+   DEF_GRIDBASED_lat_res = 0.5
 
    ! soil state init
    DEF_USE_SoilInit  = .true.
@@ -65,7 +65,7 @@
    DEF_HIST_lon_res = 0.5
    DEF_HIST_lat_res = 0.5
    DEF_WRST_FREQ = 'YEARLY' ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
-   DEF_HIST_FREQ = 'MONTHLY' ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+   DEF_HIST_FREQ = 'DAILY' ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
    DEF_HIST_groupby = 'MONTH' ! history in one file: DAY/MONTH/YEAR
    DEF_HIST_mode = 'one' ! history in one or block
    DEF_REST_CompressLevel = 1

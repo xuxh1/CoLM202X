@@ -985,7 +985,12 @@ CONTAINS
                      smin_no3_vr     (nsl, i)            = min_no3_vr(nsl,i)
                      sminn_vr        (nsl, i)            = min_nh4_vr(nsl,i)+min_no3_vr(nsl,i)
                   ENDDO
+
+#ifndef CH4
+                  IF (patchtype(i) == 0)THEN
+#else
                   IF (patchtype(i) == 0 .or. patchtype(i) == 2)THEN
+#endif
                      DO m = ps, pe
                         ivt = pftclass(m)
                         IF(isevg(ivt))THEN
@@ -1133,7 +1138,11 @@ CONTAINS
          DO i = 1, numpatch
             ! Call Ecological Model()
             ltyp = patchtype(i)
+#ifndef CH4
             IF(ltyp > 0) THEN
+#else
+            IF(ltyp > 0 .and. ltyp /= 2) THEN
+#endif
                CALL lai_empirical(ltyp, nl_soil,rootfr(1:,i), t_soisno(1:,i),tlai(i),tsai(i),fveg(i),green(i))
             ENDIF
          ENDDO

@@ -1,9 +1,9 @@
 #!/bin/bash
-#BSUB -J ME_g_250726_2019
+#BSUB -J ME_g_250808_1608
 #BSUB -q normal
-#BSUB -o ME_g_250726_2019-o.out
-#BSUB -e ME_g_250726_2019-e.out
-#BSUB -n 960
+#BSUB -o ME_g_250808_1608-o.out
+#BSUB -e ME_g_250808_1608-e.out
+#BSUB -n 480
 #BSUB -R rusage[mem=150G]
 #BSUB -R span[ptile=48]
 
@@ -14,9 +14,9 @@ echo `hostname`
 
 echo "start: ${SYEAR}" `date`  >> log.txt
 
-mpirun  -np 960 ./mksrfdata.x ME_g_250726_2019.nml
-mpirun  -np 960 ./mkinidata.x ME_g_250726_2019.nml
-#mpirun  -np 480 ./colm.x ME_g_250726_2019.nml
+#mpirun  -np 960 ./mksrfdata.x ME_g.nml
+#mpirun  -np 960 ./mkinidata.x ME_g.nml
+mpirun  -np 480 ./colm.x ME_g.nml
 
 
 echo "end:   ${SYEAR}" `date`  >> log.txt

@@ -41,7 +41,11 @@ CONTAINS
       write(cyear,'(i4.4)') lc_year
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
 #ifdef SinglePoint
+#ifndef CH4
       IF (patchtypes(SITE_landtype) /= 0) RETURN
+#else
+      IF ((patchtypes(SITE_landtype) /= 0) .and. (patchtypes(SITE_landtype) /= 2)) RETURN
+#endif
 #endif
 
 #ifndef SinglePoint
@@ -80,12 +84,20 @@ CONTAINS
 #ifdef RangeCheck
       IF (p_is_worker) THEN
          
+#ifndef CH4
          npatch = count(patchtypes(landpatch%settyp) == 0)
+#else
+         npatch = count((patchtypes(landpatch%settyp) == 0) .or. (patchtypes(landpatch%settyp) == 2))
+#endif
          allocate (sumpct (npatch))
 
          npatch = 0
          DO ipatch = 1, numpatch
+#ifndef CH4
             IF (patchtypes(landpatch%settyp(ipatch)) == 0) THEN
+#else
+            IF ((patchtypes(landpatch%settyp(ipatch)) == 0) .or. (patchtypes(landpatch%settyp(ipatch)) == 2)) THEN
+#endif
                npatch = npatch + 1
                sumpct(npatch) = sum(pftfrac(patch_pft_s(ipatch):patch_pft_e(ipatch)))
             ENDIF

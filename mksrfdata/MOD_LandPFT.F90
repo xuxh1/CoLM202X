@@ -310,7 +310,7 @@ CONTAINS
                      landpft%ipxend(npft) = landpatch%ipxend(ipatch)
                      landpft%settyp(npft) = wetlandclass(ipatch) + N_PFT + N_CFT - 1
                      
-                     landpft%pctshared(npft) = landpatch%pctshared(ipatch)
+                     landpft%pctshared(npft) = 1.
 
                      pft2patch(npft) = npatch
 #endif
