@@ -235,8 +235,15 @@ MODULE MOD_Namelist
    logical :: DEF_URBAN_LUCY        = .true.
    logical :: DEF_USE_CANYON_HWR    = .true.
 
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+! ----- Part 11: Methane model related ------
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#ifdef CH4
+   logical :: DEF_METHANE_only_wetland = .true.
+#endif
+
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-! ----- Part 11: parameterization schemes -----
+! ----- Part 12: parameterization schemes -----
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    integer :: DEF_Interception_scheme = 1  !1:CoLM；2:CLM4.5; 3:CLM5; 4:Noah-MP; 5:MATSIRO; 6:VIC; 7:JULES
@@ -360,7 +367,7 @@ MODULE MOD_Namelist
    logical            :: DEF_CheckEquilibrium    = .false.
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-! ----- Part 12: forcing -----
+! ----- Part 13: forcing -----
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    character(len=256) :: DEF_forcing_namelist  = 'null'
@@ -439,7 +446,7 @@ MODULE MOD_Namelist
    character(len=5)  :: DEF_DS_longwave_adjust_scheme      = 'II'
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-! ----- Part 13: history and restart -----
+! ----- Part 14: history and restart -----
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    logical  :: DEF_HISTORY_IN_VECTOR            = .false.
@@ -1046,6 +1053,10 @@ CONTAINS
       DEF_USE_CNSOYFIXN,                      & !add by Xingjie Lu @ sysu 2023/06/27
       DEF_USE_FIRE,                           & !add by Xingjie Lu @ sysu 2023/06/27
 
+#ifdef CH4
+      DEF_METHANE_only_wetland,               & !add by Xionghui Xu @sysu 2025/08/19
+#endif
+
       DEF_USE_Dynamic_Lake,                   & !add by Shupeng Zhang @ sysu 2024/09/12
       DEF_CheckEquilibrium,                   & !add by Shupeng Zhang @ sysu 2024/11/26
 
@@ -1571,6 +1582,11 @@ CONTAINS
       CALL mpi_bcast (DEF_USE_NITRIF                         ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_USE_CNSOYFIXN                      ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_USE_FIRE                           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+
+      ! 08/2025, added by Xionghui Xu
+#ifdef CH4
+      CALL mpi_bcast (DEF_USE_FIRE                           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+#endif 
 
       CALL mpi_bcast (DEF_USE_Dynamic_Lake                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_CheckEquilibrium                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)

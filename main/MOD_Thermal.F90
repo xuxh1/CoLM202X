@@ -897,7 +897,6 @@ ENDIF
 
 
 IF (DEF_USE_PC .and. patchclass(ipatch)/=CROPLAND .and. patchclass(ipatch)/=WETLAND) THEN
-      ! print*, "898 thermk",thermk
 
       ! initialization
       rst_p      (ps:pe) = 2.0e4

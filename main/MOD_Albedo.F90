@@ -615,7 +615,6 @@ ENDIF
       power3 = min( 50., power3 )
       power3 = max( 1.e-5, power3 )
       thermk = exp(-power3)
-      print*, "626 thermk",thermk
       IF (lsai <= 1e-6) RETURN
 
       DO iw = 1, 2    ! WAVE_BAND_LOOP

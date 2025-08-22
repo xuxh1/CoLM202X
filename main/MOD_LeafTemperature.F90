@@ -815,13 +815,11 @@ CONTAINS
 IF (.not.DEF_SPLIT_SOILSNOW) THEN
          irab = (frl - 2. * stefnc * tl**4 + emg*stefnc*tg**4 ) * fac &
               + (1-emg)*thermk*fac*frl + (1-emg)*(1-thermk)*fac*stefnc*tl**4
-            !   print*, "791: frl,stefnc,tl,emg,tg,fac,thermk",frl,stefnc,tl,emg,tg,fac,thermk
 ELSE
          irab = (frl - 2. * stefnc * tl**4 &
               + (1.-fsno)*emg*stefnc*t_soil**4 &
               + fsno*emg*stefnc*t_snow**4 ) * fac &
               + (1-emg)*thermk*fac*frl + (1-emg)*(1-thermk)*fac*stefnc*tl**4
-            !   print*, "797: frl,stefnc,tl,fsno,emg,t_soil,t_snow,tg,fac,thermk",frl,stefnc,tl,fsno,emg,t_soil,t_snow,tg,fac,thermk
 ENDIF
          dirab_dtl = - 8. * stefnc * tl**3 * fac &
                    + 4.*(1-emg)*(1-thermk)*fac*stefnc*tl**3

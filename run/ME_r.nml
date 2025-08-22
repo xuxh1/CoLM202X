@@ -1,11 +1,11 @@
 &nl_colm
 
-   DEF_CASE_NAME = 'ME_r_250729_2144'
+   DEF_CASE_NAME = 'ME_r_Amazon_250822_1607'
 
-   DEF_domain%edges = 58.0
-   DEF_domain%edgen = 60.0
-   DEF_domain%edgew = 65.0
-   DEF_domain%edgee = 67.0
+   DEF_domain%edges = -17.0
+   DEF_domain%edgen = 5.0
+   DEF_domain%edgew = -80.0
+   DEF_domain%edgee = -50.0
 
   ! DEF_domain%edges = 58.0
   ! DEF_domain%edgen = 58.5
@@ -17,15 +17,15 @@
    ! DEF_ny_blocks = 1
 
    DEF_simulation_time%greenwich    = .TRUE.
-   DEF_simulation_time%start_year   = 2020
+   DEF_simulation_time%start_year   = 1995
    DEF_simulation_time%start_month  = 1
    DEF_simulation_time%start_day    = 1
    DEF_simulation_time%start_sec    = 0
-   DEF_simulation_time%end_year     = 2020
+   DEF_simulation_time%end_year     = 1999
    DEF_simulation_time%end_month    = 12
    DEF_simulation_time%end_day      = 31
    DEF_simulation_time%end_sec      = 86400
-   DEF_simulation_time%spinup_year  = 2005
+   DEF_simulation_time%spinup_year  = 1990
    DEF_simulation_time%spinup_month = 1
    DEF_simulation_time%spinup_day   = 1
    DEF_simulation_time%spinup_sec   = 0
@@ -35,24 +35,25 @@
 
    DEF_dir_rawdata = '/share/home/dq013/zhwei/colm/data/CoLMrawdata/'
    DEF_dir_runtime = '/share/home/dq013/zhwei/colm/data/CoLMruntime/'
-   DEF_dir_output  = '/share/home/dq076/xuxh36/cases/'
+   DEF_dir_output  = '/share/home/dq076/data/cases/ME/'
 
    ! ----- land units and land sets -----
    ! for GRIDBASED
-   DEF_GRIDBASED_lon_res = 0.25  
-   DEF_GRIDBASED_lat_res = 0.25
+   DEF_GRIDBASED_lon_res = 0.5  
+   DEF_GRIDBASED_lat_res = 0.5
 
    ! soil state init
    DEF_USE_SoilInit  = .true.
    DEF_file_SoilInit = '/share/home/dq013/zhwei/colm/data/soilstate/soilstate.nc' 
 
    ! LAI setting
-   DEF_LAI_MONTHLY = .false.
+   DEF_LAI_MONTHLY = .true.
    DEF_LAI_CHANGE_YEARLY = .false.
 
    ! DEF_USE_BEDROCK = .true.
    DEF_USE_VariablySaturatedFlow = .false.
-   ! DEF_Runoff_SCHEME = 0
+
+   DEF_METHANE_only_wetland = .false.
 
    ! ----- forcing -----
    ! Options :
@@ -64,8 +65,8 @@
    DEF_HIST_lon_res = 0.5
    DEF_HIST_lat_res = 0.5
    DEF_WRST_FREQ = 'YEARLY' ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
-   DEF_HIST_FREQ = 'MONTHLY' ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
-   DEF_HIST_groupby = 'MONTH' ! history in one file: DAY/MONTH/YEAR
+   DEF_HIST_FREQ = 'DAILY' ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+   DEF_HIST_groupby = 'YEAR' ! history in one file: DAY/MONTH/YEAR
    DEF_HIST_mode = 'one' ! history in one or block
    DEF_REST_CompressLevel = 1
    DEF_HIST_CompressLevel = 1
@@ -73,6 +74,6 @@
    DEF_HIST_WriteBack = .false.
 
    DEF_hist_vars_out_default = .false.
-   DEF_hist_vars_namelist    = './history_1.nml'
+   DEF_hist_vars_namelist    = './history_ME.nml'
 
 /
