@@ -1026,12 +1026,12 @@ CONTAINS
          ! CH4 flux to atm.
          CALL write_history_variable_2d ( DEF_hist_vars%ch4_surf_flux_tot, &
              a_ch4_surf_flux_tot, file_hist, 'f_ch4_surf_flux_tot', itime_in_file, sumarea, filter, &
-             'CH4 flux to atm.','kgC/m2/s')
+             'CH4 flux to atm.','gCH4/m2/s')
 
          ! average net methane correction to CO2 flux
          CALL write_history_variable_2d ( DEF_hist_vars%net_methane, &
              a_net_methane, file_hist, 'f_net_methane', itime_in_file, sumarea, filter, &
-             'average net methane correction to CO2 flux','gC/m2/s')
+             'average net methane correction to CO2 flux','gCH4/m2/s')
 
          ! annual average above-ground NPP 
          CALL write_history_variable_2d ( DEF_hist_vars%annavg_agnpp, &
@@ -1126,7 +1126,7 @@ CONTAINS
          ! total methane in soil column, start of timestep
          CALL write_history_variable_2d ( DEF_hist_vars%totcolch4, &
              a_totcolch4, file_hist, 'f_totcolch4', itime_in_file, sumarea, filter, &
-             'total methane in soil column, start of timestep','gC/m2')
+             'total methane in soil column, start of timestep','gCH4/m2')
 
          ! CH4 concentration in atmos.
          CALL write_history_variable_2d ( DEF_hist_vars%forc_pch4m, &

@@ -1,6 +1,6 @@
 &nl_colm
 
-   DEF_CASE_NAME = 'ME_r_Amazon_250822_1607'
+   DEF_CASE_NAME = 'ME_r_Amazon_250825_0954'
 
    DEF_domain%edges = -17.0
    DEF_domain%edgen = 5.0
@@ -53,7 +53,7 @@
    ! DEF_USE_BEDROCK = .true.
    DEF_USE_VariablySaturatedFlow = .false.
 
-   DEF_METHANE_only_wetland = .false.
+   DEF_METHANE_only_wetland = .true.
 
    ! ----- forcing -----
    ! Options :

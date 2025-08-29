@@ -20,6 +20,7 @@ MODULE MOD_Const_ch4
 	!------------------------------------------------------------------
 
 	real(r8), public, parameter :: catomw = 12.011_r8 ! molar mass of C atoms (g/mol)
+	real(r8), public, parameter :: ch4atomw = 16.04_r8 ! molar mass of CH4 atoms (g/mol)
 
 	real(r8), public :: s_con(ngases,4)    ! Schmidt # calculation constants (spp, #)
 	data (s_con(1,i),i=1,4) /1898_r8, -110.1_r8, 2.834_r8, -0.02791_r8/ ! CH4
@@ -100,8 +101,8 @@ MODULE MOD_Const_ch4
 
    ! ! ch4 transport constants
    real(r8), public, parameter :: satpow  =2._r8             ! exponent on watsat for saturated soil solute diffusion (2? params:2.)
-   real(r8), public, parameter :: scale_factor_gasdiff = 1   ! For sensitivity tests; convection would allow this to be > 1(? params:1.) (doc:fD0 Basline:1 Range:1,10 Unit:m2 s-1)
-   real(r8), public, parameter :: scale_factor_liqdiff = 1   ! For sensitivity tests; convection would allow this to be > 1(? params:1.) (doc:fD0 Basline:1 Range:1,10 Unit:m2 s-1)
+   real(r8), public, parameter :: scale_factor_gasdiff = 1._r8   ! For sensitivity tests; convection would allow this to be > 1(? params:1.) (doc:fD0 Basline:1 Range:1,10 Unit:m2 s-1)
+   real(r8), public, parameter :: scale_factor_liqdiff = 1._r8   ! For sensitivity tests; convection would allow this to be > 1(? params:1.) (doc:fD0 Basline:1 Range:1,10 Unit:m2 s-1)
    real(r8), public, parameter :: capthick = 100._r8         ! min thickness before assuming h2osfc is impermeable (mm) (params:100.code:100._r8)
 
    ! ! additional constants

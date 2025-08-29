@@ -1,8 +1,8 @@
 #!/bin/bash
-#BSUB -J ME_r_Amazon_250822_1607
+#BSUB -J ME_r_Amazon_250825_0954
 #BSUB -q normal
-#BSUB -o ME_r_Amazon_250822_1607-o.out
-#BSUB -e ME_r_Amazon_250822_1607-e.out
+#BSUB -o ME_r_Amazon_250825_0954-o.out
+#BSUB -e ME_r_Amazon_250825_0954-e.out
 #BSUB -n 48
 #BSUB -R rusage[mem=150G]
 #BSUB -R span[ptile=48]

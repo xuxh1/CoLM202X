@@ -170,8 +170,8 @@ contains
 			c_atm      (1:3)             , &! CH4, O2, CO2 atmospheric conc  (mol/m3)         
 		! 	ch4co2                       , &! CO2 production from CH4 oxidation (g C/m**2/s)
 		! 	ch4prod                      , &! average CH4 production (g C/m^2/s)       
-			ch4_surf_flux_tot            , &! CH4 flux to atm. (kg C/m2/s)
-			net_methane                     ! average net methane correction to CO2 flux (g C/m2/s)
+			ch4_surf_flux_tot            , &! CH4 flux to atm. (gCH4/m2/s)
+			net_methane                     ! average net methane correction to CO2 flux (gCH4/m2/s)
 
 		!------------------- ch4_annualupdate ------------------------------
 		real(r8), intent(out) :: &
@@ -215,7 +215,7 @@ contains
 			ch4_first_time
 		
 		real(r8), intent(inout) :: &
-			totcolch4               , &! total methane in soil column, start of timestep (gC/m2)
+			totcolch4               , &! total methane in soil column, start of timestep (gCH4/m2)
 			forc_pch4m              , &! CH4 concentration in atmos. (pascals)
 			grnd_ch4_cond           , &! tracer conductance for boundary layer [m/s]
 			conc_o2  (1:nl_soil)    , &! O2 conc in each soil layer (mol/m3) 
@@ -241,8 +241,8 @@ contains
 
 		real(r8) :: lon,lat                 ! lon,lat
 
-		real(r8) :: ch4_prod_tot            ! CH4 production for column (g C/m**2/s)
-		real(r8) :: ch4_oxid_tot            ! CH4 oxidation for column (g C/m**2/s)
+		real(r8) :: ch4_prod_tot            ! CH4 production for column (gCH4/m2/s)
+		real(r8) :: ch4_oxid_tot            ! CH4 oxidation for column (gCH4/m2/s)
 
 		real(r8) :: total                   ! diff + aere + ebul
 		real(r8) :: dfsat
@@ -254,7 +254,7 @@ contains
 		! real(r8) :: qflxlags              ! Time to lag qflx_surf_lag (s)
 		integer  :: dummyfilter(1)          ! empty filter
 
-		real(r8) :: totcolch4_bef           ! total methane in soil column, start of timestep (g C / m^2)
+		real(r8) :: totcolch4_bef           ! total methane in soil column, start of timestep (gCH4/m2)
 
 		!-----------------------------------------------------------------------
 		! Set parameters
@@ -436,15 +436,21 @@ contains
 		do j=1,nl_soil
 			if (j == 1) then
 				total = ch4_surf_diff + ch4_surf_aere + ch4_surf_ebul
-				ch4_surf_flux_tot = total* catomw / 1000._r8
-				!Convert from mol to kg C
+				! ch4_surf_flux_tot = total* catomw / 1000._r8
+				! !Convert from mol to kg C
+				ch4_surf_flux_tot = total* ch4atomw
+				!Convert from mol to g CH4
 				! ch4_oxid_tot and ch4_prod_tot are initialized to zero above
 			end if
 
-			ch4_oxid_tot = ch4_oxid_tot + ch4_oxid_depth(j) * dz_soisno(j) * catomw
-			!Convert from mol to g C
-			ch4_prod_tot = ch4_prod_tot + ch4_prod_depth(j) * dz_soisno(j) * catomw
-			!Convert from mol to g C
+			! ch4_oxid_tot = ch4_oxid_tot + ch4_oxid_depth(j) * dz_soisno(j) * catomw
+			! !Convert from mol to g C
+			! ch4_prod_tot = ch4_prod_tot + ch4_prod_depth(j) * dz_soisno(j) * catomw
+			! !Convert from mol to g C
+			ch4_oxid_tot = ch4_oxid_tot + ch4_oxid_depth(j) * dz_soisno(j) * ch4atomw
+			!Convert from mol to g CH4
+			ch4_prod_tot = ch4_prod_tot + ch4_prod_depth(j) * dz_soisno(j) * ch4atomw
+			!Convert from mol to g CH4
 			if (j == nl_soil) then
 				! Adjustment to NEE flux to atm. for methane production
 				net_methane = net_methane - ch4_prod_tot
@@ -461,9 +467,9 @@ contains
 		! 		if (j == 1) then
 		! 			! ch4_oxid_tot and ch4_prod_tot are initialized to zero above
 		! 			total = ch4_surf_diff + ch4_surf_aere + ch4_surf_ebul
-		! 			ch4_surf_flux_tot = total*catomw / 1000._r8
+		! 			ch4_surf_flux_tot = total*catomw
 		! 		end if
-	
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!change catomw
 		! 		ch4_oxid_tot = ch4_oxid_tot + ch4_oxid_depth(j)*dz_soisno(j)*catomw
 		! 		ch4_prod_tot = ch4_prod_tot + ch4_prod_depth(j)*dz_soisno(j)*catomw
 	
@@ -495,15 +501,17 @@ contains
 		! Finalize CH4 balance and check for errors
 	
 		do j = 1, nl_soil
-			totcolch4 = totcolch4 + conc_ch4(j)*dz_soisno(j)*catomw
-			! mol CH4 --> g C
+			! totcolch4 = totcolch4 + conc_ch4(j)*dz_soisno(j)*catomw
+			! ! mol CH4 --> g C
+			totcolch4 = totcolch4 + conc_ch4(j)*dz_soisno(j)*ch4atomw
+			! mol CH4 --> g CH4
 		end do
 	
 		! Column level balance
 	
 		if (.not. ch4_first_time) then
 			! Check balance
-			errch4 = totcolch4 - totcolch4_bef - deltim*(ch4_prod_tot - ch4_oxid_tot - ch4_surf_flux_tot*1000._r8) 
+			errch4 = totcolch4 - totcolch4_bef - deltim*(ch4_prod_tot - ch4_oxid_tot - ch4_surf_flux_tot) 
 			! kg C --> g C
 			if (abs(errch4) > 1.e-7_r8) then ! g C / m^2 / timestep
 				! write(6,*)'Patch-level CH4 Conservation Error in CH4Mod driver, istep,  errch4 (gC /m^2.timestep)',istep,errch4
@@ -512,7 +520,7 @@ contains
 				write(6,*)'totcolch4_bef             = ', totcolch4_bef
 				write(6,*)'deltim*ch4_prod_tot           = ', deltim*ch4_prod_tot
 				write(6,*)'deltim*ch4_oxid_tot           = ', deltim*ch4_oxid_tot
-				write(6,*)'deltim*ch4_surf_flux_tot*1000 = ', deltim*ch4_surf_flux_tot*1000._r8
+				write(6,*)'deltim*ch4_surf_flux_tot = ', deltim*ch4_surf_flux_tot
 				CALL CoLM_stop ()
 			end if
 		end if
@@ -520,7 +528,7 @@ contains
 		! if (allowlakeprod) then
 		! 	if (.not. ch4_first_time) then
 		! 		! Check balance
-		! 		errch4 = totcolch4 - totcolch4_bef - deltim*(ch4_prod_tot - ch4_oxid_tot - ch4_surf_flux_tot*1000._r8) 
+		! 		errch4 = totcolch4 - totcolch4_bef - deltim*(ch4_prod_tot - ch4_oxid_tot - ch4_surf_flux_tot) 
 		! 		! kg C --> g C
 		! 		if (abs(errch4) > 1.e-7_r8) then ! g C / m^2 / timestep
 		! 			! write(6,*)'Column-level CH4 Conservation Error in CH4Mod driver for lake column, istep, errch4 (gC/m^2.timestep)',istep,errch4
@@ -529,7 +537,7 @@ contains
 		! 			write(6,*)'totcolch4_bef            = ', totcolch4_bef
 		! 			write(6,*)'deltim*ch4_prod_tot           = ', deltim*ch4_prod_tot
 		! 			write(6,*)'deltim*ch4_oxid_tot           = ', deltim*ch4_oxid_tot
-		! 			write(6,*)'deltim*ch4_surf_flux_tot*1000 = ', deltim*ch4_surf_flux_tot*1000._r8
+		! 			write(6,*)'deltim*ch4_surf_flux_tot = ', deltim*ch4_surf_flux_tot
 		! 			CALL CoLM_stop ()
 		! 		end if
 		! 	end if

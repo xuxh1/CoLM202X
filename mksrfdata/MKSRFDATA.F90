@@ -146,7 +146,7 @@ PROGRAM MKSRFDATA
       CALL CoLM_stop()
 #endif
       IF (p_is_master) THEN
-            print*, "0"
+            print*, "0_149"
             print*, "USE_srfdata_from_larger_region",USE_srfdata_from_larger_region
       ENDIF
 
@@ -203,7 +203,7 @@ PROGRAM MKSRFDATA
       ! define domain in pixel coordinate
 
       IF (p_is_master) THEN
-            print*, "1"
+            print*, "1_206"
             ! filename = trim(DEF_dir_landdata) + "pixel.nc"
             ! CALL check_ncfile_exist (filename)
       END IF
@@ -302,7 +302,7 @@ PROGRAM MKSRFDATA
 #endif
 
       IF (p_is_master) THEN
-            print*, "2"
+            print*, "2_305"
             ! filename = trim(DEF_dir_landdata) + "pixel.nc"
             ! CALL check_ncfile_exist (filename)
       END IF
@@ -348,7 +348,7 @@ PROGRAM MKSRFDATA
 #endif
 
       IF (p_is_master) THEN
-            print*, "3"
+            print*, "3_351"
             ! filename = trim(DEF_dir_landdata) + "pixel.nc"
             ! CALL check_ncfile_exist (filename)
       END IF
@@ -373,6 +373,9 @@ PROGRAM MKSRFDATA
 !    ! CALL pixel%map_to_grid (grid_wetland_500m)
 !    ! CALL pixel%map_to_grid (grid_wetland_5km )
 ! #endif
+      IF (p_is_master) THEN
+            print*, "3.1_377"
+      END IF
 
       CALL pixel%map_to_grid (grid_htop )
       CALL pixel%map_to_grid (grid_soil )
@@ -394,7 +397,7 @@ PROGRAM MKSRFDATA
 #endif
 
       IF (p_is_master) THEN
-            print*, "4"
+            print*, "4_397"
             ! filename = trim(DEF_dir_landdata) + "pixel.nc"
             ! CALL check_ncfile_exist (filename)
       END IF
@@ -404,7 +407,7 @@ PROGRAM MKSRFDATA
       CALL landelm_build
 
       IF (p_is_master) THEN
-            print*, "4.1"
+            print*, "4.1_407"
             ! filename = trim(DEF_dir_landdata) + "pixel.nc"
             ! CALL check_ncfile_exist (filename)
       END IF
@@ -428,7 +431,7 @@ PROGRAM MKSRFDATA
       ENDIF
 
       IF (p_is_master) THEN
-            print*, "4.2"
+            print*, "4.2_431"
             ! filename = trim(DEF_dir_landdata) + "pixel.nc"
             ! CALL check_ncfile_exist (filename)
       END IF
@@ -438,7 +441,7 @@ PROGRAM MKSRFDATA
 #endif
 
       IF (p_is_master) THEN
-            print*, "4.3"
+            print*, "4.3_441"
             ! filename = trim(DEF_dir_landdata) + "pixel.nc"
             ! CALL check_ncfile_exist (filename)
       END IF
@@ -467,7 +470,7 @@ PROGRAM MKSRFDATA
 ! ................................................................
 
       IF (p_is_master) THEN
-            print*, "5"
+            print*, "5_470"
             ! filename = trim(DEF_dir_landdata) + "pixel.nc"
             ! CALL check_ncfile_exist (filename)
       END IF
@@ -477,7 +480,7 @@ PROGRAM MKSRFDATA
       CALL pixel%save_to_file     (dir_landdata)
 
       IF (p_is_master) THEN
-            print*, "11"
+            print*, "11_480"
             ! filename = trim(DEF_dir_landdata) + "pixel.nc"
             ! CALL check_ncfile_exist (filename)
       END IF

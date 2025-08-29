@@ -26,7 +26,7 @@
 ! 3. If defined, debug information is output.
 #define CoLMDEBUG
 ! 3.1 If defined, range of variables is checked.
-#define RangeCheck
+#undef RangeCheck
 ! 3.1 If defined, surface data in vector is mapped to gridded data for checking.
 #define SrfdataDiag
 

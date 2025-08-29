@@ -301,8 +301,8 @@ MODULE MOD_BGC_Vars_TimeVariables
 
 
    real(r8), allocatable :: c_atm               (:,:) ! CH4, O2, CO2 atmospheric conc  (mol/m3)  
-	real(r8), allocatable :: ch4_surf_flux_tot     (:) ! CH4 flux to atm. (kg C/m2/s)
-	real(r8), allocatable :: net_methane           (:) ! average net methane correction to CO2 flux (g C/m2/s)
+	real(r8), allocatable :: ch4_surf_flux_tot     (:) ! CH4 flux to atm. (gCH4/m2/s)
+	real(r8), allocatable :: net_methane           (:) ! average net methane correction to CO2 flux (gCH4/m2/s)
 	real(r8), allocatable :: annavg_agnpp          (:) ! annual average above-ground NPP (gC/m2/s)
 	real(r8), allocatable :: annavg_bgnpp          (:) ! annual average below-ground NPP (gC/m2/s)     
 	real(r8), allocatable :: annavg_somhr          (:) ! annual average SOM heterotrophic resp. (gC/m2/s)  
@@ -322,7 +322,7 @@ MODULE MOD_BGC_Vars_TimeVariables
 	real(r8), allocatable :: ch4_surf_diff         (:) ! Output: CH4 surface flux (mol/m2/s)
 	real(r8), allocatable :: ch4_ebul_total        (:) ! Output: Total column CH4 ebullition (mol/m2/s)
 
-   real(r8), allocatable :: totcolch4             (:) ! total methane in soil column, start of timestep (gC / m2)
+   real(r8), allocatable :: totcolch4             (:) ! total methane in soil column, start of timestep (gCH4/m2)
 	real(r8), allocatable :: forc_pch4m            (:) ! CH4 concentration in atmos. (pascals)
 	real(r8), allocatable :: grnd_ch4_cond         (:) ! tracer conductance for boundary layer (m/s)
 	real(r8), allocatable :: conc_o2             (:,:) ! O2 conc in each soil layer (mol/m3) 

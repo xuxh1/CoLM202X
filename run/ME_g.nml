@@ -1,6 +1,6 @@
 &nl_colm
 
-   DEF_CASE_NAME = 'ME_g_250808_1608'
+   DEF_CASE_NAME = 'ME_g_exp1'
 
    DEF_domain%edges = -90.0
    DEF_domain%edgen = 90.0
@@ -22,7 +22,7 @@
    DEF_simulation_time%start_month  = 1
    DEF_simulation_time%start_day    = 1
    DEF_simulation_time%start_sec    = 0
-   DEF_simulation_time%end_year     = 1999
+   DEF_simulation_time%end_year     = 2000
    DEF_simulation_time%end_month    = 12
    DEF_simulation_time%end_day      = 31
    DEF_simulation_time%end_sec      = 86400
@@ -40,8 +40,8 @@
 
    ! ----- land units and land sets -----
    ! for GRIDBASED
-   DEF_GRIDBASED_lon_res = 0.5  
-   DEF_GRIDBASED_lat_res = 0.5
+   DEF_GRIDBASED_lon_res = 2  
+   DEF_GRIDBASED_lat_res = 2
 
    ! soil state init
    DEF_USE_SoilInit  = .true.
@@ -54,7 +54,7 @@
    ! DEF_USE_BEDROCK = .true.
    DEF_USE_VariablySaturatedFlow = .false.
 
-   DEF_METHANE_only_wetland = .false.
+   DEF_METHANE_only_wetland = .true.
 
    ! ----- forcing -----
    ! Options :
@@ -63,8 +63,8 @@
    DEF_forcing_namelist = './forcing/ERA5.nml'
    
    ! ----- history -----
-   DEF_HIST_lon_res = 0.5
-   DEF_HIST_lat_res = 0.5
+   DEF_HIST_lon_res = 2
+   DEF_HIST_lat_res = 2
    DEF_WRST_FREQ = 'YEARLY' ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
    DEF_HIST_FREQ = 'DAILY' ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
    DEF_HIST_groupby = 'YEAR' ! history in one file: DAY/MONTH/YEAR
