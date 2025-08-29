@@ -39,9 +39,6 @@ CONTAINS
    USE MOD_NetCDFBlock
    USE MOD_PixelsetShared
    USE MOD_5x5DataReadin
-#ifdef SinglePoint
-   USE MOD_SingleSrfdata
-#endif
 
    IMPLICIT NONE
 

@@ -101,7 +101,6 @@ PROGRAM MKSRFDATA
 
    type (grid_type) :: grid_500m, grid_htop, grid_soil, grid_lai, grid_topo, grid_topo_factor
    type (grid_type) :: grid_urban_5km, grid_urban_500m
-   type (grid_type) :: grid_wetland_5km, grid_wetland_500m
    type (grid_type) :: grid_twi
 
    integer   :: lc_year, lai_year
@@ -258,21 +257,17 @@ PROGRAM MKSRFDATA
 #else
       CALL grid_htop%define_by_name ('colm_500m')
 #endif
+
    ! add by Xu, only test for making wetland data
-! #if (defined CH4)
+#if (defined CH4)
    ! define grid for wetland parameters
-   ! CALL grid_wetland%define_from_file (trim(DEF_dir_rawdata)//'/global_WFT_surface_data.nc', 'lat', 'lon')
-! #ifndef CROP
-!    CALL grid_wetland%define_from_file ('/share/home/dq076/xuxh36/global_WFT_surface_data.nc', 'lat', 'lon')
-! #else
-!    CALL grid_wetland%define_from_file ('/share/home/dq076/xuxh36/global_WFT_surface_data_CROP.nc', 'lat', 'lon')
-! #endif
-! #endif
-! #ifdef CH4
-!    CALL grid_wetland%define_by_name          ('colm_500m')
-!    CALL grid_wetland_500m%define_by_name ('colm_500m')
-!    CALL grid_wetland_5km%define_by_name  ('colm_5km' )
-! #endif
+!    CALL grid_wetland%define_from_file (trim(DEF_dir_rawdata)//'/global_WFT_surface_data.nc', 'lat', 'lon')
+#ifndef CROP
+   CALL grid_wetland%define_from_file ('/share/home/dq076/data/CoLMrawdata/global_WFT_surface_data.nc', 'lat', 'lon')
+#else
+   CALL grid_wetland%define_from_file ('/share/home/dq076/data/CoLMrawdata/global_WFT_surface_data_CROP.nc', 'lat', 'lon')
+#endif
+#endif
 
       ! define grid for soil parameters raw data
       CALL grid_soil%define_by_name ('colm_500m')
@@ -322,11 +317,9 @@ PROGRAM MKSRFDATA
 #if (defined CROP)
       CALL pixel%assimilate_grid (grid_crop )
 #endif
-! #ifdef CH4
-!    CALL pixel%assimilate_grid (grid_wetland         )
-   ! CALL pixel%assimilate_grid (grid_wetland_500m)
-   ! CALL pixel%assimilate_grid (grid_wetland_5km )
-! #endif
+#ifdef CH4
+   CALL pixel%assimilate_grid (grid_wetland         )
+#endif
 
       CALL pixel%assimilate_grid (grid_htop )
       CALL pixel%assimilate_grid (grid_soil )
