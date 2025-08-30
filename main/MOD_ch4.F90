@@ -1382,7 +1382,7 @@ contains
 
 		real(r8), intent(in) :: &
 			lon   	   				   , &! logitude 
-			lat     	   					, &! latitude 
+			lat     	   			   , &! latitude 
 
 			deltim                  	, &! land model time step (sec)
 			z_soisno (maxsnl+1:nl_soil)   	, &! layer depth (m)
