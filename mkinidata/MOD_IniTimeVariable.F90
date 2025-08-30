@@ -71,7 +71,7 @@ CONTAINS
    USE MOD_Utils
    USE MOD_Const_Physical, only: tfrz, denh2o, denice
    USE MOD_Vars_TimeVariables, only: tlai, tsai
-   USE MOD_Const_PFT, only: isevg, woody, leafcn, frootcn, livewdcn, deadwdcn, slatop
+   USE MOD_Const_PFT, only: isevg, woody, leafcn, frootcn, livewdcn, deadwdcn, slatop, manure
    USE MOD_Vars_TimeInvariants, only: ibedrock, dbedrock
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
    USE MOD_LandPFT, only: patch_pft_s, patch_pft_e
@@ -451,14 +451,19 @@ CONTAINS
                ENDIF
             ENDDO
 
-            IF (DEF_USE_VariablySaturatedFlow) THEN
-               wa  = 0.
-               zwt = zi_soimm(nl_soil)/1000.
+            IF (patchtype <= 1) THEN
+               IF (DEF_USE_VariablySaturatedFlow) THEN
+                  wa  = 0.
+                  zwt = zi_soimm(nl_soil)/1000.
+               ELSE
+                  ! water table depth (initially at 1.0 m below the model bottom; wa when zwt
+                  !                    is below the model bottom zi(nl_soil)
+                  wa  = 4800.                             !assuming aquifer capacity is 5000 mm
+                  zwt = (25. + z_soisno(nl_soil))+dz_soisno(nl_soil)/2. - wa/1000./0.2 !to result in zwt = zi(nl_soil) + 1.0 m
+               ENDIF
             ELSE
-               ! water table depth (initially at 1.0 m below the model bottom; wa when zwt
-               !                    is below the model bottom zi(nl_soil)
-               wa  = 4800.                             !assuming aquifer capacity is 5000 mm
-               zwt = (25. + z_soisno(nl_soil))+dz_soisno(nl_soil)/2. - wa/1000./0.2 !to result in zwt = zi(nl_soil) + 1.0 m
+               wa = 0.
+               zwt = 0.
             ENDIF
 
          ENDIF
@@ -937,6 +942,9 @@ CONTAINS
             tref_max_inst_p          (ps:pe) = spval
             latbaset_p               (ps:pe) = spval
             fert_p                   (ps:pe) = 0._r8
+            IF(DEF_FERT_SOURCE == 1)THEN
+               manunitro_p              (ps:pe) = manure(pftclass(ps:pe)) * 1000
+            ENDIF
 #endif
 
             IF(DEF_USE_LAIFEEDBACK)THEN
