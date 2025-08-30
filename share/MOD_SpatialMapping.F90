@@ -114,6 +114,7 @@ CONTAINS
    integer  :: iworker, iproc, idest, isrc, nrecv
    integer  :: rmesg(2), smesg(2)
    integer  :: iy, ix, xblk, yblk, xloc, yloc
+   integer  :: ipxstt, ipxend
    real(r8) :: lat_s, lat_n, lon_w, lon_e, area
    logical  :: skip, is_new
 
@@ -233,7 +234,17 @@ CONTAINS
             allocate (gfrom(iset)%ilon(npxl))
 
             gfrom(iset)%ng = 0
-            DO ipxl = pixelset%ipxstt(iset), pixelset%ipxend(iset)
+
+            ipxstt = pixelset%ipxstt(iset)
+            ipxend = pixelset%ipxend(iset)
+
+            ! deal with 2m WMO patch
+            IF (ipxstt==-1 .and. ipxend==-1) THEN
+               ipxstt = 1
+               ipxend = npxl
+            ENDIF
+
+            DO ipxl = ipxstt, ipxend
 
                ilat = mesh(ie)%ilat(ipxl)
                ilon = mesh(ie)%ilon(ipxl)
@@ -1977,8 +1988,10 @@ CONTAINS
                   iproc = this%address(iset)%val(1,ipart)
                   iloc  = this%address(iset)%val(2,ipart)
 
-                  pdata(iset) = pdata(iset) &
-                     + pbuff(iproc)%val(iloc) * this%areapart(iset)%val(ipart)
+                  IF (this%areapart(iset)%val(ipart) > 0) THEN
+                     pdata(iset) = pdata(iset) &
+                        + pbuff(iproc)%val(iloc) * this%areapart(iset)%val(ipart)
+                  ENDIF
                ENDDO
 
                pdata(iset) = pdata(iset) / this%areapset(iset)
@@ -2086,8 +2099,10 @@ CONTAINS
                   iproc = this%address(iset)%val(1,ipart)
                   iloc  = this%address(iset)%val(2,ipart)
 
-                  pdata(:,iset) = pdata(:,iset) &
-                     + pbuff(iproc)%val(:,iloc) * this%areapart(iset)%val(ipart)
+                  IF (this%areapart(iset)%val(ipart) > 0) THEN
+                     pdata(:,iset) = pdata(:,iset) &
+                        + pbuff(iproc)%val(:,iloc) * this%areapart(iset)%val(ipart)
+                  ENDIF
                ENDDO
 
                pdata(:,iset) = pdata(:,iset) / this%areapset(iset)

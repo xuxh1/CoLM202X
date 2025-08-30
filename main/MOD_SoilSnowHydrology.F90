@@ -6,7 +6,8 @@ MODULE MOD_SoilSnowHydrology
    USE MOD_Precision
    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_USE_SNICAR,     &
                            DEF_URBAN_RUN,           DEF_USE_IRRIGATION, &
-                           DEF_SPLIT_SOILSNOW,      DEF_Runoff_SCHEME
+                           DEF_SPLIT_SOILSNOW,      DEF_Runoff_SCHEME,  &
+                           DEF_DA_GRACE
 #if (defined CaMa_Flood)
    USE YOS_CMF_INPUT,      only: LWINFILT
 #endif
@@ -68,9 +69,9 @@ CONTAINS
 !  FLOW DIAGRAM FOR WATER_2014.F90
 !
 !  WATER_2014 ===> snowwater
-!                  SurfaceRunoff_SIMTOP
+!                  SurfaceRunoff_TOPMOD
 !                  soilwater
-!                  SubsurfaceRunoff_SIMTOP
+!                  SubsurfaceRunoff_TOPMOD
 !
 !=======================================================================
 
@@ -290,7 +291,7 @@ IF(patchtype<=1)THEN   ! soil ground only
          ! 0: runoff scheme from TOPMODEL
 
          IF (gwat > 0.) THEN
-            CALL SurfaceRunoff_SIMTOP (nl_soil,wimp,porsl,psi0,hksati,fsatmax,fsatdcf,&
+            CALL SurfaceRunoff_TOPMOD (nl_soil,wimp,porsl,psi0,hksati,fsatmax,fsatdcf,&
                z_soisno(1:),dz_soisno(1:),zi_soisno(0:),&
                eff_porosity,icefrac,zwt,gwat,rsur)
          ELSE
@@ -337,7 +338,7 @@ IF(patchtype<=1)THEN   ! soil ground only
             ! only the re-infiltration is added to water balance calculation.
             IF (DEF_Runoff_SCHEME  == 0) THEN
 
-               CALL SurfaceRunoff_SIMTOP (nl_soil,wimp,porsl,psi0,hksati,1.0,fsatdcf,&
+               CALL SurfaceRunoff_TOPMOD (nl_soil,wimp,porsl,psi0,hksati,1.0,fsatdcf,&
                         z_soisno(1:),dz_soisno(1:),zi_soisno(0:),&
                         eff_porosity,icefrac,zwt,gfld,rsur_fld)
 
@@ -791,11 +792,11 @@ IF((patchtype<=1) .or. is_dry_lake)THEN   ! soil ground only
 
          IF (DEF_Runoff_SCHEME  == 0) THEN
 
-            CALL SurfaceRunoff_SIMTOP (nl_soil,wimp,porsl,psi0,hksati,fsatmax,fsatdcf,&
+            CALL SurfaceRunoff_TOPMOD (nl_soil,wimp,porsl,psi0,hksati,fsatmax,fsatdcf,&
                z_soisno(1:),dz_soisno(1:),zi_soisno(0:),&
                eff_porosity,icefrac,zwt,gwat,rsur,rsur_se,rsur_ie,topoweti,alp_twi,chi_twi,mu_twi,frcsat,eta)
 
-            CALL SubsurfaceRunoff_SIMTOP (nl_soil, icefrac, dz_soisno(1:), zi_soisno(0:), &
+            CALL SubsurfaceRunoff_TOPMOD (nl_soil, icefrac, dz_soisno(1:), zi_soisno(0:), &
                zwt, rsubst, hksati, topoweti, eta)
 
          ELSEIF (DEF_Runoff_SCHEME  == 1) THEN
@@ -832,8 +833,10 @@ IF((patchtype<=1) .or. is_dry_lake)THEN   ! soil ground only
          ENDIF
 
 #ifdef DataAssimilation
-         rsur = max(min(rsur * fslp_k(ipatch), gwat), 0.)
-         rsubst = rsubst * fslp_k(ipatch)
+         IF (DEF_DA_GRACE) THEN
+            rsur = max(min(rsur * fslp_k(ipatch), gwat), 0.)
+            rsubst = rsubst * fslp_k(ipatch)
+         ENDIF
 #endif
       ENDIF
 
@@ -860,7 +863,7 @@ IF((patchtype<=1) .or. is_dry_lake)THEN   ! soil ground only
             ! only the re-infiltration is added to water balance calculation.
             IF (DEF_Runoff_SCHEME  == 0) THEN
 
-               CALL SurfaceRunoff_SIMTOP (nl_soil,wimp,porsl,psi0,hksati,1.0,fsatdcf,&
+               CALL SurfaceRunoff_TOPMOD (nl_soil,wimp,porsl,psi0,hksati,1.0,fsatdcf,&
                         z_soisno(1:),dz_soisno(1:),zi_soisno(0:),&
                         eff_porosity,icefrac,zwt,gfld,rsur_fld)
 
@@ -902,13 +905,6 @@ IF((patchtype<=1) .or. is_dry_lake)THEN   ! soil ground only
       sp_zc(1:nl_soil) = z_soisno (1:nl_soil) * 1000.0   ! from meter to mm
       sp_zi(0:nl_soil) = zi_soisno(0:nl_soil) * 1000.0   ! from meter to mm
 
-      ! check consistency between water table location and liquid water content
-      DO j = 1, nl_soil
-         IF ((vol_liq(j) < eff_porosity(j)-1.e-8) .and. (zwtmm <= sp_zi(j-1))) THEN
-            zwtmm = sp_zi(j)
-         ENDIF
-      ENDDO
-
 #ifdef Campbell_SOIL_MODEL
       prms(1,:) = bsw(1:nl_soil)
 #endif
@@ -919,6 +915,21 @@ IF((patchtype<=1) .or. is_dry_lake)THEN   ! soil ground only
       prms(4,1:nl_soil) = sc_vgm   (1:nl_soil)
       prms(5,1:nl_soil) = fc_vgm   (1:nl_soil)
 #endif
+
+      ! check consistency between water table location and liquid water content
+      IF (wa < 0.) THEN
+         IF (zwtmm <= sp_zi(nl_soil)) THEN
+            CALL get_zwt_from_wa ( &
+               porsl(nl_soil), theta_r(nl_soil), psi0(nl_soil), hksati(nl_soil), &
+               nprms, prms(:,nl_soil), 1.e-5, 1.e-8, wa, sp_zi(nl_soil), zwtmm)
+         ENDIF
+      ELSE
+         DO j = 1, nl_soil
+            IF ((vol_liq(j) < eff_porosity(j)-1.e-8) .and. (zwtmm <= sp_zi(j-1))) THEN
+               zwtmm = sp_zi(j)
+            ENDIF
+         ENDDO
+      ENDIF
 
       ! update "vol_liq" in the level containing water table
       ! "vol_liq" in this level refers to volume content in unsaturated part
@@ -2205,7 +2216,7 @@ ENDIF
 
 !-- Topographic runoff  ----------------------------------------------------------
       IF (DEF_Runoff_SCHEME == 0) THEN
-         CALL SubsurfaceRunoff_SIMTOP (nl_soil, icefrac, dz_soisno, zi_soisno, zwt, rsubst)
+         CALL SubsurfaceRunoff_TOPMOD (nl_soil, icefrac, dz_soisno, zi_soisno, zwt, rsubst)
       ENDIF
 
       drainage = rsubst
