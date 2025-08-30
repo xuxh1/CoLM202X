@@ -22,9 +22,9 @@
    DEF_simulation_time%start_day    = 1
    DEF_simulation_time%start_sec    = 0
    DEF_simulation_time%end_year     = 2020
-   DEF_simulation_time%end_month    = 1
-   DEF_simulation_time%end_day      = 1
-   DEF_simulation_time%end_sec      = 0
+   DEF_simulation_time%end_month    = 12
+   DEF_simulation_time%end_day      = 31
+   DEF_simulation_time%end_sec      = 86400
    DEF_simulation_time%spinup_year  = 1990
    DEF_simulation_time%spinup_month = 1
    DEF_simulation_time%spinup_day   = 1
