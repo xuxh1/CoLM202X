@@ -14,3 +14,6 @@ lib
 *.a
 *.x
 *.log
+single_test
+single_point
+single_point_test

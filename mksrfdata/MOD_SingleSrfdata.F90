@@ -101,7 +101,7 @@ MODULE MOD_SingleSrfdata
    real(r8), allocatable :: SITE_area_type(:)
    real(r8), allocatable :: SITE_sf_lut (:,:)
 
-   logical :: u_site_landtype,   u_site_crop,         u_site_pfts,        u_site_htop,              &
+   logical :: u_site_landtype,   u_site_crop,         u_site_wetland,     u_site_pfts,        u_site_htop,              &
               u_site_lai,        u_site_lakedepth,    u_site_soil_bright, u_site_vf_quartz_mineral, &
               u_site_vf_gravels, u_site_vf_sand,      u_site_vf_clay,     u_site_vf_om,             &
               u_site_wf_gravels, u_site_wf_sand,      u_site_wf_clay,     u_site_wf_om,             &
@@ -217,11 +217,11 @@ CONTAINS
    character(len=256) :: filename, dir_5x5, fmt_str
    character(len=4)   :: cyear, c
 
-   type(grid_type) :: gridpatch,  gridcrop, gridpft,  gridhtop, gridlai, gridlake,  &
+   type(grid_type) :: gridpatch,  gridcrop, gridwetland, gridpft,  gridhtop, gridlai, gridlake,  &
                       gridbright, gridsoil, gridrock, gridtopo, grid_topo_factor
 
-   integer,  allocatable :: croptyp(:), pfttyp (:)
-   real(r8), allocatable :: pctcrop(:), pctpfts(:), pftLAI(:), pftSAI(:), tea_f(:), tea_b(:)
+   integer,  allocatable :: croptyp(:), pfttyp (:), wetlandtyp(:)
+   real(r8), allocatable :: pctcrop(:), pctwetland(:), pctpfts(:), pftLAI(:), pftSAI(:), tea_f(:), tea_b(:)
 
    integer, parameter :: N_PFT_modis = 16
    logical            :: readflag

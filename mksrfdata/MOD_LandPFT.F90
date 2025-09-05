@@ -78,93 +78,93 @@ CONTAINS
          write(*,'(A)') 'Making land plant function type tiles:'
       ENDIF
 
-#ifdef SinglePoint
-      IF (USE_SITE_pctpfts) THEN
-#ifndef CROP
-         IF (patchtypes(landpatch%settyp(1)) == 0) THEN
-#else
-         IF (patchtypes(landpatch%settyp(1)) == 0 .and. landpatch%settyp(1)/=CROPLAND) THEN
-#endif
-            numpft = count(SITE_pctpfts > 0.)
-#ifdef CROP
-         ELSEIF (landpatch%settyp(1) == CROPLAND) THEN
-            numpft = numpatch
-#endif
-#ifdef CH4
-         ELSEIF (landpatch%settyp(1) == WETLAND) THEN
-            numpft = numpatch
-#endif
-         ELSE
-            numpft = 0
-         ENDIF
+! #ifdef SinglePoint
+!       IF (USE_SITE_pctpfts) THEN
+! #ifndef CROP
+!          IF (patchtypes(landpatch%settyp(1)) == 0) THEN
+! #else
+!          IF (patchtypes(landpatch%settyp(1)) == 0 .and. landpatch%settyp(1)/=CROPLAND) THEN
+! #endif
+!             numpft = count(SITE_pctpfts > 0.)
+! #ifdef CROP
+!          ELSEIF (landpatch%settyp(1) == CROPLAND) THEN
+!             numpft = numpatch
+! #endif
+! #ifdef CH4
+!          ELSEIF (landpatch%settyp(1) == WETLAND) THEN
+!             numpft = numpatch
+! #endif
+!          ELSE
+!             numpft = 0
+!          ENDIF
 
-         allocate (patch_pft_s (numpatch))
-         allocate (patch_pft_e (numpatch))
+!          allocate (patch_pft_s (numpatch))
+!          allocate (patch_pft_e (numpatch))
 
-         IF (numpft > 0) THEN
-            allocate (landpft%eindex (numpft))
-            allocate (landpft%settyp (numpft))
-            allocate (landpft%ipxstt (numpft))
-            allocate (landpft%ipxend (numpft))
-            allocate (landpft%ielm   (numpft))
+!          IF (numpft > 0) THEN
+!             allocate (landpft%eindex (numpft))
+!             allocate (landpft%settyp (numpft))
+!             allocate (landpft%ipxstt (numpft))
+!             allocate (landpft%ipxend (numpft))
+!             allocate (landpft%ielm   (numpft))
 
-            landpft%ielm  (:) = 1
-            landpft%eindex(:) = 1
-            landpft%ipxstt(:) = 1
-            landpft%ipxend(:) = 1
+!             landpft%ielm  (:) = 1
+!             landpft%eindex(:) = 1
+!             landpft%ipxstt(:) = 1
+!             landpft%ipxend(:) = 1
 
-            allocate(pft2patch (numpft))
+!             allocate(pft2patch (numpft))
 
-            landpft%has_shared = .true.
-            allocate (landpft%pctshared (numpft))
+!             landpft%has_shared = .true.
+!             allocate (landpft%pctshared (numpft))
 
-#ifndef CROP
-            IF (patchtypes(landpatch%settyp(1)) == 0) THEN
-#else
-            IF (patchtypes(landpatch%settyp(1)) == 0 .and. landpatch%settyp(1)/=CROPLAND) THEN
-#endif
-               landpft%settyp = pack(SITE_pfttyp, SITE_pctpfts > 0.)
+! #ifndef CROP
+!             IF (patchtypes(landpatch%settyp(1)) == 0) THEN
+! #else
+!             IF (patchtypes(landpatch%settyp(1)) == 0 .and. landpatch%settyp(1)/=CROPLAND) THEN
+! #endif
+!                landpft%settyp = pack(SITE_pfttyp, SITE_pctpfts > 0.)
 
-               pft2patch  (:) = 1
-               patch_pft_s(:) = 1
-               patch_pft_e(:) = numpft
+!                pft2patch  (:) = 1
+!                patch_pft_s(:) = 1
+!                patch_pft_e(:) = numpft
 
-               landpft%pctshared = pack(SITE_pctpfts, SITE_pctpfts > 0.)
-#ifdef CROP
-            ELSEIF (landpatch%settyp(1) == CROPLAND) THEN
-               DO ipft = 1, numpft
-                  landpft%settyp(ipft) = cropclass(ipft) + N_PFT - 1
-                  pft2patch   (ipft) = ipft
-                  patch_pft_s (ipft) = ipft
-                  patch_pft_e (ipft) = ipft
-               ENDDO
+!                landpft%pctshared = pack(SITE_pctpfts, SITE_pctpfts > 0.)
+! #ifdef CROP
+!             ELSEIF (landpatch%settyp(1) == CROPLAND) THEN
+!                DO ipft = 1, numpft
+!                   landpft%settyp(ipft) = cropclass(ipft) + N_PFT - 1
+!                   pft2patch   (ipft) = ipft
+!                   patch_pft_s (ipft) = ipft
+!                   patch_pft_e (ipft) = ipft
+!                ENDDO
                
-               landpft%pctshared = landpatch%pctshared 
-#endif
-#ifdef CH4
-            ELSEIF (landpatch%settyp(1) == WETLAND) THEN
-               DO ipft = 1, numpft
-                  landpft%settyp(ipft) = wetlandclass(ipft) + N_PFT + N_CFT - 1
-                  pft2patch   (ipft) = ipft
-                  patch_pft_s (ipft) = ipft
-                  patch_pft_e (ipft) = ipft
-               ENDDO
+!                landpft%pctshared = landpatch%pctshared 
+! #endif
+! #ifdef CH4
+!             ELSEIF (landpatch%settyp(1) == WETLAND) THEN
+!                DO ipft = 1, numpft
+!                   landpft%settyp(ipft) = wetlandclass(ipft) + N_PFT + N_CFT - 1
+!                   pft2patch   (ipft) = ipft
+!                   patch_pft_s (ipft) = ipft
+!                   patch_pft_e (ipft) = ipft
+!                ENDDO
                
-               landpft%pctshared = landpatch%pctshared 
-#endif
-            ENDIF
-         ELSE
-            write(*,*) 'Warning : land type ', landpatch%settyp(1), ' for LULC_IGBP_PFT|LULC_IGBP_PC'
-            patch_pft_s(:) = -1
-            patch_pft_e(:) = -1
-         ENDIF
+!                landpft%pctshared = landpatch%pctshared 
+! #endif
+!             ENDIF
+!          ELSE
+!             write(*,*) 'Warning : land type ', landpatch%settyp(1), ' for LULC_IGBP_PFT|LULC_IGBP_PC'
+!             patch_pft_s(:) = -1
+!             patch_pft_e(:) = -1
+!          ENDIF
 
-         landpft%nset = numpft
-         CALL landpft%set_vecgs
+!          landpft%nset = numpft
+!          CALL landpft%set_vecgs
 
-         RETURN
-      ENDIF
-#endif
+!          RETURN
+!       ENDIF
+! #endif
 
 #ifdef USEMPI
       CALL mpi_barrier (p_comm_glb, p_err)
