@@ -45,7 +45,7 @@
 		! USE MOD_BGC_Vars_PFTimeVariables, only: annsum_npp_p
 		! USE MOD_BGC_Vars_1DPFTFluxes, only: froot_mr_p, cpool_froot_gr_p, cpool_froot_storage_gr_p, transfer_froot_gr_p
 		IMPLICIT NONE
-		integer ,intent(inout) :: istep  
+		integer ,intent(in) :: istep  
 
 		integer ,intent(in) :: i         ! patch index
 		integer ,intent(in) :: idate(1:3)  ! current date (year, day of the year, seconds of the day)
@@ -87,7 +87,7 @@
 
 		integer :: ps, pe
 		integer j
-		logical :: ch4_first_time = .false.
+		logical, save :: ch4_first_time = .true.
 		! real(r8):: &
 				! annsum_npp_tmp
 				! froot_mr,&
@@ -136,10 +136,6 @@
 		t_h2osfc = t_grnd
 		! organic_max = cellorg(1)
 
-		if (istep == 1) then
-			ch4_first_time = .true.
-		endif
-
 		CALL ch4 (i,idate(1:3),patchtype,lb,snl,dlon,dlat,deltim,&
 		z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:),&
 		t_grnd,wliq_soisno(maxsnl+1:),wice_soisno(maxsnl+1:),&
@@ -159,6 +155,7 @@
 		layer_sat_lag(1:nl_soil,i),lake_soilc(1:nl_soil,i),&
 		tempavg_agnpp(i),tempavg_bgnpp(i),annsum_counter(i),&
 		tempavg_somhr(i),tempavg_finrw(i))
-	
+		
+		if (ch4_first_time) ch4_first_time = .false.
 	END SUBROUTINE ch4_driver
 #endif

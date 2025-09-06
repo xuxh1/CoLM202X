@@ -572,7 +572,11 @@ CONTAINS
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
 #ifdef SinglePoint
+#ifndef CH4
       IF (patchtypes(SITE_landtype) == 0) THEN
+#else
+      IF (patchtypes(SITE_landtype) == 0 .or. patchtypes(SITE_landtype) == 2) THEN
+#endif
          file_restart = trim(dir_restart) // '/const/' // trim(casename) //'_restart_pft_const' // '_lc' // trim(cyear) // '.nc'
          CALL READ_PFTimeInvariants (file_restart)
       ENDIF

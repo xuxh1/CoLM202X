@@ -150,7 +150,7 @@ MODULE MOD_Const_PFT
         '78  irrigated_tropical_soybean         '  &
 #endif
 #ifdef CH4
-      ,'79  permanent wetlands                  '  &
+       ,'79  permanent wetlands                 '  &
 #endif
         /)
 

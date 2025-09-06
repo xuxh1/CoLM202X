@@ -3,7 +3,7 @@
 ! Author: Shupeng Zhang 
 ! Description : an example for SinglePoint with all surface data from database instead of observations.
 
-   DEF_CASE_NAME = 'ME_s_CN-Dan'
+   DEF_CASE_NAME = 'ME_s_DE-SfN'
 
    USE_SITE_landtype        = .true.
    USE_SITE_pctpfts         = .false.
@@ -16,11 +16,11 @@
    USE_SITE_topography      = .false.
 
    DEF_simulation_time%greenwich     = .false.
-   DEF_simulation_time%start_year    = 2004
+   DEF_simulation_time%start_year    = 2013
    DEF_simulation_time%start_month   = 1
    DEF_simulation_time%start_day     = 1
    DEF_simulation_time%start_sec     = 0
-   DEF_simulation_time%end_year      = 2004
+   DEF_simulation_time%end_year      = 2014
    DEF_simulation_time%end_month     = 12
    DEF_simulation_time%end_day       = 31
    DEF_simulation_time%end_sec       = 0
@@ -33,11 +33,11 @@
    DEF_simulation_time%timestep     = 1800.
 
    ! surface data from SITE.
-   SITE_fsitedata = '/share/home/dq013/zhwei/colm/data/CoLM_Forcing/PLUMBER2/Srfdata/CN-Dan_2004-2005_FLUXNET2015_Srf.nc'
+   SITE_fsitedata = '/tera12/yuanhua/data/CoLMpointdata/PLUMBER2s/Sitedata/DE-SfN_2013-2014_FLUXNET2015_site.nc'
    ! path to surface database
-   DEF_dir_rawdata = '/share/home/dq013/zhwei/colm/data/CoLMrawdata/'
-   DEF_dir_runtime = '/share/home/dq013/zhwei/colm/data/CoLMruntime/'
-   DEF_dir_output  = '/share/home/dq076/data/cases/ME/'
+   DEF_dir_rawdata = '/shr03/CoLMrawdata/'
+   DEF_dir_runtime = '/shr03/CoLMruntime/'
+   DEF_dir_output  = '/tera04/zhwei/xionghui/data/cases/'
 
    DEF_LAI_MONTHLY = .false.
    DEF_METHANE_only_wetland = .true.

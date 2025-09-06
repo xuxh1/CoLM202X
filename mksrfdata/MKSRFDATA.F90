@@ -145,10 +145,6 @@ PROGRAM MKSRFDATA
       write(*,*)  'Successful in surface data making.'
       CALL CoLM_stop()
 #endif
-      IF (p_is_master) THEN
-            print*, "0_149"
-            print*, "USE_srfdata_from_larger_region",USE_srfdata_from_larger_region
-      ENDIF
 
       IF (USE_srfdata_from_larger_region) THEN
 
@@ -202,11 +198,6 @@ PROGRAM MKSRFDATA
 
       ! define domain in pixel coordinate
 
-      IF (p_is_master) THEN
-            print*, "1_206"
-            ! filename = trim(DEF_dir_landdata) + "pixel.nc"
-            ! CALL check_ncfile_exist (filename)
-      END IF
       CALL pixel%set_edges (edges, edgen, edgew, edgee)
       CALL pixel%assimilate_gblock ()
 
@@ -264,9 +255,9 @@ PROGRAM MKSRFDATA
    ! define grid for wetland parameters
 !    CALL grid_wetland%define_from_file (trim(DEF_dir_rawdata)//'/global_WFT_surface_data.nc', 'lat', 'lon')
 #ifndef CROP
-   CALL grid_wetland%define_from_file ('/share/home/dq076/data/CoLMrawdata/global_WFT_surface_data.nc', 'lat', 'lon')
+   CALL grid_wetland%define_from_file ('/tera04/zhwei/xionghui/data/CoLMrawdata/global_WFT_surface_data.nc', 'lat', 'lon')
 #else
-   CALL grid_wetland%define_from_file ('/share/home/dq076/data/CoLMrawdata/global_WFT_surface_data_CROP.nc', 'lat', 'lon')
+   CALL grid_wetland%define_from_file ('/tera04/zhwei/xionghui/data/CoLMrawdata/global_WFT_surface_data_CROP.nc', 'lat', 'lon')
 #endif
 #endif
 
@@ -296,12 +287,6 @@ PROGRAM MKSRFDATA
       CALL grid_urban_500m%define_by_name ('colm_500m')
       CALL grid_urban_5km%define_by_name  ('colm_5km' )
 #endif
-
-      IF (p_is_master) THEN
-            print*, "2_305"
-            ! filename = trim(DEF_dir_landdata) + "pixel.nc"
-            ! CALL check_ncfile_exist (filename)
-      END IF
 
       ! assimilate grids to build pixels
 #ifndef SinglePoint
@@ -341,12 +326,6 @@ PROGRAM MKSRFDATA
       CALL pixel%assimilate_grid (grid_urban_5km )
 #endif
 
-      IF (p_is_master) THEN
-            print*, "3_351"
-            ! filename = trim(DEF_dir_landdata) + "pixel.nc"
-            ! CALL check_ncfile_exist (filename)
-      END IF
-
       ! map pixels to grid coordinates
 #ifndef SinglePoint
       CALL pixel%map_to_grid (gridmesh)
@@ -367,10 +346,6 @@ PROGRAM MKSRFDATA
 !    ! CALL pixel%map_to_grid (grid_wetland_500m)
 !    ! CALL pixel%map_to_grid (grid_wetland_5km )
 ! #endif
-      IF (p_is_master) THEN
-            print*, "3.1_377"
-      END IF
-
       CALL pixel%map_to_grid (grid_htop )
       CALL pixel%map_to_grid (grid_soil )
       CALL pixel%map_to_grid (grid_lai  )
@@ -390,21 +365,9 @@ PROGRAM MKSRFDATA
       CALL pixel%map_to_grid (grid_urban_5km )
 #endif
 
-      IF (p_is_master) THEN
-            print*, "4_397"
-            ! filename = trim(DEF_dir_landdata) + "pixel.nc"
-            ! CALL check_ncfile_exist (filename)
-      END IF
-
       ! build land elms
       CALL mesh_build ()
       CALL landelm_build
-
-      IF (p_is_master) THEN
-            print*, "4.1_407"
-            ! filename = trim(DEF_dir_landdata) + "pixel.nc"
-            ! CALL check_ncfile_exist (filename)
-      END IF
 
 #if (defined GRIDBASED || defined UNSTRUCTURED)
       IF (DEF_LANDONLY) THEN
@@ -424,21 +387,9 @@ PROGRAM MKSRFDATA
          CALL mesh_filter (grid_filter, DEF_file_mesh_filter, 'mesh_filter')
       ENDIF
 
-      IF (p_is_master) THEN
-            print*, "4.2_431"
-            ! filename = trim(DEF_dir_landdata) + "pixel.nc"
-            ! CALL check_ncfile_exist (filename)
-      END IF
-
 #ifdef CATCHMENT
       CALL landhru_build
 #endif
-
-      IF (p_is_master) THEN
-            print*, "4.3_441"
-            ! filename = trim(DEF_dir_landdata) + "pixel.nc"
-            ! CALL check_ncfile_exist (filename)
-      END IF
 
       ! build land patches
       CALL landpatch_build(lc_year)
@@ -468,21 +419,9 @@ PROGRAM MKSRFDATA
 ! 2. SAVE land surface tessellation information
 ! ................................................................
 
-      IF (p_is_master) THEN
-            print*, "5_470"
-            ! filename = trim(DEF_dir_landdata) + "pixel.nc"
-            ! CALL check_ncfile_exist (filename)
-      END IF
-
       CALL gblock%save_to_file    (dir_landdata)
 
       CALL pixel%save_to_file     (dir_landdata)
-
-      IF (p_is_master) THEN
-            print*, "11_480"
-            ! filename = trim(DEF_dir_landdata) + "pixel.nc"
-            ! CALL check_ncfile_exist (filename)
-      END IF
 
       CALL mesh_save_to_file      (dir_landdata, lc_year)
 

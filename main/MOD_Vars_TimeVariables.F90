@@ -1154,7 +1154,11 @@ ENDIF
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
 #ifdef SinglePoint
+#ifndef CH4
       IF (patchtypes(SITE_landtype) == 0) THEN
+#else
+      IF (patchtypes(SITE_landtype) == 0 .or. patchtypes(SITE_landtype) == 2) THEN
+#endif
          file_restart = trim(dir_restart)// '/'//trim(cdate)//'/' // trim(site) //'_restart_pft_'//trim(cdate)//'_lc'//trim(cyear)//'.nc'
          CALL WRITE_PFTimeVariables (file_restart)
       ENDIF
@@ -1338,7 +1342,11 @@ ENDIF
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
 #ifdef SinglePoint
+#ifndef CH4
       IF (patchtypes(SITE_landtype) == 0) THEN
+#else
+      IF (patchtypes(SITE_landtype) == 0 .or. patchtypes(SITE_landtype) == 2) THEN
+#endif
          file_restart = trim(dir_restart)// '/'//trim(cdate)//'/' // trim(site) //'_restart_pft_'//trim(cdate)//'_lc'//trim(cyear)//'.nc'
          CALL READ_PFTimeVariables (file_restart)
       ENDIF
