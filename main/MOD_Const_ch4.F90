@@ -27,12 +27,12 @@ MODULE MOD_Const_ch4
 	data (s_con(2,i),i=1,4) /1801_r8, -120.1_r8, 3.7818_r8, -0.047608_r8/ ! O2
 	data (s_con(3,i),i=1,4) /1911_r8, -113.7_r8, 2.967_r8, -0.02943_r8/ ! CO2
 	
-	real(r8), public :: d_con_w(ngases,3)    ! water diffusivity constants (spp, #)  (mult. by 10^-4)
+	real(r8), public :: d_con_w(ngases,3)    ! water diffusivity constants (spp, #)  (*10^-9 m2/s)
 	data (d_con_w(1,i),i=1,3) /0.9798_r8, 0.02986_r8, 0.0004381_r8/ ! CH4
 	data (d_con_w(2,i),i=1,3) /1.172_r8, 0.03443_r8, 0.0005048_r8/ ! O2
 	data (d_con_w(3,i),i=1,3) /0.939_r8, 0.02671_r8, 0.0004095_r8/ ! CO2
 	
-	real(r8), public :: d_con_g(ngases,2)    ! gas diffusivity constants (spp, #) (cm^2/s) (mult. by 10^-9)
+	real(r8), public :: d_con_g(ngases,2)    ! gas diffusivity constants (spp, #) (*10^-4 m2/s)
 	data (d_con_g(1,i),i=1,2) /0.1875_r8, 0.0013_r8/ ! CH4
 	data (d_con_g(2,i),i=1,2) /0.1759_r8, 0.00117_r8/ ! O2
 	data (d_con_g(3,i),i=1,2) /0.1325_r8, 0.0009_r8/ ! CO2

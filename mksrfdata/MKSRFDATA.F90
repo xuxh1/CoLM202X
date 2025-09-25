@@ -255,9 +255,9 @@ PROGRAM MKSRFDATA
    ! define grid for wetland parameters
 !    CALL grid_wetland%define_from_file (trim(DEF_dir_rawdata)//'/global_WFT_surface_data.nc', 'lat', 'lon')
 #ifndef CROP
-   CALL grid_wetland%define_from_file ('/tera04/zhwei/xionghui/data/CoLMrawdata/global_WFT_surface_data.nc', 'lat', 'lon')
+   CALL grid_wetland%define_from_file ('/share/home/dq076/data/CoLMrawdata/global_WFT_surface_data.nc', 'lat', 'lon')
 #else
-   CALL grid_wetland%define_from_file ('/tera04/zhwei/xionghui/data/CoLMrawdata/global_WFT_surface_data_CROP.nc', 'lat', 'lon')
+   CALL grid_wetland%define_from_file ('/share/home/dq076/data/CoLMrawdata/global_WFT_surface_data_CROP.nc', 'lat', 'lon')
 #endif
 #endif
 

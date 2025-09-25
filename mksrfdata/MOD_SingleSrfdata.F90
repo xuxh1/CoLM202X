@@ -387,9 +387,9 @@ CONTAINS
 
             ! filename = trim(DEF_dir_rawdata) // '/global_WFT_surface_data.nc'
 #ifndef CROP
-            filename = '/tera04/zhwei/xionghui/data/CoLMrawdata/global_WFT_surface_data.nc'
+            filename = '/share/home/dq076/data/CoLMrawdata/global_WFT_surface_data.nc'
 #else
-            filename = '/tera04/zhwei/xionghui/data/CoLMrawdata/global_WFT_surface_data_CROP.nc'
+            filename = '/share/home/dq076/data/CoLMrawdata/global_WFT_surface_data_CROP.nc'
 #endif
             CALL gridwetland%define_from_file (filename, 'lat', 'lon')
             CALL read_point_var_3d_first_real8 (gridwetland, filename, 'PCT_WFT', &

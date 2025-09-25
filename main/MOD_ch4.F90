@@ -1153,7 +1153,8 @@ contains
 		real(r8) :: n_tiller 
 		real(r8) :: vol_liq_min
 		real(r8) :: k_h_cc, k_h_inv
-		real(r8) :: anpp, nppratio
+		real(r8) :: anpp        ! annual sum NPP (gC/m2/yr) 
+		real(r8) :: nppratio    ! bg/sum NPP
 		real(r8) :: conc_ch4_wat
 		real(r8) :: aerecond    ! aerenchyma conductance (m/s)
 		real(r8), parameter :: smallnumber = 1.e-12_r8
@@ -1634,6 +1635,7 @@ contains
 				if (j <= jwt) then  ! Above the WT
 					do s=1,2
 						epsilon_t(j,s) = porsl(j)- (1._r8-k_h_cc(j,s))*vol_liq_min(j)*liqfrac(j)
+						!!!!!!!!!! Here, based on the formula derivation, it needs to be divided by another k_h_cc
 					end do
 					! Partition between the liquid and gas phases. The gas phase will drive the diffusion.
 				else ! Below the WT
