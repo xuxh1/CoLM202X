@@ -118,8 +118,8 @@ contains
 			wat                     , &! total water storage [mm]
 			rsur                    , &! surface runoff (mm h2o/s)
 			etr                     , &! transpiration rate [mm/s]
-			lakedepth               , &! lake depth
-			lake_icefrac (1:nl_soil), &! lake mass fraction of lake layer that is frozen
+			! lakedepth               , &! lake depth
+			! lake_icefrac (1:nl_soil), &! lake mass fraction of lake layer that is frozen
 			wdsrf                   , &! depth of surface water [mm]
 			bsw      (1:nl_soil)   	, &! Clapp and Hornberger "b" (nlevgrnd)             
 

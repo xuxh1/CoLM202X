@@ -136,11 +136,11 @@
 		t_h2osfc = t_grnd
 		! organic_max = cellorg(1)
 
-		CALL ch4 (i,idate(1:3),patchtype,lb,snl,dlon,dlat,deltim,&
+		CALL ch4 (idate(1:3),patchtype,lb,snl,dlon,dlat,deltim,&
 		z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:),&
 		t_grnd,wliq_soisno(maxsnl+1:),wice_soisno(maxsnl+1:),&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&
-		zwt,rootfr,snowdp,wat,rsur,etr,lakedepth,lake_icefrac,wdsrf,bsw,&
+		zwt,rootfr,snowdp,wat,rsur,etr,wdsrf,bsw,&
 		smp,porsl,lai,rootr,&
 		annsum_npp(i),rr(i),agnpp(i),bgnpp(i),somhr(i),&
 		crootfr(1:nl_soil),lithr(i),hr_vr(1:nl_soil,i),o_scalar(1:nl_soil,i),fphr(1:nl_soil,i),pot_f_nit_vr(1:nl_soil,i),pH,&

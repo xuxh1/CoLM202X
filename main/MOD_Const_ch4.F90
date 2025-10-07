@@ -37,24 +37,32 @@ MODULE MOD_Const_ch4
 	data (d_con_g(2,i),i=1,2) /0.1759_r8, 0.00117_r8/ ! O2
 	data (d_con_g(3,i),i=1,2) /0.1325_r8, 0.0009_r8/ ! CO2
 	
-	real(r8), public :: c_h_inv(ngases)    ! constant (K) for Henry's law (4.12, Wania)
+	real(r8), public :: c_h(ngases)    ! constant (K) for Henry's law (4.12, Wania)
 	data c_h_inv(1:3) /1600._r8, 1500._r8, 2400._r8/ ! CH4, O2, CO2
 	
 	real(r8), public :: kh_theta(ngases)    ! Henry's constant (L.atm/mol) at standard temperature (298K)
-	data kh_theta(1:3) /714.29_r8, 769.23_r8, 29.4_r8/ ! CH4, O2, CO2
-	
-	real(r8), public :: kh_tbase = 298._r8 ! base temperature for calculation of Henry's constant (K)
+	! data kh_theta(1:3) /714.29_r8, 769.23_r8, 29.4_r8/ ! CH4, O2, CO2
+   data kh_theta(1:3) /1.4e-3, 1.3e-3, 3.4e-2/ ! CH4, O2, CO2
+
+	real(r8), public :: kh_tbase = 298.15_r8 ! base temperature for calculation of Henry's constant (K)
 
 !------------------------------------------------------------------
 
-	real(r8), public, parameter :: rgasm = SHR_CONST_RGAS/1000._r8 ! J mol-1 K-1; Universal gas constant 
+	real(r8), public, parameter :: rgasm = SHR_CONST_RGAS/1000._r8 ! 8.314 J mol-1 K-1; Universal gas constant 
                                  ![J/K/mol]=[J/K/kmol]/[kmol/mol]
+                                 ![J/K/mol]=[N*m/K/mol]=[Pa*m3/K/mol]
 	!!! rgas Different from CoLM
 	!!! rgas in CoLM is gas constant for dry air [J/kg/K]
 	!!! not Universal gas constant
-	real(r8), public, parameter :: rgasLatm = 0.0821_r8 ! L.atm/mol.K
+	real(r8), public, parameter :: rgasLatm = 0.08206_r8 ! L*atm/mol/K
+   ! rgasLatm      = rgasm         / 101325 / 0.001
+   ! [L*atm/mol/K] = [Pa*m3/K/mol] / [Pa/atm] / [m3/L]
 
 	real(r8), public, parameter :: secspday = 86400._r8 ! Seconds per day
+
+	real(r8), public, parameter :: wet_lai = 4._r8 ! Wetland leaf area index [m2/m2]
+	real(r8), public, parameter :: tiller_C = 0.22_r8 ! Per tiller 0.22 g C [g C/tiller]
+	real(r8), public, parameter :: aere_radius = 2.9e-3_r8 ! Aerenchyma radius
 
 !------------------------------------------------------------------
    !!!!!!!!!!!!!!!!!!!!!!! The parameters here are inaccurate and need to be reconfirmed !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -98,6 +106,7 @@ MODULE MOD_Const_ch4
 
    ! ! ch4 ebbulition constants
    real(r8), public, parameter :: vgc_max  =0.15_r8            ! ratio of saturation pressure triggering ebullition (params:0.15) (doc:Ce,max Ce,min Baseline:0.15 Unit:mol m-3 ?)
+	real(r8), public, parameter :: bubble_f =0.57_r8            ! CH4 content in gas bubbles (Kellner et al. 2006)
 
    ! ! ch4 transport constants
    real(r8), public, parameter :: satpow  =2._r8             ! exponent on watsat for saturated soil solute diffusion (2? params:2.)
