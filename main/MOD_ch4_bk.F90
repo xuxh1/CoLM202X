@@ -1,7 +1,7 @@
 #include "define.h"
 
 module MOD_ch4
-    !=======================================================================
+	!=======================================================================
 	! !DESCRIPTION:
 	! Module holding routines to calculate methane fluxes
 	! The driver averages up to gridcell, weighting by finundated, and checks for balance errors.
@@ -17,21 +17,29 @@ module MOD_ch4
 	! and impact of forcing uncertainty. Journal of Advances in Modeling Earth Systems, 11(12), 4245-4287.
 
 	! !REVISION:
-	! Xionghui Xu, 2025, 1) Modify original CLM5 to be compatible with CoLM code structure. 
-    !                    2) Fix some bugs based on the original code. 
+	! Xionghui Xu, 2025, modify original CLM5 to be compatible with CoLM code structure.
 	!=======================================================================
+	! !USES:
 	use MOD_Precision
+	use MOD_Const_ch4
+	use MOD_Const_Physical, only: rgas, denh2o, denice, tfrz, grav
+	! use MOD_ch4varcon, only : replenishlakec, allowlakeprod, ch4offline
+	! use MOD_ch4varcon, only : usephfact, anoxicmicrosites, ch4rmcnlim 
+	! use MOD_ch4varcon, only : iulog, use_cn, use_nitrif_denitrif, use_lch4, use_fates_bgc, anoxia
+	! use MOD_ch4varcon, only : transpirationloss, use_aereoxid_prog
+	! use MOD_ch4varcon, only : ch4frzout
+	use MOD_ch4varcon
+	use MOD_Namelist, only : DEF_USE_VariablySaturatedFlow
+	use MOD_Vars_Global, only : maxsnl,nl_soil,nl_lake,spval,PI,deg2rad
 	use MOD_SPMD_Task
 	use MOD_TimeManager
-	use MOD_Vars_Global, only : maxsnl,nl_soil,nl_lake,spval,PI,deg2rad
-	use MOD_Const_Physical, only: rgas, denh2o, denice, tfrz, grav
-	use MOD_Const_ch4
-	use MOD_ch4varcon
 	!-----------------------------------------------------------------------
 	implicit none
 	save
+	! !PUBLIC MEMBER FUNCTIONS:
 	public  :: ch4
 	
+	! !PRIVATE MEMBER FUNCTIONS:
 	private :: ch4_annualupdate
 	private :: ch4_prod
 	private :: ch4_oxid
@@ -42,13 +50,13 @@ module MOD_ch4
 contains
 
 	!-----------------------------------------------------------------------
-	subroutine ch4 (idate,patchtype,&!input
+	subroutine ch4 (ipatch,idate,patchtype,&!input
 		lb,snl,&
 		dlon,dlat,&
 		deltim,&
 		z_soisno,dz_soisno,zi_soisno,t_soisno,t_grnd,wliq_soisno,wice_soisno,&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&
-		zwt,rootfr,snowdp,wat,rsur,etr,wdsrf,bsw,&
+		zwt,rootfr,snowdp,wat,rsur,etr,lakedepth,lake_icefrac,wdsrf,bsw,&
 		smp,porsl,lai,rootr,&
 		annsum_npp,rr,&
 		agnpp,bgnpp,somhr,&
@@ -70,29 +78,34 @@ contains
 		!=======================================================================
 
 		!===================== input ===========================================
-		!===================== input ===========================================
 		integer, intent(in) :: &
-			idate(3)         , &! current date (year, days of the year, seconds of the day)
-			patchtype        , &! land patch type (0=soil, 1=urban or built-up, 2=wetland, 3=land ice, 4=land water bodies, 99=ocean)
-			
+			ipatch            , &! patch index
+			idate(3)          , &! current date (year, days of the year, seconds of the day)
+			patchtype            ! land patch type (0=soil, 1=urban or built-up, 2=wetland,
+									   ! 3=land ice, 4=land water bodies, 99=ocean
+
+			! istep            , &! the i time step
+
+		integer, intent(in) :: &
 			lb               , &! lower bound of array   (snl+1)
 			snl				     ! number of snow layers (-5~-1)
 
 		real(r8), intent(in) :: &
-			dlon                    , &! latitude (degrees)
-			dlat                    , &! longitude (degrees)
+			dlon             , &! latitude (degrees)
+			dlat                ! longitude (degrees)
 
+		real(r8), intent(in) :: &
 			deltim                  , &! land model time step [sec]
 			z_soisno (maxsnl+1:nl_soil)    , &! layer depth [m]
 			dz_soisno(maxsnl+1:nl_soil)    , &! layer thickness [m]
 			zi_soisno(maxsnl:nl_soil)      , &! interface level below a "z" level [m]
 
-			t_soisno (maxsnl+1:nl_soil)    , &! soil temperature [K]
-			t_grnd                 		    , &! ground surface temperature [K]
+			t_soisno (maxsnl+1:nl_soil)    , &! soil temperature (Kelvin)
+			t_grnd                 		    , &! ground surface temperature [k]
 			wliq_soisno(maxsnl+1:nl_soil)  , &! liquid water in layers [kg/m2]
 			wice_soisno(maxsnl+1:nl_soil)  , &! ice lens in layers [kg/m2]
 
-			forc_t                  , &! temperature at reference height [K]
+			forc_t                  , &! temperature at reference height [kelvin]
 			forc_pbot               , &! atm bottom level pressure (or reference height) [Pa]
 			forc_po2m               , &! O2 concentration in atmos. [Pa]
 			forc_pco2m              , &! CO2 concentration in atmos. [Pa]
@@ -103,17 +116,21 @@ contains
 
 			snowdp                  , &! snow depth [m]
 			wat                     , &! total water storage [mm]
-			rsur                    , &! surface runoff [mm/s]
+			rsur                    , &! surface runoff (mm h2o/s)
 			etr                     , &! transpiration rate [mm/s]
+			! lakedepth               , &! lake depth
+			! lake_icefrac (1:nl_soil), &! lake mass fraction of lake layer that is frozen
 			wdsrf                   , &! depth of surface water [mm]
 			bsw      (1:nl_soil)   	, &! Clapp and Hornberger "b" (nlevgrnd)             
 
 			smp      (1:nl_soil)    , &! soil matrix potential [mm]
 			porsl    (1:nl_soil)    , &! volumetric soil water at saturation (porosity)
-			lai                     , &! leaf area index [m2/m2]
+			lai                        ! leaf area index [m2/m2]
 
-			annsum_npp              , &! annual sum NPP (g C/m2/yr)
+		real(r8), intent(in) :: &
+			annsum_npp              , &! annual sum NPP (gC/m2/yr)
 			rr                         ! root respiration (fine root MR + total root GR) (gC/m2/s)
+			! froot_xsmr               ! fine root maintenance respiration storage C due to available C deficit (gC m-2 s-1)
 
 		!------------------- ch4_annualupdate ------------------------------------
 		real(r8), intent(in) :: &			
@@ -144,7 +161,15 @@ contains
 
 		!=================== output ============================================
 		real(r8), intent(out) :: &
+		! 	soilc          (1:nl_soil)   , &! total soil organic matter found in level (g C / m3) 
+		! 	! conc_o2_lake   (1:nl_soil)   , &! O2 conc  in each soil layer (mol/m3)
+		! 	! ch4_dfsat_flux               , &! CH4 flux to atm due to decreasing finundated (kg C/m^2/s) [+]
+
+		! 	rsur_lag                     , &! time-lagged surface runoff (mm H2O /s)
+		! 	layer_lag  (1:nl_soil)       , &! Lagged saturation status of soil layer (1 = sat)
 			c_atm      (1:3)             , &! CH4, O2, CO2 atmospheric conc  (mol/m3)         
+		! 	ch4co2                       , &! CO2 production from CH4 oxidation (g C/m**2/s)
+		! 	ch4prod                      , &! average CH4 production (g C/m^2/s)       
 			ch4_surf_flux_tot            , &! CH4 flux to atm. (gCH4/m2/s)
 			net_methane                     ! average net methane correction to CO2 flux (gCH4/m2/s)
 
@@ -207,54 +232,40 @@ contains
 			tempavg_finhr              ! respiration-weighted annual average of finundated 
 
 		!=================== Local Variables ============================================
-		integer  :: j,s                     ! indices
+		integer  :: j,s      ! indices
+
 		integer  :: sat                     ! 0 = unsatured, 1 = saturated
 		integer  :: finundated              ! fractional inundated area, =sat(0 or 1)
 		integer  :: jwt                     ! index of the soil layer right above the water table (-)
+		real(r8) :: vol_liq  (1:nl_soil)    ! liquid volumetric water content [m3/m3]
+
 		real(r8) :: lon,lat                 ! lon,lat
+
 		real(r8) :: ch4_prod_tot            ! CH4 production for column (gCH4/m2/s)
 		real(r8) :: ch4_oxid_tot            ! CH4 oxidation for column (gCH4/m2/s)
+
 		real(r8) :: total                   ! diff + aere + ebul
 		real(r8) :: dfsat
 		real(r8) :: fsat_bef                ! finundated from previous timestep
 		real(r8) :: errch4                  ! g C / m^2
+		! real(r8) :: redoxlags               ! Redox time lag in s
 		real(r8) :: redoxlags_vertical      ! Vertical redox lag time in s
+		! real(r8) :: zwt_actual
+		! real(r8) :: qflxlags              ! Time to lag qflx_surf_lag (s)
 		integer  :: dummyfilter(1)          ! empty filter
+
 		real(r8) :: totcolch4_bef           ! total methane in soil column, start of timestep (gCH4/m2)
 
-		real(r8) :: k_h_cc(0:nl_soil,ngases)! ratio of mol/m3 in liquid to mol/m3 in gas [-]
-
-		real(r8) :: vol_aqu  (1:nl_soil)    ! liquid volumetric water content ---- water volume/all volume [m3/m3]
-		real(r8) :: vol_gas  (1:nl_soil)    ! air volumetric water content ---- air volume/all volume [m3/m3]
-		! real(r8) :: vol_sol  (1:nl_soil)    ! ice volumetric water content ---- ice volume/all volume [m3/m3]
-		real(r8) :: f_aqu    (1:nl_soil)    ! water-filled proportion
-		real(r8) :: f_gas    (1:nl_soil)    ! air-filled proportion
-		! real(r8) :: f_sol    (1:nl_soil)    ! ice-filled proportion
-
-		real(r8) :: conc_ch4_gas     (1:nl_soil) ! gas phase CH4 conc in each soil layer (mol/m3)
-		real(r8) :: conc_ch4_aqu     (1:nl_soil) ! aqueous phase CH4 conc in each soil layer (mol/m3)
-		! real(r8) :: conc_ch4_sol     (1:nl_soil) ! solid phase CH4 conc in each soil layer (mol/m3)
-		real(r8) :: conc_ch4_porsl     (1:nl_soil) ! CH4 conc in each porosity (mol/m3)
-		real(r8) :: conc_ch4_gas_porsl (1:nl_soil) ! gas phase CH4 conc in each porosity (mol/m3)
-		real(r8) :: conc_ch4_aqu_porsl (1:nl_soil) ! aqueous phase CH4 conc in each porosity (mol/m3)
-		! real(r8) :: conc_ch4_sol_porsl (1:nl_soil) ! solid phase CH4 conc in each porosity (mol/m3)
-
-		real(r8) :: conc_o2_gas     (1:nl_soil) ! gas phase O2 conc in each soil layer (mol/m3)
-		real(r8) :: conc_o2_aqu     (1:nl_soil) ! aqueous phase O2 conc in each soil layer (mol/m3)
-		! real(r8) :: conc_o2_sol     (1:nl_soil) ! solid phase O2 conc in each soil layer (mol/m3)
-		real(r8) :: conc_o2_porsl     (1:nl_soil) ! O2 conc in each porosity (mol/m3)
-		real(r8) :: conc_o2_gas_porsl (1:nl_soil) ! gas phase O2 conc in each porosity (mol/m3)
-		real(r8) :: conc_o2_aqu_porsl (1:nl_soil) ! aqueous phase O2 conc in each porosity (mol/m3)
-		! real(r8) :: conc_o2_sol_porsl (1:nl_soil) ! solid phase O2 conc in each porosity (mol/m3)
 		!-----------------------------------------------------------------------
-
 		! Set parameters
+		! redoxlags = redoxlag*secspday ! days --> s
 		redoxlags_vertical = redoxlag_vertical*secspday ! days --> s
 		
 		totcolch4_bef = totcolch4
 		totcolch4 = 0
 
-		! Compute jwt index, from 0-10
+		!-----------------------------------------------------------------------
+		! compute jwt index
 		! The layer index of the first unsaturated layer,
 		! i.e., the layer right above the water table
 		jwt = nl_soil
@@ -275,6 +286,12 @@ contains
 	
 		finundated = sat
 
+		do j= 1, nl_soil
+			vol_liq(j) = wliq_soisno(j)/(dz_soisno(j)*denh2o)
+			! [m3/m3]  = [kg/m2]       /([m]         *[kg/m3])
+		end do
+		
+		!-----------------------------------------------------------------------
 		! Initialize fluxes to zero
 		ch4_surf_flux_tot     = 0._r8
 		ch4_prod_tot          = 0._r8
@@ -282,8 +299,8 @@ contains
 
 		! Adjustment to NEE for methane production - oxidation
 		net_methane           = 0._r8
-
-		! Check if offline. If offline, the default atmospheric methane concentration will be adopted globally (1700ppb)
+	
+      ! Check if offline. If offline, the default atmospheric methane concentration will be adopted globally (1700ppb)
 		if (ch4offline) then
 			forc_pch4m = atmch4*forc_pbot
 			! [Pa]     =[mol/mol]*[Pa]
@@ -295,13 +312,13 @@ contains
 			end if
 		end if
 
-		c_atm(1) =  forc_pch4m / rgasm / forc_t
-		c_atm(2) =  forc_po2m  / rgasm / forc_t
-		c_atm(3) =  forc_pco2m / rgasm / forc_t
 		! n/V = P/RT
 		![mol/m3]=[Pa]         /[J/K/mol]/[K]
 		![mol/m3]=[J/m3]       *[K*mol/J]*[1/K]
-
+		c_atm(1) =  forc_pch4m / rgasm / forc_t ! [mol/m3 air]
+		c_atm(2) =  forc_po2m  / rgasm / forc_t ! [mol/m3 air]
+		c_atm(3) =  forc_pco2m / rgasm / forc_t ! [mol/m3 air]
+	
 		!!!! Begin biochemistry
 		! First for soil
 		! Do CH4 Annual Averages
@@ -329,55 +346,7 @@ contains
 			end do
 		end if ! saturated no change
 
-		call henry_law(t_grnd,t_soisno,k_h_cc)
-
-		do j=1,nl_soil
-
-			! Calculate the water-filled and air-filled volume
-			vol_aqu(j) = min(wliq_soisno(j)/(dz_soisno(j)*denh2o),porsl(j))
-			! [m3/m3]  = [kg/m2]       /([m]         *[kg/m3])
-
-			! if (ch4frzout) then
-			! 	vol_sol(j) = min(wice_soisno(j)/(dz_soisno(j)*denice),porsl(j))
-			! else
-			! 	vol_sol(j) = 0
-
-			vol_gas(j) = max(porsl(j) - vol_aqu(j) - vol_sol(j), 0._r8)
-
-			! Calculate the water-filled and air-filled proportion
-			f_aqu(j) = vol_aqu/porsl(j)
-			f_gas(j) = vol_gas/porsl(j)
-			f_sol(j) = vol_sol/porsl(j)
-
-			! if (j  >  jwt) then ! below the water table
-			! 	! The pores are filled with water and no gas
-			! 	! conc_ch4_gas is the equivalent gas concentration
-			! 	conc_ch4_aqu(j) = conc_ch4(j)
-			! 	conc_ch4_gas(j) = conc_ch4(j)/k_h_cc(j,1)
-			! else
-			! 	conc_ch4_aqu(j) = conc_ch4(j)/(f_aqu(j)+f_gas(j)/k_h_cc(j,1)) 
-			! 	conc_ch4_gas(j) = conc_ch4(j)/(k_h_cc(j,1)*f_aqu(j)+f_gas(j)) 
-			! endif
-
-			conc_ch4_aqu(j) = conc_ch4(j)/(f_aqu(j)+f_gas(j)/k_h_cc(j,1)) 
-			conc_ch4_gas(j) = conc_ch4(j)/(k_h_cc(j,1)*f_aqu(j)+f_gas(j)) 
-
-			conc_o2_aqu(j) = conc_o2(j)/(f_aqu(j)+f_gas(j)/k_h_cc(j,1)) 
-			conc_o2_gas(j) = conc_o2(j)/(k_h_cc(j,1)*f_aqu(j)+f_gas(j)) 
-
-
-			! the real concentration in porosity
-			conc_ch4_porsl(j) = conc_ch4(j)/porsl(j)
-			conc_ch4_aqu_porsl(j) = conc_ch4_aqu(j)/porsl(j)
-			conc_ch4_gas_porsl(j) = conc_ch4_gas(j)/porsl(j)
-
-			conc_o2_porsl(j) = conc_o2(j)/porsl(j)
-			conc_o2_aqu_porsl(j) = conc_o2_aqu(j)/porsl(j)
-			conc_o2_gas_porsl(j) = conc_o2_gas(j)/porsl(j)
-		enddo
-				
-
-		! Calculate CH4 production in each soil layer
+		! calculate CH4 production in each soil layer
 		call ch4_prod (patchtype,sat,finundated,jwt,rr,deltim,& !input
 			z_soisno,dz_soisno,zi_soisno,t_soisno,&
 			lai,conc_o2,rootfr,annavg_finrw,&
@@ -385,47 +354,103 @@ contains
 			pH,lake_soilc,layer_sat_lag,&
 			ch4_prod_depth,o2_decomp_depth)
 
-		! Calculate CH4 oxidation in each soil layer
-		call ch4_oxid (jwt,  sat, t_soisno, smp, vol_aqu, &
-			conc_o2_aqu_porsl, conc_ch4_aqu_porsl, &
-			ch4_oxid_depth, o2_oxid_depth) 
+		! calculate CH4 oxidation in each soil layer
+		call ch4_oxid (jwt,  sat,  deltim,  z_soisno,  dz_soisno,  zi_soisno, &
+			t_soisno,      smp,      vol_liq,    porsl,   conc_o2,   conc_ch4,              &
+			ch4_oxid_depth,          o2_oxid_depth) 
 
-		! Calculate CH4 aerenchyma losses in each soil layer
-		call ch4_aere (jwt, sat, lai, deltim,&
-			z_soisno, dz_soisno, zi_soisno, t_soisno,&
-			rootfr, rootr, etr, grnd_ch4_cond, c_atm, annsum_npp,&
-			annavg_agnpp, annavg_bgnpp, conc_ch4, ch4_prod_depth,conc_ch4_aqu_porsl,conc_o2_aqu_porsl,&
+		! calculate CH4 aerenchyma losses in each soil layer
+		call ch4_aere (patchtype, jwt, sat, lai,     deltim, &
+			z_soisno, dz_soisno,  zi_soisno,     t_soisno, vol_liq, porsl,  &
+			rootfr,   rootr, etr, grnd_ch4_cond, c_atm,    annsum_npp,      &
+			annavg_agnpp,    annavg_bgnpp, conc_o2, conc_ch4, ch4_prod_depth,&
 			ch4_aere_depth, ch4_tran_depth, o2_aere_depth)
 
-		! Calculate CH4 ebullition losses in each soil layer
-		call ch4_ebul (jwt, sat, deltim, &
-			z_soisno, dz_soisno, zi_soisno, forc_pbot, &
-			t_soisno, wdsrf, conc_ch4, conc_ch4_gas_porsl,&
+		! calculate CH4 ebullition losses in each soil layer
+		call ch4_ebul (patchtype, jwt, sat, deltim, &
+			z_soisno, dz_soisno, zi_soisno, lakedepth, forc_pbot,&
+			t_soisno, lake_icefrac, porsl, wdsrf, conc_ch4,&
 			ch4_ebul_depth)
 
 		! Solve CH4 reaction/diffusion equation 
 		! Competition for oxygen will occur here.
-		call ch4_tran (patchtype, &
+		call ch4_tran (patchtype,&
 			lb, snl, jwt, sat,&
-			lon, lat, deltim, z_soisno, dz_soisno, zi_soisno,  t_soisno, t_grnd, &
-			porsl, wliq_soisno, wice_soisno, wdsrf, bsw, c_atm, ch4_prod_depth, o2_aere_depth,&
-			cellorg,t_h2osfc, organic_max, k_h_cc, conc_ch4_gas_porsl,conc_ch4_aqu_porsl,conc_o2_gas_porsl,conc_o2_aqu_porsl,vol_aqu,vol_gas,&
+			lon,lat,deltim, z_soisno, dz_soisno, zi_soisno,  t_soisno, t_grnd, &
+			vol_liq, porsl, wliq_soisno, wice_soisno, wdsrf,bsw, c_atm, ch4_prod_depth, o2_aere_depth,&
+			cellorg,t_h2osfc, organic_max, &
 			o2stress, ch4stress, ch4_surf_aere, ch4_surf_ebul, ch4_surf_diff, ch4_ebul_total, &
 			ch4_oxid_depth, ch4_aere_depth, ch4_ebul_depth, &
 			grnd_ch4_cond, o2_oxid_depth, o2_decomp_depth, conc_o2, conc_ch4 )
+	
+		! !-------------------------------------------------
+		! ! Now do over lakes (lake layer not soil layer)
+		! !-------------------------------------------------
+		! if (patchtype == 4) then
+		! 	sat = 1
+		! 	jwt = 0
+	
+		! 	! calculate CH4 production in each soil layer
+		! 	call ch4_prod (patchtype,sat,finundated,jwt,rr,deltim,& !input
+		! 		z_soisno,dz_soisno,zi_soisno,t_soisno,&
+		! 		lai,conc_o2,rootfr,annavg_finrw,&
+		! 		crootfr,somhr,lithr,hr_vr,o_scalar,fphr,pot_f_nit_vr,&
+		! 		pH,lake_soilc,layer_sat_lag,&
+		! 		ch4_prod_depth,o2_decomp_depth)
 
+		! 	! calculate CH4 oxidation in each soil layer
+		! 	call ch4_oxid (nl_soil,  jwt,  sat,  deltim,  z_soisno,  dz_soisno,  zi_soisno, &
+		! 		t_soisno,      smp,      vol_liq,    porsl,   conc_o2,   conc_ch4,              &
+		! 		ch4_oxid_depth,          o2_oxid_depth) 
 
+		! 	! calculate CH4 aerenchyma losses in each soil layer
+		! 	call ch4_aere (patchtype, jwt, sat, lai,     deltim, &
+		! 		z_soisno, dz_soisno,  zi_soisno,     t_soisno, vol_liq, porsl,  &
+		! 		rootfr,   rootr, etr, grnd_ch4_cond, c_atm,    annsum_npp,      &
+		! 		annavg_agnpp,    annavg_bgnpp, conc_o2, conc_ch4, ch4_prod_depth,&
+		! 		ch4_aere_depth, ch4_tran_depth, o2_aere_depth)
+
+		! 	! calculate CH4 ebullition losses in each soil layer
+		! 	call ch4_ebul (patchtype, jwt, sat, deltim, &
+		! 		z_soisno, dz_soisno, zi_soisno, lakedepth, forc_pbot,&
+		! 		t_soisno, lake_icefrac, porsl, wdsrf, conc_ch4,&
+		! 		ch4_ebul_depth)
+
+		! 	! Solve CH4 reaction/diffusion equation 
+		! 	! Competition for oxygen will occur here.
+		! 	call ch4_tran (patchtype,&
+		! 		lb, snl,jwt, sat,&
+		! 		lon,lat,deltim, z_soisno, dz_soisno, zi_soisno,  t_soisno, t_grnd, &
+		! 		vol_liq, porsl, wliq_soisno, wice_soisno, wdsrf,bsw, c_atm, ch4_prod_depth, o2_aere_depth,&
+		! 		cellorg,t_h2osfc, organic_max, &
+		! 		o2stress, ch4stress, ch4_surf_aere, ch4_surf_ebul, ch4_surf_diff, ch4_ebul_total, &
+		! 		ch4_oxid_depth, ch4_aere_depth, ch4_ebul_depth, &
+		! 		grnd_ch4_cond, o2_oxid_depth, o2_decomp_depth, conc_o2, conc_ch4 )
+	
+		! end if
+ 
+		!-------------------------------------------------------------------------------
+		! Average up to gridcell flux and column oxidation and production rate.
+		!-------------------------------------------------------------------------------
+		! First weight the soil columns by finundated.
 		do j=1,nl_soil
 			if (j == 1) then
 				total = ch4_surf_diff + ch4_surf_aere + ch4_surf_ebul
+				! ch4_surf_flux_tot = total* catomw / 1000._r8
+				! !Convert from mol to kg C
 				ch4_surf_flux_tot = total* ch4atomw
-				! [g CH4/m2/s]    = [mol CH4/m2/s]*[g CH4/mol CH4] 
+				!Convert from mol to g CH4
+				! ch4_oxid_tot and ch4_prod_tot are initialized to zero above
 			end if
 
+			! ch4_oxid_tot = ch4_oxid_tot + ch4_oxid_depth(j) * dz_soisno(j) * catomw
+			! !Convert from mol to g C
+			! ch4_prod_tot = ch4_prod_tot + ch4_prod_depth(j) * dz_soisno(j) * catomw
+			! !Convert from mol to g C
 			ch4_oxid_tot = ch4_oxid_tot + ch4_oxid_depth(j) * dz_soisno(j) * ch4atomw
+			!Convert from mol to g CH4
 			ch4_prod_tot = ch4_prod_tot + ch4_prod_depth(j) * dz_soisno(j) * ch4atomw
-			! [g CH4/m2/s]    = [g CH4/m2/s] + [mol CH4/m3/s]*[m]*[g CH4/mol CH4] 
-
+			!Convert from mol to g CH4
 			if (j == nl_soil) then
 				! Adjustment to NEE flux to atm. for methane production
 				net_methane = net_methane - ch4_prod_tot
@@ -433,30 +458,109 @@ contains
 				net_methane = net_methane + ch4_oxid_tot
 			end if
 		end do
+	
+		! ! Correct for discrepancies in CH4 concentration from changing finundated
+		! ch4_surf_flux_tot = ch4_surf_flux_tot + ch4_dfsat_flux
+	
+		! if (patchtype==4) then
+		! 	do j=1,nl_soil
+		! 		if (j == 1) then
+		! 			! ch4_oxid_tot and ch4_prod_tot are initialized to zero above
+		! 			total = ch4_surf_diff + ch4_surf_aere + ch4_surf_ebul
+		! 			ch4_surf_flux_tot = total*catomw
+		! 		end if
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!change catomw
+		! 		ch4_oxid_tot = ch4_oxid_tot + ch4_oxid_depth(j)*dz_soisno(j)*catomw
+		! 		ch4_prod_tot = ch4_prod_tot + ch4_prod_depth(j)*dz_soisno(j)*catomw
+	
+		! 		if (.not. replenishlakec) then
+		! 			!Adjust lake_soilc for production.
+		! 			lake_soilc(j) = lake_soilc(j) - 2._r8*ch4_prod_depth(j)*deltim*catomw
+		! 			! Factor of 2 is for CO2 that comes off with CH4 because of stoichiometry
+		! 		end if
+	
+		! 		if (j == nl_soil) then
+		! 			! Adjustment to NEE flux to atm. for methane production
+		! 			if (.not. replenishlakec) then
+		! 				net_methane = net_methane + ch4_prod_tot
+		! 				! Here this is positive because it is actually the CO2 that comes off with the methane
+		! 				! NOTE THIS MODE ASSUMES TRANSIENT CARBON SUPPLY FROM LAKES; COUPLED MODEL WILL NOT CONSERVE CARBON
+		! 				! IN THIS MODE.
+		! 			else ! replenishlakec
+		! 				net_methane = net_methane - ch4_prod_tot
+		! 				! Keep total C constant, just shift from CO2 to methane
+		! 			end if
 
+		! 			! Adjustment to NEE flux to atm. for methane oxidation
+		! 			net_methane = net_methane + ch4_oxid_tot
+
+		! 		end if
+		! 	end do
+		! end if  ! ch4_surf_flux_tot, ch4_oxid_tot, and ch4_prod_tot should be initialized to 0 above if .not. allowlakeprod
+	
+		! Finalize CH4 balance and check for errors
+	
 		do j = 1, nl_soil
+			! totcolch4 = totcolch4 + conc_ch4(j)*dz_soisno(j)*catomw
+			! ! mol CH4 --> g C
 			totcolch4 = totcolch4 + conc_ch4(j)*dz_soisno(j)*ch4atomw
-			! [g CH4/m2]    = [g CH4/m2] + [mol CH4/m3]*[m]*[g CH4/mol CH4] 
+			! mol CH4 --> g CH4
 		end do
-
+	
 		! Column level balance
+	
 		if (.not. ch4_first_time) then
 			! Check balance
 			errch4 = totcolch4 - totcolch4_bef - deltim*(ch4_prod_tot - ch4_oxid_tot - ch4_surf_flux_tot) 
-			! [g CH4/m2]    = [g CH4/m2] - [g CH4/m2] + [s]*[g CH4/m2/s]
-			if (abs(errch4) > 1.e-7_r8) then
-				write(6,*)'Lat,Lon,Patchtype        = ', dlat,dlon, patchtype
-				write(6,*)'totcolch4                = ', totcolch4
-				write(6,*)'totcolch4_bef            = ', totcolch4_bef
-				write(6,*)'deltim*ch4_prod_tot      = ', deltim*ch4_prod_tot
-				write(6,*)'deltim*ch4_oxid_tot      = ', deltim*ch4_oxid_tot
+			! kg C --> g C
+			if (abs(errch4) > 1.e-7_r8) then ! g C / m^2 / timestep
+				! write(6,*)'Patch-level CH4 Conservation Error in CH4Mod driver, istep,  errch4 (gC /m^2.timestep)',istep,errch4
+				write(6,*)'Lat,Lon,Patchtype=',dlat,dlon,patchtype
+				write(6,*)'totcolch4                 = ', totcolch4
+				write(6,*)'totcolch4_bef             = ', totcolch4_bef
+				write(6,*)'deltim*ch4_prod_tot           = ', deltim*ch4_prod_tot
+				write(6,*)'deltim*ch4_oxid_tot           = ', deltim*ch4_oxid_tot
 				write(6,*)'deltim*ch4_surf_flux_tot = ', deltim*ch4_surf_flux_tot
 				CALL CoLM_stop ()
 			end if
 		end if
+	
+		! if (allowlakeprod) then
+		! 	if (.not. ch4_first_time) then
+		! 		! Check balance
+		! 		errch4 = totcolch4 - totcolch4_bef - deltim*(ch4_prod_tot - ch4_oxid_tot - ch4_surf_flux_tot) 
+		! 		! kg C --> g C
+		! 		if (abs(errch4) > 1.e-7_r8) then ! g C / m^2 / timestep
+		! 			! write(6,*)'Column-level CH4 Conservation Error in CH4Mod driver for lake column, istep, errch4 (gC/m^2.timestep)',istep,errch4
+		! 			write(6,*)'Lat,Lon,Patchtype=',dlat,dlon,patchtype
+		! 			write(6,*)'totcolch4                = ', totcolch4
+		! 			write(6,*)'totcolch4_bef            = ', totcolch4_bef
+		! 			write(6,*)'deltim*ch4_prod_tot           = ', deltim*ch4_prod_tot
+		! 			write(6,*)'deltim*ch4_oxid_tot           = ', deltim*ch4_oxid_tot
+		! 			write(6,*)'deltim*ch4_surf_flux_tot = ', deltim*ch4_surf_flux_tot
+		! 			CALL CoLM_stop ()
+		! 		end if
+		! 	end if
+		! end if
 
+		! if ( is_beg_curr_year() .and. get_do_transient_lakes() .or. &
+		! 	is_first_step() .and. get_do_transient_lakes() )then
+		! 	ch4_first_time = .true.
+		! end if
+	
 		ch4_first_time = .false.
+
+		! do j=1,nl_soil
+		! 	print*, "ch4_oxid_depth",j,"=",ch4_oxid_depth(j)
+		! 	print*, "ch4_prod_depth",j,"=",ch4_prod_depth(j)
+		! enddo
+		
+		! print*, "ch4_surf_flux_tot",ch4_surf_flux_tot
+		! print*, "ch4_prod_tot",ch4_prod_tot
+		! print*, "ch4_oxid_tot",ch4_oxid_tot
+		! print*, "net_methane",net_methane
 	end subroutine ch4
+
 
 	!-----------------------------------------------------------------------
 	subroutine ch4_annualupdate(idate, finundated, deltim,  agnpp, bgnpp, somhr, &
@@ -464,14 +568,16 @@ contains
 		tempavg_agnpp,tempavg_bgnpp,annsum_counter,tempavg_somhr, tempavg_finhr)
 		!-----------------------------------------------------------------------
 		! !DESCRIPTION:
-		! Annual mean fields. 
-		! Only the annavg is useful, the tempavg is temp.
+		! Annual mean fields.
 		!-----------------------------------------------------------------------
+
 		use MOD_Precision
 		implicit none
+
 		!-----------------------Argument----------------------------------------
 		integer, intent(in) :: &
-			idate(3)             , &! model calendar for next time step (year, days of the year, seconds of the day)
+			idate(3)             , &! model calendar for next time step
+			! (year, days of the year, seconds of the day)
 			finundated              ! fractional inundated area, =sat(0 or 1)
 
 		real(r8), intent(in) :: &
@@ -485,8 +591,8 @@ contains
 			annavg_agnpp            , &! annual average aboveground NPP (gC/m2/s)         
 			annavg_bgnpp            , &! annual average belowground NPP (gC/m2/s)         
 			annavg_somhr            , &! annual average SOM heterotrophic resp. (gC/m2/s)  
-			annavg_finrw               ! respiration-weighted annual average of finundated (1e-2*%) 
-    		! definition different with tempavg_finhr 
+			annavg_finrw               ! respiration-weighted annual average of finundated (%) 
+                                 ! definition different with tempavg_finhr 
 		
 		real(r8), intent(inout) :: &
 			! Cumulative data (from year start to now)   
@@ -541,11 +647,13 @@ contains
 
 	end subroutine ch4_annualupdate
 
+
 	!-----------------------------------------------------------------------
 	subroutine ch4_prod (patchtype,sat,finundated,jwt,rr,deltim,& !input
 		z_soisno,dz_soisno,zi_soisno,t_soisno,&
 		lai,conc_o2,rootfr,annavg_finrw,&
-		crootfr,somhr,lithr,hr_vr,o_scalar,fphr,pot_f_nit_vr,pH,&
+		crootfr,somhr,lithr,hr_vr,o_scalar,fphr,pot_f_nit_vr,&
+		pH,lake_soilc,layer_sat_lag,&
 		ch4_prod_depth,o2_decomp_depth)!output
 		!-----------------------------------------------------------------------
 		! !DESCRIPTION:
@@ -555,50 +663,63 @@ contains
 		! pH (optional), & redox lag factor.
 		!-----------------------------------------------------------------------
 
-		!-----------------------Argument----------------------------------------  
+		!-----------------------Argument----------------------------------------
+		integer, intent(in) :: &
+			patchtype            ! land patch type (0=soil, 1=urban or built-up, 2=wetland,
+									   ! 3=land ice, 4=land water bodies, 99=ocean
+  
 		integer , intent(in) :: &
-			patchtype                   , &! land patch type (0=soil, 1=urban or built-up, 
-			! 2=wetland, 3=land ice, 4=land water bodies, 99=ocean)
-			sat                         , &! 0 = unsaturated; 1 = saturated 
-			finundated                  , &! fractional inundated area in soil column 
-			jwt                            ! index of the soil layer right above the water table (-) 
+			sat                     , &! 0 = unsaturated; 1 = saturated 
+			finundated              , &! fractional inundated area in soil column 
+			jwt                        ! index of the soil layer right above the water table (-) 
   
 		real(r8), intent(in) :: &
-			rr                          , &! root respiration (fine root MR + total root GR) (gC/m2/s)
+			rr                      , &! root respiration (fine root MR + total root GR) (gC/m2/s)
 
-			deltim                      , &! land model time step (sec)
-			z_soisno (maxsnl+1:nl_soil) , &! layer depth (m)
-			dz_soisno(maxsnl+1:nl_soil) , &! layer thickness (m)
-			zi_soisno(maxsnl:nl_soil)   , &! interface level below a "z" level (m)
 	
-			t_soisno (maxsnl+1:nl_soil) , &! soil temperature (K)
+			deltim                  , &! land model time step (sec)
+			z_soisno (maxsnl+1:nl_soil)    , &! layer depth (m)
+			dz_soisno(maxsnl+1:nl_soil)    , &! layer thickness (m)
+			zi_soisno(maxsnl:nl_soil)      , &! interface level below a "z" level (m)
 	
-			lai                         , &! leaf area index [m2/m2]
-			conc_o2  (1:nl_soil)        , &! O2 conc in each soil layer (mol/m3) (nl_soil)   
-			rootfr   (1:nl_soil)        , &! fraction of roots in each soil layer (the sum of all layer is 1)
+			t_soisno (maxsnl+1:nl_soil)    , &! soil temperature (Kelvin)
 	
-			annavg_finrw                , &! respiration-weighted annual average of finundated 
+			lai                     , &! leaf area index [m2/m2]
+			conc_o2   (1:nl_soil)   , &! O2 conc in each soil layer (mol/m3) (nl_soil)   
+			rootfr   (1:nl_soil)    , &! fraction of roots in each soil layer (the sum of all layer is 1)
 	
-			crootfr  (1:nl_soil)        , &! fraction of roots for carbon in each soil layer (the sum of all layer is 1)
+			annavg_finrw               ! respiration-weighted annual average of finundated 
 	
-			somhr                       , &! soil organic matter heterotrophic respiration (gC/m2/s)
-			lithr                       , &! litter heterotrophic respiration (gC/m2/s)        
-			hr_vr    (1:nl_soil)        , &! total vertically-resolved het. resp. from decomposing C pools (gC/m3/s)
-			o_scalar (1:nl_soil)        , &! fraction by which decomposition is limited by anoxia
-			fphr     (1:nl_soil)        , &! fraction of potential heterotrophic respiration 
+		real(r8), intent(in) :: &
+			crootfr  (1:nl_soil)    , &! fraction of roots for carbon in each soil layer (the sum of all layer is 1)
 	
-			pot_f_nit_vr  (1:nl_soil)   , &! potential soil nitrification flux (gN/m3/s)
+			somhr                   , &! soil organic matter heterotrophic respiration (gC/m2/s)
+			lithr                   , &! litter heterotrophic respiration (gC/m2/s)        
+			hr_vr    (1:nl_soil)    , &! total vertically-resolved het. resp. from decomposing C pools (gC/m3/s)
+			o_scalar (1:nl_soil)    , &! fraction by which decomposition is limited by anoxia
+			fphr     (1:nl_soil)    , &! fraction of potential heterotrophic respiration 
 	
-			pH                             ! soil water pH                                     
+			pot_f_nit_vr(1:nl_soil) , &! potential soil nitrification flux (gN/m3/s)
+	
+			pH                      , &! soil water pH                                     
+			lake_soilc   (1:nl_soil), &! total soil organic matter found in level (g C / m^3) (nl_soil)
+			layer_sat_lag   (1:nl_soil)           ! Lagged saturation status of soil layer in the unsaturated zone (1 = sat)
+				
   
 		real(r8), intent(out) :: &            
-			ch4_prod_depth (1:nl_soil)  , &! production of CH4 in each soil layer (nl_soil) (mol/m3/s)
-			o2_decomp_depth(1:nl_soil)     ! O2 consumption during decomposition in each soil layer (nl_soil) (mol/m3/s)
-
+			ch4_prod_depth    (1:nl_soil)         , &! production of CH4 in each soil layer (nl_soil) (mol/m3/s)
+			o2_decomp_depth   (1:nl_soil)            ! O2 consumption during decomposition in each soil layer (nl_soil) (mol/m3/s)
+		
+		! real(r8), intent(inout) :: &            
+		! 	layer_sat_lag   (1:nl_soil)           ! Lagged saturation status of soil layer in the unsaturated zone (1 = sat)
 		!-----------------------Local Variables---------------------------------
 		integer  :: j,s              ! indices
 		real(r8) :: base_decomp      ! base heterotrophic respiration rate [mol C/m2/s]
 		real(r8) :: partition_z
+    
+		! real(r8) :: rootlitfrac      ! Fraction of soil organic matter associated with roots
+		! added by Lei Meng to account for pH influence of CH4 production 
+
 		real(r8) :: pH_fact_ch4      ! pH factor in methane production
   
 		! Factors for methanogen temperature dependence being greater than soil aerobes
@@ -614,43 +735,54 @@ contains
 		real(r8) :: sif              ! (unitless) ratio applied to sat. prod. to account for seasonal inundation
   		!-----------------------------------------------------------------------  
 		! PATCH loop to calculate vertically resolved column-averaged root respiration
-		rr_vr(:) = 0.0_r8
-
-		if (lai > 0._r8) then
-			do j=1,nl_soil
-				rr_vr(j) = rr_vr(j) + rr*crootfr(j)
-				! [g C/m2/s]=[g C/m2/s] + [g C/m2/s]*[-]
-			end do
-		end if
+		if (patchtype /= 4) then
+			rr_vr(:) = 0.0_r8
+  
+			if (lai > 0._r8) then
+				do j=1,nl_soil
+					rr_vr(j) = rr_vr(j) + rr*crootfr(j)
+					! [g C/m2/s]=[g C/m2/s] + [g C/m2/s]*[-]
+				end do
+			end if
 		  
+		end if
+
 		partition_z = 1._r8
 		base_decomp = 0.0_r8
   
 		! column loop to partition decomposition_rate into each soil layer
 		do j=1,nl_soil
-			! Use soil heterotrophic respiration (based on Wania)
-			base_decomp = (somhr+lithr) / catomw
-			! [mol C/m2/s]=[g C/m2/s]   / [g C/mol C]
+			if (patchtype /= 4) then
+				! Use soil heterotrophic respiration (based on Wania)
+				base_decomp = (somhr+lithr) / catomw
+				! [mol C/m2/s]=[g C/m2/s]   / [g C/mol C]
 
-			! Multiply base_decomp by factor accounting for lower carbon stock in seasonally inundated areas than
-			! if it were inundated all year.
-			! This is to reduce emissions in seasonally inundated zones, because the eq.
-			! C-flux will be less than predicted by a non-O2-lim model
-			if (sat == 1) then
-				sif = 1._r8
-				if (.not. anoxia) then
-					if (annavg_finrw /= spval) then
-						seasonalfin = max(finundated-annavg_finrw, 0._r8)
-						if (seasonalfin > 0._r8) then
-							sif = (annavg_finrw + mino2lim*seasonalfin) / finundated
-							base_decomp = base_decomp * sif
+				! Multiply base_decomp by factor accounting for lower carbon stock in seasonally inundated areas than
+				! if it were inundated all year.
+				! This is to reduce emissions in seasonally inundated zones, because the eq.
+				! C-flux will be less than predicted by a non-O2-lim model
+				if (sat == 1) then
+					sif = 1._r8
+					if (.not. anoxia) then
+						if (annavg_finrw /= spval) then
+							seasonalfin = max(finundated-annavg_finrw, 0._r8)
+							if (seasonalfin > 0._r8) then
+								sif = (annavg_finrw + mino2lim*seasonalfin) / finundated
+								base_decomp = base_decomp * sif
+							end if
 						end if
-					end if
-				end if ! anoxia
+					end if ! anoxia
+				end if
+	
+				! For sensitivity studies
+				base_decomp = base_decomp * cnscalefactor
+	
+			else !lake
+  
+				base_decomp = lake_decomp_fact * lake_soilc(j) * dz_soisno(j) * &
+					q10lake**((t_soisno(j)-q10lakebase)/10._r8) / catomw
+				! convert from g C to mol C
 			end if
-
-			! For sensitivity studies
-			base_decomp = base_decomp * cnscalefactor
   
 			! For all landunits, prevent production or oxygen consumption when soil is at or below freezing.
 			! If using VERTSOILC, it is OK to use base_decomp as given because liquid water stress will limit decomp.
@@ -658,34 +790,40 @@ contains
 			if (t_soisno(j) <= tfrz) base_decomp = 0._r8
   
 			! depth dependence of production either from rootfr or decomp model
-			if ( (somhr + lithr) > 0._r8) then
-				partition_z = hr_vr(j) * dz_soisno(j) / (somhr + lithr)
-				!   [-]     = [g C/m3/s]*[m]/[g C/m2/s]
-			else
+			if (patchtype /= 4) then ! use default rootfr, averaged to the column level in the ch4 driver, or vert HR
+				if ( (somhr + lithr) > 0._r8) then
+					partition_z = hr_vr(j) * dz_soisno(j) / (somhr + lithr)
+				else
+					partition_z = 1._r8
+				end if
+			else ! lake
 				partition_z = 1._r8
-			end if
-
+			endif
 
 			! Adjust f_ch4 to account for the fact that methanogens may have a higher Q10 than aerobic decomposers.
 			! Note this is crude and should ideally be applied to all anaerobic decomposition rather than just the
 			! f_ch4.
 			f_ch4_adj = 1.0_r8
-
-			t_fact_ch4 = q10ch4**((t_soisno(j) - q10ch4base)/10._r8)
-			! Adjust f_ch4 by the ratio
-			f_ch4_adj = f_ch4 * t_fact_ch4
-
-			! Remove CN nitrogen limitation, as methanogenesis is not N limited.
-			! Also remove (low) moisture limitation
-			if (ch4rmcnlim) then
-				if (fphr(j) > 0._r8) then
-					f_ch4_adj = f_ch4_adj / fphr(j)
+			if (patchtype /= 4) then
+				t_fact_ch4 = q10ch4**((t_soisno(j) - q10ch4base)/10._r8)
+				! Adjust f_ch4 by the ratio
+				f_ch4_adj = f_ch4 * t_fact_ch4
+	
+				! Remove CN nitrogen limitation, as methanogenesis is not N limited.
+				! Also remove (low) moisture limitation
+				if (ch4rmcnlim) then
+					if (fphr(j) > 0._r8) then
+						f_ch4_adj = f_ch4_adj / fphr(j)
+					end if
 				end if
+	
+			else ! lake
+				f_ch4_adj = 0.5_r8 ! For lakes assume no redox limitation. Production only depends on temp, soil C, and
+				! lifetime parameter.
 			end if
 	
-	
 			! If switched on, use pH factor for production based on spatial pH data defined in surface data.
-			if (usephfact)then 
+			if ((patchtype /= 4) .and. usephfact )then 
 				if (  pH >  pHmin .and.pH <  pHmax) then
 					pH_fact_ch4 = 10._r8**(-0.2235_r8*pH*pH + 2.7727_r8*pH - 8.6_r8)
 					! fitted function using data from Dunfield et al. 1993  
@@ -697,7 +835,7 @@ contains
 				! if no data, then no pH effects
 			end if
 	
-			! Redox factor                                
+			! Redox factor                                ??????????????????????????????????
 			if (j > jwt) then ! Assume lag in decay of alternative electron acceptors vertically
 				f_ch4_adj = f_ch4_adj * layer_sat_lag(j)
 			end if
@@ -717,26 +855,31 @@ contains
 			o2_decomp_depth(j) = base_decomp * partition_z / dz_soisno(j)
 			if (anoxia) then
 				! Divide off o_scalar to use potential O2-unlimited HR to represent aerobe demand for oxygen competition
-				if (o_scalar(j) > 0._r8) then
-					o2_decomp_depth(j) = o2_decomp_depth(j) / o_scalar(j)
+				if (patchtype /= 4) then
+					if (o_scalar(j) > 0._r8) then
+						o2_decomp_depth(j) = o2_decomp_depth(j) / o_scalar(j)
+					end if
 				end if
 			end if ! anoxia
 	    
 			! Add root respiration
-			o2_decomp_depth(j) = o2_decomp_depth(j) + rr_vr(j)/catomw/dz_soisno(j)
-			! [mol/m3/s]       = [mol/m3/s]         + [g C/m2/s]/[g C/mol C]/[m]
+			if (patchtype /= 4) then
+				o2_decomp_depth(j) = o2_decomp_depth(j) + rr_vr(j)/catomw/dz_soisno(j) ! mol/m^3/s
+				! g C/m2/s ! gC/mol O2 ! m
+			end if
 	
 			! Add oxygen demand for nitrification
 			if (use_nitrif_denitrif) then
-				o2_decomp_depth(j) = o2_decomp_depth(j) + pot_f_nit_vr(j) * 2.0_r8/14.0_r8
-				! [mol/m3/s]       = [mol/m3/s]         + [g N/m3/s]/[g N/mol N]
+				if (patchtype /= 4) then
+					o2_decomp_depth(j) = o2_decomp_depth(j) + pot_f_nit_vr(j) * 2.0_r8/14.0_r8
+					! g N/m^3/s           mol O2 / g N
+				end if
 			end if
 	
 			if (j  >  jwt) then ! Below the water table so anaerobic CH4 production can occur
 				! partition decomposition to layer
 				! turn into per volume-total by dz
-				ch4_prod_depth(j) = f_ch4_adj * base_decomp * partition_z / dz_soisno(j)
-				! [mol C/m3/s]    = [-]       * [mol C/m2/s]* [-]         / [m]
+				ch4_prod_depth(j) = f_ch4_adj * base_decomp * partition_z / dz_soisno(j)! [mol/m3-total/s]
 			else ! Above the WT
 				if (anoxicmicrosites) then
 					ch4_prod_depth(j) = f_ch4_adj * base_decomp * partition_z / dz_soisno(j) &
@@ -751,9 +894,9 @@ contains
 	end subroutine ch4_prod
 
 	!---------------------------------------------------------------------------
-	subroutine ch4_oxid (jwt,  sat, t_soisno, smp, vol_aqu, &
-		conc_o2_aqu_porsl, conc_ch4_aqu_porsl, &
-		ch4_oxid_depth, o2_oxid_depth) 
+	subroutine ch4_oxid (jwt,  sat,  deltim,  z_soisno,  dz_soisno,  zi_soisno, &
+		t_soisno,      smp,      vol_liq,    porsl,   conc_o2,   conc_ch4,              &
+		ch4_oxid_depth,          o2_oxid_depth) 
 		!-----------------------------------------------------------------------
 		! !DESCRIPTION:
 		! Oxidation is based on double Michaelis-Mentin kinetics, and is adjusted for low soil moisture.
@@ -766,12 +909,18 @@ contains
 			sat                       ! 0 = unsaturated; 1 = saturated 
 
 		real(r8), intent(in) :: &
+			deltim                 , &! land model time step (sec)
+			z_soisno (maxsnl+1:nl_soil)    , &! layer depth (m)
+			dz_soisno(maxsnl+1:nl_soil)    , &! layer thickness (m)
+			zi_soisno(maxsnl:nl_soil)      , &! interface level below a "z" level (m)
+
 			t_soisno (maxsnl+1:nl_soil)    , &! soil temperature (Kelvin)
 			smp      (1:nl_soil)   , &! soil matrix potential [mm]
-			vol_aqu  (1:nl_soil)   , &! liquid volumetric water content
+			vol_liq  (1:nl_soil)   , &! liquid volumetric water content
+			porsl    (1:nl_soil)   , &! volumetric soil water at saturation (porosity)
 
-			conc_o2_aqu_porsl  (1:nl_soil)   , &! aqueous phase O2 conc in each porosity (mol/m3)
-			conc_ch4_aqu_porsl (1:nl_soil)      ! aqueous phase CH4 conc in each porosity (mol/m3)
+			conc_o2  (1:nl_soil)   , &! O2 conc in each soil layer (mol/m3) 
+			conc_ch4 (1:nl_soil)      ! CH4 conc in each soil layer (mol/m3) 
 
 		real(r8), intent(out) :: &
 			ch4_oxid_depth (1:nl_soil)   , &! CH4 consumption rate via oxidation in each soil layer (mol/m3/s) 
@@ -780,8 +929,13 @@ contains
 		!-----------------------Local Variables---------------------------------
 		integer :: j                              ! indices
 		real(r8):: t0                             ! Base temperature for Q10
+		real(r8):: porevol                        ! air-filled volume ratio to total soil volume
+		real(r8):: vol_liq_min                    ! vol_liq restricted to be below porsl
+		real(r8):: conc_ch4_rel                   ! concentration with respect to water volume (mol/m^3 water)
+		real(r8):: conc_o2_rel                    ! concentration with respect to water volume (mol/m^3 water)
 		real(r8):: oxid_a                         ! Oxidation predicted by method A (temperature & enzyme limited) (mol CH4/m3/s)
 		real(r8):: smp_fact                       ! factor for reduction based on soil moisture (unitless)
+		real(r8):: k_h_cc, k_h_inv                ! see functions below for description
 		real(r8):: k_m_eff                        ! effective k_m
 		real(r8):: vmax_eff                       ! effective vmax 
 		!-----------------------------------------------------------------------
@@ -799,6 +953,8 @@ contains
 				vmax_eff = vmax_oxid_unsat
 			end if
 
+			porevol = max(porsl(j) - vol_liq(j), 0._r8)
+			vol_liq_min = min(porsl(j), vol_liq(j))
 			if (j <= jwt .and. smp(j) < 0._r8) then
 				smp_fact = exp(-smp(j)/smp_crit)
 				! Schnell & King, 1996, Figure 3
@@ -806,9 +962,22 @@ contains
 				smp_fact = 1._r8
 			end if
 
-			oxid_a              = vmax_eff     * vol_aqu* conc_ch4_aqu_porsl / (k_m_eff + conc_ch4_aqu_porsl) &
-			! [mol/m3/s]        = [mol/m3/s]   * [-]     [mol/m3-w]    [mol/m3-w]  [mol/m3-w]
-				* conc_o2_aqu_porsl / (k_m_o2 + conc_o2_aqu_porsl) &
+			if (j  <=  jwt) then ! Above the water table
+				k_h_inv = exp(-c_h_inv(1) * (1._r8 / t_soisno(j) - 1._r8 / kh_tbase) + log (kh_theta(1)))
+				k_h_cc = t_soisno(j) / k_h_inv * rgasLatm ! (4.21) Wania [(mol/m3w) / (mol/m3g)]
+				conc_ch4_rel = conc_ch4(j) / (vol_liq_min + porevol/k_h_cc)
+
+				k_h_inv = exp(-c_h_inv(2) * (1._r8 / t_soisno(j) - 1._r8 / kh_tbase) + log (kh_theta(2)))
+				k_h_cc = t_soisno(j) / k_h_inv * rgasLatm ! (4.21) Wania [(mol/m3w) / (mol/m3g)]
+				conc_o2_rel  = conc_o2(j) / (vol_liq_min + porevol/k_h_cc)
+			else
+				conc_ch4_rel = conc_ch4(j) / porsl(j)
+				conc_o2_rel  = conc_o2(j) / porsl(j)
+			endif
+
+			oxid_a              = vmax_eff     * vol_liq_min* conc_ch4_rel / (k_m_eff + conc_ch4_rel) &
+							![mol/m3-t/s]         [mol/m3-w/s]    [m3-w/m3-t]     [mol/m3-w]    [mol/m3-w]  [mol/m3-w]
+				* conc_o2_rel / (k_m_o2 + conc_o2_rel) &
 				* q10_ch4_oxid ** ((t_soisno(j) - t0) / 10._r8) * smp_fact
 
 			! For all landunits / levels, prevent oxidation if at or below freezing
@@ -817,14 +986,15 @@ contains
 			ch4_oxid_depth(j) = oxid_a
 			o2_oxid_depth(j) = ch4_oxid_depth(j) * 2._r8
 
-		end do  
+		end do
 	end subroutine ch4_oxid
 
-		!---------------------------------------------------------------------------
-	subroutine ch4_aere (jwt, sat, lai, deltim,&
-		z_soisno, dz_soisno, zi_soisno, t_soisno,&
-		rootfr, rootr, etr, grnd_ch4_cond, c_atm, annsum_npp,&
-		annavg_agnpp, annavg_bgnpp, conc_ch4, ch4_prod_depth,conc_ch4_aqu_porsl,conc_o2_aqu_porsl,&
+
+	!---------------------------------------------------------------------------
+	subroutine ch4_aere (patchtype, jwt, sat, lai,     deltim, &
+		z_soisno, dz_soisno,  zi_soisno,     t_soisno, vol_liq, porsl,  &
+		rootfr,   rootr, etr, grnd_ch4_cond, c_atm,    annsum_npp,      &
+		annavg_agnpp,    annavg_bgnpp, conc_o2, conc_ch4, ch4_prod_depth,&
 		ch4_aere_depth, ch4_tran_depth, o2_aere_depth)
 		!-----------------------------------------------------------------------
 		! !DESCRIPTION:
@@ -836,6 +1006,10 @@ contains
 		!-----------------------------------------------------------------------
 
 		!-----------------------Argument----------------------------------------
+		integer, intent(in) :: &
+			patchtype       ! land patch type (0=soil, 1=urban or built-up, 2=wetland,
+							! 3=land ice, 4=land water bodies, 99=ocean
+
 		integer , intent(in) :: &
 			jwt                    , &! index of the soil layer right above the water table (-) 
 			sat                       ! 0 = unsatured, 1 = saturated 
@@ -849,7 +1023,10 @@ contains
 			zi_soisno(maxsnl:nl_soil)      , &! interface level below a "z" level (m)
 
 			t_soisno (maxsnl+1:nl_soil)    , &! soil temperature (Kelvin)
+			vol_liq  (1:nl_soil)   , &! liquid volumetric water content
+			porsl    (1:nl_soil)   , &! volumetric soil water at saturation (porosity)
 			rootfr   (1:nl_soil)   , &! fraction of roots in each soil layer
+			
 			rootr    (1:nl_soil)   , &! effective fraction of roots in each soil layer (SMS method only)
 			! rootr here for effective per-layer transpiration, which may not be the same as rootfr
 			etr                    , &! transpiration rate [mm/s]
@@ -858,17 +1035,14 @@ contains
 			c_atm(3)               , &! CH4, O2, CO2 atmospheric conc  (mol/m3)
 
 			! These variables help us swap between big-leaf and fates boundary conditions
-			annsum_npp             , &! annual sum NPP (g C/m2/yr)
+			annsum_npp             , &! annual sum NPP (molC m-2 s-1)
 			annavg_agnpp           , &! annual avg aboveground NPP (gC/m2/s)
 			annavg_bgnpp           , &! annual avg belowground NPP (gC/m2/s)
 
 			! These variables help us swap between saturated and unsaturated boundary conditions
+			conc_o2  (1:nl_soil)        , &! O2 conc in each soil layer (mol/m3) 
 			conc_ch4 (1:nl_soil)        , &! CH4 conc in each soil layer (mol/m3) 
-			ch4_prod_depth (1:nl_soil)  , &! production of CH4 in each soil layer (mol/m3/s) 
-
-			conc_ch4_aqu_porsl (1:nl_soil) , &! aqueous phase CH4 conc in each porosity [mol/m3]
-			conc_o2_aqu_porsl (1:nl_soil)     ! aqueous phase O2 conc in each porosity [mol/m3]
-
+			ch4_prod_depth (1:nl_soil)     ! production of CH4 in each soil layer (mol/m3/s) 
 
 		real(r8), intent(out) :: &
 			ch4_aere_depth  (1:nl_soil)  , &! CH4 loss rate via aerenchyma in each soil layer (mol/m3/s) 
@@ -882,9 +1056,13 @@ contains
 		real(r8) :: tranloss(1:nl_soil)    ! loss due to transpiration (mol / m3 /s)
 		real(r8) :: aere    (1:nl_soil) 
 		real(r8) :: oxaere  (1:nl_soil)    ! (mol / m3 /s)
-		real(r8) :: poros_tiller           ! porosity for tiller 
 
 		real(r8) :: aeretran
+		real(r8) :: poros_tiller
+
+		! These pointers help us swap between saturated and unsaturated boundary conditions
+		real(r8), parameter :: smallnumber = 1.e-12_r8   
+
 		!-----------------------------------------------------------------------
 		! Initialize ch4_aere_depth
 		do j=1,nl_soil
@@ -893,30 +1071,35 @@ contains
 			o2_aere_depth(j) = 0._r8
 		end do
 
-		poros_tiller = 0.3
 
-		call SiteOxAere(jwt,  sat, lai, z_soisno, dz_soisno,  zi_soisno,  t_soisno,  &
-			rootfr, rootr, grnd_ch4_cond, etr, &
-			annsum_npp, annavg_agnpp, annavg_bgnpp, c_atm, conc_ch4_aqu_porsl,  conc_o2_aqu_porsl,&
-			tranloss, aere, oxaere, poros_tiller)
+		! point loop to partition aerenchyma flux into each soil layer
+		if (patchtype /= 4) then
 
-		do j = 1,nl_soil
-			! Impose limitation based on available methane during timestep
-			! By imposing the limitation here, don't allow aerenchyma access to methane from other Patches.
-			aeretran = min(aere(j)+tranloss(j), conc_ch4(j)/deltim + ch4_prod_depth(j))
-			ch4_aere_depth (j) = ch4_aere_depth(j) + aeretran
-			ch4_tran_depth (j) = ch4_tran_depth(j) + min(tranloss(j), aeretran)
-			o2_aere_depth  (j) = o2_aere_depth (j) + oxaere(j)
-		end do ! over levels
+			poros_tiller = 0.3
+
+			call SiteOxAere(jwt,  sat,lai,    z_soisno, dz_soisno,  zi_soisno,  t_soisno,  &
+			vol_liq,  porsl,  rootfr,   rootr,  poros_tiller,grnd_ch4_cond, etr,   &
+			annsum_npp, annavg_agnpp,   annavg_bgnpp,  c_atm,      conc_o2, conc_ch4,        &
+			tranloss, aere,   oxaere)
+
+			do j = 1,nl_soil
+				! Impose limitation based on available methane during timestep
+				! By imposing the limitation here, don't allow aerenchyma access to methane from other Patches.
+				aeretran = min(aere(j)+tranloss(j), conc_ch4(j)/deltim + ch4_prod_depth(j))
+				ch4_aere_depth (j) = ch4_aere_depth(j) + aeretran
+				ch4_tran_depth (j) = ch4_tran_depth(j) + min(tranloss(j), aeretran)
+				o2_aere_depth  (j) = o2_aere_depth (j) + oxaere(j)
+			end do ! over levels
+		end if ! not lake
 
 	end subroutine ch4_aere
 
 
 	!--------------------------------------------------------------------------- 
-	subroutine SiteOxAere(jwt,  sat, lai, z_soisno, dz_soisno,  zi_soisno,  t_soisno,  &
-	 	rootfr, rootr, grnd_ch4_cond, etr, &
-		annsum_npp, annavg_agnpp, annavg_bgnpp, c_atm, conc_ch4_aqu_porsl,  conc_o2_aqu_porsl,&
-		tranloss, aere, oxaere, poros_tiller)
+	subroutine SiteOxAere(jwt,  sat, lai,    z_soisno, dz_soisno,  zi_soisno,  t_soisno,  &
+		vol_liq,  porsl,  rootfr,   rootr,  poros_tiller,grnd_ch4_cond, etr,   &
+		annsum_npp, annavg_agnpp,   annavg_bgnpp,  c_atm,      conc_o2, conc_ch4,        &
+		tranloss, aere,   oxaere)
 		!-----------------------------------------------------------------------
 		! !DESCRIPTION:
 		! Site(column) level fluxes for O2 gain rate via
@@ -936,19 +1119,22 @@ contains
 			zi_soisno(maxsnl:nl_soil)      , &! interface level below a "z" level (m)
 
 			t_soisno (maxsnl+1:nl_soil)    , &! soil temperature (Kelvin)
+			vol_liq  (1:nl_soil)   , &! liquid volumetric water content
+			porsl    (1:nl_soil)   , &! volumetric soil water at saturation (porosity)
 			rootfr   (1:nl_soil)   , &! fraction of roots in each soil layer
 			rootr    (1:nl_soil)   , &! root resistance of a layer, all layers sum to 1
 			grnd_ch4_cond          , &! tracer conductance for boundary layer [m/s] 
 			etr                    , &! transpiration rate [mm/s]
 
-			annsum_npp             , &! annual sum NPP (g C/m2/yr)
-			annavg_agnpp           , &! annual average aboveground NPP (g C/m2/s)
-			annavg_bgnpp           , &! annual average belowground NPP (g C/m2/s)
+
+
+			annsum_npp             , &! annual sum NPP (molC m-2 yr-1)
+			annavg_agnpp           , &! annual average aboveground NPP (gC/m2/s)
+			annavg_bgnpp           , &! annual average belowground NPP (gC/m2/s)
 
 			c_atm(3)               , &! CH4, O2, CO2 atmospheric conc  (mol/m3)
-
-			conc_ch4_aqu_porsl (1:nl_soil) , &! aqueous phase CH4 conc in each porosity [mol/m3]
-			conc_o2_aqu_porsl (1:nl_soil)     ! aqueous phase O2 conc in each porosity [mol/m3]
+			conc_o2  (1:nl_soil)   , &! O2 conc in each soil layer (mol/m3) 
+			conc_ch4 (1:nl_soil)      ! CH4 conc in each soil layer (mol/m3) 
 
 		real(r8), intent(out) :: &
 			tranloss        (1:nl_soil)  , &! CH4 in soil water tran rate via plant transpiration in each soil layer (mol/m3/s) 
@@ -956,87 +1142,96 @@ contains
 			oxaere          (1:nl_soil)     ! O2 gain rate via aerenchyma in each soil layer (mol/m3/s) 
 
 		real(r8), intent(inout) :: &
-			poros_tiller                    ! porosity for tiller
+			poros_tiller           
 
 		!-----------------------Local Variables---------------------------------         
 		integer  :: j
-		real(r8) :: area_tiller ! cross-sectional area of tillers (m2/m2)
+		real(r8) :: oxdiffus
+		real(r8) :: area_tiller ! cross-sectional area of tillers (m^2/m^2)
+		real(r8) :: diffus_aere ! gas diffusivity through aerenchyma (m^2/s)
 		real(r8) :: m_tiller 
 		real(r8) :: n_tiller 
+		real(r8) :: vol_liq_min
+		real(r8) :: k_h_cc, k_h_inv
 		real(r8) :: anpp        ! annual sum NPP (gC/m2/yr) 
 		real(r8) :: nppratio    ! bg/sum NPP
-		real(r8) :: aere_ch4_resis    ! aerenchyma resistance [s/m]
-		real(r8) :: grnd_ch4_resis    ! boundary layer resistance [s/m]
-		real(r8) :: aere_o2_resis    ! aerenchyma resistance [s/m]
-		real(r8) :: grnd_o2_resis    ! boundary layer resistance [s/m]
+		real(r8) :: conc_ch4_wat
+		real(r8) :: aerecond    ! aerenchyma conductance (m/s)
 		real(r8), parameter :: smallnumber = 1.e-12_r8
 		!-----------------------------------------------------------------------
 		! This parameter is poorly constrained and should be done on a patch-specific basis...
-
-		! Attn EK: This calculation of aerenchyma properties is very uncertain. Let's check in once all
-		! the new components are in; if there is any tuning to be done to get a realistic global flux,
-		! this would probably be the place.  We will have to document clearly in the Tech Note
-		! any major changes from the Riley et al. 2011 version. (There are a few other minor ones.)
-
-		anpp = annsum_npp 
-		anpp = max(anpp, 0._r8) ! NPP can be negative b/c of consumption of storage pools
-
-		if (annavg_agnpp /= spval .and. annavg_bgnpp /= spval .and. &
-			annavg_agnpp > 0._r8 .and. annavg_bgnpp > 0._r8) then
-			nppratio = annavg_bgnpp / (annavg_agnpp + annavg_bgnpp)
-		else
-			nppratio = 0.5_r8
-		end if
+		diffus_aere = d_con_g(1,1)*1.e-4_r8  ! for CH4: m^2/s
 
 		do j=1,nl_soil
 			! Calculate transpiration loss
 			if (transpirationloss .and. lai > 0) then
-				tranloss(j) = conc_ch4_aqu_porsl * rootr(j)*etr / dz_soisno(j) / 1000._r8
-				! [mol/m3/s]= [mol/m3]           * [-]     *[mm/s]/ [m]        /   [mm/m]
+				! Calculate water concentration
+				vol_liq_min = min(porsl(j), vol_liq(j))
+				k_h_inv = exp(-c_h_inv(1) * (1._r8 / t_soisno(j) - 1._r8 / kh_tbase) + log (kh_theta(1)))
+				k_h_cc = t_soisno(j) / k_h_inv * rgasLatm
+				conc_ch4_wat = conc_ch4(j) / ( (porsl(j)-vol_liq_min)/k_h_cc + vol_liq_min)
+
+				tranloss(j) = conc_ch4_wat * rootr(j)*etr / dz_soisno(j) / 1000._r8
+				! mol/m3/s    mol/m3                  mm / s  m           mm/m
 				! Use rootr here for effective per-layer transpiration, which may not be the same as rootfr
 				tranloss(j) = max(tranloss(j), 0._r8) ! in case transpiration is pathological
 			else
 				tranloss(j) = 0._r8
 			end if
 
-			! Calculate aerenchyma diffusion   
+			! Calculate aerenchyma diffusion
 			if (j > jwt .and. t_soisno(j) > tfrz .and. lai > 0) then ! Below water table
+				! Attn EK: This calculation of aerenchyma properties is very uncertain. Let's check in once all
+				! the new components are in; if there is any tuning to be done to get a realistic global flux,
+				! this would probably be the place.  We will have to document clearly in the Tech Note
+				! any major changes from the Riley et al. 2011 version. (There are a few other minor ones.)
+
+				anpp = annsum_npp ! g C / m^2/yr
+				anpp = max(anpp, 0._r8) ! NPP can be negative b/c of consumption of storage pools
+
+				if (annavg_agnpp /= spval .and. annavg_bgnpp /= spval .and. &
+					annavg_agnpp > 0._r8 .and. annavg_bgnpp > 0._r8) then
+					nppratio = annavg_bgnpp / (annavg_agnpp + annavg_bgnpp)
+				else
+					nppratio = 0.5_r8
+				end if
+
 				! Estimate area of tillers (see Wania thesis)
 				!m_tiller = anpp * r_leaf_root * lai ! (4.17 Wania)
 				!m_tiller = 600._r8 * 0.5_r8 * 2._r8  ! used to be 300
 				! Note: this calculation is based on Arctic graminoids, and should be refined for woody plants, if not
 				! done on a PFT-specific basis.
 
-				m_tiller = anpp * nppratio * wet_lai  !replace the elai(p) by constant 4 (by Xiyan Xu, 05/2016)
-				! anpp as the sum carbon storage    [g C/m2/yr] as [g C/m2]
-				! [g C/m2] = [g C/m2] * [-] * [m2/m2]
+				m_tiller = anpp * nppratio * 4._r8  !replace the elai(p) by constant 4 (by Xiyan Xu, 05/2016)
 
-				n_tiller = m_tiller / tiller_C
-				! [tiller/m2] = [g C/m2]/ [g C/tiller]
+
+				n_tiller = m_tiller / 0.22_r8
+
 				if (sat == 0) then ! unsaturate
 					poros_tiller = poros_tiller * unsat_aere_ratio
 				end if
 
 				poros_tiller = max(poros_tiller, porosmin)
 
-				area_tiller = scale_factor_aere * n_tiller * poros_tiller * PI * aere_radius**2._r8
-				! [m2/m2]   = [-]               * [tiller/m2] * [-]       * [-]* [m2/tiller]
+				area_tiller = scale_factor_aere * n_tiller * poros_tiller * PI * 2.9e-3_r8**2._r8 ! (m2/m2)
 
-				aere_ch4_resis = 1._r8/((area_tiller * rootfr(j) * d_con_g(1,1) * 1e-4_r8 / (z_soisno(j)*rob))+smallnumber)
-				! [s/m]         = /([m2/m2]          * [-]       * [m2/s]                 / [m]         /[-])
+				k_h_inv = exp(-c_h_inv(1) * (1._r8 / t_soisno(j) - 1._r8 / kh_tbase) + log (kh_theta(1))) ! (4.12) Wania (L atm/mol)
+				k_h_cc = t_soisno(j) / k_h_inv * rgasLatm ! (4.21) Wania [(mol/m3w) / (mol/m3g)]
+				aerecond = area_tiller * rootfr(j) * diffus_aere / (z_soisno(j)*rob)
 				! Add in boundary layer resistance
-				grnd_ch4_resis = 1._r8/(grnd_ch4_cond+smallnumber)
+				aerecond = 1._r8 / (1._r8/(aerecond+smallnumber) + 1._r8/(grnd_ch4_cond+smallnumber))
 
-				aere(j) = (conc_ch4_gas_porsl(j) - c_atm(1)) / (dz_soisno(j)*(aere_ch4_resis + grnd_ch4_resis)) 
-				! [mol/m3/s] = [mol/m3]                      / [m]          / [s/m]
+				aere(j) = aerecond * (conc_ch4(j)/porsl(j)/k_h_cc - c_atm(1)) / dz_soisno(j) ![mol/m3-total/s]
 				!ZS: Added porsl & Henry's const.
 				aere(j) = max(aere(j), 0._r8) ! prevent backwards diffusion
 
 				! Do oxygen diffusion into layer
-				aere_o2_resis = 1._r8/((area_tiller * rootfr(j) * d_con_g(2,1) * 1e-4_r8 / (z_soisno(j)*rob)) + smallnumber)
-				grnd_o2_resis = 1._r8/(grnd_ch4_cond+smallnumber)
-		
-				oxaere(j) = -(conc_o2_gas_porsl(j) - c_atm(2)) / (dz_soisno(j)*(aere_o2_resis + grnd_o2_resis)) ![mol/m3-total/s]
+				k_h_inv = exp(-c_h_inv(2) * (1._r8 / t_soisno(j) - 1._r8 / kh_tbase) + log (kh_theta(2)))
+				k_h_cc = t_soisno(j) / k_h_inv * rgasLatm ! (4.21) Wania [(mol/m3w) / (mol/m3g)]
+				oxdiffus = diffus_aere * d_con_g(2,1) / d_con_g(1,1) ! adjust for O2:CH4 molecular diffusion
+				aerecond = area_tiller * rootfr(j) * oxdiffus / (z_soisno(j)*rob)
+				aerecond = 1._r8 / (1._r8/(aerecond+smallnumber) + 1._r8/(grnd_ch4_cond+smallnumber))
+				oxaere(j) = -aerecond *(conc_o2(j)/porsl(j)/k_h_cc - c_atm(2)) / dz_soisno(j) ![mol/m3-total/s]
 				oxaere(j) = max(oxaere(j), 0._r8)
 				! Diffusion in is positive; prevent backwards diffusion
 				if ( .not. use_aereoxid_prog ) then ! fixed aere oxid proportion; will be done in ch4_tran
@@ -1050,10 +1245,11 @@ contains
 
   	end subroutine SiteOxAere
 
+	
 	!---------------------------------------------------------------------------
-	subroutine ch4_ebul (jwt, sat, deltim, &
-		z_soisno, dz_soisno, zi_soisno, forc_pbot, &
-		t_soisno, wdsrf, conc_ch4, conc_ch4_gas_porsl,&
+	subroutine ch4_ebul (patchtype, jwt, sat, deltim, &
+		z_soisno, dz_soisno, zi_soisno, lakedepth, forc_pbot,&
+		t_soisno, lake_icefrac, porsl, wdsrf, conc_ch4,&
 		ch4_ebul_depth)
 		!-----------------------------------------------------------------------
 		! !DESCRIPTION:
@@ -1064,56 +1260,76 @@ contains
 		!-----------------------------------------------------------------------
 
 		!-----------------------Argument---------- -----------------------------
+		integer, intent(in) :: &
+			patchtype           ! land patch type (0=soil, 1=urban or built-up, 2=wetland,
+									  ! 3=land ice, 4=land water bodies, 99=ocean
+
 		integer , intent(in) :: &
-			jwt                        , &! index of the soil layer right above the water table (-) 
-			sat                           ! 0 = unsaturated; 1 = saturated 
+			jwt                     , &! index of the soil layer right above the water table (-) 
+			sat                        ! 0 = unsaturated; 1 = saturated 
 
 		real(r8), intent(in) :: &
 			deltim                     , &! land model time step (sec)
-			z_soisno (maxsnl+1:nl_soil), &! layer depth (m)
-			dz_soisno(maxsnl+1:nl_soil), &! layer thickness (m)
-			zi_soisno(maxsnl:nl_soil)  , &! interface level below a "z" level (m)
+			z_soisno (maxsnl+1:nl_soil)    , &! layer depth (m)
+			dz_soisno(maxsnl+1:nl_soil)    , &! layer thickness (m)
+			zi_soisno(maxsnl:nl_soil)      , &! interface level below a "z" level (m)
 
-			forc_pbot                  , &! atm bottom level pressure (or reference height) (Pa)
-			t_soisno (maxsnl+1:nl_soil), &! soil temperature (Kelvin)
+			lakedepth                  , &! lake depth
+			forc_pbot                  , &! atm bottom level pressure (or reference height) (pa)
+			t_soisno (maxsnl+1:nl_soil)    , &! soil temperature (Kelvin)
+			lake_icefrac (1:nl_lake)   , &! lake mass fraction of lake layer that is frozen
+			porsl    (1:nl_soil)       , &! volumetric soil water at saturation (porosity)
+			! vol_liq  (1:nl_soil)       , &! liquid volumetric water content
 			wdsrf                      , &! depth of surface water [mm]
-			conc_ch4       (1:nl_soil) , &! CH4 conc in each soil layer (mol/m3)
-
-		   conc_ch4_gas_porsl (1:nl_soil)  ! gas phase CH4 conc in each porosity (mol/m3)
+			conc_ch4       (1:nl_soil)    ! CH4 conc in each soil layer (mol/m3) 
 
 		real(r8), intent(out) :: &
-			ch4_ebul_depth (1:nl_soil)    ! CH4 loss rate via ebullition in each soil layer (mol/m3/s)
+			ch4_ebul_depth (1:nl_soil)   ! CH4 loss rate via ebullition in each soil layer (mol/m3/s)
 
 		!-----------------------Local Variables---------------------------------
 		integer :: j      ! indices
 
-		real(r8) :: vgc     ! gas phase volumetric CH4 content (m3 CH4/m3 pore air)
+		real(r8) :: vgc     ! volumetric CH4 content (m3 CH4/m3 pore air)
 		real(r8) :: vgc_min ! minimum aqueous CH4 content when ebullition ceases
+		real(r8) :: k_h_inv ! 
 		real(r8) :: k_h     ! 
+		real(r8) :: k_h_cc  ! 
 		real(r8) :: pressure! sum atmospheric and hydrostatic pressure
+		real(r8) :: bubble_f! CH4 content in gas bubbles (Kellner et al. 2006)
 		real(r8) :: ebul_timescale
 		!-----------------------------------------------------------------------
+		bubble_f = 0.57_r8 ! CH4 content in gas bubbles (Kellner et al. 2006)
 		vgc_min = vgc_max
 		ebul_timescale = deltim ! Allow fast bubbling
+
+		! IF (.not. DEF_USE_VARIABLY_SATURATED_FLOW) THEN
+		! 	wdsrf = 0
+		! END IF
 
 		! column loop to estimate ebullition CH4 flux from each soil layer
 		do j=1,nl_soil
 			if (j  >  jwt .and. t_soisno(j) > tfrz) then ! Ebullition occurs only below the water table
-				pressure = forc_pbot + denh2o * grav * (z_soisno(j)-zi_soisno(jwt)) 
-				! [Pa]   = [Pa]      + [kg/m3]* [m/s2]* [m]
-				! [Pa]   = [N/m2] = [kg]*[m/s2]/[m2] = [kg/m/s2]
-				if (sat == 1 ) then ! Add ponding pressure head
-					pressure = pressure + denh2o * grav * wdsrf/1000._r8
-					! [Pa]   = [Pa]     + [kg/m3]* [m/s2]* [mm]/[mm/m]
+				k_h_inv = exp(-c_h_inv(1) * (1._r8 / t_soisno(j) - 1._r8 / kh_tbase) + log (kh_theta(1))) ! (4.12 Wania) (atm.L/mol)
+				k_h = 1._r8 / k_h_inv ! (mol/L.atm)
+				k_h_cc = t_soisno(j) * k_h * rgasLatm ! (4.21) Wania [(mol/m3w) / (mol/m3g)] 
+
+				if (patchtype/=4) then
+					pressure = forc_pbot + denh2o * grav * (z_soisno(j)-zi_soisno(jwt)) ! (Pa)
+					if (sat == 1 ) then ! Add ponding pressure head
+						pressure = pressure + denh2o * grav * wdsrf/1000._r8
+						! mm     / mm/m
+					end if
+				else
+					pressure = forc_pbot + denh2o * grav * (z_soisno(j) + lakedepth)
 				end if
 
 				! Compare partial pressure to ambient pressure.
-				vgc = conc_ch4_gas_porsl(j) * rgasm * t_soisno(j) / pressure
-				! [-]= [mol/m3]           * [Pa*m3/K/mol]*[K]   / [Pa]
+				vgc = conc_ch4(j) / porsl(j) / k_h_cc * rgasm * t_soisno(j) / pressure
+				! [mol/m3t]      [m3w/m3t]   [m3g/m3w]  [Pa/(mol/m3g)]          [Pa]
 
 				if (vgc > vgc_max * bubble_f) then ! If greater than max value, remove amount down to vgc_min
 					ch4_ebul_depth(j) = (vgc - vgc_min * bubble_f) * conc_ch4(j) / ebul_timescale
-					! [mol/m3/s]      = [-]                        * [mol/m3]    / [s]
+					! [mol/m3t/s]                                       [mol/m3t]         [s]
 				else
 					ch4_ebul_depth(j) = 0._r8
 				endif
@@ -1121,16 +1337,20 @@ contains
 			else ! above the water table or freezing
 				ch4_ebul_depth(j) = 0._r8
 			endif ! below the water table and not freezing
+
+			! Prevent ebullition from reaching the surface for frozen lakes
+			! lake_icefrac(1=the first lake, not soil)
+			if (patchtype==4 .and. lake_icefrac(1) > 0.1_r8) ch4_ebul_depth(j) = 0._r8
 		end do ! j
 
 	end subroutine ch4_ebul
 
-		!---------------------------------------------------------------------------
+	!---------------------------------------------------------------------------
 	subroutine ch4_tran (patchtype, &
 		lb, snl, jwt, sat,&
 		lon, lat, deltim, z_soisno, dz_soisno, zi_soisno,  t_soisno, t_grnd, &
-	 	porsl, wliq_soisno, wice_soisno, wdsrf, bsw, c_atm, ch4_prod_depth, o2_aere_depth,&
-		cellorg,t_h2osfc, organic_max, k_h_cc, conc_ch4_gas_porsl,conc_ch4_aqu_porsl,conc_o2_gas_porsl,conc_o2_aqu_porsl,vol_aqu,vol_gas,&
+		vol_liq, porsl, wliq_soisno, wice_soisno, wdsrf, bsw, c_atm, ch4_prod_depth, o2_aere_depth,&
+		cellorg,t_h2osfc, organic_max, &
 		o2stress, ch4stress, ch4_surf_aere, ch4_surf_ebul, ch4_surf_diff, ch4_ebul_total, &
 		ch4_oxid_depth, ch4_aere_depth, ch4_ebul_depth, &
 		grnd_ch4_cond, o2_oxid_depth, o2_decomp_depth, conc_o2, conc_ch4 )
@@ -1156,66 +1376,59 @@ contains
 
 
 		integer , intent(in) :: &
-			lb                , &! lower bound of array (snl+1)
+			lb               , &! lower bound of array (snl+1)
 			snl				  , &!  number of snow layers     (-5~-1)
-			jwt               , &! index of the soil layer right above the water table (-) 
-			sat                  ! 0 = unsaturated; 1 = saturated 
+			jwt              , &! index of the soil layer right above the water table (-) 
+			sat                 ! 0 = unsaturated; 1 = saturated 
 
 		real(r8), intent(in) :: &
-			lon   	   				        , &! logitude 
-			lat     	   			        , &! latitude 
- 
-			deltim                  	    , &! land model time step (sec)
+			lon   	   				   , &! logitude 
+			lat     	   			   , &! latitude 
+
+			deltim                  	, &! land model time step (sec)
 			z_soisno (maxsnl+1:nl_soil)   	, &! layer depth (m)
 			dz_soisno(maxsnl+1:nl_soil)   	, &! layer thickness (m)
 			zi_soisno(maxsnl:nl_soil)   	, &! interface level below a "z" level (m)
 
 
 			t_soisno (maxsnl+1:nl_soil)    	, &! soil temperature (Kelvin)
-			t_grnd                 		    , &! ground surface temperature [k]
+			t_grnd                 		, &! ground surface temperature [k]
 
-			porsl             (1:nl_soil)   , &! volumetric soil water at saturation (porosity)
-			wliq_soisno(maxsnl+1:nl_soil)	, &! liquid water in layers [kg/m2]
+			vol_liq  (1:nl_soil)   		, &! liquid volumetric water content
+			porsl    (1:nl_soil)   		, &! volumetric soil water at saturation (porosity)
+			wliq_soisno(maxsnl+1:nl_soil)		, &! liquid water in layers [kg/m2]
 			wice_soisno(maxsnl+1:nl_soil) 	, &! ice lens in layers [kg/m2]
-			wdsrf                  		    , &! depth of surface water [mm]
-			bsw               (1:nl_soil)   , &! Clapp and Hornberger "b" (nlevgrnd)             
+			wdsrf                  		, &! depth of surface water [mm]
+			bsw      (1:nl_soil)   		, &! Clapp and Hornberger "b" (nlevgrnd)             
 
-			c_atm(3)               		    , &! CH4, O2, CO2 atmospheric conc  (mol/m3)
+			c_atm(3)               		, &! CH4, O2, CO2 atmospheric conc  (mol/m3)
 
-			ch4_prod_depth    (1:nl_soil)   , &! production of CH4 in each soil layer (mol/m3/s) 
-			o2_aere_depth     (1:nl_soil)   , &! O2 gain rate via aerenchyma in each soil layer (mol/m3/s) 
+			ch4_prod_depth    (1:nl_soil)  , &! production of CH4 in each soil layer (mol/m3/s) 
+			o2_aere_depth     (1:nl_soil)  , &! O2 gain rate via aerenchyma in each soil layer (mol/m3/s) 
 
 
-			cellorg           (1:nl_soil)   , &! column 3D org (kg/m^3 organic matter)
-			t_h2osfc               		    , &! surface water temperature               
-			organic_max               	    , &! organic matter content (kg m-3) where soil is assumed to act like peat
-
-			k_h_cc(0:nl_soil,ngases)        , &! ratio of mol/m3 in liquid to mol/m3 in gas
-			conc_ch4_gas_porsl(1:nl_soil)   , &! gas phase CH4 conc in each porosity (mol/m3)
-			conc_ch4_aqu_porsl(1:nl_soil)   , &! aqueous phase CH4 conc in each porosity (mol/m3)
-			conc_o2_gas_porsl (1:nl_soil)   , &! gas phase O2 conc in each porosity (mol/m3)
-			conc_o2_aqu_porsl (1:nl_soil)   , &! aqueous phase O2 conc in each porosity (mol/m3)
-			vol_aqu           (1:nl_soil)   , &
-			vol_gas           (1:nl_soil)
+			cellorg  (1:nl_soil)   		, &! column 3D org (kg/m^3 organic matter)
+			t_h2osfc               		, &! surface water temperature               
+			organic_max               		! organic matter content (kg m-3) where soil is assumed to act like peat
 
 		real(r8), intent(out) :: &
-			o2stress          (1:nl_soil)   , &! Ratio of oxygen available to that demanded by roots, aerobes, & methanotrophs
-			ch4stress         (1:nl_soil)   , &! Ratio of methane available to the total per-timestep methane sinks 
-			ch4_surf_aere                   , &! Total column CH4 aerenchyma (mol/m2/s)
-			ch4_surf_ebul                   , &! CH4 ebullition to atmosphere (mol/m2/s)
-			ch4_surf_diff                   , &! CH4 surface flux (mol/m2/s)
+			o2stress          (1:nl_soil)  , &! Ratio of oxygen available to that demanded by roots, aerobes, & methanotrophs
+			ch4stress         (1:nl_soil)  , &! Ratio of methane available to the total per-timestep methane sinks 
+			ch4_surf_aere                  , &! Total column CH4 aerenchyma (mol/m2/s)
+			ch4_surf_ebul                  , &! CH4 ebullition to atmosphere (mol/m2/s)
+			ch4_surf_diff                  , &! CH4 surface flux (mol/m2/s)
 			ch4_ebul_total                    ! Total column CH4 ebullition (mol/m2/s)
 
 		real(r8), intent(inout) :: &
-			ch4_oxid_depth    (1:nl_soil)   , &! InOut: CH4 consumption rate via oxidation in each soil layer (mol/m3/s) 
-			ch4_aere_depth    (1:nl_soil)   , &! InOut: CH4 loss rate via aerenchyma in each soil layer (mol/m3/s) 
-			ch4_ebul_depth    (1:nl_soil)   , &! InOut: CH4 loss rate via ebullition in each soil layer (mol/m3/s)
-			o2_oxid_depth     (1:nl_soil)   , &! InOut: O2 loss rate via ebullition in each soil layer (mol/m3/s) 
-			o2_decomp_depth   (1:nl_soil)   , &! InOut: O2 consumption during decomposition in each soil layer (mol/m3/s)
+			ch4_oxid_depth    (1:nl_soil)  , &! InOut: CH4 consumption rate via oxidation in each soil layer (mol/m3/s) 
+			ch4_aere_depth    (1:nl_soil)  , &! InOut: CH4 loss rate via aerenchyma in each soil layer (mol/m3/s) 
+			ch4_ebul_depth    (1:nl_soil)  , &! InOut: CH4 loss rate via ebullition in each soil layer (mol/m3/s)
+			o2_oxid_depth     (1:nl_soil)  , &! InOut: O2 loss rate via ebullition in each soil layer (mol/m3/s) 
+			o2_decomp_depth   (1:nl_soil)  , &! InOut: O2 consumption during decomposition in each soil layer (mol/m3/s)
 
-			grnd_ch4_cond                   , &! InOut: tracer conductance for boundary layer [m/s]  
-			conc_o2           (1:nl_soil)   , &! InOut: O2 conc in each soil layer (mol/m3) 
-			conc_ch4          (1:nl_soil)      ! InOut: CH4 conc in each soil layer (mol/m3) 
+			grnd_ch4_cond                  , &! InOut: tracer conductance for boundary layer [m/s]  
+			conc_o2           (1:nl_soil)  , &! InOut: O2 conc in each soil layer (mol/m3) 
+			conc_ch4          (1:nl_soil)     ! InOut: CH4 conc in each soil layer (mol/m3) 
 
   		!-----------------------Local Variables------------------------------
 		integer :: j,s,i			                                               ! indices
@@ -1226,10 +1439,13 @@ contains
 		real(r8) :: rt (0:nl_soil)                     ! "r" vector for tridiagonal solution
 		real(r8) :: f_a                                                        ! air-filled fraction of available pore space
 		real(r8) :: diffus (0:nl_soil)                 ! diffusivity (m2/s)
+		real(r8) :: k_h_inv                                                    ! 1/Henry's Law Constant in Latm/mol
+		real(r8) :: k_h_cc(0:nl_soil,ngases)           ! ratio of mol/m3 in liquid to mol/m3 in gas
 		real(r8) :: dzj                                                        ! 
 		real(r8) :: dp1_zp1 (0:nl_soil)                ! diffusivity/delta_z for next j
 		real(r8) :: dm1_zm1 (0:nl_soil)                ! diffusivity/delta_z for previous j
 		real(r8) :: t_soisno_c                                                 ! soil temperature   (maxsnl+1:nl_soil)
+		real(r8) :: eps                                                        ! either epsilon_a or epsilon_w, depending on where in soil, wrt WT
 		real(r8) :: deficit                                                    ! mol CH4 /m^2 that must be subtracted from diffusive flux to atm. to make up
 		! for keeping concentrations always above zero
 		real(r8) :: conc_ch4_bef(1:nl_soil)            ! concentration at the beginning of the timestep
@@ -1237,10 +1453,11 @@ contains
 		real(r8) :: conc_ch4_rel(0:nl_soil)            ! Concentration per volume of air or water
 		real(r8) :: conc_o2_rel(0:nl_soil)             ! Concentration per volume of air or water
 		real(r8) :: conc_ch4_rel_old(0:nl_soil)        ! Concentration during last Crank-Nich. loop
+		real(r8) :: vol_liq_min(1:nl_soil)          ! vol_liq restricted to be <= porsl
 		real(r8), parameter :: smallnumber = 1.e-12_r8
 		real(r8) :: snowdiff                                                   ! snow diffusivity (m^2/s)
-		real(r8) :: snow_resis                           ! Cumulative Snow resistance (s/m). Also includes
-		real(r8) :: pond_resis                                                    ! Additional resistance from ponding, up to pondmx water on top of top soil layer (s/m)
+		real(r8) :: snowres                           ! Cumulative Snow resistance (s/m). Also includes
+		real(r8) :: pondres                                                    ! Additional resistance from ponding, up to pondmx water on top of top soil layer (s/m)
 		real(r8) :: pondz                                                      ! Depth of ponding (m)
 		real(r8) :: ponddiff                                                   ! Pondwater diffusivity (m^2/s)
 		real(r8) :: spec_grnd_cond(1:ngases)            ! species grnd conductance (s/m)
@@ -1253,6 +1470,7 @@ contains
 		real(r8) :: source_old (1:nl_soil,1:ngases)    ! source from last time step !Currently deprecated
 		real(r8) :: om_frac                                                    ! organic matter fraction
 		real(r8) :: o2demand, ch4demand                                        ! mol/m^3/s
+		real(r8) :: liqfrac(1:nl_soil)
   		!-----------------------------------------------------------------------
 		! Perform competition for oxygen and methane in each soil layer if demands over the course of the timestep
 		! exceed that available. Assign to each process in proportion to the quantity demanded in the absense of
@@ -1318,6 +1536,22 @@ contains
 			if (j == 1) ch4_ebul_total = 0._r8
 			ch4_ebul_total = ch4_ebul_total + ch4_ebul_depth(j) * dz_soisno(j)
 		end do
+  
+		! Set the Henry's Law coefficients
+		do j = 0,nl_soil
+			do s=1,2         
+				if (j == 0) then
+					k_h_inv = exp(-c_h_inv(s) * (1._r8 / t_grnd - 1._r8 / kh_tbase) + log (kh_theta(s)))
+					! (4.12) Wania (L atm/mol)
+					k_h_cc(j,s) = t_grnd / k_h_inv * rgasLatm ! (4.21) Wania [(mol/m3w) / (mol/m3g)]
+				else
+					k_h_inv = exp(-c_h_inv(s) * (1._r8 / t_soisno(j) - 1._r8 / kh_tbase) + log (kh_theta(s)))
+					! (4.12) Wania (L atm/mol)
+					k_h_cc(j,s) = t_soisno(j) / k_h_inv * rgasLatm ! (4.21) Wania [(mol/m3w) / (mol/m3g)]
+				end if
+			end do
+		end do
+  
   
 		! Set the source term for each species (no need to do j=0, since epsilon_t and source not used there)
 		! Note that because of the semi-implicit diffusion and the 30 min timestep combined with explicit
@@ -1390,16 +1624,27 @@ contains
 				conc_ch4_rel(j) = c_atm(1)
 				conc_o2_rel(j)  = c_atm(2)
 			else
+				vol_liq_min(j) = min(porsl(j), vol_liq(j))
+				! liqfrac(j) = 1._r8
+				if (ch4frzout) then
+					liqfrac(j) = max(0.05_r8, (wliq_soisno(j)/denh2o+smallnumber)/ &
+					(wliq_soisno(j)/denh2o+wice_soisno(j)/denice+smallnumber))
+				else
+					liqfrac(j) = 1._r8
+				end if
 				if (j <= jwt) then  ! Above the WT
-					epsilon_t(j,s) = porsl(j)- (1._r8-k_h_cc(j,s))*vol_aqu(j)
-					conc_ch4_rel(j) = conc_ch4_gas_porsl(j)
-					conc_o2_rel(j)  = conc_o2_gas_porsl(j)
+					do s=1,2
+						epsilon_t(j,s) = porsl(j)- (1._r8-k_h_cc(j,s))*vol_liq_min(j)*liqfrac(j)
+						!!!!!!!!!! Here, based on the formula derivation, it needs to be divided by another k_h_cc
+					end do
 					! Partition between the liquid and gas phases. The gas phase will drive the diffusion.
 				else ! Below the WT
-					epsilon_t(j,s) = porsl(j)
-					conc_ch4_rel(j) = conc_ch4_aqu_porsl(j)
-					conc_o2_rel(j)  = conc_o2_aqu_porsl(j)
+					do s=1,2
+						epsilon_t(j,s) = porsl(j)*liqfrac(j)
+					end do
 				end if
+				conc_ch4_rel(j) = conc_ch4(j)/epsilon_t(j,1)
+				conc_o2_rel(j)  = conc_o2(j) /epsilon_t(j,2)
 			end if
 		end do
 
@@ -1411,37 +1656,38 @@ contains
 				if (j == maxsnl + 1) then
 					if (grnd_ch4_cond < smallnumber .and. s==1) grnd_ch4_cond = smallnumber
 					! Needed to prevent overflow when ground is frozen, e.g. for lakes
-					snow_resis = 0._r8
+					snowres = 0._r8
 				end if
 	
 				! Add snow resistance
 				if (j >= snl + 1) then
-					! For the ice layer, all = ice + water + air, no soil
 					t_soisno_c = t_soisno(j) - tfrz
 					icefrac = wice_soisno(j)/denice/dz_soisno(j)
-					! [-]   = [kg/m2]       / [kg/m3] / [m]
 					waterfrac = wliq_soisno(j)/denh2o/dz_soisno(j)
 					airfrac = max(1._r8 - icefrac - waterfrac, 0._r8)
 					! Calculate snow diffusivity
 					if (airfrac > 0.05_r8) then
+						f_a = airfrac / (airfrac + waterfrac)
+						eps = airfrac ! Air-filled fraction of total snow volume
 						! Use Millington-Quirk Expression, as hydraulic properties (bsw) not available
 						snowdiff = (d_con_g(s,1) + d_con_g(s,2)*t_soisno_c) * 1.e-4_r8 * &
-								airfrac**(10._r8/3._r8) / (airfrac+waterfrac)**2 &
+								f_a**(10._r8/3._r8) / (airfrac+waterfrac)**2 &
 								* scale_factor_gasdiff
-					else !solute diffusion in water only, airfrac -> 0
-						snowdiff = (airfrac+waterfrac)**satpow * (d_con_w(s,1) + d_con_w(s,2)*t_soisno_c + d_con_w(s,3)*t_soisno_c**2) * 1.e-9_r8 &
+					else !solute diffusion in water only
+						eps = waterfrac  ! Water-filled fraction of total soil volume
+						snowdiff = eps**satpow * (d_con_w(s,1) + d_con_w(s,2)*t_soisno_c + d_con_w(s,3)*t_soisno_c**2) * 1.e-9_r8 &
 								* scale_factor_liqdiff
 					end if
 					snowdiff = max(snowdiff, smallnumber)
-					snow_resis = snow_resis + dz_soisno(j)/snowdiff
+					snowres = snowres + dz_soisno(j)/snowdiff
 				end if
 	
 				if (j == 0) then ! final loop
 					! Add pond resistance
-					pond_resis = 0._r8
+					pondres = 0._r8
 
 					! First old pond formulation up to pondmx
-					if (patchtype /= 4 .and. snl == 0 .and. (wliq_soisno(1)/(dz_soisno(1)*denh2o)) > porsl(1)) then
+					if (patchtype /= 4 .and. snl == 0 .and. vol_liq(1) > porsl(1)) then
 						t_soisno_c = t_soisno(1) - tfrz
 						if (t_soisno(1) <= tfrz) then
 							ponddiff = (d_con_w(s,1) + d_con_w(s,2)*t_soisno_c + d_con_w(s,3)*t_soisno_c**2) * 1.e-9_r8 &
@@ -1452,8 +1698,8 @@ contains
 							ponddiff = (d_con_w(s,1) + d_con_w(s,2)*t_soisno_c + d_con_w(s,3)*t_soisno_c**2) * 1.e-9_r8 &
 									* scale_factor_liqdiff
 						end if
-						pondz = dz_soisno(1) * ((wliq_soisno(1)/(dz_soisno(1)*denh2o)) - porsl(1))
-						pond_resis = pondz / ponddiff
+						pondz = dz_soisno(1) * (vol_liq(1) - porsl(1))
+						pondres = pondz / ponddiff
 					end if
 
 					! Now add new wdsrf form
@@ -1463,15 +1709,15 @@ contains
 							ponddiff = (d_con_w(s,1) + d_con_w(s,2)*t_soisno_c + d_con_w(s,3)*t_soisno_c**2) * 1.e-9_r8 &
 									* scale_factor_liqdiff
 							pondz = wdsrf / 1000._r8 ! Assume all wdsrf corresponds to sat area
-							! [m] = [mm]  /  [mm/m]
-							pond_resis = pond_resis + pondz / ponddiff
+							! mm      /  mm/m
+							pondres = pondres + pondz / ponddiff
 						else if (wdsrf > capthick) then
 							! assume surface ice is impermeable
-							pond_resis = 1/smallnumber
+							pondres = 1/smallnumber
 						end if
 					end if
 
-					spec_grnd_cond(s) = 1._r8/(1._r8/grnd_ch4_cond + snow_resis + pond_resis)
+					spec_grnd_cond(s) = 1._r8/(1._r8/grnd_ch4_cond + snowres + pondres)
 				end if
 			end do ! j
 	
@@ -1480,6 +1726,10 @@ contains
 				t_soisno_c = t_soisno(j) - tfrz
 	
 				if (j <= jwt) then  ! Above the WT
+					f_a = 1._r8 - vol_liq_min(j) / porsl(j)
+					! Provisionally calculate diffusivity as linear combination of the Millington-Quirk 
+					! expression in Wania (for peat) & Moldrup (for mineral soil)
+					eps =  porsl(j)-vol_liq_min(j) ! Air-filled fraction of total soil volume
 					if (organic_max > 0._r8) then
 						om_frac = min(om_frac_sf*cellorg(j)/organic_max, 1._r8)
 						! Use first power, not square as in iniTimeConst
@@ -1487,13 +1737,14 @@ contains
 						om_frac = 1._r8
 					end if
 					diffus (j) = (d_con_g(s,1) + d_con_g(s,2)*t_soisno_c) * 1.e-4_r8 * &
-								(om_frac * vol_gas(j)**(10._r8/3._r8) / porsl(j)**2._r8 + &
-								(1._r8-om_frac) * vol_gas(j)**2._r8 * (vol_gas(j)/porsl(j))**(3._r8 / bsw(j)) ) &
+								(om_frac * f_a**(10._r8/3._r8) / porsl(j)**2._r8 + &
+								(1._r8-om_frac) * eps**2._r8 * f_a**(3._r8 / bsw(j)) ) &
 								* scale_factor_gasdiff
 				else ! Below the WT use saturated diffusivity and only water in epsilon_t
 					! Note the following is not currently corrected for the effect on diffusivity of excess ice in soil under
 					! lakes (which is currently experimental only).
-					diffus (j) = porsl(j)**satpow * (d_con_w(s,1) + d_con_w(s,2)*t_soisno_c + d_con_w(s,3)*t_soisno_c**2) * 1.e-9_r8 &
+					eps = porsl(j)  ! Water-filled fraction of total soil volume
+					diffus (j) = eps**satpow * (d_con_w(s,1) + d_con_w(s,2)*t_soisno_c + d_con_w(s,3)*t_soisno_c**2) * 1.e-9_r8 &
 						* scale_factor_liqdiff
 					if (t_soisno(j)<=tfrz) then
 						diffus(j) = diffus(j)*(wliq_soisno(j)/denh2o+smallnumber)/ &
@@ -1808,33 +2059,6 @@ contains
 		
 	end subroutine Tridiagonal
 
-	subroutine henry_law (t_grnd,t_soisno,k_h_cc)
-		real(r8), intent(in) :: &
-			t_grnd                 		   , &! ground surface temperature [k]
-			t_soisno (maxsnl+1:nl_soil)       ! soil temperature [K]
-
-		real(r8), intent(out) :: &
-			k_h_cc(0:nl_soil,ngases)          ! Dimensionless Henry's coefficient [-]
-
-		integer :: j,s  			          ! Indices
-		real(r8):: k_h						  ! Henry's coefficient [mol/L/atm]
-
-		do j = 0,nl_soil
-			do s=1,2
-				if (j==0) then
-					k_h = kh_theta(s)*exp(c_h(s) * (1._r8 / t_grnd - 1._r8 / kh_tbase))
-					! [mol/L/atm] = [mol/L/atm]*e**([K]*[1/K])
-					k_h_cc(j,s) = k_h * rgasLatm * t_grnd
-					! [-]  = [mol/L/atm]*[L*atm/mol/K]*[K]
-				else
-					k_h = kh_theta(s)*exp(c_h(s) * (1._r8 / t_soisno(j) - 1._r8 / kh_tbase))
-					! [mol/L/atm] = [mol/L/atm]*e**([K]*[1/K])
-					k_h_cc(j,s) = k_h * rgasLatm * t_soisno(j)
-					! [-]  = [mol/L/atm]*[L*atm/mol/K]*[K]
-				end if
-			end do
-		end do
-	end subroutine henry_law
-
 END MODULE MOD_ch4
 ! --------- EOP ----------
+
