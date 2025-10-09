@@ -37,14 +37,12 @@ MODULE MOD_Const_ch4
 	data (d_con_g(2,i),i=1,2) /0.1759_r8, 0.00117_r8/ ! O2
 	data (d_con_g(3,i),i=1,2) /0.1325_r8, 0.0009_r8/ ! CO2
 	
-	real(r8), public :: c_h_inv(ngases)    ! constant (K) for Henry's law (4.12, Wania)
-	data c_h_inv(1:3) /1600._r8, 1500._r8, 2400._r8/ ! CH4, O2, CO2
-	! data c_h(1:3) /1600._r8, 1500._r8, 2400._r8/ ! CH4, O2, CO2
-
+	real(r8), public :: c_h(ngases)    ! constant (K) for Henry's law (4.12, Wania)
+	data c_h(1:3) /1600._r8, 1500._r8, 2400._r8/ ! CH4, O2, CO2
 	
 	real(r8), public :: kh_theta(ngases)    ! Henry's constant (L.atm/mol) at standard temperature (298K)
-	data kh_theta(1:3) /714.29_r8, 769.23_r8, 29.4_r8/ ! CH4, O2, CO2
-   ! data kh_theta(1:3) /1.4e-3, 1.3e-3, 3.4e-2/ ! CH4, O2, CO2
+	! data kh_theta(1:3) /714.29_r8, 769.23_r8, 29.4_r8/ ! CH4, O2, CO2
+   data kh_theta(1:3) /1.4e-3, 1.3e-3, 3.4e-2/ ! CH4, O2, CO2
 
 	real(r8), public :: kh_tbase = 298.15_r8 ! base temperature for calculation of Henry's constant (K)
 

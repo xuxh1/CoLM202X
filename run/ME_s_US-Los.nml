@@ -16,30 +16,30 @@
    USE_SITE_topography      = .false.
 
    DEF_simulation_time%greenwich     = .false.
-   DEF_simulation_time%start_year    = 2000
+   DEF_simulation_time%start_year    = 2014
    DEF_simulation_time%start_month   = 1
    DEF_simulation_time%start_day     = 1
    DEF_simulation_time%start_sec     = 0
-   DEF_simulation_time%end_year      = 2008
+   DEF_simulation_time%end_year      = 2018
    DEF_simulation_time%end_month     = 12
    DEF_simulation_time%end_day       = 31
-   DEF_simulation_time%end_sec       = 0
-   DEF_simulation_time%spinup_year   = 2001
+   DEF_simulation_time%end_sec       = 84600
+   DEF_simulation_time%spinup_year   = 2014
    DEF_simulation_time%spinup_month  = 1
-   DEF_simulation_time%spinup_day    = 1
-   DEF_simulation_time%spinup_sec    = 0
-   DEF_simulation_time%spinup_repeat = 30
+   DEF_simulation_time%spinup_day    = 31
+   DEF_simulation_time%spinup_sec    = 86400
+   DEF_simulation_time%spinup_repeat = 1200
 
    DEF_simulation_time%timestep     = 1800.
 
    ! surface data from SITE.
-   SITE_fsitedata = '/share/home/dq013/zhwei/colm/data/CoLM_Forcing/PLUMBER2/Srfdata/US-Los_2000-2008_FLUXNET2015_Srf.nc'
+   SITE_fsitedata = '/share/home/dq076/data/Srfdata/US-Los_2014-2018_FLUXNET-CH4_Srf.nc'
    ! path to surface database
    DEF_dir_rawdata = '/share/home/dq013/zhwei/colm/data/CoLMrawdata/'
    DEF_dir_runtime = '/share/home/dq013/zhwei/colm/data/CoLMruntime/'
    DEF_dir_output  = '/share/home/dq076/data/cases/ME/'
 
-      ! soil state init
+   ! soil state init
    DEF_USE_SoilInit  = .true.
    DEF_file_SoilInit = '/share/home/dq013/zhwei/colm/data/soilstate/soilstate.nc' 
 
@@ -56,7 +56,11 @@
    ! Options :
    ! PRINCETON | GSWP3   | QIAN  | CRUNCEPV4 | CRUNCEPV7 | ERA5LAND | ERA5  |  MSWX
    ! WFDE5     | CRUJRA  | WFDEI | JRA55     | GDAS      | CMFD     | POINT |  JRA3Q
-   DEF_forcing_namelist = './forcing/SINGLE_US-Los.nml'
+   DEF_forcing_namelist = './forcing/SINGLE.nml'
+   ! DEF_forcing_namelist = './forcing/SINGLE_US-Los.nml'
+   ! DEF_forcing_namelist = './forcing/CRUJRA.nml'
+   ! DEF_forcing_namelist = './forcing/JRA3Q.nml'
+   ! DEF_forcing_namelist = './forcing/ERA5LAND.nml'
    
    ! ----- history -----
    DEF_WRST_FREQ = 'YEARLY'   ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY

@@ -1,7 +1,7 @@
 &nl_colm_forcing
    
   ! ----- forcing -----
-   DEF_dir_forcing  = '/shr03/CoLM_Forcing/crujra_v2.5/'
+   DEF_dir_forcing  = '/share/home/dq013/zhwei/colm/data/CoLM_Forcing/crujra_v2.5/'
 
    DEF_forcing%dataset           = 'CRUJRA' 
    DEF_forcing%solarin_all_band  = .true.  

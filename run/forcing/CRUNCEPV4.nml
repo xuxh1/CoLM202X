@@ -1,7 +1,7 @@
 &nl_colm_forcing
 
   ! ----- forcing -----
-   DEF_dir_forcing  = '/shr03/CoLM_Forcing/cruncep_v4/cruncep/'
+   DEF_dir_forcing  = '/share/home/dq013/zhwei/colm/data/CoLM_Forcing/cruncep_v4/cruncep/'
 
    DEF_forcing%dataset           = 'CRUNCEPV4'
    DEF_forcing%solarin_all_band  = .true.
