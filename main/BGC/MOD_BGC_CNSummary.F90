@@ -593,12 +593,14 @@ CONTAINS
          DO j = 1, nl_soil
             decomp_hr(i) = decomp_hr(i) &
                          + decomp_hr_vr(j,k,i) * dz_soi(j)
+#ifdef CH4
             hr_vr(j,i) = hr_vr(j,i) + decomp_hr_vr(j,k,i)
             IF(donor_pool(k) .eq. i_soil1 .or. donor_pool(k) .eq. i_soil2 .or. donor_pool(k) .eq. i_soil3)THEN
                somhr(i)  = somhr(i) + decomp_hr_vr(j,k,i) * dz_soi(j)
             ELSE
                lithr(i)  = lithr(i) + decomp_hr_vr(j,k,i) * dz_soi(j)
             ENDIF
+#endif
          ENDDO
       ENDDO
   
@@ -736,6 +738,7 @@ CONTAINS
             gpp_c4grass   (i) = psn_to_cpool_p(m)
          ENDIF
 
+#ifdef CH4
          rr_p(m) = froot_mr_p (m) + cpool_froot_gr_p(m) + cpool_livecroot_gr_p(m) + cpool_deadcroot_gr_p(m) &
                  + transfer_froot_gr_p(m) + transfer_livecroot_gr_p(m) + transfer_deadcroot_gr_p(m) &
                  + cpool_froot_storage_gr_p(m) + cpool_livecroot_storage_gr_p(m) + cpool_deadcroot_storage_gr_p(m)
@@ -761,12 +764,15 @@ CONTAINS
                           + grain_mr_p(m)                   + xsmrpool_to_atm_p(m) &
                           + cpool_grain_gr_p(m)             + transfer_grain_gr_p(m) &
                           + cpool_grain_storage_gr_p(m))
+#endif
       ENDDO
 
+#ifdef CH4
        rr(i)         = sum(rr_p   (ps:pe) * pftfrac(ps:pe))  
        agnpp(i)      = sum(agnpp_p(ps:pe) * pftfrac(ps:pe))  
        bgnpp(i)      = sum(bgnpp_p(ps:pe) * pftfrac(ps:pe))  
        annsum_npp(i) = sum(annsum_npp_p(ps:pe) * pftfrac(ps:pe))
+#endif
 
 #ifdef FUN
       ar(i) = ar(i) + sum(soil_change_p(ps:pe) * pftfrac(ps:pe))

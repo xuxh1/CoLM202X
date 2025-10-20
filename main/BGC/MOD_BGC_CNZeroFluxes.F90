@@ -331,10 +331,11 @@ MODULE MOD_BGC_CNZeroFluxes
        decomp_hr                            , &
        decomp_hr_vr                         , &
        decomp_ctransfer_vr                  , &
+#ifdef CH4
        hr_vr                                , &
        somhr                                , &
        lithr                                , &
- 
+#endif
        decomp_cpools_transport_tendency     , &
        decomp_cpools_sourcesink             , &
  
@@ -595,11 +596,14 @@ CONTAINS
          DO k=1,ndecomp_pools
             m_decomp_cpools_to_fire_vr(j,k,i)     = 0._r8
          ENDDO
-
+#ifdef CH4
          hr_vr(j,i)                               = 0._r8
+#endif
       ENDDO
+#ifdef CH4
       somhr(i)                                    = 0._r8
       lithr(i)                                    = 0._r8
+#endif
 
       fire_closs(i)                               = 0._r8
       fire_nloss(i)                               = 0._r8

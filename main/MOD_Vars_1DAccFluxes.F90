@@ -236,12 +236,15 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: a_leafc_c4grass      (:) !14
    real(r8), allocatable :: a_O2_DECOMP_DEPTH_UNSAT (:,:)
    real(r8), allocatable :: a_CONC_O2_UNSAT         (:,:)
+
+#ifdef CH4
    real(r8), allocatable :: a_annsum_npp            (:)
    real(r8), allocatable :: a_rr                    (:)
    real(r8), allocatable :: a_agnpp                 (:)
    real(r8), allocatable :: a_bgnpp                 (:)
    real(r8), allocatable :: a_somhr                 (:)
    real(r8), allocatable :: a_lithr                 (:)
+#endif
 #ifdef CROP
    real(r8), allocatable :: a_pdcorn                (:)
    real(r8), allocatable :: a_pdswheat              (:)
@@ -707,13 +710,14 @@ CONTAINS
 
             allocate (a_O2_DECOMP_DEPTH_UNSAT (1:nl_soil,numpatch))
             allocate (a_CONC_O2_UNSAT         (1:nl_soil,numpatch))
+#ifdef CH4
             allocate (a_annsum_npp            (numpatch))
             allocate (a_rr                    (numpatch))
             allocate (a_agnpp                 (numpatch))
             allocate (a_bgnpp                 (numpatch))
             allocate (a_somhr                 (numpatch))
             allocate (a_lithr                 (numpatch))
-
+#endif
 #ifdef CROP
             allocate (a_pdcorn             (numpatch))
             allocate (a_pdswheat           (numpatch))
@@ -1188,12 +1192,14 @@ CONTAINS
 
             deallocate (a_O2_DECOMP_DEPTH_UNSAT )
             deallocate (a_CONC_O2_UNSAT         )
+#ifdef CH4
             deallocate (a_annsum_npp            )
             deallocate (a_rr                    )
             deallocate (a_agnpp                 )
             deallocate (a_bgnpp                 )
             deallocate (a_somhr                 )
             deallocate (a_lithr                 )
+#endif
 
 #ifdef CROP
             deallocate (a_pdcorn             )
@@ -1670,12 +1676,15 @@ CONTAINS
 
             a_O2_DECOMP_DEPTH_UNSAT (:,:) = spval
             a_CONC_O2_UNSAT         (:,:) = spval
+#ifdef CH4
             a_annsum_npp            (:) = spval
             a_rr                    (:) = spval
             a_agnpp                 (:) = spval
             a_bgnpp                 (:) = spval
             a_somhr                 (:) = spval
             a_lithr                 (:) = spval
+#endif
+
 #ifdef CROP
             a_pdcorn             (:) = spval
             a_pdswheat           (:) = spval
@@ -2273,12 +2282,14 @@ CONTAINS
                CALL acc2d (to2_decomp_depth_unsat, a_O2_DECOMP_DEPTH_UNSAT)
                CALL acc2d (tconc_o2_unsat        , a_CONC_O2_UNSAT        )
             ENDIF
+#ifdef CH4
             CALL acc1d (annsum_npp         , a_annsum_npp          )
             CALL acc1d (rr                 , a_rr                  )
             CALL acc1d (agnpp              , a_agnpp               )
             CALL acc1d (bgnpp              , a_bgnpp               )
             CALL acc1d (somhr              , a_somhr               )
             CALL acc1d (lithr              , a_lithr               )
+#endif
 #ifdef CROP
             CALL acc1d (pdcorn             ,   a_pdcorn             )
             CALL acc1d (pdswheat           ,   a_pdswheat           )

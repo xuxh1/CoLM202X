@@ -1,7 +1,7 @@
 &nl_colm_forcing
 
    ! ----- forcing -----
-   DEF_dir_forcing  = '/share/home/dq076/data/Forcing/'
+   DEF_dir_forcing  = '/share/home/dq076/data/CoLM_Forcing/PLUMBER2/Forcing/'
 
    DEF_forcing%dataset           = 'POINT' 
    DEF_forcing%solarin_all_band  = .true.  
@@ -25,7 +25,7 @@
    DEF_forcing%fprefix(7) = 'US-Los_2014-2018_FLUXNET-CH4_Met.nc'
    DEF_forcing%fprefix(8) = 'US-Los_2014-2018_FLUXNET-CH4_Met.nc'
    
-   DEF_forcing%vname    = 'TA_F_K' 'q' 'PA_F_Pa' 'P_F' 'WS_F' 'NULL' 'SW_IN_F' 'LW_IN_F' 
+   DEF_forcing%vname    = 'TA_F_K' 'q' 'PA_F_Pa' 'P_F_kgm2s' 'WS_F' 'NULL' 'SW_IN_F' 'LW_IN_F' 
    DEF_forcing%timelog  = 'instant' 'instant' 'instant' 'foreward' 'instant' 'instant' 'foreward' 'foreward'
    DEF_forcing%tintalgo = 'linear' 'linear' 'linear' 'nearest' 'linear' 'NULL' 'coszen' 'linear'
 

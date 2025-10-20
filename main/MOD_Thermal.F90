@@ -1285,6 +1285,8 @@ ENDIF
          write(6,*) ipatch,errore,sabv,sabg,frl,olrg,fsenl,fseng,hvap*fevpl,htvp*fevpg,xmf,fgrnd
       ENDIF
 
+      ! write(6,*) olrg,stefnc
+      ! write(6,*) olrg/stefnc
       trad = (olrg/stefnc)**0.25
 
 ! additional variables required by WRF and RSM model

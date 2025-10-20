@@ -1,0 +1,69 @@
+&nl_colm
+
+! Author: Shupeng Zhang 
+! Description : an example for SinglePoint with all surface data from database instead of observations.
+
+DEF_CASE_NAME = 'MY-MLM'
+
+   USE_SITE_landtype        = .true.
+   USE_SITE_pctpfts         = .false.
+   USE_SITE_pctcrop         = .false.
+   USE_SITE_htop            = .false.
+   USE_SITE_LAI             = .false. 
+   USE_SITE_lakedepth       = .false.
+   USE_SITE_soilreflectance = .false.
+   USE_SITE_soilparameters  = .false.
+   USE_SITE_topography      = .false.
+
+   DEF_simulation_time%greenwich     = .false.
+DEF_simulation_time%start_year = 2014
+DEF_simulation_time%start_month = 1
+DEF_simulation_time%start_day = 1
+DEF_simulation_time%start_sec = 0
+DEF_simulation_time%end_year = 2015
+DEF_simulation_time%end_month = 12
+DEF_simulation_time%end_day = 31
+DEF_simulation_time%end_sec = 82800
+DEF_simulation_time%spinup_year = 2013
+   DEF_simulation_time%spinup_month  = 1
+   DEF_simulation_time%spinup_day    = 31
+   DEF_simulation_time%spinup_sec    = 86400
+   DEF_simulation_time%spinup_repeat = 0
+
+   DEF_simulation_time%timestep     = 1800.
+
+   ! surface data from SITE.
+SITE_fsitedata = '/share/home/dq076/data/CoLM_Forcing/PLUMBER2/Srfdata/MY-MLM_2014-2015_FLUXNET-CH4_Srf.nc'
+   ! path to surface database
+   DEF_dir_rawdata = '/share/home/dq013/zhwei/colm/data/CoLMrawdata/'
+   DEF_dir_runtime = '/share/home/dq013/zhwei/colm/data/CoLMruntime/'
+DEF_dir_output = '/share/home/dq076/data/cases/site/FLUXNET-CH4/no_spin_up/'
+
+   ! soil state init
+   DEF_USE_SoilInit  = .true.
+   DEF_file_SoilInit = '/share/home/dq013/zhwei/colm/data/soilstate/soilstate.nc' 
+
+   ! soil state init
+   DEF_USE_CN_INIT  = .true.
+   DEF_file_cn_init = '/share/home/dq013/zhwei/colm/data/CoLMruntime/cnsteadystate.nc' 
+
+   DEF_LAI_MONTHLY = .true.
+   DEF_METHANE_only_wetland = .false.
+
+   DEF_USE_VariablySaturatedFlow = .true.
+
+   ! ----- forcing -----
+   ! Options :
+   ! PRINCETON | GSWP3   | QIAN  | CRUNCEPV4 | CRUNCEPV7 | ERA5LAND | ERA5  |  MSWX
+   ! WFDE5     | CRUJRA  | WFDEI | JRA55     | GDAS      | CMFD     | POINT |  JRA3Q
+DEF_forcing_namelist = '/share/home/dq076/mode/ME/CoLM202X_CH4_s/run//site/FLUXNET-CH4/forcing/SINGLE_MY-MLM.nml'
+   
+   ! ----- history -----
+   DEF_WRST_FREQ = 'YEARLY'   ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+   DEF_HIST_FREQ = 'DAILY'    ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+   DEF_HIST_groupby = 'YEAR'  ! history in one file: DAY/MONTH/YEAR
+
+   DEF_hist_vars_out_default = .true.
+   DEF_hist_vars_namelist    = '/share/home/dq076/mode/ME/CoLM202X_CH4_s/run/history_ME.nml'
+
+/
