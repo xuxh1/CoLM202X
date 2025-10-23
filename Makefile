@@ -83,6 +83,7 @@ OBJS_MKSRFDATA = \
 				  Aggregation_Topography.o          \
 				  Aggregation_TopoWetness.o         \
 				  Aggregation_TopographyFactors.o   \
+				  Aggregation_TopographyFactors_Simple.o \
 				  Aggregation_Urban.o               \
 				  Aggregation_SoilTexture.o         \
 				  MOD_Lulcc_TransferTrace.o         \
@@ -160,6 +161,7 @@ OBJS_BASIC =    \
 				 MOD_Catch_HillslopeNetwork.o   \
 				 MOD_Catch_RiverLakeNetwork.o   \
 				 MOD_Catch_Reservoir.o          \
+				 MOD_VicParaReadin.o            \
 				 MOD_Initialize.o
 
 
@@ -203,7 +205,6 @@ OBJECTS_CAMA=\
 				  cmf_calc_pthout_mod.o   \
 				  cmf_calc_fldstg_mod.o   \
 				  cmf_calc_stonxt_mod.o   \
-				  cmf_calc_diag_mod.o     \
 				  cmf_opt_outflw_mod.o    \
 				  cmf_ctrl_tracer_mod.o   \
 				  cmf_ctrl_mpi_mod.o      \
@@ -213,6 +214,8 @@ OBJECTS_CAMA=\
 				  cmf_ctrl_boundary_mod.o \
 				  cmf_ctrl_output_mod.o   \
 				  cmf_ctrl_restart_mod.o  \
+				  cmf_ctrl_sed_mod.o      \
+				  cmf_calc_diag_mod.o     \
 				  cmf_ctrl_physics_mod.o  \
 				  cmf_ctrl_time_mod.o     \
 				  cmf_ctrl_maps_mod.o     \
@@ -263,8 +266,6 @@ OBJS_MAIN = \
 				MOD_BGC_Veg_CNNDynamics.o                 \
 				MOD_BGC_Veg_CNFireBase.o                  \
 				MOD_BGC_Veg_CNFireLi2016.o                \
-				MOD_Irrigation.o                          \
-				MOD_BGC_driver.o                          \
 				MOD_Vars_2DForcing.o                      \
 				MOD_UserSpecifiedForcing.o                \
 				MOD_ForcingDownscaling.o                  \
@@ -307,6 +308,8 @@ OBJS_MAIN = \
 				MOD_Thermal.o                             \
 				MOD_Vars_1DAccFluxes.o                    \
 				MOD_CaMa_Vars.o                           \
+				MOD_Irrigation.o                          \
+				MOD_BGC_driver.o                          \
 				MOD_HistWriteBack.o                       \
 				MOD_HistGridded.o                         \
 				MOD_HistVector.o                          \

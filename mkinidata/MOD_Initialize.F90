@@ -62,6 +62,8 @@ CONTAINS
 #endif
    USE MOD_SpatialMapping
 #ifdef CatchLateralFlow
+   USE MOD_Mesh
+   USE MOD_Utils
    USE MOD_LandHRU
    USE MOD_Catch_BasinNetwork
    USE MOD_ElementNeighbour
@@ -80,6 +82,7 @@ CONTAINS
    USE MOD_PercentagesPFTReadin
    USE MOD_SoilParametersReadin
    USE MOD_SoilTextureReadin
+   USE MOD_VicParaReadin
 #ifdef SinglePoint
    USE MOD_SingleSrfdata
 #endif
@@ -206,6 +209,10 @@ CONTAINS
 
    real(r8) :: wdsrfm, depthratio
    real(r8), dimension(10) :: dzlak = (/0.1, 1., 2., 3., 4., 5., 7., 7., 10.45, 10.45/)  ! m
+#ifdef CatchLateralFlow
+   integer :: ip, ie, ipxl
+   real(r8), allocatable :: patcharea (:)  ! m^2
+#endif
 
    ! CoLM soil layer thickness and depths
    real(r8), allocatable :: z_soisno (:,:)
@@ -427,6 +434,16 @@ ENDIF
          CALL ncio_read_vector (lndname, 'cur_patches', landpatch, cur_patches)
 #endif
        ENDIF
+
+      IF (DEF_USE_Forcing_Downscaling_Simple) THEN
+         lndname = trim(DEF_dir_landdata) // '/topography/'//trim(cyear)//'/slp_type_patches.nc'      ! slope
+         CALL ncio_read_vector (lndname, 'slp_type_patches', num_aspect_type, landpatch, slp_type_patches)
+         lndname = trim(DEF_dir_landdata) // '/topography/'//trim(cyear)//'/asp_type_patches.nc'      ! aspect
+         CALL ncio_read_vector (lndname, 'asp_type_patches', num_aspect_type, landpatch, asp_type_patches)
+         lndname = trim(DEF_dir_landdata) // '/topography/'//trim(cyear)//'/cur_patches.nc'           ! curvature
+         CALL ncio_read_vector (lndname, 'cur_patches', landpatch, cur_patches)
+      ENDIF
+
 ! ................................
 ! 1.6 Initialize TUNABLE constants
 ! ................................
@@ -507,6 +524,9 @@ ENDIF
       ENDIF
 
       IF (DEF_Runoff_SCHEME == 1) THEN
+         IF (DEF_VIC_OPT) THEN
+            CALL vicpara_readin ()
+         ELSE
          IF (p_is_master) THEN
             txt_id = 111
             open(txt_id, file=trim(DEF_file_VIC_para), status='old', form='formatted')
@@ -531,6 +551,7 @@ ENDIF
                vic_Ws       = vic_Ws_
                vic_c        = vic_c_
             ENDIF
+         ENDIF
          ENDIF
       ELSE
          IF (p_is_worker) THEN
@@ -998,11 +1019,11 @@ ENDIF
                      DO m = ps, pe
                         ivt = pftclass(m)
                         IF(isevg(ivt))THEN
-                           leafc_p            (m) = leafcin_p(m)
+                           leafc_p            (m) = amin1(leafcin_p(m),300._r8)
                            frootc_p           (m) = frootcin_p(m)
                         ELSE
-                           leafc_p            (m) = leafcin_p(m)
-                           leafc_storage_p    (m) = leafc_storagein_p(m)
+                           leafc_p            (m) = amin1(leafcin_p(m),300._r8)
+                           leafc_storage_p    (m) = amin1(leafc_storagein_p(m),600._r8)
                            frootc_p           (m) = frootcin_p(m)
                            frootc_storage_p   (m) = frootc_storagein_p(m)
                         ENDIF
@@ -1197,12 +1218,18 @@ ENDIF
                ENDIF
             ENDDO
          ENDIF
-      IF(DEF_USE_IRRIGATION)THEN
-         irrig_rate(:) = 0._r8
-         deficit_irrig(:) = 0._r8
-         sum_irrig(:) = 0._r8
-         sum_irrig_count(:) = 0._r8
-         n_irrig_steps_left(:) = 0
+      IF (p_is_worker) THEN
+         IF(DEF_USE_IRRIGATION)THEN
+            sum_irrig(:) = 0._r8
+            sum_deficit_irrig(:) = 0._r8
+            sum_irrig_count(:) = 0._r8
+            waterstorage(:) = 0._r8
+            DO i = 1, numpatch
+               zwt_stand(i) = zwt(i) + 1._r8
+               zwt_stand(i) = max(0., zwt_stand(i))
+               zwt_stand(i) = min(80., zwt_stand(i))
+            ENDDO
+         ENDIF
       ENDIF
 #endif
 #endif
@@ -1404,8 +1431,23 @@ ENDIF
       ! -----
 #ifdef CatchLateralFlow
 
-      CALL element_neighbour_init  (lc_year)
-      CALL river_lake_network_init ()
+      IF (p_is_worker) THEN
+         IF (numpatch > 0) THEN
+            allocate (patcharea (numpatch))
+            patcharea(:) = 0.
+            DO ip = 1, numpatch
+               ie = landpatch%ielm(ip)
+               DO ipxl = landpatch%ipxstt(ip), landpatch%ipxend(ip)
+                  patcharea(ip) = patcharea(ip) + 1.0e6 * areaquad ( &
+                     pixel%lat_s(mesh(ie)%ilat(ipxl)), pixel%lat_n(mesh(ie)%ilat(ipxl)), &
+                     pixel%lon_w(mesh(ie)%ilon(ipxl)), pixel%lon_e(mesh(ie)%ilon(ipxl)) )
+               ENDDO
+            ENDDO
+         ENDIF
+      ENDIF
+
+      CALL element_neighbour_init  (patcharea,lc_year)
+      CALL river_lake_network_init (patcharea)
 
       IF (p_is_worker) THEN
 
@@ -1472,6 +1514,8 @@ ENDIF
       CALL check_vector_data ('Basin Water Depth   [m]  ', wdsrf_bsn)
       CALL check_vector_data ('HRU Water Depth     [m]  ', wdsrf_bsnhru)
 #endif
+
+      IF (allocated(patcharea)) deallocate(patcharea)
 
 #endif
 

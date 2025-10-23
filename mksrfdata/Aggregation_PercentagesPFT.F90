@@ -132,6 +132,7 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
                pct_pft_one(N_PFT_modis-1,:) = 0.
 #endif
 
+               pct_pft_one = max(pct_pft_one , 0.0)
                pct_one = sum(pct_pft_one, dim=1)
                pct_one = max(pct_one, 1.0e-6)
                sumarea = sum(area_one)
@@ -184,7 +185,7 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
       lndname = trim(dir_model_landdata)//'/diag/pftfrac_elm_'//trim(cyear)//'.nc'
       CALL srfdata_map_and_write (pct_pfts, landpft%settyp, typpft, m_pft2diag, &
          -1.0e36_r8, lndname, 'pftfrac_elm', compress = 1, write_mode = 'one',  &
-         defval=0._r8, stat_mode = 'fraction', pctshared = landpft%pctshared,&
+         defval=0._r8, stat_mode = 'fraction', pctshared = landpft%pctshared,   &
          create_mode=.true.)
 #endif
 
@@ -207,7 +208,7 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
       lndname = trim(dir_model_landdata) // '/diag/cropfrac_elm_' // trim(cyear) // '.nc'
       CALL srfdata_map_and_write (cropfrac, cropclass, typcrop, m_patch2diag,   &
          -1.0e36_r8, lndname, 'cropfrac_elm', compress = 1, write_mode = 'one', &
-         defval=0._r8, tat_mode = 'fraction', pctshared = landpatch%pctshared, &)
+         defval=0._r8, stat_mode = 'fraction', pctshared = landpatch%pctshared, &
          create_mode=.true.)
 #endif
 #endif

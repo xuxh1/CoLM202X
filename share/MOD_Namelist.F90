@@ -268,6 +268,8 @@ MODULE MOD_Namelist
 
    integer :: DEF_Runoff_SCHEME = 3
    character(len=256) :: DEF_file_VIC_para = 'null'
+   character(len=256) :: DEF_file_VIC_OPT = 'null'
+   logical :: DEF_VIC_OPT = .false.
 
    integer :: DEF_TOPMOD_method = 0
 
@@ -313,6 +315,7 @@ MODULE MOD_Namelist
    ! ----- lateral flow related -----
    logical :: DEF_USE_EstimatedRiverDepth     = .true.
    character(len=256) :: DEF_ElementNeighbour_file = 'null'
+   integer :: DEF_Reservoir_Method = 0
 
    character(len=5)   :: DEF_precip_phase_discrimination_scheme = 'II'
    character(len=256) :: DEF_SSP='585' ! Co2 path for CMIP6 future scenario.
@@ -320,6 +323,15 @@ MODULE MOD_Namelist
 
    !use irrigation
    logical            :: DEF_USE_IRRIGATION      = .false.
+
+   !irrigation allocated method
+   integer            :: DEF_IRRIGATION_ALLOCATION = 1
+
+   !photosynthesis stress option 
+   logical            :: DEF_USE_NOSTRESSNITROGEN = .false.
+
+   !root resistance factors option
+   integer            :: DEF_RSTFAC               = 1
 
    !Plant Hydraulics
    logical            :: DEF_USE_PLANTHYDRAULICS = .true.
@@ -437,6 +449,7 @@ MODULE MOD_Namelist
    character(len=20) :: DEF_Forcing_Interp_Method = 'arealweight' ! 'arealweight' (default) or 'bilinear'
 
    logical           :: DEF_USE_Forcing_Downscaling        = .false.
+   logical           :: DEF_USE_Forcing_Downscaling_Simple = .false.
    character(len=256):: DEF_DS_HiresTopographyDataDir      = 'null'
    character(len=5)  :: DEF_DS_precipitation_adjust_scheme = 'I'
    character(len=5)  :: DEF_DS_longwave_adjust_scheme      = 'II'
@@ -747,10 +760,14 @@ MODULE MOD_Namelist
       logical :: irrig_method_rice2               = .true.
       logical :: irrig_method_sugarcane           = .true.
 
-      logical :: irrig_rate                       = .true.
-      logical :: deficit_irrig                    = .true.
       logical :: sum_irrig                        = .true.
+      logical :: sum_deficit_irrig                = .true.
       logical :: sum_irrig_count                  = .true.
+      logical :: waterstorage                     = .true.
+      logical :: groundwater_demand               = .true.
+      logical :: groundwater_supply               = .true.
+      logical :: reservoirriver_demand            = .true.
+      logical :: reservoirriver_supply            = .true.
 
       logical :: ndep_to_sminn                    = .true.
       logical :: CONC_O2_UNSAT                    = .false.
@@ -894,6 +911,9 @@ MODULE MOD_Namelist
       logical :: discharge                        = .true.
       logical :: wdsrf_hru                        = .true.
       logical :: veloc_hru                        = .true.
+      logical :: volresv                          = .true.
+      logical :: qresv_in                         = .true.
+      logical :: qresv_out                        = .true.
 
       logical :: sensors                          = .true.
 
@@ -973,8 +993,10 @@ CONTAINS
       DEF_LAI_END_YEAR,                       &
       DEF_LAI_CHANGE_YEARLY,                  &
       DEF_USE_LAIFEEDBACK,                    & !add by Xingjie Lu, use for updating LAI with leaf carbon
-      DEF_USE_IRRIGATION,                     & !use irrigation
-
+      DEF_USE_IRRIGATION,                     & !add by Hongbin Liang @ sysu 
+      DEF_IRRIGATION_ALLOCATION,              & !add by Hongbin Liang @ sysu 
+      DEF_USE_NOSTRESSNITROGEN,               & !add by Hongbin Liang @ sysu 
+      DEF_RSTFAC,                             & !add by Hongbin Liang @ sysu 
       DEF_LC_YEAR,                            &
       DEF_LULCC_SCHEME,                       &
 
@@ -998,6 +1020,8 @@ CONTAINS
       DEF_SPLIT_SOILSNOW,                     &
       DEF_VEG_SNOW,                           &
       DEF_file_VIC_para,                      &
+      DEF_file_VIC_OPT,                       &
+      DEF_VIC_OPT,                            & !add by Qijia Guo @ sysu
 
       DEF_dir_existing_srfdata,               &
       USE_srfdata_from_larger_region,         &
@@ -1032,6 +1056,7 @@ CONTAINS
       DEF_Aerosol_Readin,                     &
       DEF_Aerosol_Clim,                       &
       DEF_USE_EstimatedRiverDepth,            &
+      DEF_Reservoir_Method,                   &
 
       DEF_precip_phase_discrimination_scheme, &
 
@@ -1067,6 +1092,7 @@ CONTAINS
       DEF_Forcing_Interp_Method,              &
 
       DEF_USE_Forcing_Downscaling,            &
+      DEF_USE_Forcing_Downscaling_Simple,     &
       DEF_DS_HiresTopographyDataDir,          &
       DEF_DS_precipitation_adjust_scheme,     &
       DEF_DS_longwave_adjust_scheme,          &
@@ -1154,6 +1180,12 @@ CONTAINS
          ENDIF
 #endif
 
+         IF (DEF_Runoff_SCHEME == 1) THEN
+            DEF_file_VIC_para = trim(DEF_dir_runtime)//'/vic/vic_para.txt'
+            IF (DEF_VIC_OPT) THEN
+               DEF_file_VIC_OPT = trim(DEF_dir_runtime)//'vic/vic_para.nc'
+            ENDIF
+         ENDIF
 
 ! ----- subgrid type related ------ Macros&Namelist conflicts and dependency management
 
@@ -1521,6 +1553,10 @@ CONTAINS
       CALL mpi_bcast (DEF_USE_LAIFEEDBACK                    ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_USE_IRRIGATION                     ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
+      CALL mpi_bcast (DEF_IRRIGATION_ALLOCATION              ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_USE_NOSTRESSNITROGEN               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_RSTFAC                             ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+
       ! LULC related
       CALL mpi_bcast (DEF_LC_YEAR                            ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_LULCC_SCHEME                       ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
@@ -1547,7 +1583,9 @@ CONTAINS
       CALL mpi_bcast (DEF_RSS_SCHEME                         ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
       ! 02/2024, added by Shupeng Zhang
       CALL mpi_bcast (DEF_Runoff_SCHEME                      ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_VIC_OPT                            ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_file_VIC_para                      ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_file_VIC_OPT                       ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_TOPMOD_method                      ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
       ! 08/2023, added by hua yuan
       CALL mpi_bcast (DEF_SPLIT_SOILSNOW                     ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
@@ -1615,6 +1653,7 @@ CONTAINS
       CALL mpi_bcast (DEF_Aerosol_Clim                       ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_USE_EstimatedRiverDepth            ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_Reservoir_Method                   ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_HISTORY_IN_VECTOR                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
@@ -1633,6 +1672,7 @@ CONTAINS
 
       CALL mpi_bcast (DEF_Forcing_Interp_Method              ,20  ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_USE_Forcing_Downscaling            ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_USE_Forcing_Downscaling_Simple     ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_DS_HiresTopographyDataDir          ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_DS_precipitation_adjust_scheme     ,5   ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_DS_longwave_adjust_scheme          ,5   ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
@@ -2014,10 +2054,14 @@ CONTAINS
       ENDIF
 
       IF(DEF_USE_IRRIGATION)THEN
-         CALL sync_hist_vars_one (DEF_hist_vars%irrig_rate                   , set_defaults)
-         CALL sync_hist_vars_one (DEF_hist_vars%deficit_irrig                , set_defaults)
          CALL sync_hist_vars_one (DEF_hist_vars%sum_irrig                    , set_defaults)
+         CALL sync_hist_vars_one (DEF_hist_vars%sum_deficit_irrig            , set_defaults)    
          CALL sync_hist_vars_one (DEF_hist_vars%sum_irrig_count              , set_defaults)
+         CALL sync_hist_vars_one (DEF_hist_vars%waterstorage                 , set_defaults)
+         CALL sync_hist_vars_one (DEF_hist_vars%groundwater_demand           , set_defaults)
+         CALL sync_hist_vars_one (DEF_hist_vars%groundwater_supply           , set_defaults)
+         CALL sync_hist_vars_one (DEF_hist_vars%reservoirriver_demand        , set_defaults)
+         CALL sync_hist_vars_one (DEF_hist_vars%reservoirriver_supply        , set_defaults)
       ENDIF
 #endif
       CALL sync_hist_vars_one (DEF_hist_vars%ndep_to_sminn                   , set_defaults)
@@ -2171,6 +2215,9 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%discharge   , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%wdsrf_hru   , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%veloc_hru   , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%volresv     , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%qresv_in    , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%qresv_out   , set_defaults)
 
       CALL sync_hist_vars_one (DEF_hist_vars%sensors     , set_defaults)
 
