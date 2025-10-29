@@ -48,8 +48,10 @@
    DEF_file_cn_init = '/share/home/dq013/zhwei/colm/data/CoLMruntime/cnsteadystate.nc' 
 
    DEF_LAI_MONTHLY = .true.
-   DEF_METHANE_only_wetland = .false.
-
+   DEF_METHANE_only_wetland = .true.
+   DEF_USE_METHANE_para = .true.
+   DEF_file_METHANE_para = '/share/home/dq076/mode/ME/CoLM202X_CH4_s/run/ch4_parameter.nml'
+   
    DEF_USE_VariablySaturatedFlow = .true.
 
    ! ----- forcing -----

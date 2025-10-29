@@ -238,6 +238,8 @@ MODULE MOD_Namelist
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #ifdef CH4
    logical :: DEF_METHANE_only_wetland = .true.
+   logical :: DEF_USE_METHANE_para = .false.
+   character(len=256) :: DEF_file_METHANE_para = 'null'
 #endif
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1074,6 +1076,8 @@ CONTAINS
 
 #ifdef CH4
       DEF_METHANE_only_wetland,               & !add by Xionghui Xu @sysu 2025/08/19
+      DEF_USE_METHANE_para,                   & !add by Xionghui Xu @sysu 2025/10/21
+      DEF_file_METHANE_para,                  & !add by Xionghui Xu @sysu 2025/10/21
 #endif
 
       DEF_USE_Dynamic_Lake,                   & !add by Shupeng Zhang @ sysu 2024/09/12
@@ -1629,9 +1633,14 @@ CONTAINS
       CALL mpi_bcast (DEF_USE_CNSOYFIXN                      ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_USE_FIRE                           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
-      ! 08/2025, added by Xionghui Xu
 #ifdef CH4
+      ! 08/2025, added by Xionghui Xu
       CALL mpi_bcast (DEF_USE_FIRE                           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      
+      ! 10/2025, added by Xionghui Xu
+      CALL mpi_bcast (DEF_METHANE_only_wetland               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_USE_METHANE_para                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_file_METHANE_para                  ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
 #endif 
 
       CALL mpi_bcast (DEF_USE_Dynamic_Lake                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)

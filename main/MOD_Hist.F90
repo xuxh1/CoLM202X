@@ -850,12 +850,24 @@ ENDIF
          ! ------------------------------------------------------------------
          ! Mapping the fluxes and state variables at patch [numpatch] to grid
          ! ------------------------------------------------------------------
+#ifdef CH4
          IF (p_is_worker) THEN
             IF (numpatch > 0) THEN
-               filter(:) = patchtype < 99
-               IF (DEF_forcing%has_missing_value) THEN
-                  filter = filter .and. forcmask_pch
-               ENDIF
+               DO i=1,numpatch
+                  IF (DEF_METHANE_only_wetland) THEN
+                     IF(patchtype(i) .eq. 2)THEN
+                        filter(i) = .true.
+                     ELSE
+                        filter(i) = .false.
+                     ENDIF
+                  ELSE
+                     IF(patchtype(i) .eq. 0 .and. patchtype(i) .eq. 2)THEN
+                        filter(i) = .true.
+                     ELSE
+                        filter(i) = .false.
+                     ENDIF
+                  ENDIF
+               ENDDO
             ENDIF
          ENDIF
 
@@ -863,164 +875,6 @@ ENDIF
             CALL mp2g_hist%get_sumarea (sumarea, filter)
          ENDIF
 
-         ! 1: assimsun enf temperate
-         CALL write_history_variable_2d ( DEF_hist_vars%assimsun, &
-             a_assimsun, file_hist, 'f_assimsun', itime_in_file, sumarea, filter, &
-         'Photosynthetic assimilation rate of sunlit leaf for needleleaf evergreen temperate tree',&
-         'mol m-2 s-1')
-
-         ! 1: assimsha enf temperate
-         CALL write_history_variable_2d ( DEF_hist_vars%assimsha, &
-             a_assimsha, file_hist, 'f_assimsha', itime_in_file, sumarea, filter, &
-         'Photosynthetic assimilation rate of shaded leaf for needleleaf evergreen temperate tree',&
-         'mol m-2 s-1')
-
-         ! 1: etrsun enf temperate
-         CALL write_history_variable_2d ( DEF_hist_vars%etrsun, &
-             a_etrsun, file_hist, 'f_etrsun', itime_in_file, sumarea, filter, &
-             'Transpiration rate of sunlit leaf for needleleaf evergreen temperate tree','mm s-1')
-
-         ! 1: etrsha enf temperate
-         CALL write_history_variable_2d ( DEF_hist_vars%etrsha, &
-             a_etrsha, file_hist, 'f_etrsha', itime_in_file, sumarea, filter, &
-             'Transpiration rate of shaded leaf for needleleaf evergreen temperate tree','mm s-1')
-
-         ! rstfacsun
-         CALL write_history_variable_2d ( DEF_hist_vars%rstfacsun, &
-             a_rstfacsun, file_hist, 'f_rstfacsun', itime_in_file, sumarea, filter, &
-             'Ecosystem level Water stress factor on sunlit canopy','unitless')
-
-         ! rstfacsha
-         CALL write_history_variable_2d ( DEF_hist_vars%rstfacsha, &
-             a_rstfacsha, file_hist, 'f_rstfacsha', itime_in_file, sumarea, filter, &
-             'Ecosystem level Water stress factor on shaded canopy','unitless')
-
-         ! gssun
-         CALL write_history_variable_2d ( DEF_hist_vars%gssun, &
-             a_gssun, file_hist, 'f_gssun', itime_in_file, sumarea, filter, &
-             'Ecosystem level canopy conductance on sunlit canopy','mol m-2 s-1')
-
-         ! gssha
-         CALL write_history_variable_2d ( DEF_hist_vars%gssha, &
-             a_gssha, file_hist, 'f_gssha', itime_in_file, sumarea, filter, &
-             'Ecosystem level canopy conductance on shaded canopy','mol m-2 s-1')
-
-         ! soil resistance [m/s]
-         CALL write_history_variable_2d ( DEF_hist_vars%rss, &
-             a_rss, file_hist, 'f_rss', itime_in_file, sumarea, filter, &
-             'soil surface resistance','s/m')
-
-#ifdef BGC
-         ! leaf carbon display pool
-         CALL write_history_variable_2d ( DEF_hist_vars%leafc, &
-             a_leafc, file_hist, 'f_leafc', itime_in_file, sumarea, filter, &
-             'leaf carbon display pool','gC/m2')
-
-         ! leaf carbon storage pool
-         CALL write_history_variable_2d ( DEF_hist_vars%leafc_storage, &
-             a_leafc_storage, file_hist, 'f_leafc_storage', itime_in_file, sumarea, filter, &
-             'leaf carbon storage pool','gC/m2')
-
-         ! leaf carbon transfer pool
-         CALL write_history_variable_2d ( DEF_hist_vars%leafc_xfer, &
-             a_leafc_xfer, file_hist, 'f_leafc_xfer', itime_in_file, sumarea, filter, &
-             'leaf carbon transfer pool','gC/m2')
-
-         ! fine root carbon display pool
-         CALL write_history_variable_2d ( DEF_hist_vars%frootc, &
-             a_frootc, file_hist, 'f_frootc', itime_in_file, sumarea, filter, &
-             'fine root carbon display pool','gC/m2')
-
-         ! fine root carbon storage pool
-         CALL write_history_variable_2d ( DEF_hist_vars%frootc_storage, &
-             a_frootc_storage, file_hist, 'f_frootc_storage', itime_in_file, sumarea, filter, &
-             'fine root carbon storage pool','gC/m2')
-
-         ! fine root carbon transfer pool
-         CALL write_history_variable_2d ( DEF_hist_vars%frootc_xfer, &
-             a_frootc_xfer, file_hist, 'f_frootc_xfer', itime_in_file, sumarea, filter, &
-             'fine root carbon transfer pool','gC/m2')
-
-         ! live stem carbon display pool
-         CALL write_history_variable_2d ( DEF_hist_vars%livestemc, &
-             a_livestemc, file_hist, 'f_livestemc', itime_in_file, sumarea, filter, &
-             'live stem carbon display pool','gC/m2')
-
-         ! live stem carbon storage pool
-         CALL write_history_variable_2d ( DEF_hist_vars%livestemc_storage, &
-             a_livestemc_storage, file_hist, 'f_livestemc_storage', itime_in_file, sumarea, filter,&
-             'live stem carbon storage pool','gC/m2')
-
-         ! live stem carbon transfer pool
-         CALL write_history_variable_2d ( DEF_hist_vars%livestemc_xfer, &
-             a_livestemc_xfer, file_hist, 'f_livestemc_xfer', itime_in_file, sumarea, filter, &
-             'live stem carbon transfer pool','gC/m2')
-
-         ! dead stem carbon display pool
-         CALL write_history_variable_2d ( DEF_hist_vars%deadstemc, &
-             a_deadstemc, file_hist, 'f_deadstemc', itime_in_file, sumarea, filter, &
-             'dead stem carbon display pool','gC/m2')
-
-         ! dead stem carbon storage pool
-         CALL write_history_variable_2d ( DEF_hist_vars%deadstemc_storage, &
-             a_deadstemc_storage, file_hist, 'f_deadstemc_storage', itime_in_file, sumarea, filter,&
-             'dead stem carbon storage pool','gC/m2')
-
-         ! dead stem carbon transfer pool
-         CALL write_history_variable_2d ( DEF_hist_vars%deadstemc_xfer, &
-             a_deadstemc_xfer, file_hist, 'f_deadstemc_xfer', itime_in_file, sumarea, filter, &
-             'dead stem carbon transfer pool','gC/m2')
-
-         ! live coarse root carbon display pool
-         CALL write_history_variable_2d ( DEF_hist_vars%livecrootc, &
-             a_livecrootc, file_hist, 'f_livecrootc', itime_in_file, sumarea, filter, &
-             'live coarse root carbon display pool','gC/m2')
-
-         ! live coarse root carbon storage pool
-         CALL write_history_variable_2d ( DEF_hist_vars%livecrootc_storage, &
-             a_livecrootc_storage, file_hist, 'f_livecrootc_storage', &
-             itime_in_file, sumarea, filter, &
-             'live coarse root carbon storage pool','gC/m2')
-
-         ! live coarse root carbon transfer pool
-         CALL write_history_variable_2d ( DEF_hist_vars%livecrootc_xfer, &
-             a_livecrootc_xfer, file_hist, 'f_livecrootc_xfer', itime_in_file, sumarea, filter, &
-             'live coarse root carbon transfer pool','gC/m2')
-
-         ! dead coarse root carbon display pool
-         CALL write_history_variable_2d ( DEF_hist_vars%deadcrootc, &
-             a_deadcrootc, file_hist, 'f_deadcrootc', itime_in_file, sumarea, filter, &
-             'dead coarse root carbon display pool','gC/m2')
-
-         ! dead coarse root carbon storage pool
-         CALL write_history_variable_2d ( DEF_hist_vars%deadcrootc_storage, &
-             a_deadcrootc_storage, file_hist, 'f_deadcrootc_storage', &
-             itime_in_file, sumarea, filter, &
-             'dead coarse root carbon storage pool','gC/m2')
-
-         ! dead coarse root carbon transfer pool
-         CALL write_history_variable_2d ( DEF_hist_vars%deadcrootc_xfer, &
-             a_deadcrootc_xfer, file_hist, 'f_deadcrootc_xfer', itime_in_file, sumarea, filter, &
-             'dead coarse root carbon transfer pool','gC/m2')
-
-#ifdef CROP
-         ! grain carbon display pool
-         CALL write_history_variable_2d ( DEF_hist_vars%grainc, &
-             a_grainc, file_hist, 'f_grainc', itime_in_file, sumarea, filter, &
-             'grain carbon display pool','gC/m2')
-
-         ! grain carbon storage pool
-         CALL write_history_variable_2d ( DEF_hist_vars%grainc_storage, &
-             a_grainc_storage, file_hist, 'f_grainc_storage', itime_in_file, sumarea, filter, &
-             'grain carbon storage pool','gC/m2')
-
-         ! grain carbon transfer pool
-         CALL write_history_variable_2d ( DEF_hist_vars%grainc_xfer, &
-             a_grainc_xfer, file_hist, 'f_grainc_xfer', itime_in_file, sumarea, filter, &
-             'grain carbon transfer pool','gC/m2')
-#endif
-
-#ifdef CH4
          ! CALL write_history_variable_2d ( DEF_hist_vars%annsum_npp, &
          !     a_annsum_npp, file_hist, 'f_annsum_npp', itime_in_file, sumarea, filter, &
          !     '-','-')
@@ -1201,6 +1055,176 @@ ENDIF
          CALL write_history_variable_2d ( DEF_hist_vars%tempavg_finrw, &
              a_tempavg_finrw, file_hist, 'f_tempavg_finrw', itime_in_file, sumarea, filter, &
              'respiration-weighted annual average of finundated','-')
+#endif
+
+         IF (p_is_worker) THEN
+            IF (numpatch > 0) THEN
+               filter(:) = patchtype < 99
+               IF (DEF_forcing%has_missing_value) THEN
+                  filter = filter .and. forcmask_pch
+               ENDIF
+            ENDIF
+         ENDIF
+
+         IF (HistForm == 'Gridded') THEN
+            CALL mp2g_hist%get_sumarea (sumarea, filter)
+         ENDIF
+
+         ! 1: assimsun enf temperate
+         CALL write_history_variable_2d ( DEF_hist_vars%assimsun, &
+             a_assimsun, file_hist, 'f_assimsun', itime_in_file, sumarea, filter, &
+         'Photosynthetic assimilation rate of sunlit leaf for needleleaf evergreen temperate tree',&
+         'mol m-2 s-1')
+
+         ! 1: assimsha enf temperate
+         CALL write_history_variable_2d ( DEF_hist_vars%assimsha, &
+             a_assimsha, file_hist, 'f_assimsha', itime_in_file, sumarea, filter, &
+         'Photosynthetic assimilation rate of shaded leaf for needleleaf evergreen temperate tree',&
+         'mol m-2 s-1')
+
+         ! 1: etrsun enf temperate
+         CALL write_history_variable_2d ( DEF_hist_vars%etrsun, &
+             a_etrsun, file_hist, 'f_etrsun', itime_in_file, sumarea, filter, &
+             'Transpiration rate of sunlit leaf for needleleaf evergreen temperate tree','mm s-1')
+
+         ! 1: etrsha enf temperate
+         CALL write_history_variable_2d ( DEF_hist_vars%etrsha, &
+             a_etrsha, file_hist, 'f_etrsha', itime_in_file, sumarea, filter, &
+             'Transpiration rate of shaded leaf for needleleaf evergreen temperate tree','mm s-1')
+
+         ! rstfacsun
+         CALL write_history_variable_2d ( DEF_hist_vars%rstfacsun, &
+             a_rstfacsun, file_hist, 'f_rstfacsun', itime_in_file, sumarea, filter, &
+             'Ecosystem level Water stress factor on sunlit canopy','unitless')
+
+         ! rstfacsha
+         CALL write_history_variable_2d ( DEF_hist_vars%rstfacsha, &
+             a_rstfacsha, file_hist, 'f_rstfacsha', itime_in_file, sumarea, filter, &
+             'Ecosystem level Water stress factor on shaded canopy','unitless')
+
+         ! gssun
+         CALL write_history_variable_2d ( DEF_hist_vars%gssun, &
+             a_gssun, file_hist, 'f_gssun', itime_in_file, sumarea, filter, &
+             'Ecosystem level canopy conductance on sunlit canopy','mol m-2 s-1')
+
+         ! gssha
+         CALL write_history_variable_2d ( DEF_hist_vars%gssha, &
+             a_gssha, file_hist, 'f_gssha', itime_in_file, sumarea, filter, &
+             'Ecosystem level canopy conductance on shaded canopy','mol m-2 s-1')
+
+         ! soil resistance [m/s]
+         CALL write_history_variable_2d ( DEF_hist_vars%rss, &
+             a_rss, file_hist, 'f_rss', itime_in_file, sumarea, filter, &
+             'soil surface resistance','s/m')
+
+#ifdef BGC
+         ! leaf carbon display pool
+         CALL write_history_variable_2d ( DEF_hist_vars%leafc, &
+             a_leafc, file_hist, 'f_leafc', itime_in_file, sumarea, filter, &
+             'leaf carbon display pool','gC/m2')
+
+         ! leaf carbon storage pool
+         CALL write_history_variable_2d ( DEF_hist_vars%leafc_storage, &
+             a_leafc_storage, file_hist, 'f_leafc_storage', itime_in_file, sumarea, filter, &
+             'leaf carbon storage pool','gC/m2')
+
+         ! leaf carbon transfer pool
+         CALL write_history_variable_2d ( DEF_hist_vars%leafc_xfer, &
+             a_leafc_xfer, file_hist, 'f_leafc_xfer', itime_in_file, sumarea, filter, &
+             'leaf carbon transfer pool','gC/m2')
+
+         ! fine root carbon display pool
+         CALL write_history_variable_2d ( DEF_hist_vars%frootc, &
+             a_frootc, file_hist, 'f_frootc', itime_in_file, sumarea, filter, &
+             'fine root carbon display pool','gC/m2')
+
+         ! fine root carbon storage pool
+         CALL write_history_variable_2d ( DEF_hist_vars%frootc_storage, &
+             a_frootc_storage, file_hist, 'f_frootc_storage', itime_in_file, sumarea, filter, &
+             'fine root carbon storage pool','gC/m2')
+
+         ! fine root carbon transfer pool
+         CALL write_history_variable_2d ( DEF_hist_vars%frootc_xfer, &
+             a_frootc_xfer, file_hist, 'f_frootc_xfer', itime_in_file, sumarea, filter, &
+             'fine root carbon transfer pool','gC/m2')
+
+         ! live stem carbon display pool
+         CALL write_history_variable_2d ( DEF_hist_vars%livestemc, &
+             a_livestemc, file_hist, 'f_livestemc', itime_in_file, sumarea, filter, &
+             'live stem carbon display pool','gC/m2')
+
+         ! live stem carbon storage pool
+         CALL write_history_variable_2d ( DEF_hist_vars%livestemc_storage, &
+             a_livestemc_storage, file_hist, 'f_livestemc_storage', itime_in_file, sumarea, filter,&
+             'live stem carbon storage pool','gC/m2')
+
+         ! live stem carbon transfer pool
+         CALL write_history_variable_2d ( DEF_hist_vars%livestemc_xfer, &
+             a_livestemc_xfer, file_hist, 'f_livestemc_xfer', itime_in_file, sumarea, filter, &
+             'live stem carbon transfer pool','gC/m2')
+
+         ! dead stem carbon display pool
+         CALL write_history_variable_2d ( DEF_hist_vars%deadstemc, &
+             a_deadstemc, file_hist, 'f_deadstemc', itime_in_file, sumarea, filter, &
+             'dead stem carbon display pool','gC/m2')
+
+         ! dead stem carbon storage pool
+         CALL write_history_variable_2d ( DEF_hist_vars%deadstemc_storage, &
+             a_deadstemc_storage, file_hist, 'f_deadstemc_storage', itime_in_file, sumarea, filter,&
+             'dead stem carbon storage pool','gC/m2')
+
+         ! dead stem carbon transfer pool
+         CALL write_history_variable_2d ( DEF_hist_vars%deadstemc_xfer, &
+             a_deadstemc_xfer, file_hist, 'f_deadstemc_xfer', itime_in_file, sumarea, filter, &
+             'dead stem carbon transfer pool','gC/m2')
+
+         ! live coarse root carbon display pool
+         CALL write_history_variable_2d ( DEF_hist_vars%livecrootc, &
+             a_livecrootc, file_hist, 'f_livecrootc', itime_in_file, sumarea, filter, &
+             'live coarse root carbon display pool','gC/m2')
+
+         ! live coarse root carbon storage pool
+         CALL write_history_variable_2d ( DEF_hist_vars%livecrootc_storage, &
+             a_livecrootc_storage, file_hist, 'f_livecrootc_storage', &
+             itime_in_file, sumarea, filter, &
+             'live coarse root carbon storage pool','gC/m2')
+
+         ! live coarse root carbon transfer pool
+         CALL write_history_variable_2d ( DEF_hist_vars%livecrootc_xfer, &
+             a_livecrootc_xfer, file_hist, 'f_livecrootc_xfer', itime_in_file, sumarea, filter, &
+             'live coarse root carbon transfer pool','gC/m2')
+
+         ! dead coarse root carbon display pool
+         CALL write_history_variable_2d ( DEF_hist_vars%deadcrootc, &
+             a_deadcrootc, file_hist, 'f_deadcrootc', itime_in_file, sumarea, filter, &
+             'dead coarse root carbon display pool','gC/m2')
+
+         ! dead coarse root carbon storage pool
+         CALL write_history_variable_2d ( DEF_hist_vars%deadcrootc_storage, &
+             a_deadcrootc_storage, file_hist, 'f_deadcrootc_storage', &
+             itime_in_file, sumarea, filter, &
+             'dead coarse root carbon storage pool','gC/m2')
+
+         ! dead coarse root carbon transfer pool
+         CALL write_history_variable_2d ( DEF_hist_vars%deadcrootc_xfer, &
+             a_deadcrootc_xfer, file_hist, 'f_deadcrootc_xfer', itime_in_file, sumarea, filter, &
+             'dead coarse root carbon transfer pool','gC/m2')
+
+#ifdef CROP
+         ! grain carbon display pool
+         CALL write_history_variable_2d ( DEF_hist_vars%grainc, &
+             a_grainc, file_hist, 'f_grainc', itime_in_file, sumarea, filter, &
+             'grain carbon display pool','gC/m2')
+
+         ! grain carbon storage pool
+         CALL write_history_variable_2d ( DEF_hist_vars%grainc_storage, &
+             a_grainc_storage, file_hist, 'f_grainc_storage', itime_in_file, sumarea, filter, &
+             'grain carbon storage pool','gC/m2')
+
+         ! grain carbon transfer pool
+         CALL write_history_variable_2d ( DEF_hist_vars%grainc_xfer, &
+             a_grainc_xfer, file_hist, 'f_grainc_xfer', itime_in_file, sumarea, filter, &
+             'grain carbon transfer pool','gC/m2')
 #endif
 
          ! leaf nitrogen display pool

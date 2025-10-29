@@ -103,6 +103,9 @@ PROGRAM CoLM
    USE MOD_Lake_Namelist
 #endif
 
+#ifdef CH4
+   USE MOD_Const_ch4, only: read_ch4_namelist
+#endif
    IMPLICIT NONE
 
    character(len=256) :: nlfile
@@ -161,6 +164,12 @@ PROGRAM CoLM
       CALL getarg (1, nlfile)
 
       CALL read_namelist (nlfile)
+
+#ifdef CH4
+   IF (DEF_USE_METHANE_para) THEN
+      CALL read_ch4_namelist (nlfile)
+   ENDIF
+#endif
 
 #ifdef EXTERNAL_LAKE
       CALL read_lake_namelist (nlfile)

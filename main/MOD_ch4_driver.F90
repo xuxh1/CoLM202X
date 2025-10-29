@@ -8,8 +8,8 @@
 
 		use MOD_Precision
 		use MOD_Const_Physical, only: rgas, denh2o, denice, tfrz, grav
-		use MOD_Const_ch4
-		use MOD_ch4varcon
+		! use MOD_Const_ch4
+		! use MOD_ch4varcon
 		use MOD_Namelist, only : DEF_USE_VariablySaturatedFlow
 		use MOD_Vars_Global, only : maxsnl,nl_soil,nl_lake,spval,PI,deg2rad,z_soi,zi_soi,dz_soi
 		use MOD_ch4
