@@ -166,7 +166,7 @@ contains
 		! 	ch4co2                       , &! CO2 production from CH4 oxidation (g C/m**2/s)
 		! 	ch4prod                      , &! average CH4 production (g C/m^2/s)       
 			ch4_surf_flux_tot            , &! CH4 flux to atm. (gCH4/m2/s)
-			net_methane                     ! average net methane correction to CO2 flux (mol/m2/s)
+			net_methane                     ! average net methane correction to CO2 flux (gCH4/m2/s)
 
 		!------------------- ch4_annualupdate ------------------------------
 		real(r8), intent(out) :: &
@@ -236,8 +236,8 @@ contains
 
 		real(r8) :: lon,lat                 ! lon,lat
 
-		real(r8) :: ch4_prod_tot            ! CH4 production for column (mol/m2/s)
-		real(r8) :: ch4_oxid_tot            ! CH4 oxidation for column (mol/m2/s)
+		real(r8) :: ch4_prod_tot            ! CH4 production for column (gCH4/m2/s)
+		real(r8) :: ch4_oxid_tot            ! CH4 oxidation for column (gCH4/m2/s)
 
 		real(r8) :: total                   ! diff + aere + ebul
 		real(r8) :: dfsat
@@ -346,7 +346,7 @@ contains
 		end if ! saturated no change
 
 		! calculate CH4 production in each soil layer
-		call ch4_prod (patchtype,sat,finundated,jwt,rr,deltim,& !input
+		call ch4_prod (patchtype,sat,finundated,jwt,rr,deltim,idate,& !input
 			z_soisno,dz_soisno,zi_soisno,t_soisno,&
 			lai,conc_o2,rootfr,annavg_finrw,&
 			crootfr,somhr,lithr,hr_vr,o_scalar,fphr,pot_f_nit_vr,&
@@ -354,26 +354,26 @@ contains
 			ch4_prod_depth,o2_decomp_depth)
 
 		! calculate CH4 oxidation in each soil layer
-		call ch4_oxid (jwt,  sat,  deltim,  z_soisno,  dz_soisno,  zi_soisno, &
+		call ch4_oxid (jwt,  sat,  deltim,  z_soisno,  dz_soisno,  zi_soisno,idate, &
 			t_soisno,      smp,      vol_liq,    porsl,   conc_o2,   conc_ch4,              &
 			ch4_oxid_depth,          o2_oxid_depth) 
 
 		! calculate CH4 aerenchyma losses in each soil layer
-		call ch4_aere (patchtype, jwt, sat, lai,     deltim, &
+		call ch4_aere (patchtype, jwt, sat, lai,     deltim,idate, &
 			z_soisno, dz_soisno,  zi_soisno,     t_soisno, vol_liq, porsl,  &
 			rootfr,   rootr, etr, grnd_ch4_cond, c_atm,    annsum_npp,      &
 			annavg_agnpp,    annavg_bgnpp, conc_o2, conc_ch4, ch4_prod_depth,&
 			ch4_aere_depth, ch4_tran_depth, o2_aere_depth)
 
 		! calculate CH4 ebullition losses in each soil layer
-		call ch4_ebul (patchtype, jwt, sat, deltim, &
+		call ch4_ebul (patchtype, jwt, sat, deltim, idate,&
 			z_soisno, dz_soisno, zi_soisno, lakedepth, forc_pbot,&
 			t_soisno, lake_icefrac, porsl, wdsrf, conc_ch4,&
 			ch4_ebul_depth)
 
 		! Solve CH4 reaction/diffusion equation 
 		! Competition for oxygen will occur here.
-		call ch4_tran (patchtype,&
+		call ch4_tran (patchtype,idate,&
 			lb, snl, jwt, sat,&
 			lon,lat,deltim, z_soisno, dz_soisno, zi_soisno,  t_soisno, t_grnd, &
 			vol_liq, porsl, wliq_soisno, wice_soisno, wdsrf,bsw, c_atm, ch4_prod_depth, o2_aere_depth,&
@@ -446,8 +446,10 @@ contains
 			! !Convert from mol to g C
 			! ch4_prod_tot = ch4_prod_tot + ch4_prod_depth(j) * dz_soisno(j) * catomw
 			! !Convert from mol to g C
-			ch4_oxid_tot = ch4_oxid_tot + ch4_oxid_depth(j) * dz_soisno(j)
-			ch4_prod_tot = ch4_prod_tot + ch4_prod_depth(j) * dz_soisno(j)
+			ch4_oxid_tot = ch4_oxid_tot + ch4_oxid_depth(j) * dz_soisno(j) * ch4atomw
+			!Convert from mol to g CH4
+			ch4_prod_tot = ch4_prod_tot + ch4_prod_depth(j) * dz_soisno(j) * ch4atomw
+			!Convert from mol to g CH4
 			if (j == nl_soil) then
 				! Adjustment to NEE flux to atm. for methane production
 				net_methane = net_methane - ch4_prod_tot
@@ -547,7 +549,7 @@ contains
 	
 		ch4_first_time = .false.
 
-		if (idate(2)==1 .and. idate(3)==1800) then
+		if (idate(2)==342 .and. idate(3)==1800) then
 			print*, "===================================================================================="
 			do j=1,nl_soil
 				print*, "the layer j is ",j
@@ -596,8 +598,8 @@ contains
 			err1 = (ch4_surf_flux_tot-(ch4_surf_aere+ch4_surf_ebul+ch4_surf_diff)*ch4atomw)/ch4_surf_flux_tot
 			err2 = (ch4_surf_ebul - sum(ch4_ebul_depth(1:10) * dz_soisno(1:10)))/ch4_surf_ebul
 			err3 = (ch4_surf_aere - sum(ch4_aere_depth(1:10) * dz_soisno(1:10)))/ch4_surf_aere
-			err4 = (ch4_prod_tot - sum(ch4_prod_depth(1:10) * dz_soisno(1:10)))/ch4_prod_tot
-			err5 = (ch4_oxid_tot - sum(ch4_oxid_depth(1:10) * dz_soisno(1:10)))/ch4_oxid_tot
+			err4 = (ch4_prod_tot - sum(ch4_prod_depth(1:10) * dz_soisno(1:10)) * ch4atomw)/ch4_prod_tot
+			err5 = (ch4_oxid_tot - sum(ch4_oxid_depth(1:10) * dz_soisno(1:10)) * ch4atomw)/ch4_oxid_tot
 			print*, "err1",err1
 			print*, "err2",err2
 			print*, "err3",err3
@@ -692,11 +694,28 @@ contains
 		
 		end if
 
+		if (idate(2)==342 .and. idate(3)==1800) then
+			print*, "===================================================================================="
+			print*, "j",j
+			print*, "f_ch4_adj",f_ch4_adj
+			print*, "t_soisno",t_soisno(j)
+
+			print*, "base_decomp",base_decomp
+			print*, "somhr",somhr
+			print*, "lithr",lithr
+
+			print*, "partition_z",partition_z
+			print*, "layer_sat_lag",layer_sat_lag(j)
+
+			print*, "hr_vr",hr_vr(j)
+			print*, "dz_soisno(j)",dz_soisno(j)
+			print*, "===================================================================================="
+		endif
 	end subroutine ch4_annualupdate
 
 
 	!-----------------------------------------------------------------------
-	subroutine ch4_prod (patchtype,sat,finundated,jwt,rr,deltim,& !input
+	subroutine ch4_prod (patchtype,sat,finundated,jwt,rr,deltim,idate,& !input
 		z_soisno,dz_soisno,zi_soisno,t_soisno,&
 		lai,conc_o2,rootfr,annavg_finrw,&
 		crootfr,somhr,lithr,hr_vr,o_scalar,fphr,pot_f_nit_vr,&
@@ -716,6 +735,7 @@ contains
 									   ! 3=land ice, 4=land water bodies, 99=ocean
   
 		integer , intent(in) :: &
+			idate(3)          , &! current date (year, days of the year, seconds of the day)
 			sat                     , &! 0 = unsaturated; 1 = saturated 
 			finundated              , &! fractional inundated area in soil column 
 			jwt                        ! index of the soil layer right above the water table (-) 
@@ -935,23 +955,31 @@ contains
 					ch4_prod_depth(j) = 0._r8 ! [mol/m3 total/s]
 				endif ! anoxicmicrosites
 			endif ! WT
-			! print*, "j",j
-			! print*, "f_ch4_adj",f_ch4_adj
-			! print*, "t_soisno",t_soisno(j)
 
-			! print*, "base_decomp",base_decomp
-			! print*, "somhr",somhr
-			! print*, "lithr",lithr
+		if (idate(2)==342 .and. idate(3)==1800) then
+			print*, "===================================================================================="
+			print*, "j",j
+			print*, "f_ch4_adj",f_ch4_adj
+			print*, "t_soisno",t_soisno(j)
 
-			! print*, "partition_z",partition_z
-			! print*, "hr_vr",hr_vr(j)
-			! print*, "dz_soisno(j)",dz_soisno(j)
+			print*, "base_decomp",base_decomp
+			print*, "somhr",somhr
+			print*, "lithr",lithr
+
+			print*, "partition_z",partition_z
+			print*, "layer_sat_lag",layer_sat_lag(j)
+
+			print*, "hr_vr",hr_vr(j)
+			print*, "dz_soisno(j)",dz_soisno(j)
+			print*, "===================================================================================="
+		endif
+
 		end do ! nl_soil
 	
 	end subroutine ch4_prod
 
 	!---------------------------------------------------------------------------
-	subroutine ch4_oxid (jwt,  sat,  deltim,  z_soisno,  dz_soisno,  zi_soisno, &
+	subroutine ch4_oxid (jwt,  sat,  deltim,  z_soisno,  dz_soisno,  zi_soisno, idate,&
 		t_soisno,      smp,      vol_liq,    porsl,   conc_o2,   conc_ch4,              &
 		ch4_oxid_depth,          o2_oxid_depth) 
 		!-----------------------------------------------------------------------
@@ -962,6 +990,8 @@ contains
 
 		!-----------------------Argument---------- -----------------------------
 		integer , intent(in) :: &
+			idate(3)          , &! current date (year, days of the year, seconds of the day)
+
 			jwt                    , &! index of the soil layer right above the water table (-) 
 			sat                       ! 0 = unsaturated; 1 = saturated 
 
@@ -1043,12 +1073,31 @@ contains
 			ch4_oxid_depth(j) = oxid_a
 			o2_oxid_depth(j) = ch4_oxid_depth(j) * 2._r8
 
+			if (idate(2)==342 .and. idate(3)==1800) then
+				print*, "===================================================================================="
+				print*, "j",j
+				print*, "ch4_oxid_depth",ch4_oxid_depth(j)
+				print*, "vol_liq_min",vol_liq_min
+				print*, "porevol",porevol
+				print*, "porsl",porsl(j)
+				print*, "vol_liq",vol_liq(j)
+
+				print*, "conc_ch4_rel",conc_ch4_rel
+				print*, "conc_o2_rel",conc_o2_rel
+				print*, "conc_ch4",conc_ch4(j)
+				print*, "conc_o2",conc_o2(j)
+
+				print*, "smp",smp(j)
+				print*, "smp_fact",smp_fact
+
+				print*, "===================================================================================="
+			endif
 		end do
 	end subroutine ch4_oxid
 
 
 	!---------------------------------------------------------------------------
-	subroutine ch4_aere (patchtype, jwt, sat, lai,     deltim, &
+	subroutine ch4_aere (patchtype, jwt, sat, lai,     deltim, idate,&
 		z_soisno, dz_soisno,  zi_soisno,     t_soisno, vol_liq, porsl,  &
 		rootfr,   rootr, etr, grnd_ch4_cond, c_atm,    annsum_npp,      &
 		annavg_agnpp,    annavg_bgnpp, conc_o2, conc_ch4, ch4_prod_depth,&
@@ -1064,6 +1113,7 @@ contains
 
 		!-----------------------Argument----------------------------------------
 		integer, intent(in) :: &
+			idate(3)          , &! current date (year, days of the year, seconds of the day)
 			patchtype       ! land patch type (0=soil, 1=urban or built-up, 2=wetland,
 							! 3=land ice, 4=land water bodies, 99=ocean
 
@@ -1131,7 +1181,7 @@ contains
 		! point loop to partition aerenchyma flux into each soil layer
 		if (patchtype /= 4) then
 
-			call SiteOxAere(jwt,  sat,lai,    z_soisno, dz_soisno,  zi_soisno,  t_soisno,  &
+			call SiteOxAere(jwt,  sat,lai,    z_soisno, dz_soisno,  zi_soisno,  t_soisno, idate, &
 			vol_liq,  porsl,  rootfr,   rootr,grnd_ch4_cond, etr,   &
 			annsum_npp, annavg_agnpp,   annavg_bgnpp,  c_atm,      conc_o2, conc_ch4,        &
 			tranloss, aere,   oxaere)
@@ -1143,6 +1193,14 @@ contains
 				ch4_aere_depth (j) = ch4_aere_depth(j) + aeretran
 				ch4_tran_depth (j) = ch4_tran_depth(j) + min(tranloss(j), aeretran)
 				o2_aere_depth  (j) = o2_aere_depth (j) + oxaere(j)
+				if (idate(2)==342 .and. idate(3)==1800) then
+					print*, "===================================================================================="
+					print*, "j",j
+					print*, "aeretran",aeretran
+					print*, "aere",aere(j)
+					print*, "tranloss",tranloss(j)
+					print*, "===================================================================================="
+				endif
 			end do ! over levels
 		end if ! not lake
 
@@ -1150,7 +1208,7 @@ contains
 
 
 	!--------------------------------------------------------------------------- 
-	subroutine SiteOxAere(jwt,  sat, lai,    z_soisno, dz_soisno,  zi_soisno,  t_soisno,  &
+	subroutine SiteOxAere(jwt,  sat, lai,    z_soisno, dz_soisno,  zi_soisno,  t_soisno, idate, &
 		vol_liq,  porsl,  rootfr,   rootr,  grnd_ch4_cond, etr,   &
 		annsum_npp, annavg_agnpp,   annavg_bgnpp,  c_atm,      conc_o2, conc_ch4,        &
 		tranloss, aere,   oxaere)
@@ -1162,6 +1220,7 @@ contains
 
 		!-----------------------Argument----------------------------------------
 		integer , intent(in) :: &
+			idate(3)          , &! current date (year, days of the year, seconds of the day)
 			jwt                    , &! index of the soil layer right above the water table (-) 
 			sat                       ! 0 = unsatured, 1 = saturated 
 
@@ -1270,12 +1329,36 @@ contains
 				k_h_inv = exp(-c_h_inv(1) * (1._r8 / t_soisno(j) - 1._r8 / kh_tbase) + log (kh_theta(1))) ! (4.12) Wania (L atm/mol)
 				k_h_cc = t_soisno(j) / k_h_inv * rgasLatm ! (4.21) Wania [(mol/m3w) / (mol/m3g)]
 				aerecond = area_tiller * rootfr(j) * diffus_aere / (z_soisno(j)*DEF_CH4%rob)
+			if (idate(2)==342 .and. idate(3)==1800) then
+				print*, "aerecond",aerecond
+			endif
+
 				! Add in boundary layer resistance
 				aerecond = 1._r8 / (1._r8/(aerecond+smallnumber) + 1._r8/(grnd_ch4_cond+smallnumber))
 
 				aere(j) = aerecond * (conc_ch4(j)/porsl(j)/k_h_cc - c_atm(1)) / dz_soisno(j) ![mol/m3-total/s]
 				!ZS: Added porsl & Henry's const.
 				aere(j) = max(aere(j), 0._r8) ! prevent backwards diffusion
+			if (idate(2)==342 .and. idate(3)==1800) then
+				print*, "===================================================================================="
+				print*, "j",j
+				print*, "lai",lai
+				print*, "aere",aere(j)
+				print*, "aerecond",aerecond
+				print*, "grnd_ch4_cond",grnd_ch4_cond
+				print*, "area_tiller",area_tiller
+				print*, "rootfr(j)",rootfr(j)
+				print*, "diffus_aere",diffus_aere
+				print*, "dz_soisno(j)",dz_soisno(j)
+
+				print*, "k_h_cc",k_h_cc
+				print*, "porsl",porsl(j)
+				print*, "conc_ch4",conc_ch4(j)
+				print*, "c_atm(1)",c_atm(1)
+				print*, "conc_ch4(j)/porsl(j)/k_h_cc",conc_ch4(j)/porsl(j)/k_h_cc
+				print*, "conc_ch4(j)/porsl(j)/k_h_cc - c_atm(1)",conc_ch4(j)/porsl(j)/k_h_cc - c_atm(1)
+				print*, "===================================================================================="
+			endif
 
 				! Do oxygen diffusion into layer
 				k_h_inv = exp(-c_h_inv(2) * (1._r8 / t_soisno(j) - 1._r8 / kh_tbase) + log (kh_theta(2)))
@@ -1285,6 +1368,20 @@ contains
 				aerecond = 1._r8 / (1._r8/(aerecond+smallnumber) + 1._r8/(grnd_ch4_cond+smallnumber))
 				oxaere(j) = -aerecond *(conc_o2(j)/porsl(j)/k_h_cc - c_atm(2)) / dz_soisno(j) ![mol/m3-total/s]
 				oxaere(j) = max(oxaere(j), 0._r8)
+			if (idate(2)==342 .and. idate(3)==1800) then
+				print*, "===================================================================================="
+				print*, "j",j
+				print*, "lai",lai
+				print*, "oxaere",oxaere(j)
+				print*, "aerecond",aerecond
+				print*, "k_h_cc",k_h_cc
+				print*, "porsl",porsl(j)
+				print*, "conc_o2",conc_o2(j)
+				print*, "c_atm(2)",c_atm(2)
+				print*, "conc_o2(j)/porsl(j)/k_h_cc",conc_o2(j)/porsl(j)/k_h_cc
+				print*, "conc_o2(j)/porsl(j)/k_h_cc - c_atm(2)",conc_o2(j)/porsl(j)/k_h_cc - c_atm(2)
+				print*, "===================================================================================="
+			endif
 				! Diffusion in is positive; prevent backwards diffusion
 				if ( .not. DEF_CH4%use_aereoxid_prog ) then ! fixed aere oxid proportion; will be done in ch4_tran
 					oxaere(j) = 0._r8
@@ -1293,13 +1390,37 @@ contains
 				aere(j) = 0._r8
 				oxaere(j) = 0._r8
 			end if ! veg type, below water table, & above freezing
+			if (idate(2)==342 .and. idate(3)==1800) then
+				print*, "===================================================================================="
+				print*, "j",j
+				print*, "lai",lai
+				print*, "aere",aere(j)
+				print*, "oxaere",oxaere(j)
+				! print*, "oxaere",oxaere(j)
+
+				! print*, "aerecond",aerecond
+				! print*, "porsl",porsl(j)
+				! print*, "k_h_cc",k_h_cc
+				! print*, "aerecond",aerecond
+				print*, "area_tiller",area_tiller
+				print*, "rootfr",rootfr(j)
+				print*, "z_soisno",z_soisno(j)
+				print*, "n_tiller",n_tiller
+				print*, "m_tiller",m_tiller
+				print*, "anpp",anpp
+				print*, "nppratio",nppratio
+				print*, "annavg_agnpp",annavg_agnpp
+				print*, "annavg_bgnpp",annavg_bgnpp
+
+				print*, "===================================================================================="
+			endif
 		end do
 
   	end subroutine SiteOxAere
 
 	
 	!---------------------------------------------------------------------------
-	subroutine ch4_ebul (patchtype, jwt, sat, deltim, &
+	subroutine ch4_ebul (patchtype, jwt, sat, deltim, idate,&
 		z_soisno, dz_soisno, zi_soisno, lakedepth, forc_pbot,&
 		t_soisno, lake_icefrac, porsl, wdsrf, conc_ch4,&
 		ch4_ebul_depth)
@@ -1313,6 +1434,8 @@ contains
 
 		!-----------------------Argument---------- -----------------------------
 		integer, intent(in) :: &
+			idate(3)          , &! current date (year, days of the year, seconds of the day)
+			
 			patchtype           ! land patch type (0=soil, 1=urban or built-up, 2=wetland,
 									  ! 3=land ice, 4=land water bodies, 99=ocean
 
@@ -1387,7 +1510,22 @@ contains
 			else ! above the water table or freezing
 				ch4_ebul_depth(j) = 0._r8
 			endif ! below the water table and not freezing
+			if (idate(2)==342 .and. idate(3)==1800) then
+				print*, "===================================================================================="
+				print*, "j",j
+				print*, "vgc",vgc
+				print*, "porsl",porsl(j)
+				print*, "conc_ch4",conc_ch4(j)
+				print*, "k_h_cc",k_h_cc
+				print*, "t_soisno",t_soisno(j)
+				print*, "pressure",pressure
+				print*, "forc_pbot",forc_pbot
+				print*, "z_soisno",z_soisno(j)
+				print*, "wdsrf",wdsrf
+				print*, "zi_soisno",zi_soisno(j)
 
+				print*, "===================================================================================="
+			endif
 			! Prevent ebullition from reaching the surface for frozen lakes
 			! lake_icefrac(1=the first lake, not soil)
 			if (patchtype==4 .and. lake_icefrac(1) > 0.1_r8) ch4_ebul_depth(j) = 0._r8
@@ -1396,7 +1534,7 @@ contains
 	end subroutine ch4_ebul
 
 	!---------------------------------------------------------------------------
-	subroutine ch4_tran (patchtype, &
+	subroutine ch4_tran (patchtype, idate,&
 		lb, snl, jwt, sat,&
 		lon, lat, deltim, z_soisno, dz_soisno, zi_soisno,  t_soisno, t_grnd, &
 		vol_liq, porsl, wliq_soisno, wice_soisno, wdsrf, bsw, c_atm, ch4_prod_depth, o2_aere_depth,&
@@ -1420,6 +1558,8 @@ contains
 
 		!-----------------------Argument----------------------------------------
 		integer, intent(in) :: &
+			idate(3)          , &! current date (year, days of the year, seconds of the day)
+			
 			patchtype        	! land patch type (0=soil, 1=urban or built-up, 2=wetland,
 										! 3=land ice, 4=land water bodies, 99=ocean
 			! istep             , &! the i time step

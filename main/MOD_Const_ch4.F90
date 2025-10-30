@@ -131,7 +131,7 @@ MODULE MOD_Const_ch4
       ! the parameter file and may be modifed by the user (default aereoxid on the
       ! file is 0.0).
 
-      logical :: transpirationloss = .true. ! switch for activating CH4 loss from transpiration
+      logical :: transpirationloss = .false. ! switch for activating CH4 loss from transpiration
                                     ! Transpiration loss assumes that the methane concentration in dissolved soil
                                     ! water remains constant through the plant and is released when the water evaporates
                                     ! from the stomata.
