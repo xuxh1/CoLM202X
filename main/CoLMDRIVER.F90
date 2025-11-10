@@ -218,7 +218,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
                 t_grnd(i),wliq_soisno(maxsnl+1:,i),wice_soisno(maxsnl+1:,i),&
                 forc_t(i),forc_pbot(i),forc_po2m(i),forc_pco2m(i),&
                 zwt(i),rootfr(1:,m),snowdp(i),wat(i),rsur(i),etr(i),lakedepth(i),lake_icefrac(1:,i),wdsrf(i),bsw(1:,i),&
-                smp(1:,i),porsl(1:,i),lai(i),rootr(1:,i))
+                smp(1:,i),porsl(1:,i),lai(i),rootr(1:,i),fsatmax(i),fsatdcf(i))
               ENDIF
             ELSE
               IF ((patchtype(i) .eq. 2) .or. (patchtype(i) .eq. 0)) THEN
@@ -228,7 +228,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
                 t_grnd(i),wliq_soisno(maxsnl+1:,i),wice_soisno(maxsnl+1:,i),&
                 forc_t(i),forc_pbot(i),forc_po2m(i),forc_pco2m(i),&
                 zwt(i),rootfr(1:,m),snowdp(i),wat(i),rsur(i),etr(i),lakedepth(i),lake_icefrac(1:,i),wdsrf(i),bsw(1:,i),&
-                smp(1:,i),porsl(1:,i),lai(i),rootr(1:,i))
+                smp(1:,i),porsl(1:,i),lai(i),rootr(1:,i),fsatmax(i),fsatdcf(i))
               ENDIF
             ENDIF
 #endif

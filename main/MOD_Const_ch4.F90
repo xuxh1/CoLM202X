@@ -1,6 +1,6 @@
 MODULE MOD_Const_ch4
 !=======================================================================
-! ch4 parameters
+! ch4 constants
 !=======================================================================
 	USE MOD_Precision
 	USE MOD_ForcingDownscaling, only: SHR_CONST_RGAS
@@ -16,9 +16,12 @@ MODULE MOD_Const_ch4
 	integer :: iloop  ! loop index
 
 	integer, public, parameter :: ngases      =   3     ! CH4, O2, & CO2
+
+	!------------------------------------------------------------------
+
 	real(r8), public, parameter :: catomw = 12.011_r8 ! molar mass of C atoms (g/mol)
 	real(r8), public, parameter :: ch4atomw = 16.04_r8 ! molar mass of CH4 atoms (g/mol)
-!------------------------------------------------------------------
+
 	real(r8), public :: s_con(ngases,4)    ! Schmidt # calculation constants (spp, #)
 	data (s_con(1,iloop),iloop=1,4) /1898_r8, -110.1_r8, 2.834_r8, -0.02791_r8/ ! CH4
 	data (s_con(2,iloop),iloop=1,4) /1801_r8, -120.1_r8, 3.7818_r8, -0.047608_r8/ ! O2
@@ -34,17 +37,17 @@ MODULE MOD_Const_ch4
 	data (d_con_g(2,iloop),iloop=1,2) /0.1759_r8, 0.00117_r8/ ! O2
 	data (d_con_g(3,iloop),iloop=1,2) /0.1325_r8, 0.0009_r8/ ! CO2
 	
-	real(r8), public :: c_h_inv(ngases)    ! constant (K) for Henry's law (4.12, Wania)
-	data c_h_inv(1:3) /1600._r8, 1500._r8, 2400._r8/ ! CH4, O2, CO2
-	! data c_h(1:3) /1600._r8, 1500._r8, 2400._r8/ ! CH4, O2, CO2
-
+	real(r8), public :: c_h(ngases)    ! constant (K) for Henry's law (4.12, Wania)
+	data c_h(1:3) /1600._r8, 1500._r8, 2400._r8/ ! CH4, O2, CO2
 	
 	real(r8), public :: kh_theta(ngases)    ! Henry's constant (L.atm/mol) at standard temperature (298K)
-	data kh_theta(1:3) /714.29_r8, 769.23_r8, 29.4_r8/ ! CH4, O2, CO2
-   ! data kh_theta(1:3) /1.4e-3, 1.3e-3, 3.4e-2/ ! CH4, O2, CO2
+	! data kh_theta(1:3) /714.29_r8, 769.23_r8, 29.4_r8/ ! CH4, O2, CO2
+   data kh_theta(1:3) /1.4e-3, 1.3e-3, 3.4e-2/ ! CH4, O2, CO2
 
 	real(r8), public :: kh_tbase = 298.15_r8 ! base temperature for calculation of Henry's constant (K)
-	!------------------------------------------------------------------
+
+!------------------------------------------------------------------
+
 	real(r8), public, parameter :: rgasm = SHR_CONST_RGAS/1000._r8 ! 8.314 J mol-1 K-1; Universal gas constant 
                                  ![J/K/mol]=[J/K/kmol]/[kmol/mol]
                                  ![J/K/mol]=[N*m/K/mol]=[Pa*m3/K/mol]
@@ -56,14 +59,11 @@ MODULE MOD_Const_ch4
    ! [L*atm/mol/K] = [Pa*m3/K/mol] / [Pa/atm] / [m3/L]
 
 	real(r8), public, parameter :: secspday = 86400._r8 ! Seconds per day
-   !------------------------------------------------------------------
 
    type CH4_type
       ! ---------------------------------------------------- Variable parameter ----------------------------------------------------
       ! ! ch4 production constants
       real(r8) :: q10ch4 =1.33              ! additional Q10 for methane production ABOVE the soil decomposition temperature relationship (doc:Q10 Baseline:2 Range:1.5~4) (params:1.33)
-      real(r8) :: q10lake =1.995    ! For now, take to be the same as q10ch4 * 1.5.
-      real(r8) :: mino2lim = 0.2_r8         ! minimum anaerobic decomposition rate as a fraction of potential aerobic rate (0.2+ params:0.2)
       real(r8) :: f_ch4 = 0.2            ! ratio of CH4 production to total C mineralization (Baseline:0.2 Range:NA params:0.2) 
 
       ! ! ch4 oxidation constants
@@ -72,6 +72,7 @@ MODULE MOD_Const_ch4
       real(r8) :: k_m = 5.e-3_r8                ! Michaelis-Menten oxidation rate constant for CH4 concentration (params:5e-3 code:5.e-6_r8 * 1000._r8) (doc:KCH4 Baseline:5e-3 Range:5e-4~5e-2)
       real(r8) :: k_m_unsat = 5.e-4_r8           ! Michaelis-Menten oxidation rate constant for CH4 concentration (params:5e-4 code:5.e-6_r8 * 1000._r8 / 10._r8) (doc:KCH4 Baseline:5e-3 Range:5e-4~5e-2)
       real(r8) :: k_m_o2 =2.e-2_r8             ! Michaelis-Menten oxidation rate constant for O2 concentration (params:2e-2 code:20.e-6_r8 * 1000._r8) (doc:KO2 Baseline:2e-2 Range:2e-3~2e-1)
+      real(r8) :: q10_ch4_oxid = 1.9_r8         ! Q10 oxidation constant (? params:1.9)
 
       ! ! ch4 ebbulition constants
       real(r8) :: vgc_max  =0.15_r8            ! ratio of saturation pressure triggering ebullition (params:0.15) (doc:Ce,max Ce,min Baseline:0.15 Unit:mol m-3 ?)
@@ -92,7 +93,9 @@ MODULE MOD_Const_ch4
 
       ! -------------------------------------------------- Invariant parameter ----------------------------------------------------
       ! ! ch4 production constants
+      real(r8) :: mino2lim = 0.2_r8         ! minimum anaerobic decomposition rate as a fraction of potential aerobic rate (0.2+ params:0.2)
       real(r8) :: q10ch4base = 295._r8 ! temperature at which the effective f_ch4 actually equals the constant f_ch4 (295+ params:295)
+      real(r8) :: q10lake =1.995    ! For now, take to be the same as q10ch4 * 1.5.
       real(r8) :: q10lakebase = 298._r8       ! (K) base temperature for lake CH4 production (params:298. code:298._r8)
       ! real(r8) :: rootlitfrac        ! Fraction of soil organic matter associated with roots (params:0.5)
       real(r8) :: cnscalefactor=1.        ! scale factor on CN decomposition for assigning methane flux (?- params:1.)
@@ -104,7 +107,6 @@ MODULE MOD_Const_ch4
       real(r8) :: oxinhib = 400._r8          ! inhibition of methane production by oxygen (m^3/mol) (400+? params:400.)
 
       ! ! ch4 oxidation constants
-      real(r8) :: q10_ch4_oxid = 1.9_r8         ! Q10 oxidation constant (? params:1.9)
       real(r8) :: smp_crit =-2.4e5_r8            ! Critical soil moisture potential (mm) (params:-2.4e5)
 
       ! ! ch4 ebbulition constants
@@ -195,7 +197,14 @@ MODULE MOD_Const_ch4
       logical :: use_vertical_redoxlag = .true. ! Whether to enable the vertical redox lag effect
    END type CH4_type
 
+   type CH4_hydrology_type
+      ! real(r8) :: fsatmax = 0.38_r8
+      ! real(r8) :: fsatdcf = 0.5_r8
+      real(r8) :: vdcf = 2._r8
+   END type CH4_hydrology_type
+
    type (CH4_type) :: DEF_CH4
+   type (CH4_hydrology_type) :: DEF_CH4_hydrology
 
 CONTAINS
 
@@ -211,7 +220,7 @@ CONTAINS
    integer :: ivar
    integer :: ierr
 
-   namelist /nl_colm_ch4_parameter/ DEF_CH4
+   namelist /nl_colm_ch4_parameter/ DEF_CH4,DEF_CH4_hydrology
 
       IF (p_is_master) THEN
          open(10, status='OLD', file=trim(DEF_file_METHANE_para), form="FORMATTED")

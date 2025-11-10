@@ -861,7 +861,7 @@ ENDIF
                         filter(i) = .false.
                      ENDIF
                   ELSE
-                     IF(patchtype(i) .eq. 0 .and. patchtype(i) .eq. 2)THEN
+                     IF(patchtype(i) .eq. 0 .or. patchtype(i) .eq. 2)THEN
                         filter(i) = .true.
                      ELSE
                         filter(i) = .false.
@@ -890,6 +890,29 @@ ENDIF
          ! CALL write_history_variable_2d ( DEF_hist_vars%transfer_froot_gr, &
          !     a_transfer_froot_gr, file_hist, 'f_transfer_froot_gr', itime_in_file, sumarea, filter, &
          !     '-','-')
+         CALL write_history_variable_2d ( DEF_hist_vars%annsum_npp, &
+             a_annsum_npp, file_hist, 'f_annsum_npp', itime_in_file, sumarea, filter, &
+             'annual sum NPP','gC/m2/yr')
+
+         CALL write_history_variable_2d ( DEF_hist_vars%rr, &
+             a_rr, file_hist, 'f_rr', itime_in_file, sumarea, filter, &
+             'root respiration (fine root MR + total root GR)','gC/m2/s')
+
+         CALL write_history_variable_2d ( DEF_hist_vars%agnpp, &
+             a_agnpp, file_hist, 'f_agnpp', itime_in_file, sumarea, filter, &
+             'annual avg aboveground NPP','gC/m2/s')
+
+         CALL write_history_variable_2d ( DEF_hist_vars%bgnpp, &
+             a_bgnpp, file_hist, 'f_bgnpp', itime_in_file, sumarea, filter, &
+             'annual avg belowground NPP','gC/m2/s')
+
+         CALL write_history_variable_2d ( DEF_hist_vars%somhr, &
+             a_somhr, file_hist, 'f_somhr', itime_in_file, sumarea, filter, &
+             'soil organic matter heterotrophic respiration','gC/m2/s')
+
+         CALL write_history_variable_2d ( DEF_hist_vars%lithr, &
+             a_lithr, file_hist, 'f_lithr', itime_in_file, sumarea, filter, &
+             'litter heterotrophic respiration','gC/m2/s')
 
          ! CH4, O2, CO2 atmospheric conc
          CALL write_history_variable_3d ( DEF_hist_vars%c_atm, &

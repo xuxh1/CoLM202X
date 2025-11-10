@@ -1,8 +1,6 @@
 &nl_colm_ch4_parameter
     ! ! ch4 production constants
     DEF_CH4%q10ch4 = 1.33
-    DEF_CH4%q10lake = 1.995
-    DEF_CH4%mino2lim = 0.2
     DEF_CH4%f_ch4 = 0.2
 
     ! ! ch4 oxidation constants
@@ -11,6 +9,7 @@
     DEF_CH4%k_m = 5.e-3
     DEF_CH4%k_m_unsat = 5.e-4
     DEF_CH4%k_m_o2 = 2.e-2
+    DEF_CH4%q10_ch4_oxid = 1.9
 
     ! ! ch4 ebbulition constants
     DEF_CH4%vgc_max = 0.15

@@ -50,7 +50,7 @@
    DEF_LAI_MONTHLY = .true.
    DEF_METHANE_only_wetland = .true.
    DEF_USE_METHANE_para = .true.
-   DEF_file_METHANE_para = '/share/home/dq076/mode/ME/CoLM202X_CH4_s/run/ch4_parameter.nml'
+   DEF_file_METHANE_para = '/share/home/dq076/mode/ME/251030_r/run/standard_ch4_parameter.nml'
    
    DEF_USE_VariablySaturatedFlow = .true.
 
@@ -58,7 +58,7 @@
    ! Options :
    ! PRINCETON | GSWP3   | QIAN  | CRUNCEPV4 | CRUNCEPV7 | ERA5LAND | ERA5  |  MSWX
    ! WFDE5     | CRUJRA  | WFDEI | JRA55     | GDAS      | CMFD     | POINT |  JRA3Q
-   DEF_forcing_namelist = '/share/home/dq076/mode/ME/CoLM202X_CH4_s/run/forcing/CRUJRA.nml'
+   DEF_forcing_namelist = '/share/home/dq076/mode/ME/251030_r/run/forcing/CRUJRA.nml'
    
    ! ----- history -----
    DEF_WRST_FREQ = 'YEARLY'   ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
@@ -66,6 +66,6 @@
    DEF_HIST_groupby = 'YEAR'  ! history in one file: DAY/MONTH/YEAR
 
    DEF_hist_vars_out_default = .true.
-   DEF_hist_vars_namelist    = '/share/home/dq076/mode/ME/CoLM202X_CH4_s/run/history_ME.nml'
+   DEF_hist_vars_namelist    = '/share/home/dq076/mode/ME/251030_r/run/history_ME.nml'
 
 /

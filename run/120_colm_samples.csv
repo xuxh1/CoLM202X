@@ -1,5 +1,4 @@
-Parameter,Q10,beta,f_ch4,"R_o,max
-(vmax_ch4_oxid)","K_ch4
-(k_m)",K_o2,"Ce,max",p,R,r_L,F_a,f_do
-Min,1,0.1,0.1,1.25E-06,5.00E-04,0.002,0.075,0.15,1.45E-03,1.5,0.5,1
-Max,2.67,0.3,0.3,1.25E-04,5.00E-02,0.2,0.225,0.45,4.35E-03,4.5,1.5,10
+Parameter,q10ch4,f_ch4,vmax_ch4_oxid,k_m,k_m_o2,q10_ch4_oxid,vgc_max,poros_tiller,aere_radius,rob,scale_factor_aere,scale_factor_gasdiff
+Min,1,0.1,0.00000125,0.0005,0.002,1,0.075,0.15,0.00145,2,0.5,1
+Max,4,0.3,0.000125,0.05,0.2,4,0.225,0.45,0.00435,4,1.5,5
+Standard,1.33,0.2,0.0000125,0.005,0.02,1.9,0.15,0.3,0.0029,3,1,1

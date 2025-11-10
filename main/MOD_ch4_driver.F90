@@ -4,11 +4,11 @@
 		z_soisno,dz_soisno,zi_soisno,t_soisno,t_grnd,wliq_soisno,wice_soisno,&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&
 		zwt,rootfr,snowdp,wat,rsur,etr,lakedepth,lake_icefrac,wdsrf,bsw,&
-		smp,porsl,lai,rootr)
+		smp,porsl,lai,rootr,fsatmax,fsatdcf)
 
 		use MOD_Precision
 		use MOD_Const_Physical, only: rgas, denh2o, denice, tfrz, grav
-		! use MOD_Const_ch4
+		use MOD_Const_ch4
 		! use MOD_ch4varcon
 		use MOD_Namelist, only : DEF_USE_VariablySaturatedFlow
 		use MOD_Vars_Global, only : maxsnl,nl_soil,nl_lake,spval,PI,deg2rad,z_soi,zi_soi,dz_soi
@@ -78,7 +78,11 @@
 				smp         (1:nl_soil)       , &! soil matrix potential [mm]
 				porsl       (1:nl_soil)       , &! fraction of soil that is voids [-]
 				lai                           , &! leaf area index
-				rootr       (1:nl_soil)          ! water exchange between soil and root. Positive: soil->root [?]
+				rootr       (1:nl_soil)       , &! water exchange between soil and root. Positive: soil->root [?]
+
+				fsatmax                       , &! maximum saturated area fraction [-]
+				fsatdcf                          ! decay factor in calculation of saturated area fraction [1/m]
+
 
 		integer :: ps, pe
 		integer j
@@ -131,13 +135,15 @@
 		t_h2osfc = t_grnd
 		! organic_max = cellorg(1)
 
-		CALL ch4 (i,idate(1:3),patchtype,lb,snl,dlon,dlat,deltim,&
+		CALL ch4 (idate(1:3),patchtype,lb,snl,dlon,dlat,deltim,&
 		z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:),&
 		t_grnd,wliq_soisno(maxsnl+1:),wice_soisno(maxsnl+1:),&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&
-		zwt,rootfr,snowdp,wat,rsur,etr,lakedepth,lake_icefrac,wdsrf,bsw,&
+		zwt,rootfr,snowdp,wat,rsur,etr,wdsrf,bsw,&
 		smp,porsl,lai,rootr,&
-		annsum_npp(i),rr(i),agnpp(i),bgnpp(i),somhr(i),&
+		annsum_npp(i),rr(i),&
+		fsatmax,fsatdcf,&
+		agnpp(i),bgnpp(i),somhr(i),&
 		crootfr(1:nl_soil),lithr(i),hr_vr(1:nl_soil,i),o_scalar(1:nl_soil,i),fphr(1:nl_soil,i),pot_f_nit_vr(1:nl_soil,i),pH,&
 		cellorg(1:nl_soil),t_h2osfc,organic_max,&
 		c_atm(1:3,i),ch4_surf_flux_tot(i),net_methane(i),annavg_agnpp(i),annavg_bgnpp(i),annavg_somhr(i),annavg_finrw(i),&

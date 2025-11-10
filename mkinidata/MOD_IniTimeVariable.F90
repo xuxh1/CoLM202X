@@ -1059,8 +1059,8 @@ CONTAINS
             ch4_tran_depth       (:) = 0
             o2_aere_depth        (:) = 0
             ch4_ebul_depth       (:) = 0
-            o2stress             (:) = 0
-            ch4stress            (:) = 0
+            o2stress             (:) = 1
+            ch4stress            (:) = 1
             ch4_surf_aere           = 0
             ch4_surf_ebul           = 0
             ch4_surf_diff           = 0
@@ -1068,7 +1068,7 @@ CONTAINS
 
             totcolch4               = 0
             forc_pch4m              = 0
-            grnd_ch4_cond           = 0
+            grnd_ch4_cond           = 1e-6
             conc_o2              (:) = 0
             conc_ch4             (:) = 0
             layer_sat_lag        (:) = 1
