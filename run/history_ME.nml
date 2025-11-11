@@ -37,4 +37,10 @@
    DEF_hist_vars%annsum_counter           = .true.
    DEF_hist_vars%tempavg_somhr           = .true.
    DEF_hist_vars%tempavg_finrw           = .true.
+   DEF_hist_vars%annsum_npp                       = .true. 
+   DEF_hist_vars%rr                               = .true. 
+   DEF_hist_vars%agnpp                            = .true. 
+   DEF_hist_vars%bgnpp                            = .true. 
+   DEF_hist_vars%somhr                            = .true. 
+   DEF_hist_vars%lithr                            = .true. 
 /

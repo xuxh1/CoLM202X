@@ -238,6 +238,11 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: a_CONC_O2_UNSAT         (:,:)
 
 #ifdef CH4
+   ! real(r8), allocatable :: a_fsatmax               (:)
+   ! real(r8), allocatable :: a_fsatdcf               (:)
+   ! real(r8), allocatable :: a_porsl               (:,:)
+   ! real(r8), allocatable :: a_smp                 (:,:)
+
    real(r8), allocatable :: a_annsum_npp            (:)
    real(r8), allocatable :: a_rr                    (:)
    real(r8), allocatable :: a_agnpp                 (:)
@@ -711,6 +716,11 @@ CONTAINS
             allocate (a_O2_DECOMP_DEPTH_UNSAT (1:nl_soil,numpatch))
             allocate (a_CONC_O2_UNSAT         (1:nl_soil,numpatch))
 #ifdef CH4
+            ! allocate (a_fsatmax               (numpatch))
+            ! allocate (a_fsatdcf               (numpatch))
+            ! allocate (a_porsl                 (1:nl_soil,numpatch))
+            ! allocate (a_smp                   (1:nl_soil,numpatch))
+
             allocate (a_annsum_npp            (numpatch))
             allocate (a_rr                    (numpatch))
             allocate (a_agnpp                 (numpatch))
@@ -763,12 +773,6 @@ CONTAINS
             allocate (a_sum_irrig_count    (numpatch))
 #endif
 #ifdef CH4
-            ! allocate (a_annsum_npp                   (numpatch))                            
-            ! allocate (a_froot_mr                 (numpatch)) 
-            ! allocate (a_cpool_froot_gr           (numpatch)) 
-            ! allocate (a_cpool_froot_storage_gr   (numpatch)) 
-            ! allocate (a_transfer_froot_gr        (numpatch)) 
-
             allocate (a_c_atm                   (1:3,numpatch))
             allocate (a_ch4_surf_flux_tot           (numpatch))
             allocate (a_net_methane                 (numpatch))
@@ -1193,6 +1197,11 @@ CONTAINS
             deallocate (a_O2_DECOMP_DEPTH_UNSAT )
             deallocate (a_CONC_O2_UNSAT         )
 #ifdef CH4
+            ! deallocate (a_fsatmax               )
+            ! deallocate (a_fsatdcf               )
+            ! deallocate (a_porsl                 )
+            ! deallocate (a_smp                   )
+
             deallocate (a_annsum_npp            )
             deallocate (a_rr                    )
             deallocate (a_agnpp                 )
@@ -1246,13 +1255,6 @@ CONTAINS
             deallocate (a_sum_irrig_count    )
 #endif
 #ifdef CH4
-            ! deallocate (a_annsum_npp                  )
-
-            ! deallocate (a_froot_mr                 )
-            ! deallocate (a_cpool_froot_gr           )
-            ! deallocate (a_cpool_froot_storage_gr   )
-            ! deallocate (a_transfer_froot_gr        )
-
             deallocate (a_c_atm                  )
             deallocate (a_ch4_surf_flux_tot      )
             deallocate (a_net_methane            )
@@ -1677,6 +1679,11 @@ CONTAINS
             a_O2_DECOMP_DEPTH_UNSAT (:,:) = spval
             a_CONC_O2_UNSAT         (:,:) = spval
 #ifdef CH4
+            ! a_fsatmax               (:) = spval
+            ! a_fsatdcf               (:) = spval
+            ! a_porsl               (:,:) = spval
+            ! a_smp                 (:,:) = spval
+
             a_annsum_npp            (:) = spval
             a_rr                    (:) = spval
             a_agnpp                 (:) = spval
@@ -1729,11 +1736,6 @@ CONTAINS
             a_sum_irrig_count    (:) = spval
 #endif
 #ifdef CH4
-            ! a_annsum_npp            (:) = spval
-            ! a_froot_mr                 (:) = spval
-            ! a_cpool_froot_gr           (:) = spval
-            ! a_cpool_froot_storage_gr   (:) = spval
-            ! a_transfer_froot_gr        (:) = spval
             a_c_atm                (:,:) = spval
             a_ch4_surf_flux_tot      (:) = spval
             a_net_methane            (:) = spval
@@ -2283,6 +2285,11 @@ CONTAINS
                CALL acc2d (tconc_o2_unsat        , a_CONC_O2_UNSAT        )
             ENDIF
 #ifdef CH4
+            ! CALL acc1d (fsatmax            , a_fsatmax             )
+            ! CALL acc1d (fsatdcf            , a_fsatdcf             )
+            ! CALL acc2d (porsl              , a_porsl               )
+            ! CALL acc2d (smp                , a_smp                 )
+
             CALL acc1d (annsum_npp         , a_annsum_npp          )
             CALL acc1d (rr                 , a_rr                  )
             CALL acc1d (agnpp              , a_agnpp               )
@@ -2341,11 +2348,6 @@ CONTAINS
 #endif
 
 #ifdef CH4
-            ! CALL acc1d (annsum_npp                         ,   a_annsum_npp                         )
-            ! CALL acc1d (froot_mr                              ,   a_froot_mr                              )
-            ! CALL acc1d (cpool_froot_gr                        ,   a_cpool_froot_gr                        )
-            ! CALL acc1d (cpool_froot_storage_gr                ,   a_cpool_froot_storage_gr                )
-            ! CALL acc1d (transfer_froot_gr                     ,   a_transfer_froot_gr                     )
             CALL acc2d (c_atm                             ,   a_c_atm                             )
             CALL acc1d (ch4_surf_flux_tot                   ,   a_ch4_surf_flux_tot                   )
             CALL acc1d (net_methane                         ,   a_net_methane                         )

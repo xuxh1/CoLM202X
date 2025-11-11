@@ -1931,6 +1931,13 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%etrsun      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%etrsha      , set_defaults)
 #ifdef BGC
+      CALL sync_hist_vars_one (DEF_hist_vars%annsum_npp         , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%rr                 , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%agnpp              , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%bgnpp              , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%somhr              , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%lithr              , set_defaults)
+
       CALL sync_hist_vars_one (DEF_hist_vars%leafc              , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%leafc_storage      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%leafc_xfer         , set_defaults)

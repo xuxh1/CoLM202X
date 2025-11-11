@@ -1349,9 +1349,7 @@ contains
 		real(r8) :: om_frac                                                    ! organic matter fraction
 		real(r8) :: o2demand, ch4demand                                        ! mol/m^3/s
 
-#ifdef SinglePoint
 		real(r8) :: err1,err2,err3,err4,err5,err6,err7,err8,err9,err10
-#endif
   		!-----------------------------------------------------------------------
 		! Perform competition for oxygen and methane in each soil layer if demands over the course of the timestep
 		! exceed that available. Assign to each process in proportion to the quantity demanded in the absense of

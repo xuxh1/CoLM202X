@@ -875,44 +875,21 @@ ENDIF
             CALL mp2g_hist%get_sumarea (sumarea, filter)
          ENDIF
 
-         ! CALL write_history_variable_2d ( DEF_hist_vars%annsum_npp, &
-         !     a_annsum_npp, file_hist, 'f_annsum_npp', itime_in_file, sumarea, filter, &
-         !     '-','-')
-         ! CALL write_history_variable_2d ( DEF_hist_vars%froot_mr, &
-         !     a_froot_mr, file_hist, 'f_froot_mr', itime_in_file, sumarea, filter, &
-         !     '-','-')
-         ! CALL write_history_variable_2d ( DEF_hist_vars%cpool_froot_gr, &
-         !     a_cpool_froot_gr, file_hist, 'f_cpool_froot_gr', itime_in_file, sumarea, filter, &
-         !     '-','-')
-         ! CALL write_history_variable_2d ( DEF_hist_vars%cpool_froot_storage_gr, &
-         !     a_cpool_froot_storage_gr, file_hist, 'f_cpool_froot_storage_gr', itime_in_file, sumarea, filter, &
-         !     '-','-')
-         ! CALL write_history_variable_2d ( DEF_hist_vars%transfer_froot_gr, &
-         !     a_transfer_froot_gr, file_hist, 'f_transfer_froot_gr', itime_in_file, sumarea, filter, &
-         !     '-','-')
-         CALL write_history_variable_2d ( DEF_hist_vars%annsum_npp, &
-             a_annsum_npp, file_hist, 'f_annsum_npp', itime_in_file, sumarea, filter, &
-             'annual sum NPP','gC/m2/yr')
+         ! CALL write_history_variable_2d ( DEF_hist_vars%fsatmax, &
+         !     a_fsatmax, file_hist, 'f_fsatmax', itime_in_file, sumarea, filter, &
+         !     'maximum saturated area fraction','m2/m2')
 
-         CALL write_history_variable_2d ( DEF_hist_vars%rr, &
-             a_rr, file_hist, 'f_rr', itime_in_file, sumarea, filter, &
-             'root respiration (fine root MR + total root GR)','gC/m2/s')
-
-         CALL write_history_variable_2d ( DEF_hist_vars%agnpp, &
-             a_agnpp, file_hist, 'f_agnpp', itime_in_file, sumarea, filter, &
-             'annual avg aboveground NPP','gC/m2/s')
-
-         CALL write_history_variable_2d ( DEF_hist_vars%bgnpp, &
-             a_bgnpp, file_hist, 'f_bgnpp', itime_in_file, sumarea, filter, &
-             'annual avg belowground NPP','gC/m2/s')
-
-         CALL write_history_variable_2d ( DEF_hist_vars%somhr, &
-             a_somhr, file_hist, 'f_somhr', itime_in_file, sumarea, filter, &
-             'soil organic matter heterotrophic respiration','gC/m2/s')
-
-         CALL write_history_variable_2d ( DEF_hist_vars%lithr, &
-             a_lithr, file_hist, 'f_lithr', itime_in_file, sumarea, filter, &
-             'litter heterotrophic respiration','gC/m2/s')
+         ! CALL write_history_variable_2d ( DEF_hist_vars%fsatdcf, &
+         !     a_fsatdcf, file_hist, 'f_fsatdcf', itime_in_file, sumarea, filter, &
+         !     'decay factor in calculation of saturated area fraction','1/m')
+         
+         ! CALL write_history_variable_3d ( DEF_hist_vars%porsl, &
+         !     a_porsl, file_hist, 'f_porsl', itime_in_file, 'soil', 1, nl_soil, &
+         !     sumarea, filter, 'volumetric soil water at saturation','m3/m3')
+         
+         ! CALL write_history_variable_3d ( DEF_hist_vars%smp, &
+         !     a_smp, file_hist, 'f_smp', itime_in_file, 'soil', 1, nl_soil, &
+         !     sumarea, filter, 'soil matrix potential','mm')
 
          ! CH4, O2, CO2 atmospheric conc
          CALL write_history_variable_3d ( DEF_hist_vars%c_atm, &
@@ -1141,6 +1118,31 @@ ENDIF
              'soil surface resistance','s/m')
 
 #ifdef BGC
+
+         CALL write_history_variable_2d ( DEF_hist_vars%annsum_npp, &
+             a_annsum_npp, file_hist, 'f_annsum_npp', itime_in_file, sumarea, filter, &
+             'annual sum NPP','gC/m2/yr')
+
+         CALL write_history_variable_2d ( DEF_hist_vars%rr, &
+             a_rr, file_hist, 'f_rr', itime_in_file, sumarea, filter, &
+             'root respiration (fine root MR + total root GR)','gC/m2/s')
+
+         CALL write_history_variable_2d ( DEF_hist_vars%agnpp, &
+             a_agnpp, file_hist, 'f_agnpp', itime_in_file, sumarea, filter, &
+             'annual avg aboveground NPP','gC/m2/s')
+
+         CALL write_history_variable_2d ( DEF_hist_vars%bgnpp, &
+             a_bgnpp, file_hist, 'f_bgnpp', itime_in_file, sumarea, filter, &
+             'annual avg belowground NPP','gC/m2/s')
+
+         CALL write_history_variable_2d ( DEF_hist_vars%somhr, &
+             a_somhr, file_hist, 'f_somhr', itime_in_file, sumarea, filter, &
+             'soil organic matter heterotrophic respiration','gC/m2/s')
+
+         CALL write_history_variable_2d ( DEF_hist_vars%lithr, &
+             a_lithr, file_hist, 'f_lithr', itime_in_file, sumarea, filter, &
+             'litter heterotrophic respiration','gC/m2/s')
+             
          ! leaf carbon display pool
          CALL write_history_variable_2d ( DEF_hist_vars%leafc, &
              a_leafc, file_hist, 'f_leafc', itime_in_file, sumarea, filter, &
