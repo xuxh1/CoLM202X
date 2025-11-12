@@ -265,7 +265,7 @@ ENDIF
 ! [2] surface runoff and infiltration
 !=======================================================================
 
-IF(patchtype<=1)THEN   ! soil ground only
+IF(patchtype<=1 .or. (DEF_wetland_split_fsat .and. patchtype==2))THEN   ! soil ground only
 
       ! For water balance check, the sum of water in soil column before the calculation
       w_sum = sum(wliq_soisno(1:)) + sum(wice_soisno(1:)) + wa
@@ -331,7 +331,7 @@ IF(patchtype<=1)THEN   ! soil ground only
          !  re-infiltration [mm/s] calculation.
          ! IF surface runoff is occurred (rsur != 0.), flood depth <1.e-6  and flood fraction <0.05,
          ! the re-infiltration will not be calculated.
-         IF ((flddepth .gt. 1.e-6).and.(fldfrc .gt. 0.05) .and. (patchtype == 0) ) THEN
+         IF ((flddepth .gt. 1.e-6).and.(fldfrc .gt. 0.05) .and. ((patchtype == 0) .or. (DEF_wetland_split_fsat .and. patchtype==2))) THEN
             gfld=flddepth/deltim ! [mm/s]
             ! surface runoff from inundation, this should not be added to the surface runoff from soil
             ! otherwise, the surface runoff will be double counted.
@@ -449,7 +449,7 @@ ENDIF
 !=======================================================================
 
 ELSE
-      IF(patchtype==2)THEN        ! WETLAND
+      IF((.not.DEF_wetland_split_fsat) .and. patchtype==2)THEN        ! WETLAND
          ! 09/20/2019, by Chaoqun Li: a potential bug below
          ! surface runoff could > total runoff
          ! original CoLM: rusr=0., qinfl=gwat, rsubst=0., rnof=0.
@@ -750,7 +750,7 @@ ENDIF
 ! [2] surface runoff and infiltration
 !=======================================================================
 
-IF((patchtype<=1) .or. is_dry_lake)THEN   ! soil ground only
+IF((patchtype<=1) .or. is_dry_lake .or. (DEF_wetland_split_fsat .and. patchtype==2))THEN   ! soil ground only
 
       ! For water balance check, the sum of water in soil column before the calculation
       w_sum = sum(wliq_soisno(1:nl_soil)) + sum(wice_soisno(1:nl_soil)) + wa + wdsrf
@@ -856,7 +856,7 @@ IF((patchtype<=1) .or. is_dry_lake)THEN   ! soil ground only
          !  re-infiltration [mm/s] calculation.
          ! IF surface runoff is occurred (rsur != 0.), flood depth <1.e-6  and flood fraction <0.05,
          ! the re-infiltration will not be calculated.
-         IF ((flddepth .gt. 1.e-6).and.(fldfrc .gt. 0.05) .and. (patchtype == 0) ) THEN
+         IF ((flddepth .gt. 1.e-6).and.(fldfrc .gt. 0.05) .and. (patchtype == 0 .or. (DEF_wetland_split_fsat .and. patchtype==2))) THEN
             gfld=flddepth/deltim ! [mm/s]
             ! surface runoff from inundation, this should not be added to the surface runoff from soil
             ! otherwise, the surface runoff will be double counted.
@@ -1094,7 +1094,7 @@ ENDIF
 !=======================================================================
 
 ELSE
-      IF(patchtype==2)THEN        ! WETLAND
+      IF((.not.DEF_wetland_split_fsat) .and. patchtype==2)THEN        ! WETLAND
          qinfl = 0.
          zwt = 0.
 

@@ -58,16 +58,51 @@ CONTAINS
                      ,diagVX_n_vr_acc            , upperVX_n_vr_acc           , lowerVX_n_vr_acc           &
 !------------------------------------------------------------
 #ifdef CH4
-                     ,c_atm,ch4_surf_flux_tot,net_methane,&
-                     ! annavg_agnpp,annavg_bgnpp,annavg_somhr,annavg_finrw,&
-                     ch4_prod_depth,o2_decomp_depth,&
-                     ch4_oxid_depth,o2_oxid_depth,&
-                     ch4_aere_depth,ch4_tran_depth,o2_aere_depth,&
-                     ch4_ebul_depth,&
-                     o2stress,ch4stress,ch4_surf_aere,ch4_surf_ebul,ch4_surf_diff,ch4_ebul_total,&
-                     totcolch4,forc_pch4m,grnd_ch4_cond,conc_o2,conc_ch4,layer_sat_lag,lake_soilc,&!inout
-                     tempavg_agnpp,tempavg_bgnpp,annsum_counter,&
-                     tempavg_somhr,tempavg_finrw&
+!!!! --------------------------------------------------------------------------------------------------------
+!!!!                                         sum data
+!!!! --------------------------------------------------------------------------------------------------------
+                     ,net_methane, &
+                     ch4_prod_depth, o2_decomp_depth, &
+                     ch4_oxid_depth, o2_oxid_depth, &
+                     ch4_aere_depth, ch4_tran_depth, o2_aere_depth, &
+                     ch4_ebul_depth, &
+                     o2stress, ch4stress, &
+                     ch4_surf_flux_tot, ch4_surf_aere, ch4_surf_ebul, ch4_surf_diff, &
+                     ch4_ebul_tot, ch4_prod_tot, ch4_oxid_tot, &
+                     totcolch4, grnd_ch4_cond, &
+                     conc_o2, conc_ch4, &
+!!!! --------------------------------------------------------------------------------------------------------
+!!!! --------------------------------------------------------------------------------------------------------
+!!!!                                         sum data (unsaturated / saturated)
+!!!! --------------------------------------------------------------------------------------------------------
+                     ,net_methane_unsat, net_methane_sat, &
+                     ch4_prod_depth_unsat, ch4_prod_depth_sat, &
+                     o2_decomp_depth_unsat, o2_decomp_depth_sat, &
+                     ch4_oxid_depth_unsat, ch4_oxid_depth_sat, &
+                     o2_oxid_depth_unsat, o2_oxid_depth_sat, &
+                     ch4_aere_depth_unsat, ch4_aere_depth_sat, &
+                     ch4_tran_depth_unsat, ch4_tran_depth_sat, &
+                     o2_aere_depth_unsat, o2_aere_depth_sat, &
+                     ch4_ebul_depth_unsat, ch4_ebul_depth_sat, &
+                     o2stress_unsat, o2stress_sat, &
+                     ch4stress_unsat, ch4stress_sat, &
+                     ch4_surf_flux_tot_unsat, ch4_surf_flux_tot_sat, &
+                     ch4_surf_aere_unsat, ch4_surf_aere_sat, &
+                     ch4_surf_ebul_unsat, ch4_surf_ebul_sat, &
+                     ch4_surf_diff_unsat, ch4_surf_diff_sat, &
+                     ch4_ebul_tot_unsat, ch4_ebul_tot_sat, &
+                     ch4_prod_tot_unsat, ch4_prod_tot_sat, &
+                     ch4_oxid_tot_unsat, ch4_oxid_tot_sat, &
+                     totcolch4_unsat, totcolch4_sat, &
+                     grnd_ch4_cond_unsat, grnd_ch4_cond_sat, &
+                     conc_o2_unsat, conc_o2_sat, &
+                     conc_ch4_unsat, conc_ch4_sat, &
+!!!! --------------------------------------------------------------------------------------------------------
+                     c_atm, forc_pch4m, &
+                     layer_sat_lag, lake_soilc, &
+                     annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
+                     tempavg_agnpp, tempavg_bgnpp, annsum_counter, &
+                     tempavg_somhr, tempavg_finrw, &
 #endif
 #endif
                      ,use_soilini, nl_soil_ini, soil_z,   soil_t,   soil_w, use_snowini, snow_d &
@@ -332,17 +367,11 @@ CONTAINS
         skip_balance_check
 
 #ifdef CH4
+   !!!! --------------------------------------------------------------------------------------------------------
+   !!!!                                         sum data
+   !!!! --------------------------------------------------------------------------------------------------------
    real(r8), intent(out) :: &
-        c_atm      (1:3)             , &! CH4, O2, CO2 atmospheric conc  (mol/m3)         
-        ch4_surf_flux_tot            , &! CH4 flux to atm. (kg C/m**2/s)
-        net_methane                     ! average net methane correction to CO2 flux (g C/m^2/s)
-     
-   !------------------- ch4_annualupdate ------------------------------
-   ! real(r8), intent(out) :: &
-   !      annavg_agnpp            , &! annual average above-ground NPP (gC/m2/s)         
-   !      annavg_bgnpp            , &! annual average below-ground NPP (gC/m2/s)         
-   !      annavg_somhr            , &! annual average SOM heterotrophic resp. (gC/m2/s)  
-   !      annavg_finrw               ! respiration-weighted annual average of finundated 
+        net_methane                     ! average net methane correction to CO2 flux (mol/m2/s)
      
    !------------------- ch4_prod ------------------------------
    real(r8), intent(out) :: &            
@@ -368,32 +397,111 @@ CONTAINS
    real(r8), intent(out) :: &
         o2stress          (1:nl_soil)  , &! Output: Ratio of oxygen available to that demanded by roots, aerobes, & methanotrophs
         ch4stress         (1:nl_soil)  , &! Output: Ratio of methane available to the total per-timestep methane sinks 
+
+        ch4_surf_flux_tot              , &! CH4 flux to atm. (mol/m2/s)
         ch4_surf_aere                  , &! Output: Total column CH4 aerenchyma (mol/m2/s)
         ch4_surf_ebul                  , &! Output: CH4 ebullition to atmosphere (mol/m2/s)
         ch4_surf_diff                  , &! Output: CH4 surface flux (mol/m2/s)
-        ch4_ebul_total                    ! Output: Total column CH4 ebullition (mol/m2/s)
-     
-     
-   !=================== inout ============================================
-   ! logical, intent(inout) ::&
-        ! ch4_first_time
+        ch4_ebul_tot                   , &! Output: Total column CH4 ebullition (mol/m2/s)
+        ch4_prod_tot                   , &! Output: Total column CH4 production (mol/m2/s)
+        ch4_oxid_tot                      ! Output: Total column CH4 oxidation  (mol/m2/s)
      
    real(r8), intent(inout) :: &
-        totcolch4               , &! total methane in soil column, start of timestep (g C / m^2)
-        forc_pch4m              , &! CH4 concentration in atmos. (pascals)
-        grnd_ch4_cond           , &! tracer conductance for boundary layer [m/s]
-        conc_o2  (1:nl_soil)    , &! O2 conc in each soil layer (mol/m3) 
-        conc_ch4   (1:nl_soil)  , &! CH4 conc in each soil layer (mol/m3) 
-        layer_sat_lag(1:nl_soil), &
+         totcolch4               , &! total methane in soil column, start of timestep (g C / m^2)
+         grnd_ch4_cond           , &! tracer conductance for boundary layer [m/s]
+         conc_o2  (1:nl_soil)    , &! O2 conc in each soil layer (mol/m3) 
+         conc_ch4   (1:nl_soil)  , &! CH4 conc in each soil layer (mol/m3) 
+   !!!! --------------------------------------------------------------------------------------------------------
+         
+   !!!! --------------------------------------------------------------------------------------------------------
+   !!!!                                         sum data (unsaturated / saturated)
+   !!!! --------------------------------------------------------------------------------------------------------
+   real(r8), intent(out) :: &
+        net_methane_unsat              , &! average unsaturated net methane correction to CO2 flux (mol/m2/s)
+        net_methane_sat                   ! average saturated net methane correction to CO2 flux (mol/m2/s)
+     
+   !------------------- ch4_prod ------------------------------
+   real(r8), intent(out) :: &            
+        ch4_prod_depth_unsat (1:nl_soil)   , &! production of CH4 in each unsaturated soil layer (mol/m3/s)
+        ch4_prod_depth_sat   (1:nl_soil)   , &! production of CH4 in each saturated soil layer (mol/m3/s)
+        o2_decomp_depth_unsat(1:nl_soil)   , &! O2 consumption during decomposition in each unsaturated soil layer (mol/m3/s)
+        o2_decomp_depth_sat  (1:nl_soil)      ! O2 consumption during decomposition in each saturated soil layer (mol/m3/s)
+     
+   !------------------- ch4_oxid ------------------------------
+   real(r8), intent(out) :: &
+        ch4_oxid_depth_unsat (1:nl_soil)   , &! CH4 oxidation rate in each unsaturated soil layer (mol/m3/s) 
+        ch4_oxid_depth_sat   (1:nl_soil)   , &! CH4 oxidation rate in each saturated soil layer (mol/m3/s) 
+        o2_oxid_depth_unsat  (1:nl_soil)   , &! O2 oxidation rate in each unsaturated soil layer (mol/m3/s) 
+        o2_oxid_depth_sat    (1:nl_soil)      ! O2 oxidation rate in each saturated soil layer (mol/m3/s) 
+     
+   !------------------- ch4_aere ------------------------------
+   real(r8), intent(out) :: &
+        ch4_aere_depth_unsat (1:nl_soil)   , &! CH4 loss rate via aerenchyma in each unsaturated soil layer (mol/m3/s) 
+        ch4_aere_depth_sat   (1:nl_soil)   , &! CH4 loss rate via aerenchyma in each saturated soil layer (mol/m3/s) 
+        ch4_tran_depth_unsat (1:nl_soil)   , &! CH4 loss rate via transpiration in each unsaturated soil layer (mol/m3/s) 
+        ch4_tran_depth_sat   (1:nl_soil)   , &! CH4 loss rate via transpiration in each saturated soil layer (mol/m3/s) 
+        o2_aere_depth_unsat  (1:nl_soil)   , &! O2 gain rate via aerenchyma in each unsaturated soil layer (mol/m3/s)
+        o2_aere_depth_sat    (1:nl_soil)      ! O2 gain rate via aerenchyma in each saturated soil layer (mol/m3/s)
+     
+   !------------------- ch4_ebul ------------------------------
+   real(r8), intent(out) :: &
+        ch4_ebul_depth_unsat (1:nl_soil)   , &! CH4 loss rate via ebullition in each unsaturated soil layer (mol/m3/s)
+        ch4_ebul_depth_sat   (1:nl_soil)      ! CH4 loss rate via ebullition in each saturated soil layer (mol/m3/s)
+     
+   !------------------- ch4_tran ------------------------------
+   real(r8), intent(out) :: &
+        o2stress_unsat       (1:nl_soil)   , &! Ratio of oxygen available vs demanded (unsaturated)
+        o2stress_sat         (1:nl_soil)   , &! Ratio of oxygen available vs demanded (saturated)
+        ch4stress_unsat      (1:nl_soil)   , &! Ratio of methane available vs sinks (unsaturated)
+        ch4stress_sat        (1:nl_soil)   , &! Ratio of methane available vs sinks (saturated)
+
+        ch4_surf_flux_tot_unsat          , &! CH4 flux to atm. (unsaturated) (mol/m2/s)
+        ch4_surf_flux_tot_sat            , &! CH4 flux to atm. (saturated) (mol/m2/s)
+        ch4_surf_aere_unsat              , &! Total CH4 aerenchyma (unsaturated) (mol/m2/s)
+        ch4_surf_aere_sat                , &! Total CH4 aerenchyma (saturated) (mol/m2/s)
+        ch4_surf_ebul_unsat              , &! CH4 ebullition flux (unsaturated) (mol/m2/s)
+        ch4_surf_ebul_sat                , &! CH4 ebullition flux (saturated) (mol/m2/s)
+        ch4_surf_diff_unsat              , &! CH4 diffusion flux (unsaturated) (mol/m2/s)
+        ch4_surf_diff_sat                , &! CH4 diffusion flux (saturated) (mol/m2/s)
+        ch4_ebul_tot_unsat               , &! Total CH4 ebullition (unsaturated) (mol/m2/s)
+        ch4_ebul_tot_sat                 , &! Total CH4 ebullition (saturated) (mol/m2/s)
+        ch4_prod_tot_unsat               , &! Total CH4 production (unsaturated) (mol/m2/s)
+        ch4_prod_tot_sat                 , &! Total CH4 production (saturated) (mol/m2/s)
+        ch4_oxid_tot_unsat               , &! Total CH4 oxidation (unsaturated) (mol/m2/s)
+        ch4_oxid_tot_sat                    ! Total CH4 oxidation (saturated) (mol/m2/s)
+
+   real(r8), intent(inout) :: &
+         totcolch4_unsat          , &! total CH4 in soil column (unsaturated) (g C / m^2)
+         totcolch4_sat            , &! total CH4 in soil column (saturated) (g C / m^2)
+         grnd_ch4_cond_unsat      , &! tracer conductance (unsaturated) [m/s]
+         grnd_ch4_cond_sat        , &! tracer conductance (saturated) [m/s]
+         conc_o2_unsat  (1:nl_soil) , &! O2 conc in each unsaturated soil layer (mol/m3)
+         conc_o2_sat    (1:nl_soil) , &! O2 conc in each saturated soil layer (mol/m3)
+         conc_ch4_unsat (1:nl_soil) , &! CH4 conc in each unsaturated soil layer (mol/m3)
+         conc_ch4_sat   (1:nl_soil)   ! CH4 conc in each saturated soil layer (mol/m3)
+   !!!! --------------------------------------------------------------------------------------------------------
+
+   real(r8), intent(out) :: &
+        c_atm      (1:3)            ! CH4, O2, CO2 atmospheric conc  (mol/m3)         
+     
+   real(r8), intent(inout) :: &
+        forc_pch4m               , &! CH4 concentration in atmos. (pascals)
+        layer_sat_lag(1:nl_soil) , &
         lake_soilc  (1:nl_soil)    ! total soil organic matter found in level (g C / m^3) (nl_soil)
      
    !------------------- ch4_annualupdate ------------------------------
+   real(r8), intent(out) :: &
+         annavg_agnpp            , &! annual average above-ground NPP (gC/m2/s)         
+         annavg_bgnpp            , &! annual average below-ground NPP (gC/m2/s)         
+         annavg_somhr            , &! annual average SOM heterotrophic resp. (gC/m2/s)  
+         annavg_finrw               ! respiration-weighted annual average of finundated 
+
    real(r8), intent(inout) :: &
-        tempavg_agnpp           , &! temporary average above-ground NPP (gC/m2/s)      
-        tempavg_bgnpp           , &! temporary average below-ground NPP (gC/m2/s)      
-        annsum_counter          , &! seconds since last annual accumulator turnover    
-        tempavg_somhr           , &! temporary average SOM heterotrophic resp. (gC/m2/s)
-        tempavg_finrw              ! respiration-weighted annual average of finundated 
+         tempavg_agnpp           , &! temporary average above-ground NPP (gC/m2/s)      
+         tempavg_bgnpp           , &! temporary average below-ground NPP (gC/m2/s)      
+         annsum_counter          , &! seconds since last annual accumulator turnover    
+         tempavg_somhr           , &! temporary average SOM heterotrophic resp. (gC/m2/s)
+         tempavg_finrw              ! respiration-weighted annual average of finundated 
 #endif
 #endif
 
@@ -420,7 +528,7 @@ CONTAINS
                CALL polint(soil_z,soil_t,nl_soil_ini,z_soisno(j),t_soisno(j))
             ENDDO
 
-            IF (patchtype <= 1) THEN ! soil or urban
+            IF (patchtype <= 1 .or. (DEF_wetland_split_fsat .and. patchtype==2)) THEN ! soil or urban
 
                DO j = 1, nl_soil
 
@@ -454,7 +562,7 @@ CONTAINS
                   wa = 0.
                ENDIF
 
-            ELSEIF ((patchtype == 2) .or. (patchtype == 4)) THEN ! (2) wetland or (4) lake
+            ELSEIF (((.not.DEF_wetland_split_fsat) .and. patchtype == 2) .or. (patchtype == 4)) THEN ! (2) wetland or (4) lake
 
                DO j = 1, nl_soil
                   IF(t_soisno(j).ge.tfrz)THEN
@@ -500,7 +608,7 @@ CONTAINS
                ENDIF
             ENDDO
 
-            IF (patchtype <= 1) THEN
+            IF (patchtype <= 1 .or. (DEF_wetland_split_fsat .and. patchtype==2)) THEN
                CALL get_water_equilibrium_state (zwtmm, nl_soil, wliq_soisno(1:nl_soil), smp, hk, wa, &
                   zc_soimm, zi_soimm, porsl, vliq_r, psi0, hksati, nprms, prms)
             ELSE
@@ -527,7 +635,7 @@ CONTAINS
                ENDIF
             ENDDO
 
-            IF (patchtype <= 1) THEN
+            IF (patchtype <= 1 .or. (DEF_wetland_split_fsat .and. patchtype==2)) THEN
                IF (DEF_USE_VariablySaturatedFlow) THEN
                   wa  = 0.
                   zwt = zi_soimm(nl_soil)/1000.
@@ -1044,40 +1152,97 @@ CONTAINS
 #endif
 
 #ifdef CH4
-            c_atm                (:) = 0
-            ch4_surf_flux_tot       = 0
-            net_methane             = 0
-            ! annavg_agnpp            = 0
-            ! annavg_bgnpp            = 0
-            ! annavg_somhr            = 0
-            ! annavg_finrw            = 0
-            ch4_prod_depth       (:) = 0
-            o2_decomp_depth      (:) = 0
-            ch4_oxid_depth       (:) = 0
-            o2_oxid_depth        (:) = 0
-            ch4_aere_depth       (:) = 0
-            ch4_tran_depth       (:) = 0
-            o2_aere_depth        (:) = 0
-            ch4_ebul_depth       (:) = 0
-            o2stress             (:) = 1
-            ch4stress            (:) = 1
-            ch4_surf_aere           = 0
-            ch4_surf_ebul           = 0
-            ch4_surf_diff           = 0
-            ch4_ebul_total          = 0
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data   
+            !!!! --------------------------------------------------------------------------------------------------------
+            net_methane             = 0.
+            ch4_prod_depth       (:) = 0.
+            o2_decomp_depth      (:) = 0.
+            ch4_oxid_depth       (:) = 0.
+            o2_oxid_depth        (:) = 0.
+            ch4_aere_depth       (:) = 0.
+            ch4_tran_depth       (:) = 0.
+            o2_aere_depth        (:) = 0.
+            ch4_ebul_depth       (:) = 0.
+            o2stress             (:) = 1.
+            ch4stress            (:) = 1.
+            ch4_surf_flux_tot       = 0.
+            ch4_surf_aere           = 0.
+            ch4_surf_ebul           = 0.
+            ch4_surf_diff           = 0.
+            ch4_ebul_tot            = 0.
+            ch4_prod_tot            = 0.
+            ch4_oxid_tot            = 0.
 
-            totcolch4               = 0
-            forc_pch4m              = 0
-            grnd_ch4_cond           = 1e-6
-            conc_o2              (:) = 0
-            conc_ch4             (:) = 0
-            layer_sat_lag        (:) = 1
-            lake_soilc           (:) = 0
-            tempavg_agnpp           = 0
-            tempavg_bgnpp           = 0
-            annsum_counter          = 0
-            tempavg_somhr           = 0
-            tempavg_finrw           = 0
+            totcolch4               = 0.
+            grnd_ch4_cond           = 1.e-6
+            conc_o2              (:) = 0.
+            conc_ch4             (:) = 0.
+            !!!! --------------------------------------------------------------------------------------------------------
+
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data (unsaturated / saturated)
+            !!!! --------------------------------------------------------------------------------------------------------
+            net_methane_unsat       = 0.
+            net_methane_sat         = 0.
+            ch4_prod_depth_unsat (:) = 0.
+            ch4_prod_depth_sat   (:) = 0.
+            o2_decomp_depth_unsat(:) = 0.
+            o2_decomp_depth_sat  (:) = 0.
+            ch4_oxid_depth_unsat (:) = 0.
+            ch4_oxid_depth_sat   (:) = 0.
+            o2_oxid_depth_unsat  (:) = 0.
+            o2_oxid_depth_sat    (:) = 0.
+            ch4_aere_depth_unsat (:) = 0.
+            ch4_aere_depth_sat   (:) = 0.
+            ch4_tran_depth_unsat (:) = 0.
+            ch4_tran_depth_sat   (:) = 0.
+            o2_aere_depth_unsat  (:) = 0.
+            o2_aere_depth_sat    (:) = 0.
+            ch4_ebul_depth_unsat (:) = 0.
+            ch4_ebul_depth_sat   (:) = 0.
+            o2stress_unsat       (:) = 1.
+            o2stress_sat         (:) = 1.
+            ch4stress_unsat      (:) = 1.
+            ch4stress_sat        (:) = 1.
+            ch4_surf_flux_tot_unsat = 0.
+            ch4_surf_flux_tot_sat   = 0.
+            ch4_surf_aere_unsat     = 0.
+            ch4_surf_aere_sat       = 0.
+            ch4_surf_ebul_unsat     = 0.
+            ch4_surf_ebul_sat       = 0.
+            ch4_surf_diff_unsat     = 0.
+            ch4_surf_diff_sat       = 0.
+            ch4_ebul_tot_unsat      = 0.
+            ch4_ebul_tot_sat        = 0.
+            ch4_prod_tot_unsat      = 0.
+            ch4_prod_tot_sat        = 0.
+            ch4_oxid_tot_unsat      = 0.
+            ch4_oxid_tot_sat        = 0.
+
+            totcolch4_unsat         = 0.
+            totcolch4_sat           = 0.
+            grnd_ch4_cond_unsat     = 1.e-6
+            grnd_ch4_cond_sat       = 1.e-6
+            conc_o2_unsat        (:) = 0.
+            conc_o2_sat          (:) = 0.
+            conc_ch4_unsat       (:) = 0.
+            conc_ch4_sat         (:) = 0.
+            !!!! --------------------------------------------------------------------------------------------------------
+
+            c_atm                (:) = 0.
+            forc_pch4m              = 0.
+            layer_sat_lag        (:) = 1.
+            lake_soilc           (:) = 0.
+            annavg_agnpp            = 0.
+            annavg_bgnpp            = 0.
+            annavg_somhr            = 0.
+            annavg_finrw            = 0.
+            tempavg_agnpp           = 0.
+            tempavg_bgnpp           = 0.
+            annsum_counter          = 0.
+            tempavg_somhr           = 0.
+            tempavg_finrw           = 0.
 #endif
             IF(DEF_USE_LAIFEEDBACK)THEN
                tlai_p                (ps:pe) = slatop(pftclass(ps:pe)) * leafc_p(ps:pe)

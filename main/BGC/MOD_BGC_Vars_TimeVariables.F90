@@ -293,21 +293,10 @@ MODULE MOD_BGC_Vars_TimeVariables
    real(r8), allocatable :: lag_npp             (:) !!! lagged net primary production (gC m-2)
 
 #ifdef CH4
-   ! real(r8), allocatable :: annsum_npp          (:) ! annual sum NPP (gC/m2/yr)
-
-   ! real(r8), allocatable :: froot_mr                 (:)     ! fine root maintenance respiration (gC m-2 s-1)
-   ! real(r8), allocatable :: cpool_froot_gr           (:)     ! available C allocated to fine root display growth respiration (gC m-2 s-1)
-   ! real(r8), allocatable :: cpool_froot_storage_gr   (:)     ! available C allocated to fine root storage growth respiration (gC m-2 s-1)
-   ! real(r8), allocatable :: transfer_froot_gr        (:)     ! available C allocated to fine root transfer growth respiration (gC m-2 s-1)
-
-
-   real(r8), allocatable :: c_atm               (:,:) ! CH4, O2, CO2 atmospheric conc  (mol/m3)  
-	real(r8), allocatable :: ch4_surf_flux_tot     (:) ! CH4 flux to atm. (gCH4/m2/s)
-	real(r8), allocatable :: net_methane           (:) ! average net methane correction to CO2 flux (gCH4/m2/s)
-	real(r8), allocatable :: annavg_agnpp          (:) ! annual average above-ground NPP (gC/m2/s)
-	real(r8), allocatable :: annavg_bgnpp          (:) ! annual average below-ground NPP (gC/m2/s)     
-	real(r8), allocatable :: annavg_somhr          (:) ! annual average SOM heterotrophic resp. (gC/m2/s)  
-	real(r8), allocatable :: annavg_finrw          (:) ! respiration-weighted annual average of finundated 
+   !!!! --------------------------------------------------------------------------------------------------------
+   !!!!                                         sum data   
+   !!!! --------------------------------------------------------------------------------------------------------
+	real(r8), allocatable :: net_methane           (:) ! average net methane correction to CO2 flux (mol/m2/s)
 	real(r8), allocatable :: ch4_prod_depth      (:,:) ! production of CH4 in each soil layer  (mol/m3/s)
 	real(r8), allocatable :: o2_decomp_depth     (:,:) ! O2 consumption during decomposition in each soil layer (mol/m3/s)
 	real(r8), allocatable :: ch4_oxid_depth      (:,:) ! CH4 consumption rate via oxidation in each soil layer (mol/m3/s) 
@@ -318,18 +307,97 @@ MODULE MOD_BGC_Vars_TimeVariables
 	real(r8), allocatable :: ch4_ebul_depth      (:,:) ! CH4 loss rate via ebullition in each soil layer (mol/m3/s)
 	real(r8), allocatable :: o2stress            (:,:) ! Ratio of oxygen available to that demanded by roots, aerobes, & methanotrophs
 	real(r8), allocatable :: ch4stress           (:,:) ! Ratio of methane available to the total per-timestep methane sinks 
+	real(r8), allocatable :: ch4_surf_flux_tot     (:) ! CH4 flux to atm. (mol/m2/s)
 	real(r8), allocatable :: ch4_surf_aere         (:) ! Output: Total column CH4 aerenchyma (mol/m2/s)
 	real(r8), allocatable :: ch4_surf_ebul         (:) ! Output: CH4 ebullition to atmosphere (mol/m2/s)
 	real(r8), allocatable :: ch4_surf_diff         (:) ! Output: CH4 surface flux (mol/m2/s)
-	real(r8), allocatable :: ch4_ebul_total        (:) ! Output: Total column CH4 ebullition (mol/m2/s)
-
-   real(r8), allocatable :: totcolch4             (:) ! total methane in soil column, start of timestep (gCH4/m2)
-	real(r8), allocatable :: forc_pch4m            (:) ! CH4 concentration in atmos. (pascals)
+	real(r8), allocatable :: ch4_ebul_tot        (:) ! Output: Total column CH4 ebullition (mol/m2/s)
+	real(r8), allocatable :: ch4_prod_tot        (:) ! Output: Total column CH4 production (mol/m2/s)
+	real(r8), allocatable :: ch4_oxid_tot        (:) ! Output: Total column CH4 oxidation (mol/m2/s)
+   real(r8), allocatable :: totcolch4             (:) ! total methane in soil column, start of timestep (mol/m2)
 	real(r8), allocatable :: grnd_ch4_cond         (:) ! tracer conductance for boundary layer (m/s)
-	real(r8), allocatable :: conc_o2             (:,:) ! O2 conc in each soil layer (mol/m3) 
+   real(r8), allocatable :: conc_o2             (:,:) ! O2 conc in each soil layer (mol/m3) 
 	real(r8), allocatable :: conc_ch4            (:,:) ! CH4 conc in each soil layer (mol/m3) 
+   !!!! --------------------------------------------------------------------------------------------------------
+
+   !!!! --------------------------------------------------------------------------------------------------------
+   !!!!                                         sum data (unsaturated / saturated)
+   !!!! --------------------------------------------------------------------------------------------------------
+   real(r8), allocatable :: net_methane_unsat           (:)  ! average unsaturated net methane correction to CO2 flux (mol/m2/s)
+   real(r8), allocatable :: net_methane_sat             (:)  ! average saturated   net methane correction to CO2 flux (mol/m2/s)
+
+   real(r8), allocatable :: ch4_prod_depth_unsat      (:,:)  ! production of CH4 in each soil layer (unsaturated)  (mol/m3/s)
+   real(r8), allocatable :: ch4_prod_depth_sat        (:,:)  ! production of CH4 in each soil layer (saturated)    (mol/m3/s)
+
+   real(r8), allocatable :: o2_decomp_depth_unsat     (:,:)  ! O2 consumption during decomposition (unsaturated)    (mol/m3/s)
+   real(r8), allocatable :: o2_decomp_depth_sat       (:,:)  ! O2 consumption during decomposition (saturated)      (mol/m3/s)
+
+   real(r8), allocatable :: ch4_oxid_depth_unsat      (:,:)  ! CH4 oxidation rate (unsaturated)                     (mol/m3/s)
+   real(r8), allocatable :: ch4_oxid_depth_sat        (:,:)  ! CH4 oxidation rate (saturated)                       (mol/m3/s)
+
+   real(r8), allocatable :: o2_oxid_depth_unsat       (:,:)  ! O2 oxidation rate (unsaturated)                      (mol/m3/s)
+   real(r8), allocatable :: o2_oxid_depth_sat         (:,:)  ! O2 oxidation rate (saturated)                        (mol/m3/s)
+
+   real(r8), allocatable :: ch4_aere_depth_unsat      (:,:)  ! CH4 loss via aerenchyma (unsaturated)                (mol/m3/s)
+   real(r8), allocatable :: ch4_aere_depth_sat        (:,:)  ! CH4 loss via aerenchyma (saturated)                  (mol/m3/s)
+
+   real(r8), allocatable :: ch4_tran_depth_unsat      (:,:)  ! CH4 loss via transpiration (unsaturated)             (mol/m3/s)
+   real(r8), allocatable :: ch4_tran_depth_sat        (:,:)  ! CH4 loss via transpiration (saturated)               (mol/m3/s)
+
+   real(r8), allocatable :: o2_aere_depth_unsat       (:,:)  ! O2 gain via aerenchyma (unsaturated)                 (mol/m3/s)
+   real(r8), allocatable :: o2_aere_depth_sat         (:,:)  ! O2 gain via aerenchyma (saturated)                   (mol/m3/s)
+
+   real(r8), allocatable :: ch4_ebul_depth_unsat      (:,:)  ! CH4 loss via ebullition (unsaturated)                (mol/m3/s)
+   real(r8), allocatable :: ch4_ebul_depth_sat        (:,:)  ! CH4 loss via ebullition (saturated)                  (mol/m3/s)
+
+   real(r8), allocatable :: o2stress_unsat            (:,:)  ! O2 availability/demand ratio (unsaturated)           (-)
+   real(r8), allocatable :: o2stress_sat              (:,:)  ! O2 availability/demand ratio (saturated)             (-)
+
+   real(r8), allocatable :: ch4stress_unsat           (:,:)  ! CH4 availability/sinks ratio (unsaturated)           (-)
+   real(r8), allocatable :: ch4stress_sat             (:,:)  ! CH4 availability/sinks ratio (saturated)             (-)
+
+   real(r8), allocatable :: ch4_surf_flux_tot_unsat     (:)  ! CH4 flux to atmosphere (unsaturated)                 (mol/m2/s)
+   real(r8), allocatable :: ch4_surf_flux_tot_sat       (:)  ! CH4 flux to atmosphere (saturated)                   (mol/m2/s)
+
+   real(r8), allocatable :: ch4_surf_aere_unsat         (:)  ! Total column CH4 aerenchyma (unsaturated)            (mol/m2/s)
+   real(r8), allocatable :: ch4_surf_aere_sat           (:)  ! Total column CH4 aerenchyma (saturated)              (mol/m2/s)
+
+   real(r8), allocatable :: ch4_surf_ebul_unsat         (:)  ! CH4 ebullition to atmosphere (unsaturated)           (mol/m2/s)
+   real(r8), allocatable :: ch4_surf_ebul_sat           (:)  ! CH4 ebullition to atmosphere (saturated)             (mol/m2/s)
+
+   real(r8), allocatable :: ch4_surf_diff_unsat         (:)  ! CH4 surface diffusive flux (unsaturated)             (mol/m2/s)
+   real(r8), allocatable :: ch4_surf_diff_sat           (:)  ! CH4 surface diffusive flux (saturated)               (mol/m2/s)
+
+   real(r8), allocatable :: ch4_ebul_tot_unsat          (:)  ! Total column CH4 ebullition (unsaturated)            (mol/m2/s)
+   real(r8), allocatable :: ch4_ebul_tot_sat            (:)  ! Total column CH4 ebullition (saturated)              (mol/m2/s)
+
+   real(r8), allocatable :: ch4_prod_tot_unsat          (:)  ! Total column CH4 production (unsaturated)            (mol/m2/s)
+   real(r8), allocatable :: ch4_prod_tot_sat            (:)  ! Total column CH4 production (saturated)              (mol/m2/s)
+
+   real(r8), allocatable :: ch4_oxid_tot_unsat          (:)  ! Total column CH4 oxidation (unsaturated)             (mol/m2/s)
+   real(r8), allocatable :: ch4_oxid_tot_sat            (:)  ! Total column CH4 oxidation (saturated)               (mol/m2/s)
+
+   real(r8), allocatable :: totcolch4_unsat             (:)  ! total methane in soil column, start (unsaturated)     (mol/m2)
+   real(r8), allocatable :: totcolch4_sat               (:)  ! total methane in soil column, start (saturated)       (mol/m2)
+
+   real(r8), allocatable :: grnd_ch4_cond_unsat         (:)  ! tracer conductance for boundary layer (unsaturated)  (m/s)
+   real(r8), allocatable :: grnd_ch4_cond_sat           (:)  ! tracer conductance for boundary layer (saturated)    (m/s)
+
+   real(r8), allocatable :: conc_o2_unsat             (:,:)  ! O2 concentration in each soil layer (unsaturated)    (mol/m3)
+   real(r8), allocatable :: conc_o2_sat               (:,:)  ! O2 concentration in each soil layer (saturated)      (mol/m3)
+
+   real(r8), allocatable :: conc_ch4_unsat            (:,:)  ! CH4 concentration in each soil layer (unsaturated)   (mol/m3)
+   real(r8), allocatable :: conc_ch4_sat              (:,:)  ! CH4 concentration in each soil layer (saturated)     (mol/m3)
+   !!!! --------------------------------------------------------------------------------------------------------
+
+   real(r8), allocatable :: c_atm               (:,:) ! CH4, O2, CO2 atmospheric conc  (mol/m3) 
+	real(r8), allocatable :: forc_pch4m            (:) ! CH4 concentration in atmos. (pascals)
 	real(r8), allocatable :: layer_sat_lag       (:,:)
 	real(r8), allocatable :: lake_soilc          (:,:) ! total soil organic matter found in level (gC / m3)
+   real(r8), allocatable :: annavg_agnpp          (:) ! annual average above-ground NPP (gC/m2/s)
+	real(r8), allocatable :: annavg_bgnpp          (:) ! annual average below-ground NPP (gC/m2/s)     
+	real(r8), allocatable :: annavg_somhr          (:) ! annual average SOM heterotrophic resp. (gC/m2/s)  
+	real(r8), allocatable :: annavg_finrw          (:) ! respiration-weighted annual average of finundated 
    real(r8), allocatable :: tempavg_agnpp         (:) ! temporary average above-ground NPP (gC/m2/s)     
 	real(r8), allocatable :: tempavg_bgnpp         (:) ! temporary average below-ground NPP (gC/m2/s)      
 	real(r8), allocatable :: annsum_counter        (:) ! seconds since last annual accumulator turnover    
@@ -649,20 +717,10 @@ CONTAINS
             allocate (lag_npp                      (numpatch))                            ; lag_npp               (:) = spval
 
 #ifdef CH4
-            ! allocate (annsum_npp                   (numpatch))                            ; annsum_npp            (:) = spval
-
-            ! allocate (froot_mr                 (numpatch)) ; froot_mr                 (:) = spval
-            ! allocate (cpool_froot_gr           (numpatch)) ; cpool_froot_gr           (:) = spval
-            ! allocate (cpool_froot_storage_gr   (numpatch)) ; cpool_froot_storage_gr   (:) = spval
-            ! allocate (transfer_froot_gr        (numpatch)) ; transfer_froot_gr        (:) = spval
-
-            allocate (c_atm                     (3,numpatch)); c_atm                (:,:) = spval
-            allocate (ch4_surf_flux_tot           (numpatch)); ch4_surf_flux_tot      (:) = spval
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data
+            !!!! --------------------------------------------------------------------------------------------------------
             allocate (net_methane                 (numpatch)); net_methane            (:) = spval
-            allocate (annavg_agnpp                (numpatch)); annavg_agnpp           (:) = spval
-            allocate (annavg_bgnpp                (numpatch)); annavg_bgnpp           (:) = spval
-            allocate (annavg_somhr                (numpatch)); annavg_somhr           (:) = spval
-            allocate (annavg_finrw                (numpatch)); annavg_finrw           (:) = spval
             allocate (ch4_prod_depth      (nl_soil,numpatch)); ch4_prod_depth       (:,:) = spval
             allocate (o2_decomp_depth     (nl_soil,numpatch)); o2_decomp_depth      (:,:) = spval
             allocate (ch4_oxid_depth      (nl_soil,numpatch)); ch4_oxid_depth       (:,:) = spval
@@ -673,18 +731,98 @@ CONTAINS
             allocate (ch4_ebul_depth      (nl_soil,numpatch)); ch4_ebul_depth       (:,:) = spval
             allocate (o2stress            (nl_soil,numpatch)); o2stress             (:,:) = spval
             allocate (ch4stress           (nl_soil,numpatch)); ch4stress            (:,:) = spval
+            allocate (ch4_surf_flux_tot           (numpatch)); ch4_surf_flux_tot      (:) = spval
             allocate (ch4_surf_aere               (numpatch)); ch4_surf_aere          (:) = spval
             allocate (ch4_surf_ebul               (numpatch)); ch4_surf_ebul          (:) = spval
             allocate (ch4_surf_diff               (numpatch)); ch4_surf_diff          (:) = spval
-            allocate (ch4_ebul_total              (numpatch)); ch4_ebul_total         (:) = spval
+            allocate (ch4_ebul_tot                (numpatch)); ch4_ebul_tot           (:) = spval
+            allocate (ch4_prod_tot                (numpatch)); ch4_prod_tot           (:) = spval
+            allocate (ch4_oxid_tot                (numpatch)); ch4_oxid_tot           (:) = spval
 
             allocate (totcolch4                   (numpatch)); totcolch4              (:) = spval
-            allocate (forc_pch4m                  (numpatch)); forc_pch4m             (:) = spval
             allocate (grnd_ch4_cond               (numpatch)); grnd_ch4_cond          (:) = spval
             allocate (conc_o2             (nl_soil,numpatch)); conc_o2              (:,:) = spval
             allocate (conc_ch4            (nl_soil,numpatch)); conc_ch4             (:,:) = spval
+            !!!! --------------------------------------------------------------------------------------------------------
+
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data (unsaturated / saturated)
+            !!!! --------------------------------------------------------------------------------------------------------
+            allocate (net_methane_unsat           (numpatch)); net_methane_unsat        (:)   = spval
+            allocate (net_methane_sat             (numpatch)); net_methane_sat          (:)   = spval
+
+            allocate (ch4_prod_depth_unsat  (nl_soil,numpatch)); ch4_prod_depth_unsat   (:,:) = spval
+            allocate (ch4_prod_depth_sat    (nl_soil,numpatch)); ch4_prod_depth_sat     (:,:) = spval
+
+            allocate (o2_decomp_depth_unsat (nl_soil,numpatch)); o2_decomp_depth_unsat  (:,:) = spval
+            allocate (o2_decomp_depth_sat   (nl_soil,numpatch)); o2_decomp_depth_sat    (:,:) = spval
+
+            allocate (ch4_oxid_depth_unsat  (nl_soil,numpatch)); ch4_oxid_depth_unsat   (:,:) = spval
+            allocate (ch4_oxid_depth_sat    (nl_soil,numpatch)); ch4_oxid_depth_sat     (:,:) = spval
+
+            allocate (o2_oxid_depth_unsat   (nl_soil,numpatch)); o2_oxid_depth_unsat    (:,:) = spval
+            allocate (o2_oxid_depth_sat     (nl_soil,numpatch)); o2_oxid_depth_sat      (:,:) = spval
+
+            allocate (ch4_aere_depth_unsat  (nl_soil,numpatch)); ch4_aere_depth_unsat   (:,:) = spval
+            allocate (ch4_aere_depth_sat    (nl_soil,numpatch)); ch4_aere_depth_sat     (:,:) = spval
+
+            allocate (ch4_tran_depth_unsat  (nl_soil,numpatch)); ch4_tran_depth_unsat   (:,:) = spval
+            allocate (ch4_tran_depth_sat    (nl_soil,numpatch)); ch4_tran_depth_sat     (:,:) = spval
+
+            allocate (o2_aere_depth_unsat   (nl_soil,numpatch)); o2_aere_depth_unsat    (:,:) = spval
+            allocate (o2_aere_depth_sat     (nl_soil,numpatch)); o2_aere_depth_sat      (:,:) = spval
+
+            allocate (ch4_ebul_depth_unsat  (nl_soil,numpatch)); ch4_ebul_depth_unsat   (:,:) = spval
+            allocate (ch4_ebul_depth_sat    (nl_soil,numpatch)); ch4_ebul_depth_sat     (:,:) = spval
+
+            allocate (o2stress_unsat        (nl_soil,numpatch)); o2stress_unsat         (:,:) = spval
+            allocate (o2stress_sat          (nl_soil,numpatch)); o2stress_sat           (:,:) = spval
+
+            allocate (ch4stress_unsat       (nl_soil,numpatch)); ch4stress_unsat        (:,:) = spval
+            allocate (ch4stress_sat         (nl_soil,numpatch)); ch4stress_sat          (:,:) = spval
+
+            allocate (ch4_surf_flux_tot_unsat      (numpatch)); ch4_surf_flux_tot_unsat  (:)   = spval
+            allocate (ch4_surf_flux_tot_sat        (numpatch)); ch4_surf_flux_tot_sat    (:)   = spval
+
+            allocate (ch4_surf_aere_unsat          (numpatch)); ch4_surf_aere_unsat      (:)   = spval
+            allocate (ch4_surf_aere_sat            (numpatch)); ch4_surf_aere_sat        (:)   = spval
+
+            allocate (ch4_surf_ebul_unsat          (numpatch)); ch4_surf_ebul_unsat      (:)   = spval
+            allocate (ch4_surf_ebul_sat            (numpatch)); ch4_surf_ebul_sat        (:)   = spval
+
+            allocate (ch4_surf_diff_unsat          (numpatch)); ch4_surf_diff_unsat      (:)   = spval
+            allocate (ch4_surf_diff_sat            (numpatch)); ch4_surf_diff_sat        (:)   = spval
+
+            allocate (ch4_ebul_tot_unsat           (numpatch)); ch4_ebul_tot_unsat       (:)   = spval
+            allocate (ch4_ebul_tot_sat             (numpatch)); ch4_ebul_tot_sat         (:)   = spval
+
+            allocate (ch4_prod_tot_unsat           (numpatch)); ch4_prod_tot_unsat       (:)   = spval
+            allocate (ch4_prod_tot_sat             (numpatch)); ch4_prod_tot_sat         (:)   = spval
+
+            allocate (ch4_oxid_tot_unsat           (numpatch)); ch4_oxid_tot_unsat       (:)   = spval
+            allocate (ch4_oxid_tot_sat             (numpatch)); ch4_oxid_tot_sat         (:)   = spval
+
+            allocate (totcolch4_unsat              (numpatch)); totcolch4_unsat          (:)   = spval
+            allocate (totcolch4_sat                (numpatch)); totcolch4_sat            (:)   = spval
+
+            allocate (grnd_ch4_cond_unsat          (numpatch)); grnd_ch4_cond_unsat      (:)   = spval
+            allocate (grnd_ch4_cond_sat            (numpatch)); grnd_ch4_cond_sat        (:)   = spval
+
+            allocate (conc_o2_unsat        (nl_soil,numpatch)); conc_o2_unsat           (:,:) = spval
+            allocate (conc_o2_sat          (nl_soil,numpatch)); conc_o2_sat             (:,:) = spval
+
+            allocate (conc_ch4_unsat       (nl_soil,numpatch)); conc_ch4_unsat          (:,:) = spval
+            allocate (conc_ch4_sat         (nl_soil,numpatch)); conc_ch4_sat            (:,:) = spval
+            !!!! --------------------------------------------------------------------------------------------------------
+
+            allocate (c_atm                     (3,numpatch)); c_atm                (:,:) = spval
+            allocate (forc_pch4m                  (numpatch)); forc_pch4m             (:) = spval
             allocate (layer_sat_lag       (nl_soil,numpatch)); layer_sat_lag        (:,:) = spval
             allocate (lake_soilc          (nl_soil,numpatch)); lake_soilc           (:,:) = spval
+            allocate (annavg_agnpp                (numpatch)); annavg_agnpp           (:) = spval
+            allocate (annavg_bgnpp                (numpatch)); annavg_bgnpp           (:) = spval
+            allocate (annavg_somhr                (numpatch)); annavg_somhr           (:) = spval
+            allocate (annavg_finrw                (numpatch)); annavg_finrw           (:) = spval
             allocate (tempavg_agnpp               (numpatch)); tempavg_agnpp          (:) = spval
             allocate (tempavg_bgnpp               (numpatch)); tempavg_bgnpp          (:) = spval
             allocate (annsum_counter              (numpatch)); annsum_counter         (:) = spval
@@ -987,20 +1125,10 @@ CONTAINS
 #endif
 
 #ifdef CH4
-            ! deallocate (annsum_npp                  )
-
-            ! deallocate (froot_mr                 )
-            ! deallocate (cpool_froot_gr           )
-            ! deallocate (cpool_froot_storage_gr   )
-            ! deallocate (transfer_froot_gr        )
-
-            deallocate (c_atm                  )
-            deallocate (ch4_surf_flux_tot      )
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data
+            !!!! --------------------------------------------------------------------------------------------------------
             deallocate (net_methane            )
-            deallocate (annavg_agnpp           )
-            deallocate (annavg_bgnpp           )
-            deallocate (annavg_somhr           )
-            deallocate (annavg_finrw           )
             deallocate (ch4_prod_depth         )
             deallocate (o2_decomp_depth        )
             deallocate (ch4_oxid_depth         )
@@ -1011,18 +1139,77 @@ CONTAINS
             deallocate (ch4_ebul_depth         )
             deallocate (o2stress               )
             deallocate (ch4stress              )
+            deallocate (ch4_surf_flux_tot      )
             deallocate (ch4_surf_aere          )
             deallocate (ch4_surf_ebul          )
             deallocate (ch4_surf_diff          )
-            deallocate (ch4_ebul_total         )
+            deallocate (ch4_ebul_tot           )
+            deallocate (ch4_prod_tot           )
+            deallocate (ch4_oxid_tot           )
 
             deallocate (totcolch4              )
-            deallocate (forc_pch4m             )
             deallocate (grnd_ch4_cond          )
             deallocate (conc_o2                )
             deallocate (conc_ch4               )
+            !!!! --------------------------------------------------------------------------------------------------------
+
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data (unsaturated / saturated)
+            !!!! --------------------------------------------------------------------------------------------------------
+            deallocate (net_methane_unsat       )
+            deallocate (net_methane_sat         )
+            deallocate (ch4_prod_depth_unsat    )
+            deallocate (ch4_prod_depth_sat      )
+            deallocate (o2_decomp_depth_unsat   )
+            deallocate (o2_decomp_depth_sat     )
+            deallocate (ch4_oxid_depth_unsat    )
+            deallocate (ch4_oxid_depth_sat      )
+            deallocate (o2_oxid_depth_unsat     )
+            deallocate (o2_oxid_depth_sat       )
+            deallocate (ch4_aere_depth_unsat    )
+            deallocate (ch4_aere_depth_sat      )
+            deallocate (ch4_tran_depth_unsat    )
+            deallocate (ch4_tran_depth_sat      )
+            deallocate (o2_aere_depth_unsat     )
+            deallocate (o2_aere_depth_sat       )
+            deallocate (ch4_ebul_depth_unsat    )
+            deallocate (ch4_ebul_depth_sat      )
+            deallocate (o2stress_unsat          )
+            deallocate (o2stress_sat            )
+            deallocate (ch4stress_unsat         )
+            deallocate (ch4stress_sat           )
+            deallocate (ch4_surf_flux_tot_unsat )
+            deallocate (ch4_surf_flux_tot_sat   )
+            deallocate (ch4_surf_aere_unsat     )
+            deallocate (ch4_surf_aere_sat       )
+            deallocate (ch4_surf_ebul_unsat     )
+            deallocate (ch4_surf_ebul_sat       )
+            deallocate (ch4_surf_diff_unsat     )
+            deallocate (ch4_surf_diff_sat       )
+            deallocate (ch4_ebul_tot_unsat      )
+            deallocate (ch4_ebul_tot_sat        )
+            deallocate (ch4_prod_tot_unsat      )
+            deallocate (ch4_prod_tot_sat        )
+            deallocate (ch4_oxid_tot_unsat      )
+            deallocate (ch4_oxid_tot_sat        )
+            deallocate (totcolch4_unsat         )
+            deallocate (totcolch4_sat           )
+            deallocate (grnd_ch4_cond_unsat     )
+            deallocate (grnd_ch4_cond_sat       )
+            deallocate (conc_o2_unsat           )
+            deallocate (conc_o2_sat             )
+            deallocate (conc_ch4_unsat          )
+            deallocate (conc_ch4_sat            )
+            !!!! --------------------------------------------------------------------------------------------------------
+
+            deallocate (c_atm                  )
+            deallocate (forc_pch4m             )
             deallocate (layer_sat_lag          )
             deallocate (lake_soilc             )
+            deallocate (annavg_agnpp           )
+            deallocate (annavg_bgnpp           )
+            deallocate (annavg_somhr           )
+            deallocate (annavg_finrw           )
             deallocate (tempavg_agnpp          )
             deallocate (tempavg_bgnpp          )
             deallocate (annsum_counter         )
@@ -1212,21 +1399,10 @@ CONTAINS
 #endif
 
 #ifdef CH4
-      ! CALL ncio_write_vector (file_restart, 'annsum_npp          ' , 'patch', landpatch, annsum_npp              , compress    )
-
-      ! CALL ncio_write_vector (file_restart, 'froot_mr            ' , 'patch', landpatch, froot_mr                , compress    )
-      ! CALL ncio_write_vector (file_restart, 'cpool_froot_gr      ' , 'patch', landpatch, cpool_froot_gr           , compress   )
-      ! CALL ncio_write_vector (file_restart, 'cpool_froot_storage_gr  ' , 'patch', landpatch, cpool_froot_storage_gr , compress )
-      ! CALL ncio_write_vector (file_restart, 'transfer_froot_gr   ' , 'patch', landpatch, transfer_froot_gr      , compress     )
-
-
-      CALL ncio_write_vector (file_restart, 'c_atm               ' , 'species', 3 ,'patch', landpatch, c_atm             )
-      CALL ncio_write_vector (file_restart, 'ch4_surf_flux_tot   ' , 'patch', landpatch, ch4_surf_flux_tot     , compress)
+      !!!! --------------------------------------------------------------------------------------------------------
+      !!!!                                         sum data
+      !!!! --------------------------------------------------------------------------------------------------------
       CALL ncio_write_vector (file_restart, 'net_methane         ' , 'patch', landpatch, net_methane           , compress)
-      CALL ncio_write_vector (file_restart, 'annavg_agnpp        ' , 'patch', landpatch, annavg_agnpp          , compress)
-      CALL ncio_write_vector (file_restart, 'annavg_bgnpp        ' , 'patch', landpatch, annavg_bgnpp          , compress)
-      CALL ncio_write_vector (file_restart, 'annavg_somhr        ' , 'patch', landpatch, annavg_somhr          , compress)
-      CALL ncio_write_vector (file_restart, 'annavg_finrw        ' , 'patch', landpatch, annavg_finrw          , compress)
       CALL ncio_write_vector (file_restart, 'ch4_prod_depth      ' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_prod_depth   , compress)
       CALL ncio_write_vector (file_restart, 'o2_decomp_depth     ' , 'soil'  ,   nl_soil,'patch', landpatch, o2_decomp_depth  , compress)
       CALL ncio_write_vector (file_restart, 'ch4_oxid_depth      ' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_oxid_depth   , compress)
@@ -1237,23 +1413,83 @@ CONTAINS
       CALL ncio_write_vector (file_restart, 'ch4_ebul_depth      ' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_ebul_depth   , compress)
       CALL ncio_write_vector (file_restart, 'o2stress            ' , 'soil'  ,   nl_soil,'patch', landpatch, o2stress         , compress)
       CALL ncio_write_vector (file_restart, 'ch4stress           ' , 'soil'  ,   nl_soil,'patch', landpatch, ch4stress        , compress)
-      CALL ncio_write_vector (file_restart, 'ch4_surf_aere       ' , 'patch', landpatch, ch4_surf_aere    , compress)
-      CALL ncio_write_vector (file_restart, 'ch4_surf_ebul       ' , 'patch', landpatch, ch4_surf_ebul    , compress)
-      CALL ncio_write_vector (file_restart, 'ch4_surf_diff       ' , 'patch', landpatch, ch4_surf_diff    , compress)
-      CALL ncio_write_vector (file_restart, 'ch4_ebul_total      ' , 'patch', landpatch, ch4_ebul_total   , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_surf_flux_tot   ' , 'patch', landpatch, ch4_surf_flux_tot     , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_surf_aere       ' , 'patch', landpatch, ch4_surf_aere         , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_surf_ebul       ' , 'patch', landpatch, ch4_surf_ebul         , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_surf_diff       ' , 'patch', landpatch, ch4_surf_diff         , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_ebul_tot        ' , 'patch', landpatch, ch4_ebul_tot          , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_prod_tot        ' , 'patch', landpatch, ch4_prod_tot          , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_oxid_tot        ' , 'patch', landpatch, ch4_oxid_tot          , compress)
 
-      CALL ncio_write_vector (file_restart, 'totcolch4           ' , 'patch', landpatch, totcolch4        , compress)
-      CALL ncio_write_vector (file_restart, 'forc_pch4m          ' , 'patch', landpatch, forc_pch4m       , compress)
-      CALL ncio_write_vector (file_restart, 'grnd_ch4_cond       ' , 'patch', landpatch, grnd_ch4_cond    , compress)
+      CALL ncio_write_vector (file_restart, 'totcolch4           ' , 'patch', landpatch, totcolch4             , compress)
+      CALL ncio_write_vector (file_restart, 'grnd_ch4_cond       ' , 'patch', landpatch, grnd_ch4_cond         , compress)
       CALL ncio_write_vector (file_restart, 'conc_o2             ' , 'soil'  ,   nl_soil,'patch', landpatch, conc_o2          , compress)
       CALL ncio_write_vector (file_restart, 'conc_ch4            ' , 'soil'  ,   nl_soil,'patch', landpatch, conc_ch4         , compress)
+      !!!! --------------------------------------------------------------------------------------------------------
+
+      !!!! --------------------------------------------------------------------------------------------------------
+      !!!!                                         sum data (unsaturated / saturated)
+      !!!! --------------------------------------------------------------------------------------------------------
+      CALL ncio_write_vector (file_restart, 'net_methane_unsat   ' , 'patch', landpatch, net_methane_unsat     , compress)
+      CALL ncio_write_vector (file_restart, 'net_methane_sat     ' , 'patch', landpatch, net_methane_sat       , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_prod_depth_unsat' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_prod_depth_unsat , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_prod_depth_sat  ' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_prod_depth_sat   , compress)
+      CALL ncio_write_vector (file_restart, 'o2_decomp_depth_unsat', 'soil'  ,   nl_soil,'patch', landpatch, o2_decomp_depth_unsat, compress)
+      CALL ncio_write_vector (file_restart, 'o2_decomp_depth_sat  ', 'soil'  ,   nl_soil,'patch', landpatch, o2_decomp_depth_sat  , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_oxid_depth_unsat' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_oxid_depth_unsat , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_oxid_depth_sat  ' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_oxid_depth_sat   , compress)
+      CALL ncio_write_vector (file_restart, 'o2_oxid_depth_unsat ' , 'soil'  ,   nl_soil,'patch', landpatch, o2_oxid_depth_unsat  , compress)
+      CALL ncio_write_vector (file_restart, 'o2_oxid_depth_sat   ' , 'soil'  ,   nl_soil,'patch', landpatch, o2_oxid_depth_sat    , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_aere_depth_unsat' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_aere_depth_unsat , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_aere_depth_sat  ' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_aere_depth_sat   , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_tran_depth_unsat' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_tran_depth_unsat , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_tran_depth_sat  ' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_tran_depth_sat   , compress)
+      CALL ncio_write_vector (file_restart, 'o2_aere_depth_unsat ' , 'soil'  ,   nl_soil,'patch', landpatch, o2_aere_depth_unsat  , compress)
+      CALL ncio_write_vector (file_restart, 'o2_aere_depth_sat   ' , 'soil'  ,   nl_soil,'patch', landpatch, o2_aere_depth_sat    , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_ebul_depth_unsat' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_ebul_depth_unsat , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_ebul_depth_sat  ' , 'soil'  ,   nl_soil,'patch', landpatch, ch4_ebul_depth_sat   , compress)
+      CALL ncio_write_vector (file_restart, 'o2stress_unsat      ' , 'soil'  ,   nl_soil,'patch', landpatch, o2stress_unsat       , compress)
+      CALL ncio_write_vector (file_restart, 'o2stress_sat        ' , 'soil'  ,   nl_soil,'patch', landpatch, o2stress_sat         , compress)
+      CALL ncio_write_vector (file_restart, 'ch4stress_unsat     ' , 'soil'  ,   nl_soil,'patch', landpatch, ch4stress_unsat      , compress)
+      CALL ncio_write_vector (file_restart, 'ch4stress_sat       ' , 'soil'  ,   nl_soil,'patch', landpatch, ch4stress_sat        , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_surf_flux_tot_unsat' , 'patch', landpatch, ch4_surf_flux_tot_unsat , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_surf_flux_tot_sat  ' , 'patch', landpatch, ch4_surf_flux_tot_sat   , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_surf_aere_unsat ' , 'patch', landpatch, ch4_surf_aere_unsat       , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_surf_aere_sat   ' , 'patch', landpatch, ch4_surf_aere_sat         , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_surf_ebul_unsat ' , 'patch', landpatch, ch4_surf_ebul_unsat       , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_surf_ebul_sat   ' , 'patch', landpatch, ch4_surf_ebul_sat         , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_surf_diff_unsat ' , 'patch', landpatch, ch4_surf_diff_unsat       , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_surf_diff_sat   ' , 'patch', landpatch, ch4_surf_diff_sat         , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_ebul_tot_unsat  ' , 'patch', landpatch, ch4_ebul_tot_unsat        , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_ebul_tot_sat    ' , 'patch', landpatch, ch4_ebul_tot_sat          , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_prod_tot_unsat  ' , 'patch', landpatch, ch4_prod_tot_unsat        , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_prod_tot_sat    ' , 'patch', landpatch, ch4_prod_tot_sat          , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_oxid_tot_unsat  ' , 'patch', landpatch, ch4_oxid_tot_unsat        , compress)
+      CALL ncio_write_vector (file_restart, 'ch4_oxid_tot_sat    ' , 'patch', landpatch, ch4_oxid_tot_sat          , compress)
+      CALL ncio_write_vector (file_restart, 'totcolch4_unsat     ' , 'patch', landpatch, totcolch4_unsat           , compress)
+      CALL ncio_write_vector (file_restart, 'totcolch4_sat       ' , 'patch', landpatch, totcolch4_sat             , compress)
+      CALL ncio_write_vector (file_restart, 'grnd_ch4_cond_unsat ' , 'patch', landpatch, grnd_ch4_cond_unsat       , compress)
+      CALL ncio_write_vector (file_restart, 'grnd_ch4_cond_sat   ' , 'patch', landpatch, grnd_ch4_cond_sat         , compress)
+      CALL ncio_write_vector (file_restart, 'conc_o2_unsat       ' , 'soil'  ,   nl_soil,'patch', landpatch, conc_o2_unsat       , compress)
+      CALL ncio_write_vector (file_restart, 'conc_o2_sat         ' , 'soil'  ,   nl_soil,'patch', landpatch, conc_o2_sat         , compress)
+      CALL ncio_write_vector (file_restart, 'conc_ch4_unsat      ' , 'soil'  ,   nl_soil,'patch', landpatch, conc_ch4_unsat      , compress)
+      CALL ncio_write_vector (file_restart, 'conc_ch4_sat        ' , 'soil'  ,   nl_soil,'patch', landpatch, conc_ch4_sat        , compress)
+      !!!! --------------------------------------------------------------------------------------------------------
+
+
+      CALL ncio_write_vector (file_restart, 'c_atm               ' , 'species', 3 ,'patch', landpatch, c_atm             )
+      CALL ncio_write_vector (file_restart, 'forc_pch4m          ' , 'patch', landpatch, forc_pch4m            , compress)
       CALL ncio_write_vector (file_restart, 'layer_sat_lag       ' , 'soil'  ,   nl_soil,'patch', landpatch, layer_sat_lag    , compress)
       CALL ncio_write_vector (file_restart, 'lake_soilc          ' , 'soil'  ,   nl_soil,'patch', landpatch, lake_soilc       , compress)
-      CALL ncio_write_vector (file_restart, 'tempavg_agnpp       ' , 'patch', landpatch, tempavg_agnpp    , compress)
-      CALL ncio_write_vector (file_restart, 'tempavg_bgnpp       ' , 'patch', landpatch, tempavg_bgnpp    , compress)
-      CALL ncio_write_vector (file_restart, 'annsum_counter      ' , 'patch', landpatch, annsum_counter   , compress)
-      CALL ncio_write_vector (file_restart, 'tempavg_somhr       ' , 'patch', landpatch, tempavg_somhr    , compress)
-      CALL ncio_write_vector (file_restart, 'tempavg_finrw       ' , 'patch', landpatch, tempavg_finrw    , compress)
+      CALL ncio_write_vector (file_restart, 'annavg_agnpp        ' , 'patch', landpatch, annavg_agnpp          , compress)
+      CALL ncio_write_vector (file_restart, 'annavg_bgnpp        ' , 'patch', landpatch, annavg_bgnpp          , compress)
+      CALL ncio_write_vector (file_restart, 'annavg_somhr        ' , 'patch', landpatch, annavg_somhr          , compress)
+      CALL ncio_write_vector (file_restart, 'annavg_finrw        ' , 'patch', landpatch, annavg_finrw          , compress)
+      CALL ncio_write_vector (file_restart, 'tempavg_agnpp       ' , 'patch', landpatch, tempavg_agnpp         , compress)
+      CALL ncio_write_vector (file_restart, 'tempavg_bgnpp       ' , 'patch', landpatch, tempavg_bgnpp         , compress)
+      CALL ncio_write_vector (file_restart, 'annsum_counter      ' , 'patch', landpatch, annsum_counter        , compress)
+      CALL ncio_write_vector (file_restart, 'tempavg_somhr       ' , 'patch', landpatch, tempavg_somhr         , compress)
+      CALL ncio_write_vector (file_restart, 'tempavg_finrw       ' , 'patch', landpatch, tempavg_finrw         , compress)
 #endif
 
    END SUBROUTINE WRITE_BGCTimeVariables
@@ -1411,21 +1647,10 @@ CONTAINS
 #endif
 
 #ifdef CH4
-      ! CALL ncio_read_vector (file_restart, 'annsum_npp         ' , landpatch, annsum_npp                   )
-      
-      ! CALL ncio_read_vector (file_restart, 'froot_mr          ' , landpatch, froot_mr                      )
-      ! CALL ncio_read_vector (file_restart, 'cpool_froot_gr    ' , landpatch, cpool_froot_gr                )
-      ! CALL ncio_read_vector (file_restart, ' cpool_froot_storage_gr ' , landpatch,  cpool_froot_storage_gr )
-      ! CALL ncio_read_vector (file_restart, 'transfer_froot_gr ' , landpatch, transfer_froot_gr             )
-
-
-      CALL ncio_read_vector (file_restart, 'c_atm              ' , 3, landpatch, c_atm                  )
-      CALL ncio_read_vector (file_restart, 'ch4_surf_flux_tot  ' , landpatch, ch4_surf_flux_tot         )
+      !!!! --------------------------------------------------------------------------------------------------------
+      !!!!                                         sum data   
+      !!!! --------------------------------------------------------------------------------------------------------
       CALL ncio_read_vector (file_restart, 'net_methane        ' , landpatch, net_methane               )
-      CALL ncio_read_vector (file_restart, 'annavg_agnpp       ' , landpatch, annavg_agnpp              )
-      CALL ncio_read_vector (file_restart, 'annavg_bgnpp       ' , landpatch, annavg_bgnpp              )
-      CALL ncio_read_vector (file_restart, 'annavg_somhr       ' , landpatch, annavg_somhr              )
-      CALL ncio_read_vector (file_restart, 'annavg_finrw       ' , landpatch, annavg_finrw              )
       CALL ncio_read_vector (file_restart, 'ch4_prod_depth     ' , nl_soil, landpatch, ch4_prod_depth   )
       CALL ncio_read_vector (file_restart, 'o2_decomp_depth    ' , nl_soil, landpatch, o2_decomp_depth  )
       CALL ncio_read_vector (file_restart, 'ch4_oxid_depth     ' , nl_soil, landpatch, ch4_oxid_depth   )
@@ -1436,23 +1661,83 @@ CONTAINS
       CALL ncio_read_vector (file_restart, 'ch4_ebul_depth     ' , nl_soil, landpatch, ch4_ebul_depth   )
       CALL ncio_read_vector (file_restart, 'o2stress           ' , nl_soil, landpatch, o2stress         )
       CALL ncio_read_vector (file_restart, 'ch4stress          ' , nl_soil, landpatch, ch4stress        )
+      CALL ncio_read_vector (file_restart, 'ch4_surf_flux_tot  ' , landpatch, ch4_surf_flux_tot         )
       CALL ncio_read_vector (file_restart, 'ch4_surf_aere      ' , landpatch, ch4_surf_aere             )
       CALL ncio_read_vector (file_restart, 'ch4_surf_ebul      ' , landpatch, ch4_surf_ebul             )
       CALL ncio_read_vector (file_restart, 'ch4_surf_diff      ' , landpatch, ch4_surf_diff             )
-      CALL ncio_read_vector (file_restart, 'ch4_ebul_total     ' , landpatch, ch4_ebul_total            )
+      CALL ncio_read_vector (file_restart, 'ch4_ebul_tot       ' , landpatch, ch4_ebul_tot              )
+      CALL ncio_read_vector (file_restart, 'ch4_prod_tot       ' , landpatch, ch4_prod_tot              )
+      CALL ncio_read_vector (file_restart, 'ch4_oxid_tot       ' , landpatch, ch4_oxid_tot              )
 
       CALL ncio_read_vector (file_restart, 'totcolch4          ' , landpatch, totcolch4                 )
-      CALL ncio_read_vector (file_restart, 'forc_pch4m         ' , landpatch, forc_pch4m                )
       CALL ncio_read_vector (file_restart, 'grnd_ch4_cond      ' , landpatch, grnd_ch4_cond             )
       CALL ncio_read_vector (file_restart, 'conc_o2            ' , nl_soil, landpatch, conc_o2          )
       CALL ncio_read_vector (file_restart, 'conc_ch4           ' , nl_soil, landpatch, conc_ch4         )
+      !!!! --------------------------------------------------------------------------------------------------------
+
+      !!!! --------------------------------------------------------------------------------------------------------
+      !!!!                                         sum data (unsaturated / saturated)
+      !!!! --------------------------------------------------------------------------------------------------------
+      CALL ncio_read_vector (file_restart, 'net_methane_unsat  ' , landpatch, net_methane_unsat         )
+      CALL ncio_read_vector (file_restart, 'net_methane_sat    ' , landpatch, net_methane_sat           )
+      CALL ncio_read_vector (file_restart, 'ch4_prod_depth_unsat' , nl_soil, landpatch, ch4_prod_depth_unsat )
+      CALL ncio_read_vector (file_restart, 'ch4_prod_depth_sat  ' , nl_soil, landpatch, ch4_prod_depth_sat   )
+      CALL ncio_read_vector (file_restart, 'o2_decomp_depth_unsat' , nl_soil, landpatch, o2_decomp_depth_unsat)
+      CALL ncio_read_vector (file_restart, 'o2_decomp_depth_sat  ' , nl_soil, landpatch, o2_decomp_depth_sat  )
+      CALL ncio_read_vector (file_restart, 'ch4_oxid_depth_unsat' , nl_soil, landpatch, ch4_oxid_depth_unsat )
+      CALL ncio_read_vector (file_restart, 'ch4_oxid_depth_sat  ' , nl_soil, landpatch, ch4_oxid_depth_sat   )
+      CALL ncio_read_vector (file_restart, 'o2_oxid_depth_unsat ' , nl_soil, landpatch, o2_oxid_depth_unsat  )
+      CALL ncio_read_vector (file_restart, 'o2_oxid_depth_sat   ' , nl_soil, landpatch, o2_oxid_depth_sat    )
+      CALL ncio_read_vector (file_restart, 'ch4_aere_depth_unsat' , nl_soil, landpatch, ch4_aere_depth_unsat )
+      CALL ncio_read_vector (file_restart, 'ch4_aere_depth_sat  ' , nl_soil, landpatch, ch4_aere_depth_sat   )
+      CALL ncio_read_vector (file_restart, 'ch4_tran_depth_unsat' , nl_soil, landpatch, ch4_tran_depth_unsat )
+      CALL ncio_read_vector (file_restart, 'ch4_tran_depth_sat  ' , nl_soil, landpatch, ch4_tran_depth_sat   )
+      CALL ncio_read_vector (file_restart, 'o2_aere_depth_unsat ' , nl_soil, landpatch, o2_aere_depth_unsat  )
+      CALL ncio_read_vector (file_restart, 'o2_aere_depth_sat   ' , nl_soil, landpatch, o2_aere_depth_sat    )
+      CALL ncio_read_vector (file_restart, 'ch4_ebul_depth_unsat' , nl_soil, landpatch, ch4_ebul_depth_unsat )
+      CALL ncio_read_vector (file_restart, 'ch4_ebul_depth_sat  ' , nl_soil, landpatch, ch4_ebul_depth_sat   )
+      CALL ncio_read_vector (file_restart, 'o2stress_unsat      ' , nl_soil, landpatch, o2stress_unsat      )
+      CALL ncio_read_vector (file_restart, 'o2stress_sat        ' , nl_soil, landpatch, o2stress_sat        )
+      CALL ncio_read_vector (file_restart, 'ch4stress_unsat     ' , nl_soil, landpatch, ch4stress_unsat     )
+      CALL ncio_read_vector (file_restart, 'ch4stress_sat       ' , nl_soil, landpatch, ch4stress_sat       )
+      CALL ncio_read_vector (file_restart, 'ch4_surf_flux_tot_unsat' , landpatch, ch4_surf_flux_tot_unsat   )
+      CALL ncio_read_vector (file_restart, 'ch4_surf_flux_tot_sat  ' , landpatch, ch4_surf_flux_tot_sat     )
+      CALL ncio_read_vector (file_restart, 'ch4_surf_aere_unsat ' , landpatch, ch4_surf_aere_unsat         )
+      CALL ncio_read_vector (file_restart, 'ch4_surf_aere_sat   ' , landpatch, ch4_surf_aere_sat           )
+      CALL ncio_read_vector (file_restart, 'ch4_surf_ebul_unsat ' , landpatch, ch4_surf_ebul_unsat         )
+      CALL ncio_read_vector (file_restart, 'ch4_surf_ebul_sat   ' , landpatch, ch4_surf_ebul_sat           )
+      CALL ncio_read_vector (file_restart, 'ch4_surf_diff_unsat ' , landpatch, ch4_surf_diff_unsat         )
+      CALL ncio_read_vector (file_restart, 'ch4_surf_diff_sat   ' , landpatch, ch4_surf_diff_sat           )
+      CALL ncio_read_vector (file_restart, 'ch4_ebul_tot_unsat  ' , landpatch, ch4_ebul_tot_unsat          )
+      CALL ncio_read_vector (file_restart, 'ch4_ebul_tot_sat    ' , landpatch, ch4_ebul_tot_sat            )
+      CALL ncio_read_vector (file_restart, 'ch4_prod_tot_unsat  ' , landpatch, ch4_prod_tot_unsat          )
+      CALL ncio_read_vector (file_restart, 'ch4_prod_tot_sat    ' , landpatch, ch4_prod_tot_sat            )
+      CALL ncio_read_vector (file_restart, 'ch4_oxid_tot_unsat  ' , landpatch, ch4_oxid_tot_unsat          )
+      CALL ncio_read_vector (file_restart, 'ch4_oxid_tot_sat    ' , landpatch, ch4_oxid_tot_sat            )
+      CALL ncio_read_vector (file_restart, 'totcolch4_unsat     ' , landpatch, totcolch4_unsat             )
+      CALL ncio_read_vector (file_restart, 'totcolch4_sat       ' , landpatch, totcolch4_sat               )
+      CALL ncio_read_vector (file_restart, 'grnd_ch4_cond_unsat ' , landpatch, grnd_ch4_cond_unsat         )
+      CALL ncio_read_vector (file_restart, 'grnd_ch4_cond_sat   ' , landpatch, grnd_ch4_cond_sat           )
+      CALL ncio_read_vector (file_restart, 'conc_o2_unsat       ' , nl_soil, landpatch, conc_o2_unsat      )
+      CALL ncio_read_vector (file_restart, 'conc_o2_sat         ' , nl_soil, landpatch, conc_o2_sat        )
+      CALL ncio_read_vector (file_restart, 'conc_ch4_unsat      ' , nl_soil, landpatch, conc_ch4_unsat     )
+      CALL ncio_read_vector (file_restart, 'conc_ch4_sat        ' , nl_soil, landpatch, conc_ch4_sat       )
+      !!!! --------------------------------------------------------------------------------------------------------
+
+      CALL ncio_read_vector (file_restart, 'c_atm              ' , 3, landpatch, c_atm                  )
+      CALL ncio_read_vector (file_restart, 'forc_pch4m         ' , landpatch, forc_pch4m                )
       CALL ncio_read_vector (file_restart, 'layer_sat_lag      ' , nl_soil, landpatch, layer_sat_lag    )
       CALL ncio_read_vector (file_restart, 'lake_soilc         ' , nl_soil, landpatch, lake_soilc       )
+      CALL ncio_read_vector (file_restart, 'annavg_agnpp       ' , landpatch, annavg_agnpp              )
+      CALL ncio_read_vector (file_restart, 'annavg_bgnpp       ' , landpatch, annavg_bgnpp              )
+      CALL ncio_read_vector (file_restart, 'annavg_somhr       ' , landpatch, annavg_somhr              )
+      CALL ncio_read_vector (file_restart, 'annavg_finrw       ' , landpatch, annavg_finrw              )
       CALL ncio_read_vector (file_restart, 'tempavg_agnpp      ' , landpatch, tempavg_agnpp             )
       CALL ncio_read_vector (file_restart, 'tempavg_bgnpp      ' , landpatch, tempavg_bgnpp             )
       CALL ncio_read_vector (file_restart, 'annsum_counter     ' , landpatch, annsum_counter            )
       CALL ncio_read_vector (file_restart, 'tempavg_somhr      ' , landpatch,tempavg_somhr              )
       CALL ncio_read_vector (file_restart, 'tempavg_finrw      ' , landpatch, tempavg_finrw             )
+
 #endif
 
 #ifdef RangeCheck
@@ -1761,21 +2046,10 @@ CONTAINS
       CALL check_vector_data ('lag_npp    ' , lag_npp    )
 
 #ifdef CH4
-      ! CALL check_vector_data ('annsum_npp             ' , annsum_npp            )
-
-      ! CALL check_vector_data ('froot_mr               ' , froot_mr              )
-      ! CALL check_vector_data ('cpool_froot_gr         ' , cpool_froot_gr        )
-      ! CALL check_vector_data ('cpool_froot_storage_gr ' , cpool_froot_storage_gr)
-      ! CALL check_vector_data ('transfer_froot_gr      ' , transfer_froot_gr     )
-
-
-      CALL check_vector_data ('c_atm              ' , c_atm             )
-      CALL check_vector_data ('ch4_surf_flux_tot  ' , ch4_surf_flux_tot )
+      !!!! --------------------------------------------------------------------------------------------------------
+      !!!!                                         sum data   
+      !!!! --------------------------------------------------------------------------------------------------------
       CALL check_vector_data ('net_methane        ' , net_methane       )
-      CALL check_vector_data ('annavg_agnpp       ' , annavg_agnpp      )
-      CALL check_vector_data ('annavg_bgnpp       ' , annavg_bgnpp      )
-      CALL check_vector_data ('annavg_somhr       ' , annavg_somhr      )
-      CALL check_vector_data ('annavg_finrw       ' , annavg_finrw      )
       CALL check_vector_data ('ch4_prod_depth     ' , ch4_prod_depth    )
       CALL check_vector_data ('o2_decomp_depth    ' , o2_decomp_depth   )
       CALL check_vector_data ('ch4_oxid_depth     ' , ch4_oxid_depth    )
@@ -1786,18 +2060,78 @@ CONTAINS
       CALL check_vector_data ('ch4_ebul_depth     ' , ch4_ebul_depth    )
       CALL check_vector_data ('o2stress           ' , o2stress          )
       CALL check_vector_data ('ch4stress          ' , ch4stress         )
+
+      CALL check_vector_data ('ch4_surf_flux_tot  ' , ch4_surf_flux_tot )
       CALL check_vector_data ('ch4_surf_aere      ' , ch4_surf_aere     )
       CALL check_vector_data ('ch4_surf_ebul      ' , ch4_surf_ebul     )
       CALL check_vector_data ('ch4_surf_diff      ' , ch4_surf_diff     )
-      CALL check_vector_data ('ch4_ebul_total     ' , ch4_ebul_total    )
+      CALL check_vector_data ('ch4_ebul_tot       ' , ch4_ebul_tot      )
+      CALL check_vector_data ('ch4_prod_tot       ' , ch4_prod_tot      )
+      CALL check_vector_data ('ch4_oxid_tot       ' , ch4_oxid_tot      )
 
       CALL check_vector_data ('totcolch4          ' , totcolch4         )
-      CALL check_vector_data ('forc_pch4m         ' , forc_pch4m        )
       CALL check_vector_data ('grnd_ch4_cond      ' , grnd_ch4_cond     )
       CALL check_vector_data ('conc_o2            ' , conc_o2           )
       CALL check_vector_data ('conc_ch4           ' , conc_ch4          )
+      !!!! --------------------------------------------------------------------------------------------------------
+
+      !!!! --------------------------------------------------------------------------------------------------------
+      !!!!                                         sum data (unsaturated / saturated)
+      !!!! --------------------------------------------------------------------------------------------------------
+      CALL check_vector_data ('net_methane_unsat  ' , net_methane_unsat  )
+      CALL check_vector_data ('net_methane_sat    ' , net_methane_sat    )
+      CALL check_vector_data ('ch4_prod_depth_unsat' , ch4_prod_depth_unsat )
+      CALL check_vector_data ('ch4_prod_depth_sat  ' , ch4_prod_depth_sat   )
+      CALL check_vector_data ('o2_decomp_depth_unsat' , o2_decomp_depth_unsat)
+      CALL check_vector_data ('o2_decomp_depth_sat  ' , o2_decomp_depth_sat  )
+      CALL check_vector_data ('ch4_oxid_depth_unsat' , ch4_oxid_depth_unsat )
+      CALL check_vector_data ('ch4_oxid_depth_sat  ' , ch4_oxid_depth_sat   )
+      CALL check_vector_data ('o2_oxid_depth_unsat ' , o2_oxid_depth_unsat  )
+      CALL check_vector_data ('o2_oxid_depth_sat   ' , o2_oxid_depth_sat    )
+      CALL check_vector_data ('ch4_aere_depth_unsat' , ch4_aere_depth_unsat )
+      CALL check_vector_data ('ch4_aere_depth_sat  ' , ch4_aere_depth_sat   )
+      CALL check_vector_data ('ch4_tran_depth_unsat' , ch4_tran_depth_unsat )
+      CALL check_vector_data ('ch4_tran_depth_sat  ' , ch4_tran_depth_sat   )
+      CALL check_vector_data ('o2_aere_depth_unsat ' , o2_aere_depth_unsat  )
+      CALL check_vector_data ('o2_aere_depth_sat   ' , o2_aere_depth_sat    )
+      CALL check_vector_data ('ch4_ebul_depth_unsat' , ch4_ebul_depth_unsat )
+      CALL check_vector_data ('ch4_ebul_depth_sat  ' , ch4_ebul_depth_sat   )
+      CALL check_vector_data ('o2stress_unsat      ' , o2stress_unsat      )
+      CALL check_vector_data ('o2stress_sat        ' , o2stress_sat        )
+      CALL check_vector_data ('ch4stress_unsat     ' , ch4stress_unsat     )
+      CALL check_vector_data ('ch4stress_sat       ' , ch4stress_sat       )
+      CALL check_vector_data ('ch4_surf_flux_tot_unsat' , ch4_surf_flux_tot_unsat )
+      CALL check_vector_data ('ch4_surf_flux_tot_sat  ' , ch4_surf_flux_tot_sat   )
+      CALL check_vector_data ('ch4_surf_aere_unsat ' , ch4_surf_aere_unsat )
+      CALL check_vector_data ('ch4_surf_aere_sat   ' , ch4_surf_aere_sat   )
+      CALL check_vector_data ('ch4_surf_ebul_unsat ' , ch4_surf_ebul_unsat )
+      CALL check_vector_data ('ch4_surf_ebul_sat   ' , ch4_surf_ebul_sat   )
+      CALL check_vector_data ('ch4_surf_diff_unsat ' , ch4_surf_diff_unsat )
+      CALL check_vector_data ('ch4_surf_diff_sat   ' , ch4_surf_diff_sat   )
+      CALL check_vector_data ('ch4_ebul_tot_unsat  ' , ch4_ebul_tot_unsat  )
+      CALL check_vector_data ('ch4_ebul_tot_sat    ' , ch4_ebul_tot_sat    )
+      CALL check_vector_data ('ch4_prod_tot_unsat  ' , ch4_prod_tot_unsat  )
+      CALL check_vector_data ('ch4_prod_tot_sat    ' , ch4_prod_tot_sat    )
+      CALL check_vector_data ('ch4_oxid_tot_unsat  ' , ch4_oxid_tot_unsat  )
+      CALL check_vector_data ('ch4_oxid_tot_sat    ' , ch4_oxid_tot_sat    )
+      CALL check_vector_data ('totcolch4_unsat     ' , totcolch4_unsat     )
+      CALL check_vector_data ('totcolch4_sat       ' , totcolch4_sat       )
+      CALL check_vector_data ('grnd_ch4_cond_unsat ' , grnd_ch4_cond_unsat )
+      CALL check_vector_data ('grnd_ch4_cond_sat   ' , grnd_ch4_cond_sat   )
+      CALL check_vector_data ('conc_o2_unsat       ' , conc_o2_unsat       )
+      CALL check_vector_data ('conc_o2_sat         ' , conc_o2_sat         )
+      CALL check_vector_data ('conc_ch4_unsat      ' , conc_ch4_unsat      )
+      CALL check_vector_data ('conc_ch4_sat        ' , conc_ch4_sat        )
+      !!!! --------------------------------------------------------------------------------------------------------
+
+      CALL check_vector_data ('c_atm              ' , c_atm             )
+      CALL check_vector_data ('forc_pch4m         ' , forc_pch4m        )
       CALL check_vector_data ('layer_sat_lag      ' , layer_sat_lag     )
       CALL check_vector_data ('lake_soilc         ' , lake_soilc        )
+      CALL check_vector_data ('annavg_agnpp       ' , annavg_agnpp      )
+      CALL check_vector_data ('annavg_bgnpp       ' , annavg_bgnpp      )
+      CALL check_vector_data ('annavg_somhr       ' , annavg_somhr      )
+      CALL check_vector_data ('annavg_finrw       ' , annavg_finrw      )
       CALL check_vector_data ('tempavg_agnpp      ' , tempavg_agnpp     )
       CALL check_vector_data ('tempavg_bgnpp      ' , tempavg_bgnpp     )
       CALL check_vector_data ('annsum_counter     ' , annsum_counter    )

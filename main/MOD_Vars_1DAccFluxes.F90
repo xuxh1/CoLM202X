@@ -296,41 +296,98 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: a_sum_irrig_count       (:)
 #endif
 #ifdef CH4
-   real(r8), allocatable :: a_c_atm               (:,:)
-   real(r8), allocatable :: a_ch4_surf_flux_tot     (:)
+   !!!! --------------------------------------------------------------------------------------------------------
+   !!!!                                         sum data   
+   !!!! --------------------------------------------------------------------------------------------------------
    real(r8), allocatable :: a_net_methane           (:)
+   real(r8), allocatable :: a_ch4_prod_depth        (:,:)
+   real(r8), allocatable :: a_o2_decomp_depth       (:,:)
+   real(r8), allocatable :: a_ch4_oxid_depth        (:,:)
+   real(r8), allocatable :: a_o2_oxid_depth         (:,:)
+   real(r8), allocatable :: a_ch4_aere_depth        (:,:)
+   real(r8), allocatable :: a_ch4_tran_depth        (:,:)
+   real(r8), allocatable :: a_o2_aere_depth         (:,:)
+   real(r8), allocatable :: a_ch4_ebul_depth        (:,:)
+   real(r8), allocatable :: a_o2stress              (:,:)
+   real(r8), allocatable :: a_ch4stress             (:,:)
+   real(r8), allocatable :: a_ch4_surf_flux_tot     (:)
+   real(r8), allocatable :: a_ch4_surf_aere         (:)
+   real(r8), allocatable :: a_ch4_surf_ebul         (:)
+   real(r8), allocatable :: a_ch4_surf_diff         (:)
+   real(r8), allocatable :: a_ch4_ebul_tot          (:)
+   real(r8), allocatable :: a_ch4_prod_tot          (:)
+   real(r8), allocatable :: a_ch4_oxid_tot          (:)
+
+   real(r8), allocatable :: a_totcolch4             (:)
+   real(r8), allocatable :: a_grnd_ch4_cond         (:)
+   real(r8), allocatable :: a_conc_o2               (:,:)
+   real(r8), allocatable :: a_conc_ch4              (:,:)
+   !!!! --------------------------------------------------------------------------------------------------------
+
+   !!!! --------------------------------------------------------------------------------------------------------
+   !!!!                                         sum data (unsaturated / saturated)
+   !!!! --------------------------------------------------------------------------------------------------------
+   real(r8), allocatable :: a_net_methane_unsat           (:)
+   real(r8), allocatable :: a_net_methane_sat             (:)
+   real(r8), allocatable :: a_ch4_prod_depth_unsat        (:,:)
+   real(r8), allocatable :: a_ch4_prod_depth_sat          (:,:)
+   real(r8), allocatable :: a_o2_decomp_depth_unsat       (:,:)
+   real(r8), allocatable :: a_o2_decomp_depth_sat         (:,:)
+   real(r8), allocatable :: a_ch4_oxid_depth_unsat        (:,:)
+   real(r8), allocatable :: a_ch4_oxid_depth_sat          (:,:)
+   real(r8), allocatable :: a_o2_oxid_depth_unsat         (:,:)
+   real(r8), allocatable :: a_o2_oxid_depth_sat           (:,:)
+   real(r8), allocatable :: a_ch4_aere_depth_unsat        (:,:)
+   real(r8), allocatable :: a_ch4_aere_depth_sat          (:,:)
+   real(r8), allocatable :: a_ch4_tran_depth_unsat        (:,:)
+   real(r8), allocatable :: a_ch4_tran_depth_sat          (:,:)
+   real(r8), allocatable :: a_o2_aere_depth_unsat         (:,:)
+   real(r8), allocatable :: a_o2_aere_depth_sat           (:,:)
+   real(r8), allocatable :: a_ch4_ebul_depth_unsat        (:,:)
+   real(r8), allocatable :: a_ch4_ebul_depth_sat          (:,:)
+   real(r8), allocatable :: a_o2stress_unsat              (:,:)
+   real(r8), allocatable :: a_o2stress_sat                (:,:)
+   real(r8), allocatable :: a_ch4stress_unsat             (:,:)
+   real(r8), allocatable :: a_ch4stress_sat               (:,:)
+   real(r8), allocatable :: a_ch4_surf_flux_tot_unsat     (:)
+   real(r8), allocatable :: a_ch4_surf_flux_tot_sat       (:)
+   real(r8), allocatable :: a_ch4_surf_aere_unsat         (:)
+   real(r8), allocatable :: a_ch4_surf_aere_sat           (:)
+   real(r8), allocatable :: a_ch4_surf_ebul_unsat         (:)
+   real(r8), allocatable :: a_ch4_surf_ebul_sat           (:)
+   real(r8), allocatable :: a_ch4_surf_diff_unsat         (:)
+   real(r8), allocatable :: a_ch4_surf_diff_sat           (:)
+   real(r8), allocatable :: a_ch4_ebul_tot_unsat          (:)
+   real(r8), allocatable :: a_ch4_ebul_tot_sat            (:)
+   real(r8), allocatable :: a_ch4_prod_tot_unsat          (:)
+   real(r8), allocatable :: a_ch4_prod_tot_sat            (:)
+   real(r8), allocatable :: a_ch4_oxid_tot_unsat          (:)
+   real(r8), allocatable :: a_ch4_oxid_tot_sat            (:)
+
+   real(r8), allocatable :: a_totcolch4_unsat             (:)
+   real(r8), allocatable :: a_totcolch4_sat               (:)
+   real(r8), allocatable :: a_grnd_ch4_cond_unsat         (:)
+   real(r8), allocatable :: a_grnd_ch4_cond_sat           (:)
+   real(r8), allocatable :: a_conc_o2_unsat               (:,:)
+   real(r8), allocatable :: a_conc_o2_sat                 (:,:)
+   real(r8), allocatable :: a_conc_ch4_unsat              (:,:)
+   real(r8), allocatable :: a_conc_ch4_sat                (:,:)
+   !!!! --------------------------------------------------------------------------------------------------------
+
+   real(r8), allocatable :: a_c_atm                 (:,:)
+   real(r8), allocatable :: a_forc_pch4m            (:)
+   real(r8), allocatable :: a_layer_sat_lag         (:,:)
+   real(r8), allocatable :: a_lake_soilc            (:,:)
    real(r8), allocatable :: a_annavg_agnpp          (:)
    real(r8), allocatable :: a_annavg_bgnpp          (:)
    real(r8), allocatable :: a_annavg_somhr          (:)
    real(r8), allocatable :: a_annavg_finrw          (:)
-   real(r8), allocatable :: a_ch4_prod_depth      (:,:)
-   real(r8), allocatable :: a_o2_decomp_depth     (:,:)
-   real(r8), allocatable :: a_ch4_oxid_depth      (:,:) 
-   real(r8), allocatable :: a_o2_oxid_depth       (:,:)
-   real(r8), allocatable :: a_ch4_aere_depth      (:,:) 
-   real(r8), allocatable :: a_ch4_tran_depth      (:,:)
-   real(r8), allocatable :: a_o2_aere_depth       (:,:)
-   real(r8), allocatable :: a_ch4_ebul_depth      (:,:)
-
-   real(r8), allocatable :: a_o2stress            (:,:)
-   real(r8), allocatable :: a_ch4stress           (:,:)
-   real(r8), allocatable :: a_ch4_surf_aere         (:) 
-   real(r8), allocatable :: a_ch4_surf_ebul         (:)
-   real(r8), allocatable :: a_ch4_surf_diff         (:)
-   real(r8), allocatable :: a_ch4_ebul_total        (:) 
-
-   real(r8), allocatable :: a_totcolch4             (:)
-   real(r8), allocatable :: a_forc_pch4m            (:)
-   real(r8), allocatable :: a_grnd_ch4_cond         (:)
-   real(r8), allocatable :: a_conc_o2             (:,:)
-   real(r8), allocatable :: a_conc_ch4            (:,:)
-   real(r8), allocatable :: a_layer_sat_lag       (:,:)
-   real(r8), allocatable :: a_lake_soilc          (:,:)
    real(r8), allocatable :: a_tempavg_agnpp         (:)
    real(r8), allocatable :: a_tempavg_bgnpp         (:)
    real(r8), allocatable :: a_annsum_counter        (:)
    real(r8), allocatable :: a_tempavg_somhr         (:)
    real(r8), allocatable :: a_tempavg_finrw         (:)
+
 #endif
    real(r8), allocatable :: a_ndep_to_sminn         (:)
    real(r8), allocatable :: a_abm                   (:)
@@ -773,13 +830,10 @@ CONTAINS
             allocate (a_sum_irrig_count    (numpatch))
 #endif
 #ifdef CH4
-            allocate (a_c_atm                   (1:3,numpatch))
-            allocate (a_ch4_surf_flux_tot           (numpatch))
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data   
+            !!!! --------------------------------------------------------------------------------------------------------
             allocate (a_net_methane                 (numpatch))
-            allocate (a_annavg_agnpp                (numpatch))
-            allocate (a_annavg_bgnpp                (numpatch))
-            allocate (a_annavg_somhr                (numpatch))
-            allocate (a_annavg_finrw                (numpatch))
             allocate (a_ch4_prod_depth      (nl_soil,numpatch))
             allocate (a_o2_decomp_depth     (nl_soil,numpatch))
             allocate (a_ch4_oxid_depth      (nl_soil,numpatch))
@@ -790,23 +844,84 @@ CONTAINS
             allocate (a_ch4_ebul_depth      (nl_soil,numpatch))
             allocate (a_o2stress            (nl_soil,numpatch))
             allocate (a_ch4stress           (nl_soil,numpatch))
+            allocate (a_ch4_surf_flux_tot           (numpatch))
             allocate (a_ch4_surf_aere               (numpatch))
             allocate (a_ch4_surf_ebul               (numpatch))
             allocate (a_ch4_surf_diff               (numpatch))
-            allocate (a_ch4_ebul_total              (numpatch))
+            allocate (a_ch4_ebul_tot                (numpatch))
+            allocate (a_ch4_prod_tot                (numpatch))
+            allocate (a_ch4_oxid_tot                (numpatch))
 
             allocate (a_totcolch4                   (numpatch))
-            allocate (a_forc_pch4m                  (numpatch))
             allocate (a_grnd_ch4_cond               (numpatch))
             allocate (a_conc_o2             (nl_soil,numpatch))
             allocate (a_conc_ch4            (nl_soil,numpatch))
+            !!!! --------------------------------------------------------------------------------------------------------
+
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data (unsaturated / saturated)
+            !!!! --------------------------------------------------------------------------------------------------------
+            allocate (a_net_methane_unsat           (numpatch))
+            allocate (a_net_methane_sat             (numpatch))
+            allocate (a_ch4_prod_depth_unsat  (nl_soil,numpatch))
+            allocate (a_ch4_prod_depth_sat    (nl_soil,numpatch))
+            allocate (a_o2_decomp_depth_unsat (nl_soil,numpatch))
+            allocate (a_o2_decomp_depth_sat   (nl_soil,numpatch))
+            allocate (a_ch4_oxid_depth_unsat  (nl_soil,numpatch))
+            allocate (a_ch4_oxid_depth_sat    (nl_soil,numpatch))
+            allocate (a_o2_oxid_depth_unsat   (nl_soil,numpatch))
+            allocate (a_o2_oxid_depth_sat     (nl_soil,numpatch))
+            allocate (a_ch4_aere_depth_unsat  (nl_soil,numpatch))
+            allocate (a_ch4_aere_depth_sat    (nl_soil,numpatch))
+            allocate (a_ch4_tran_depth_unsat  (nl_soil,numpatch))
+            allocate (a_ch4_tran_depth_sat    (nl_soil,numpatch))
+            allocate (a_o2_aere_depth_unsat   (nl_soil,numpatch))
+            allocate (a_o2_aere_depth_sat     (nl_soil,numpatch))
+            allocate (a_ch4_ebul_depth_unsat  (nl_soil,numpatch))
+            allocate (a_ch4_ebul_depth_sat    (nl_soil,numpatch))
+            allocate (a_o2stress_unsat        (nl_soil,numpatch))
+            allocate (a_o2stress_sat          (nl_soil,numpatch))
+            allocate (a_ch4stress_unsat       (nl_soil,numpatch))
+            allocate (a_ch4stress_sat         (nl_soil,numpatch))
+            allocate (a_ch4_surf_flux_tot_unsat     (numpatch))
+            allocate (a_ch4_surf_flux_tot_sat       (numpatch))
+            allocate (a_ch4_surf_aere_unsat         (numpatch))
+            allocate (a_ch4_surf_aere_sat           (numpatch))
+            allocate (a_ch4_surf_ebul_unsat         (numpatch))
+            allocate (a_ch4_surf_ebul_sat           (numpatch))
+            allocate (a_ch4_surf_diff_unsat         (numpatch))
+            allocate (a_ch4_surf_diff_sat           (numpatch))
+            allocate (a_ch4_ebul_tot_unsat          (numpatch))
+            allocate (a_ch4_ebul_tot_sat            (numpatch))
+            allocate (a_ch4_prod_tot_unsat          (numpatch))
+            allocate (a_ch4_prod_tot_sat            (numpatch))
+            allocate (a_ch4_oxid_tot_unsat          (numpatch))
+            allocate (a_ch4_oxid_tot_sat            (numpatch))
+
+            allocate (a_totcolch4_unsat             (numpatch))
+            allocate (a_totcolch4_sat               (numpatch))
+            allocate (a_grnd_ch4_cond_unsat         (numpatch))
+            allocate (a_grnd_ch4_cond_sat           (numpatch))
+            allocate (a_conc_o2_unsat        (nl_soil,numpatch))
+            allocate (a_conc_o2_sat          (nl_soil,numpatch))
+            allocate (a_conc_ch4_unsat       (nl_soil,numpatch))
+            allocate (a_conc_ch4_sat         (nl_soil,numpatch))
+            !!!! --------------------------------------------------------------------------------------------------------
+
+            allocate (a_c_atm                   (1:3,numpatch))
+            allocate (a_forc_pch4m                  (numpatch))
             allocate (a_layer_sat_lag       (nl_soil,numpatch))
             allocate (a_lake_soilc          (nl_soil,numpatch))
+            allocate (a_annavg_agnpp                (numpatch))
+            allocate (a_annavg_bgnpp                (numpatch))
+            allocate (a_annavg_somhr                (numpatch))
+            allocate (a_annavg_finrw                (numpatch))
             allocate (a_tempavg_agnpp               (numpatch))
             allocate (a_tempavg_bgnpp               (numpatch))
             allocate (a_annsum_counter              (numpatch))
             allocate (a_tempavg_somhr               (numpatch))
             allocate (a_tempavg_finrw               (numpatch))
+
 #endif
 
             allocate (a_ndep_to_sminn      (numpatch))
@@ -1255,13 +1370,10 @@ CONTAINS
             deallocate (a_sum_irrig_count    )
 #endif
 #ifdef CH4
-            deallocate (a_c_atm                  )
-            deallocate (a_ch4_surf_flux_tot      )
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data
+            !!!! --------------------------------------------------------------------------------------------------------
             deallocate (a_net_methane            )
-            deallocate (a_annavg_agnpp           )
-            deallocate (a_annavg_bgnpp           )
-            deallocate (a_annavg_somhr           )
-            deallocate (a_annavg_finrw           )
             deallocate (a_ch4_prod_depth         )
             deallocate (a_o2_decomp_depth        )
             deallocate (a_ch4_oxid_depth         )
@@ -1272,23 +1384,85 @@ CONTAINS
             deallocate (a_ch4_ebul_depth         )
             deallocate (a_o2stress               )
             deallocate (a_ch4stress              )
+            deallocate (a_ch4_surf_flux_tot      )
             deallocate (a_ch4_surf_aere          )
             deallocate (a_ch4_surf_ebul          )
             deallocate (a_ch4_surf_diff          )
-            deallocate (a_ch4_ebul_total         )
+            deallocate (a_ch4_ebul_tot           )
+            deallocate (a_ch4_prod_tot           )
+            deallocate (a_ch4_oxid_tot           )
 
             deallocate (a_totcolch4              )
-            deallocate (a_forc_pch4m             )
             deallocate (a_grnd_ch4_cond          )
             deallocate (a_conc_o2                )
             deallocate (a_conc_ch4               )
+            !!!! --------------------------------------------------------------------------------------------------------
+
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data (unsaturated / saturated)
+            !!!! --------------------------------------------------------------------------------------------------------
+            deallocate (a_net_methane_unsat      )
+            deallocate (a_net_methane_sat        )
+            deallocate (a_ch4_prod_depth_unsat   )
+            deallocate (a_ch4_prod_depth_sat     )
+            deallocate (a_o2_decomp_depth_unsat  )
+            deallocate (a_o2_decomp_depth_sat    )
+            deallocate (a_ch4_oxid_depth_unsat   )
+            deallocate (a_ch4_oxid_depth_sat     )
+            deallocate (a_o2_oxid_depth_unsat    )
+            deallocate (a_o2_oxid_depth_sat      )
+            deallocate (a_ch4_aere_depth_unsat   )
+            deallocate (a_ch4_aere_depth_sat     )
+            deallocate (a_ch4_tran_depth_unsat   )
+            deallocate (a_ch4_tran_depth_sat     )
+            deallocate (a_o2_aere_depth_unsat    )
+            deallocate (a_o2_aere_depth_sat      )
+            deallocate (a_ch4_ebul_depth_unsat   )
+            deallocate (a_ch4_ebul_depth_sat     )
+            deallocate (a_o2stress_unsat         )
+            deallocate (a_o2stress_sat           )
+            deallocate (a_ch4stress_unsat        )
+            deallocate (a_ch4stress_sat          )
+            deallocate (a_ch4_surf_flux_tot_unsat)
+            deallocate (a_ch4_surf_flux_tot_sat  )
+            deallocate (a_ch4_surf_aere_unsat    )
+            deallocate (a_ch4_surf_aere_sat      )
+            deallocate (a_ch4_surf_ebul_unsat    )
+            deallocate (a_ch4_surf_ebul_sat      )
+            deallocate (a_ch4_surf_diff_unsat    )
+            deallocate (a_ch4_surf_diff_sat      )
+            deallocate (a_ch4_ebul_tot_unsat     )
+            deallocate (a_ch4_ebul_tot_sat       )
+            deallocate (a_ch4_prod_tot_unsat     )
+            deallocate (a_ch4_prod_tot_sat       )
+            deallocate (a_ch4_oxid_tot_unsat     )
+            deallocate (a_ch4_oxid_tot_sat       )
+
+            deallocate (a_totcolch4_unsat        )
+            deallocate (a_totcolch4_sat          )
+            deallocate (a_grnd_ch4_cond_unsat    )
+            deallocate (a_grnd_ch4_cond_sat      )
+            deallocate (a_conc_o2_unsat          )
+            deallocate (a_conc_o2_sat            )
+            deallocate (a_conc_ch4_unsat         )
+            deallocate (a_conc_ch4_sat           )
+            !!!! --------------------------------------------------------------------------------------------------------
+
+
+            deallocate (a_c_atm                  )
+            deallocate (a_forc_pch4m             )
             deallocate (a_layer_sat_lag          )
             deallocate (a_lake_soilc             )
+            deallocate (a_annavg_agnpp           )
+            deallocate (a_annavg_bgnpp           )
+            deallocate (a_annavg_somhr           )
+            deallocate (a_annavg_finrw           )
             deallocate (a_tempavg_agnpp          )
             deallocate (a_tempavg_bgnpp          )
             deallocate (a_annsum_counter         )
             deallocate (a_tempavg_somhr          )
             deallocate (a_tempavg_finrw          )
+
 #endif
 
             deallocate (a_ndep_to_sminn      )
@@ -1736,39 +1910,98 @@ CONTAINS
             a_sum_irrig_count    (:) = spval
 #endif
 #ifdef CH4
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data
+            !!!! --------------------------------------------------------------------------------------------------------
+            a_net_methane            (:)   = spval
+            a_ch4_prod_depth       (:,:)  = spval
+            a_o2_decomp_depth      (:,:)  = spval
+            a_ch4_oxid_depth       (:,:)  = spval
+            a_o2_oxid_depth        (:,:)  = spval
+            a_ch4_aere_depth       (:,:)  = spval
+            a_ch4_tran_depth       (:,:)  = spval
+            a_o2_aere_depth        (:,:)  = spval
+            a_ch4_ebul_depth       (:,:)  = spval
+            a_o2stress             (:,:)  = spval
+            a_ch4stress            (:,:)  = spval
+            a_ch4_surf_flux_tot      (:)  = spval
+            a_ch4_surf_aere          (:)  = spval
+            a_ch4_surf_ebul          (:)  = spval
+            a_ch4_surf_diff          (:)  = spval
+            a_ch4_ebul_tot           (:)  = spval
+            a_ch4_prod_tot           (:)  = spval
+            a_ch4_oxid_tot           (:)  = spval
+
+            a_totcolch4              (:)  = spval
+            a_grnd_ch4_cond          (:)  = spval
+            a_conc_o2              (:,:) = spval
+            a_conc_ch4             (:,:) = spval
+            !!!! --------------------------------------------------------------------------------------------------------
+
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data (unsaturated / saturated)
+            !!!! --------------------------------------------------------------------------------------------------------
+            a_net_methane_unsat      (:)   = spval
+            a_net_methane_sat        (:)   = spval
+            a_ch4_prod_depth_unsat (:,:)  = spval
+            a_ch4_prod_depth_sat   (:,:)  = spval
+            a_o2_decomp_depth_unsat(:,:)  = spval
+            a_o2_decomp_depth_sat  (:,:)  = spval
+            a_ch4_oxid_depth_unsat (:,:)  = spval
+            a_ch4_oxid_depth_sat   (:,:)  = spval
+            a_o2_oxid_depth_unsat  (:,:)  = spval
+            a_o2_oxid_depth_sat    (:,:)  = spval
+            a_ch4_aere_depth_unsat (:,:)  = spval
+            a_ch4_aere_depth_sat   (:,:)  = spval
+            a_ch4_tran_depth_unsat (:,:)  = spval
+            a_ch4_tran_depth_sat   (:,:)  = spval
+            a_o2_aere_depth_unsat  (:,:)  = spval
+            a_o2_aere_depth_sat    (:,:)  = spval
+            a_ch4_ebul_depth_unsat (:,:)  = spval
+            a_ch4_ebul_depth_sat   (:,:)  = spval
+            a_o2stress_unsat       (:,:)  = spval
+            a_o2stress_sat         (:,:)  = spval
+            a_ch4stress_unsat      (:,:)  = spval
+            a_ch4stress_sat        (:,:)  = spval
+            a_ch4_surf_flux_tot_unsat(:)  = spval
+            a_ch4_surf_flux_tot_sat  (:)  = spval
+            a_ch4_surf_aere_unsat    (:)  = spval
+            a_ch4_surf_aere_sat      (:)  = spval
+            a_ch4_surf_ebul_unsat    (:)  = spval
+            a_ch4_surf_ebul_sat      (:)  = spval
+            a_ch4_surf_diff_unsat    (:)  = spval
+            a_ch4_surf_diff_sat      (:)  = spval
+            a_ch4_ebul_tot_unsat     (:)  = spval
+            a_ch4_ebul_tot_sat       (:)  = spval
+            a_ch4_prod_tot_unsat     (:)  = spval
+            a_ch4_prod_tot_sat       (:)  = spval
+            a_ch4_oxid_tot_unsat     (:)  = spval
+            a_ch4_oxid_tot_sat       (:)  = spval
+
+            a_totcolch4_unsat        (:)  = spval
+            a_totcolch4_sat          (:)  = spval
+            a_grnd_ch4_cond_unsat    (:)  = spval
+            a_grnd_ch4_cond_sat      (:)  = spval
+            a_conc_o2_unsat        (:,:) = spval
+            a_conc_o2_sat          (:,:) = spval
+            a_conc_ch4_unsat       (:,:) = spval
+            a_conc_ch4_sat         (:,:) = spval
+            !!!! --------------------------------------------------------------------------------------------------------
+
             a_c_atm                (:,:) = spval
-            a_ch4_surf_flux_tot      (:) = spval
-            a_net_methane            (:) = spval
+            a_forc_pch4m             (:) = spval
+            a_layer_sat_lag        (:,:) = spval
+            a_lake_soilc           (:,:) = spval
             a_annavg_agnpp           (:) = spval
             a_annavg_bgnpp           (:) = spval
             a_annavg_somhr           (:) = spval
             a_annavg_finrw           (:) = spval
-            a_ch4_prod_depth       (:,:) = spval
-            a_o2_decomp_depth      (:,:) = spval
-            a_ch4_oxid_depth       (:,:) = spval
-            a_o2_oxid_depth        (:,:) = spval
-            a_ch4_aere_depth       (:,:) = spval
-            a_ch4_tran_depth       (:,:) = spval
-            a_o2_aere_depth        (:,:) = spval
-            a_ch4_ebul_depth       (:,:) = spval
-            a_o2stress             (:,:) = spval
-            a_ch4stress            (:,:) = spval
-            a_ch4_surf_aere          (:) = spval
-            a_ch4_surf_ebul          (:) = spval
-            a_ch4_surf_diff          (:) = spval
-            a_ch4_ebul_total         (:) = spval
-            a_totcolch4              (:) = spval
-            a_forc_pch4m             (:) = spval
-            a_grnd_ch4_cond          (:) = spval
-            a_conc_o2              (:,:) = spval
-            a_conc_ch4             (:,:) = spval
-            a_layer_sat_lag        (:,:) = spval
-            a_lake_soilc           (:,:) = spval
             a_tempavg_agnpp          (:) = spval
             a_tempavg_bgnpp          (:) = spval
             a_annsum_counter         (:) = spval
             a_tempavg_somhr          (:) = spval
             a_tempavg_finrw          (:) = spval
+
 #endif
             a_ndep_to_sminn      (:) = spval
 
@@ -2348,34 +2581,90 @@ CONTAINS
 #endif
 
 #ifdef CH4
-            CALL acc2d (c_atm                             ,   a_c_atm                             )
-            CALL acc1d (ch4_surf_flux_tot                   ,   a_ch4_surf_flux_tot                   )
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data   
+            !!!! --------------------------------------------------------------------------------------------------------
             CALL acc1d (net_methane                         ,   a_net_methane                         )
+            CALL acc2d (ch4_prod_depth                      ,   a_ch4_prod_depth                      )
+            CALL acc2d (o2_decomp_depth                     ,   a_o2_decomp_depth                     )
+            CALL acc2d (ch4_oxid_depth                      ,   a_ch4_oxid_depth                      )
+            CALL acc2d (o2_oxid_depth                       ,   a_o2_oxid_depth                       )
+            CALL acc2d (ch4_aere_depth                      ,   a_ch4_aere_depth                      )
+            CALL acc2d (ch4_tran_depth                      ,   a_ch4_tran_depth                      )
+            CALL acc2d (o2_aere_depth                       ,   a_o2_aere_depth                       )
+            CALL acc2d (ch4_ebul_depth                      ,   a_ch4_ebul_depth                      )
+            CALL acc2d (o2stress                            ,   a_o2stress                            )
+            CALL acc2d (ch4stress                           ,   a_ch4stress                           )
+            CALL acc1d (ch4_surf_flux_tot                   ,   a_ch4_surf_flux_tot                   )
+            CALL acc1d (ch4_surf_aere                       ,   a_ch4_surf_aere                       )
+            CALL acc1d (ch4_surf_ebul                       ,   a_ch4_surf_ebul                       )
+            CALL acc1d (ch4_surf_diff                       ,   a_ch4_surf_diff                       )
+            CALL acc1d (ch4_ebul_tot                        ,   a_ch4_ebul_tot                        )
+            CALL acc1d (ch4_prod_tot                        ,   a_ch4_prod_tot                        )
+            CALL acc1d (ch4_oxid_tot                        ,   a_ch4_oxid_tot                        )
+
+            CALL acc1d (totcolch4                           ,   a_totcolch4                           )
+            CALL acc1d (grnd_ch4_cond                       ,   a_grnd_ch4_cond                       )
+            CALL acc2d (conc_o2                             ,   a_conc_o2                             )
+            CALL acc2d (conc_ch4                            ,   a_conc_ch4                            )
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!! --------------------------------------------------------------------------------------------------------
+            !!!!                                         sum data (unsaturated / saturated)
+            !!!! --------------------------------------------------------------------------------------------------------
+            CALL acc1d (net_methane_unsat                   ,   a_net_methane_unsat                   )
+            CALL acc1d (net_methane_sat                     ,   a_net_methane_sat                     )
+            CALL acc2d (ch4_prod_depth_unsat                ,   a_ch4_prod_depth_unsat                )
+            CALL acc2d (ch4_prod_depth_sat                  ,   a_ch4_prod_depth_sat                  )
+            CALL acc2d (o2_decomp_depth_unsat               ,   a_o2_decomp_depth_unsat               )
+            CALL acc2d (o2_decomp_depth_sat                 ,   a_o2_decomp_depth_sat                 )
+            CALL acc2d (ch4_oxid_depth_unsat                ,   a_ch4_oxid_depth_unsat                )
+            CALL acc2d (ch4_oxid_depth_sat                  ,   a_ch4_oxid_depth_sat                  )
+            CALL acc2d (o2_oxid_depth_unsat                 ,   a_o2_oxid_depth_unsat                 )
+            CALL acc2d (o2_oxid_depth_sat                   ,   a_o2_oxid_depth_sat                   )
+            CALL acc2d (ch4_aere_depth_unsat                ,   a_ch4_aere_depth_unsat                )
+            CALL acc2d (ch4_aere_depth_sat                  ,   a_ch4_aere_depth_sat                  )
+            CALL acc2d (ch4_tran_depth_unsat                ,   a_ch4_tran_depth_unsat                )
+            CALL acc2d (ch4_tran_depth_sat                  ,   a_ch4_tran_depth_sat                  )
+            CALL acc2d (o2_aere_depth_unsat                 ,   a_o2_aere_depth_unsat                 )
+            CALL acc2d (o2_aere_depth_sat                   ,   a_o2_aere_depth_sat                   )
+            CALL acc2d (ch4_ebul_depth_unsat                ,   a_ch4_ebul_depth_unsat                )
+            CALL acc2d (ch4_ebul_depth_sat                  ,   a_ch4_ebul_depth_sat                  )
+            CALL acc2d (o2stress_unsat                      ,   a_o2stress_unsat                      )
+            CALL acc2d (o2stress_sat                        ,   a_o2stress_sat                        )
+            CALL acc2d (ch4stress_unsat                     ,   a_ch4stress_unsat                     )
+            CALL acc2d (ch4stress_sat                       ,   a_ch4stress_sat                       )
+            CALL acc1d (ch4_surf_flux_tot_unsat             ,   a_ch4_surf_flux_tot_unsat             )
+            CALL acc1d (ch4_surf_flux_tot_sat               ,   a_ch4_surf_flux_tot_sat               )
+            CALL acc1d (ch4_surf_aere_unsat                 ,   a_ch4_surf_aere_unsat                 )
+            CALL acc1d (ch4_surf_aere_sat                   ,   a_ch4_surf_aere_sat                   )
+            CALL acc1d (ch4_surf_ebul_unsat                 ,   a_ch4_surf_ebul_unsat                 )
+            CALL acc1d (ch4_surf_ebul_sat                   ,   a_ch4_surf_ebul_sat                   )
+            CALL acc1d (ch4_surf_diff_unsat                 ,   a_ch4_surf_diff_unsat                 )
+            CALL acc1d (ch4_surf_diff_sat                   ,   a_ch4_surf_diff_sat                   )
+            CALL acc1d (ch4_ebul_tot_unsat                  ,   a_ch4_ebul_tot_unsat                  )
+            CALL acc1d (ch4_ebul_tot_sat                    ,   a_ch4_ebul_tot_sat                    )
+            CALL acc1d (ch4_prod_tot_unsat                  ,   a_ch4_prod_tot_unsat                  )
+            CALL acc1d (ch4_prod_tot_sat                    ,   a_ch4_prod_tot_sat                    )
+            CALL acc1d (ch4_oxid_tot_unsat                  ,   a_ch4_oxid_tot_unsat                  )
+            CALL acc1d (ch4_oxid_tot_sat                    ,   a_ch4_oxid_tot_sat                    )
+            CALL acc1d (totcolch4_unsat                     ,   a_totcolch4_unsat                     )
+            CALL acc1d (totcolch4_sat                       ,   a_totcolch4_sat                       )
+            CALL acc1d (grnd_ch4_cond_unsat                 ,   a_grnd_ch4_cond_unsat                 )
+            CALL acc1d (grnd_ch4_cond_sat                   ,   a_grnd_ch4_cond_sat                   )
+            CALL acc2d (conc_o2_unsat                       ,   a_conc_o2_unsat                       )
+            CALL acc2d (conc_o2_sat                         ,   a_conc_o2_sat                         )
+            CALL acc2d (conc_ch4_unsat                      ,   a_conc_ch4_unsat                      )
+            CALL acc2d (conc_ch4_sat                        ,   a_conc_ch4_sat                        )
+            !!!! --------------------------------------------------------------------------------------------------------
+
+            CALL acc2d (c_atm                               ,   a_c_atm                               )
+            CALL acc1d (forc_pch4m                          ,   a_forc_pch4m                          )
+            CALL acc2d (layer_sat_lag                       ,   a_layer_sat_lag                       )
+            CALL acc2d (lake_soilc                          ,   a_lake_soilc                          )
             CALL acc1d (annavg_agnpp                        ,   a_annavg_agnpp                        )
             CALL acc1d (annavg_bgnpp                        ,   a_annavg_bgnpp                        )
             CALL acc1d (annavg_somhr                        ,   a_annavg_somhr                        )
             CALL acc1d (annavg_finrw                        ,   a_annavg_finrw                        )
-            CALL acc2d (ch4_prod_depth                    ,   a_ch4_prod_depth                    )
-            CALL acc2d (o2_decomp_depth                   ,   a_o2_decomp_depth                   )
-            CALL acc2d (ch4_oxid_depth                    ,   a_ch4_oxid_depth                    )
-            CALL acc2d (o2_oxid_depth                     ,   a_o2_oxid_depth                     )
-            CALL acc2d (ch4_aere_depth                    ,   a_ch4_aere_depth                    )
-            CALL acc2d (ch4_tran_depth                    ,   a_ch4_tran_depth                    )
-            CALL acc2d (o2_aere_depth                     ,   a_o2_aere_depth                     )
-            CALL acc2d (ch4_ebul_depth                    ,   a_ch4_ebul_depth                    )
-            CALL acc2d (o2stress                          ,   a_o2stress                          )
-            CALL acc2d (ch4stress                         ,   a_ch4stress                         )
-            CALL acc1d (ch4_surf_aere                       ,   a_ch4_surf_aere                       )
-            CALL acc1d (ch4_surf_ebul                       ,   a_ch4_surf_ebul                       )
-            CALL acc1d (ch4_surf_diff                       ,   a_ch4_surf_diff                       )
-            CALL acc1d (ch4_ebul_total                      ,   a_ch4_ebul_total                      )
-            CALL acc1d (totcolch4                           ,   a_totcolch4                           )
-            CALL acc1d (forc_pch4m                          ,   a_forc_pch4m                          )
-            CALL acc1d (grnd_ch4_cond                       ,   a_grnd_ch4_cond                       )
-            CALL acc2d (conc_o2                           ,   a_conc_o2                           )
-            CALL acc2d (conc_ch4                          ,   a_conc_ch4                          )
-            CALL acc2d (layer_sat_lag                     ,   a_layer_sat_lag                     )
-            CALL acc2d (lake_soilc                        ,   a_lake_soilc                        )
             CALL acc1d (tempavg_agnpp                       ,   a_tempavg_agnpp                       )
             CALL acc1d (tempavg_bgnpp                       ,   a_tempavg_bgnpp                       )
             CALL acc1d (annsum_counter                      ,   a_annsum_counter                      )

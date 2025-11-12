@@ -4,7 +4,7 @@
 		z_soisno,dz_soisno,zi_soisno,t_soisno,t_grnd,wliq_soisno,wice_soisno,&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&
 		zwt,rootfr,snowdp,wat,rsur,etr,lakedepth,lake_icefrac,wdsrf,bsw,&
-		smp,porsl,lai,rootr,fsatmax,fsatdcf)
+		smp,porsl,lai,rootr,fsatmax,fsatdcf,frcsat)
 
 		use MOD_Precision
 		use MOD_Const_Physical, only: rgas, denh2o, denice, tfrz, grav
@@ -25,15 +25,39 @@
 
 		USE MOD_BGC_Vars_TimeVariables, only: decomp_cpools_vr
 	
-		! USE MOD_BGC_Vars_TimeVariables, only: froot_mr, cpool_froot_gr, cpool_froot_storage_gr, transfer_froot_gr
-		USE MOD_BGC_Vars_TimeVariables, only: c_atm, ch4_surf_flux_tot, net_methane,annavg_agnpp,annavg_bgnpp,&
-		annavg_somhr,annavg_finrw,ch4_prod_depth,o2_decomp_depth,ch4_oxid_depth,o2_oxid_depth,&
-		ch4_aere_depth,ch4_tran_depth,o2_aere_depth,ch4_ebul_depth,o2stress,ch4stress,ch4_surf_aere,&
-		ch4_surf_ebul,ch4_surf_diff,ch4_ebul_total
-	
-		USE MOD_BGC_Vars_TimeVariables, only: totcolch4,forc_pch4m,grnd_ch4_cond,conc_o2,conc_ch4,&
-		layer_sat_lag,lake_soilc,tempavg_agnpp,tempavg_bgnpp,annsum_counter,tempavg_somhr,tempavg_finrw, &
-		o_scalar
+		USE MOD_BGC_Vars_TimeVariables, only: &
+		!!!! --------------------------------------------------------------------------------------------------------
+		!!!!                                         sum data   
+		!!!! --------------------------------------------------------------------------------------------------------
+		net_methane, &
+		ch4_prod_depth, o2_decomp_depth, ch4_oxid_depth, o2_oxid_depth, &
+		ch4_aere_depth, ch4_tran_depth, o2_aere_depth, ch4_ebul_depth, &
+		o2stress, ch4stress, &
+		ch4_surf_flux_tot, ch4_surf_aere, ch4_surf_ebul, ch4_surf_diff, &
+		ch4_ebul_tot, ch4_prod_tot, ch4_oxid_tot, &
+		totcolch4, grnd_ch4_cond, conc_o2, conc_ch4, &
+		!!!! --------------------------------------------------------------------------------------------------------
+		!!!! --------------------------------------------------------------------------------------------------------
+		!!!!                                         sum data (unsaturated / saturated)
+		!!!! --------------------------------------------------------------------------------------------------------
+		net_methane_unsat, net_methane_sat, &
+		ch4_prod_depth_unsat, ch4_prod_depth_sat, o2_decomp_depth_unsat, o2_decomp_depth_sat, &
+		ch4_oxid_depth_unsat, ch4_oxid_depth_sat, o2_oxid_depth_unsat, o2_oxid_depth_sat, &
+		ch4_aere_depth_unsat, ch4_aere_depth_sat, ch4_tran_depth_unsat, ch4_tran_depth_sat, &
+		o2_aere_depth_unsat, o2_aere_depth_sat, ch4_ebul_depth_unsat, ch4_ebul_depth_sat, &
+		o2stress_unsat, o2stress_sat, ch4stress_unsat, ch4stress_sat, &
+		ch4_surf_flux_tot_unsat, ch4_surf_flux_tot_sat, ch4_surf_aere_unsat, ch4_surf_aere_sat, &
+		ch4_surf_ebul_unsat, ch4_surf_ebul_sat, ch4_surf_diff_unsat, ch4_surf_diff_sat, &
+		ch4_ebul_tot_unsat, ch4_ebul_tot_sat, ch4_prod_tot_unsat, ch4_prod_tot_sat, &
+		ch4_oxid_tot_unsat, ch4_oxid_tot_sat, &
+		totcolch4_unsat, totcolch4_sat, grnd_ch4_cond_unsat, grnd_ch4_cond_sat, &
+		conc_o2_unsat, conc_o2_sat, conc_ch4_unsat, conc_ch4_sat, &
+		!!!! --------------------------------------------------------------------------------------------------------
+		c_atm, forc_pch4m, layer_sat_lag, lake_soilc, &
+		annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
+		tempavg_agnpp, tempavg_bgnpp, annsum_counter, tempavg_somhr, tempavg_finrw
+
+		
 
 		USE MOD_BGC_Vars_TimeInvariants, only: organic_max
 
@@ -81,59 +105,26 @@
 				rootr       (1:nl_soil)       , &! water exchange between soil and root. Positive: soil->root [?]
 
 				fsatmax                       , &! maximum saturated area fraction [-]
-				fsatdcf                          ! decay factor in calculation of saturated area fraction [1/m]
-
+				fsatdcf                       , &! decay factor in calculation of saturated area fraction [1/m]
+        		frcsat                           ! fraction of saturation area
 
 		integer :: ps, pe
 		integer j
 		logical, save :: ch4_first_time = .true.
-		! real(r8):: &
-				! annsum_npp_tmp
-				! froot_mr,&
-				! cpool_froot_gr,&
-				! cpool_froot_storage_gr,&
-				! transfer_froot_gr
 		real(r8):: &
-				! agnpp                   , &! aboveground NPP (gC/m2/s)
-				! bgnpp                   , &! belowground NPP (gC/m2/s)
-				! rr                      , &! root respiration (fine root MR + total root GR) (gC/m2/s)
-				! somhr                   , &! (gC/m2/s) soil organic matter heterotrophic respiration
-				! lithr                   , &! (gC/m2/s) litter heterotrophic respiration        
-				! hr_vr    (1:nl_soil)    , &! total vertically-resolved het. resp. from decomposing C pools (gC/m3/s)
 				crootfr  (1:nl_soil)     , &! fraction of roots for carbon in each soil layer
-				! o_scalar (1:nl_soil)    , &! fraction by which decomposition is limited by anoxia
-				! fphr     (1:nl_soil)    , &! fraction of potential heterotrophic respiration 
 				pH                       , &! soil water pH                                     
 				cellorg  (1:nl_soil)     , &! column 3D org (kg/m3 organic matter)
 				t_h2osfc             	    ! surface water temperature               
-				! organic_max               ! organic matter content (kg/m3) where soil is assumed to act like peat
 
 		ps = patch_pft_s(i)      
 		pe = patch_pft_e(i)
 
-		! agnpp = annsum_npp(i)/365/86400/2
-		! bgnpp = annsum_npp(i)/365/86400/2
-
-		! annsum_npp_tmp = 600
-		! agnpp = annsum_npp_tmp/365/86400/2
-		! bgnpp = annsum_npp_tmp/365/86400/2
-
-		! rr = froot_mr(i) + cpool_froot_gr(i) + cpool_livecroot_gr(i) + cpool_deadcroot_gr(i) + &
-		!  cpool_froot_storage_gr(i) + cpool_livecroot_storage_gr(i) + cpool_deadcroot_storage_gr(i) + &
-		!  transfer_froot_gr(i) + transfer_livecroot_gr(i) + transfer_deadcroot_gr(i)
-
-		! somhr = decomp_hr(i)/2
-		! lithr = decomp_hr(i)/2
-		! hr_vr(1:10) = sum(decomp_hr_vr(1:10,1:10,i),dim=2)
 		crootfr(:) = rootfr(:)
-		! o_scalar(:) = 1
-		! fphr(:) = 1
 		pH = 7
-
 		cellorg = 0.
 		cellorg(:) = (cellorg(:) + sum(decomp_cpools_vr(1:10, 1:7, i), dim=2))*1000
 		t_h2osfc = t_grnd
-		! organic_max = cellorg(1)
 
 		CALL ch4 (idate(1:3),patchtype,lb,snl,dlon,dlat,deltim,&
 		z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:),&
@@ -142,20 +133,53 @@
 		zwt,rootfr,snowdp,wat,rsur,etr,wdsrf,bsw,&
 		smp,porsl,lai,rootr,&
 		annsum_npp(i),rr(i),&
-		fsatmax,fsatdcf,&
+		fsatmax,fsatdcf,frcsat,&
 		agnpp(i),bgnpp(i),somhr(i),&
 		crootfr(1:nl_soil),lithr(i),hr_vr(1:nl_soil,i),o_scalar(1:nl_soil,i),fphr(1:nl_soil,i),pot_f_nit_vr(1:nl_soil,i),pH,&
 		cellorg(1:nl_soil),t_h2osfc,organic_max,&
-		c_atm(1:3,i),ch4_surf_flux_tot(i),net_methane(i),annavg_agnpp(i),annavg_bgnpp(i),annavg_somhr(i),annavg_finrw(i),&
-		ch4_prod_depth(1:nl_soil,i),o2_decomp_depth(1:nl_soil,i),&
-		ch4_oxid_depth(1:nl_soil,i),o2_oxid_depth(1:nl_soil,i),&
-		ch4_aere_depth(1:nl_soil,i),ch4_tran_depth(1:nl_soil,i),o2_aere_depth(1:nl_soil,i),&
-		ch4_ebul_depth(1:nl_soil,i),&
-		o2stress(1:nl_soil,i),ch4stress(1:nl_soil,i),ch4_surf_aere(i),ch4_surf_ebul(i),ch4_surf_diff(i),ch4_ebul_total(i),&
-		ch4_first_time,totcolch4(i),forc_pch4m(i),grnd_ch4_cond(i),conc_o2(1:nl_soil,i),conc_ch4(1:nl_soil,i),&
-		layer_sat_lag(1:nl_soil,i),lake_soilc(1:nl_soil,i),&
-		tempavg_agnpp(i),tempavg_bgnpp(i),annsum_counter(i),&
-		tempavg_somhr(i),tempavg_finrw(i))
+		ch4_first_time,&
+		!!!! --------------------------------------------------------------------------------------------------------
+		!!!!                                         sum data   
+		!!!! --------------------------------------------------------------------------------------------------------
+		net_methane(i), &
+		ch4_prod_depth(1:nl_soil,i), o2_decomp_depth(1:nl_soil,i), &
+		ch4_oxid_depth(1:nl_soil,i), o2_oxid_depth(1:nl_soil,i), &
+		ch4_aere_depth(1:nl_soil,i), ch4_tran_depth(1:nl_soil,i), o2_aere_depth(1:nl_soil,i), &
+		ch4_ebul_depth(1:nl_soil,i), &
+		o2stress(1:nl_soil,i), ch4stress(1:nl_soil,i), &
+		ch4_surf_flux_tot(i), ch4_surf_aere(i), ch4_surf_ebul(i), ch4_surf_diff(i), &
+		ch4_ebul_tot(i), ch4_prod_tot(i), ch4_oxid_tot(i), &
+		totcolch4(i), grnd_ch4_cond(i), conc_o2(1:nl_soil,i), conc_ch4(1:nl_soil,i), &
+		!!!! --------------------------------------------------------------------------------------------------------
+		!!!! --------------------------------------------------------------------------------------------------------
+		!!!!                                         sum data (unsaturated / saturated)
+		!!!! --------------------------------------------------------------------------------------------------------
+		net_methane_unsat(i), net_methane_sat(i), &
+		ch4_prod_depth_unsat(1:nl_soil,i), ch4_prod_depth_sat(1:nl_soil,i), &
+		o2_decomp_depth_unsat(1:nl_soil,i), o2_decomp_depth_sat(1:nl_soil,i), &
+		ch4_oxid_depth_unsat(1:nl_soil,i), ch4_oxid_depth_sat(1:nl_soil,i), &
+		o2_oxid_depth_unsat(1:nl_soil,i), o2_oxid_depth_sat(1:nl_soil,i), &
+		ch4_aere_depth_unsat(1:nl_soil,i), ch4_aere_depth_sat(1:nl_soil,i), &
+		ch4_tran_depth_unsat(1:nl_soil,i), ch4_tran_depth_sat(1:nl_soil,i), &
+		o2_aere_depth_unsat(1:nl_soil,i), o2_aere_depth_sat(1:nl_soil,i), &
+		ch4_ebul_depth_unsat(1:nl_soil,i), ch4_ebul_depth_sat(1:nl_soil,i), &
+		o2stress_unsat(1:nl_soil,i), o2stress_sat(1:nl_soil,i), &
+		ch4stress_unsat(1:nl_soil,i), ch4stress_sat(1:nl_soil,i), &
+		ch4_surf_flux_tot_unsat(i), ch4_surf_flux_tot_sat(i), &
+		ch4_surf_aere_unsat(i), ch4_surf_aere_sat(i), &
+		ch4_surf_ebul_unsat(i), ch4_surf_ebul_sat(i), &
+		ch4_surf_diff_unsat(i), ch4_surf_diff_sat(i), &
+		ch4_ebul_tot_unsat(i), ch4_ebul_tot_sat(i), &
+		ch4_prod_tot_unsat(i), ch4_prod_tot_sat(i), &
+		ch4_oxid_tot_unsat(i), ch4_oxid_tot_sat(i), &
+		totcolch4_unsat(i), totcolch4_sat(i), &
+		grnd_ch4_cond_unsat(i), grnd_ch4_cond_sat(i), &
+		conc_o2_unsat(1:nl_soil,i), conc_o2_sat(1:nl_soil,i), &
+		conc_ch4_unsat(1:nl_soil,i), conc_ch4_sat(1:nl_soil,i), &
+		!!!! --------------------------------------------------------------------------------------------------------
+		c_atm(1:3,i), forc_pch4m(i), layer_sat_lag(1:nl_soil,i), lake_soilc(1:nl_soil,i), &
+		annavg_agnpp(i), annavg_bgnpp(i), annavg_somhr(i), annavg_finrw(i), &
+		tempavg_agnpp(i), tempavg_bgnpp(i), annsum_counter(i), tempavg_somhr(i), tempavg_finrw(i))
 		
 		if (ch4_first_time) ch4_first_time = .false.
 	END SUBROUTINE ch4_driver

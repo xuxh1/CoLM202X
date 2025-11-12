@@ -327,7 +327,7 @@ ENDIF
             wdsrf(:) = 0._r8
 
             wetwat(:) = 0._r8
-            WHERE (patchtype == 2) wetwat = 200._r8 ! for wetland
+            WHERE ((.not.DEF_wetland_split_fsat) .and. patchtype == 2) wetwat = 200._r8 ! for wetland
          ENDIF
       ENDIF
 ! ------------------------------------------
@@ -1322,18 +1322,55 @@ ENDIF
                ,diagVX_n_vr_acc          (:,:,i), upperVX_n_vr_acc         (:,:,i), lowerVX_n_vr_acc         (:,:,i) &
    !------------------------------------------------------------
 #ifdef CH4
-               ,c_atm                (:,i), ch4_surf_flux_tot      (i), net_methane            (i), &
-               ! annavg_agnpp           (i), annavg_bgnpp           (i), annavg_somhr           (i), &
-               ! annavg_finrw           (i), &
+!!!! --------------------------------------------------------------------------------------------------------
+!!!!                                         sum data
+!!!! --------------------------------------------------------------------------------------------------------
+               ,net_methane           (i), &
                ch4_prod_depth       (:,i), o2_decomp_depth      (:,i), &
-               ch4_oxid_depth       (:,i), o2_oxid_depth        (:,i), ch4_aere_depth       (:,i), &
-               ch4_tran_depth       (:,i), o2_aere_depth        (:,i), ch4_ebul_depth       (:,i), &
-               o2stress             (:,i), ch4stress            (:,i), ch4_surf_aere          (i), &
-               ch4_surf_ebul          (i), ch4_surf_diff          (i), ch4_ebul_total         (i), &
-               totcolch4              (i), forc_pch4m             (i), grnd_ch4_cond          (i), &
-               conc_o2              (:,i), conc_ch4             (:,i), layer_sat_lag        (:,i), &
-               lake_soilc           (:,i), tempavg_agnpp          (i), tempavg_bgnpp          (i), &
-               annsum_counter         (i), tempavg_somhr          (i),tempavg_finrw           (i)  &
+               ch4_oxid_depth       (:,i), o2_oxid_depth        (:,i), &
+               ch4_aere_depth       (:,i), ch4_tran_depth       (:,i), &
+               o2_aere_depth        (:,i), ch4_ebul_depth       (:,i), &
+               o2stress             (:,i), ch4stress            (:,i), &
+               ch4_surf_flux_tot      (i), ch4_surf_aere          (i), &
+               ch4_surf_ebul          (i), ch4_surf_diff          (i), &
+               ch4_ebul_tot           (i), ch4_prod_tot           (i), ch4_oxid_tot           (i)  &
+               totcolch4              (i), &
+               grnd_ch4_cond          (i), conc_o2              (:,i), &
+               conc_ch4             (:,i), &
+!!!! --------------------------------------------------------------------------------------------------------
+!!!! --------------------------------------------------------------------------------------------------------
+!!!!                                         sum data (unsaturated / saturated)
+!!!! --------------------------------------------------------------------------------------------------------
+               ,net_methane_unsat     (i), net_methane_sat     (i), &
+               ch4_prod_depth_unsat (:,i), ch4_prod_depth_sat (:,i), &
+               o2_decomp_depth_unsat(:,i), o2_decomp_depth_sat(:,i), &
+               ch4_oxid_depth_unsat (:,i), ch4_oxid_depth_sat (:,i), &
+               o2_oxid_depth_unsat  (:,i), o2_oxid_depth_sat  (:,i), &
+               ch4_aere_depth_unsat (:,i), ch4_aere_depth_sat (:,i), &
+               ch4_tran_depth_unsat (:,i), ch4_tran_depth_sat (:,i), &
+               o2_aere_depth_unsat  (:,i), o2_aere_depth_sat  (:,i), &
+               ch4_ebul_depth_unsat (:,i), ch4_ebul_depth_sat (:,i), &
+               o2stress_unsat       (:,i), o2stress_sat       (:,i), &
+               ch4stress_unsat      (:,i), ch4stress_sat      (:,i), &
+               ch4_surf_flux_tot_unsat(i), ch4_surf_flux_tot_sat(i), &
+               ch4_surf_aere_unsat    (i), ch4_surf_aere_sat    (i), &
+               ch4_surf_ebul_unsat    (i), ch4_surf_ebul_sat    (i), &
+               ch4_surf_diff_unsat    (i), ch4_surf_diff_sat    (i), &
+               ch4_ebul_tot_unsat     (i), ch4_ebul_tot_sat     (i), &
+               ch4_prod_tot_unsat     (i), ch4_prod_tot_sat     (i), &
+               ch4_oxid_tot_unsat     (i), ch4_oxid_tot_sat     (i), &
+               totcolch4_unsat        (i), totcolch4_sat        (i), &
+               grnd_ch4_cond_unsat    (i), grnd_ch4_cond_sat    (i), &
+               conc_o2_unsat        (:,i), conc_o2_sat        (:,i), &
+               conc_ch4_unsat       (:,i), conc_ch4_sat       (:,i), &
+!!!! --------------------------------------------------------------------------------------------------------
+               c_atm                (:,i), forc_pch4m             (i), &
+               layer_sat_lag        (:,i), lake_soilc           (:,i), &
+               annavg_agnpp           (i), annavg_bgnpp           (i), &
+               annavg_somhr           (i), annavg_finrw           (i), &
+               tempavg_agnpp          (i), tempavg_bgnpp          (i), &
+               annsum_counter         (i), tempavg_somhr          (i), &
+               tempavg_finrw          (i), &
 #endif
 #endif
                ! for SOIL INIT of water, temperature, snow depth

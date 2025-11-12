@@ -49,10 +49,12 @@
 
    DEF_LAI_MONTHLY = .true.
    DEF_METHANE_only_wetland = .true.
+   DEF_wetland_split_fsat = .true.
    DEF_USE_METHANE_para = .true.
    DEF_file_METHANE_para = '/share/home/dq076/mode/ME/251030_r/run/standard_ch4_parameter.nml'
    
    DEF_USE_VariablySaturatedFlow = .true.
+   DEF_Runoff_SCHEME = 0
 
    ! ----- forcing -----
    ! Options :

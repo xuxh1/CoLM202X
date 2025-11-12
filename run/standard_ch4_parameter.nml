@@ -24,4 +24,6 @@
     ! ! ch4 transport constants
     DEF_CH4%scale_factor_gasdiff = 1.
     DEF_CH4%scale_factor_liqdiff = 1.
+
+    DEF_CH4%use_vertical_redoxlag = .true.
 /
