@@ -1313,6 +1313,22 @@ ENDIF
          CALL write_history_variable_2d ( DEF_hist_vars%tempavg_finrw, &
              a_tempavg_finrw, file_hist, 'f_tempavg_finrw', itime_in_file, sumarea, filter, &
              'respiration-weighted annual average of finundated','-')
+             
+!------------------- saturated fraction ------------------------------
+         ! finundated from previous timestep
+         CALL write_history_variable_2d ( DEF_hist_vars%fsat_bef, &
+             a_fsat_bef, file_hist, 'f_fsat_bef', itime_in_file, sumarea, filter, &
+             'finundated from previous timestep','-')
+
+         ! time-lagged fractional inundated area
+         CALL write_history_variable_2d ( DEF_hist_vars%finundated_lag, &
+             a_finundated_lag, file_hist, 'f_finundated_lag', itime_in_file, sumarea, filter, &
+             'time-lagged fractional inundated area','s')
+
+         ! CH4 flux to atm due to decreasing finundated
+         CALL write_history_variable_2d ( DEF_hist_vars%ch4_dfsat_tot, &
+             a_ch4_dfsat_tot, file_hist, 'f_ch4_dfsat_tot', itime_in_file, sumarea, filter, &
+             'CH4 flux to atm due to decreasing finundated','mol/m2/s')
 #endif
 
          IF (p_is_worker) THEN

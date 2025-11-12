@@ -99,6 +99,7 @@ MODULE MOD_Const_ch4
       real(r8) :: q10lakebase = 298._r8       ! (K) base temperature for lake CH4 production (params:298. code:298._r8)
       ! real(r8) :: rootlitfrac        ! Fraction of soil organic matter associated with roots (params:0.5)
       real(r8) :: cnscalefactor=1.        ! scale factor on CN decomposition for assigning methane flux (?- params:1.)
+      
       real(r8) :: redoxlag =30.           ! Number of days to lag in the calculation of finundated_lag (30+ params:30.)
       real(r8) :: lake_decomp_fact =9e-11    ! Base decomposition rate (1/s) at 25C (1 params:9e-11)
       real(r8) :: redoxlag_vertical=30._r8   ! time lag (days) to inhibit production for newly unsaturated layers (30+ params:0.)

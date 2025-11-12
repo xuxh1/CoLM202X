@@ -388,6 +388,9 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: a_tempavg_somhr         (:)
    real(r8), allocatable :: a_tempavg_finrw         (:)
 
+   real(r8), allocatable :: a_fsat_bef              (:)
+   real(r8), allocatable :: a_finundated_lag        (:)
+   real(r8), allocatable :: a_ch4_dfsat_tot         (:)
 #endif
    real(r8), allocatable :: a_ndep_to_sminn         (:)
    real(r8), allocatable :: a_abm                   (:)
@@ -922,6 +925,9 @@ CONTAINS
             allocate (a_tempavg_somhr               (numpatch))
             allocate (a_tempavg_finrw               (numpatch))
 
+            allocate (a_fsat_bef                    (numpatch))
+            allocate (a_finundated_lag              (numpatch))
+            allocate (a_ch4_dfsat_tot               (numpatch))
 #endif
 
             allocate (a_ndep_to_sminn      (numpatch))
@@ -1463,6 +1469,9 @@ CONTAINS
             deallocate (a_tempavg_somhr          )
             deallocate (a_tempavg_finrw          )
 
+            deallocate (a_fsat_bef               )
+            deallocate (a_finundated_lag         )
+            deallocate (a_ch4_dfsat_tot          )
 #endif
 
             deallocate (a_ndep_to_sminn      )
@@ -2002,6 +2011,9 @@ CONTAINS
             a_tempavg_somhr          (:) = spval
             a_tempavg_finrw          (:) = spval
 
+            a_fsat_bef               (:) = spval
+            a_finundated_lag         (:) = spval
+            a_ch4_dfsat_tot          (:) = spval
 #endif
             a_ndep_to_sminn      (:) = spval
 
@@ -2670,6 +2682,10 @@ CONTAINS
             CALL acc1d (annsum_counter                      ,   a_annsum_counter                      )
             CALL acc1d (tempavg_somhr                       ,   a_tempavg_somhr                       )
             CALL acc1d (tempavg_finrw                       ,   a_tempavg_finrw                       )
+
+            CALL acc1d (fsat_bef                            ,   a_fsat_bef                            )
+            CALL acc1d (finundated_lag                      ,   a_finundated_lag                      )
+            CALL acc1d (ch4_dfsat_tot                       ,   a_ch4_dfsat_tot                       )
 #endif
             CALL acc1d (ndep_to_sminn      ,   a_ndep_to_sminn      )
             IF(DEF_USE_FIRE)THEN

@@ -103,6 +103,7 @@ CONTAINS
                      annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
                      tempavg_agnpp, tempavg_bgnpp, annsum_counter, &
                      tempavg_somhr, tempavg_finrw, &
+                     fsat_bef, finundated_lag, ch4_dfsat_tot,&
 #endif
 #endif
                      ,use_soilini, nl_soil_ini, soil_z,   soil_t,   soil_w, use_snowini, snow_d &
@@ -412,7 +413,7 @@ CONTAINS
          conc_o2  (1:nl_soil)    , &! O2 conc in each soil layer (mol/m3) 
          conc_ch4   (1:nl_soil)  , &! CH4 conc in each soil layer (mol/m3) 
    !!!! --------------------------------------------------------------------------------------------------------
-         
+
    !!!! --------------------------------------------------------------------------------------------------------
    !!!!                                         sum data (unsaturated / saturated)
    !!!! --------------------------------------------------------------------------------------------------------
@@ -502,6 +503,12 @@ CONTAINS
          annsum_counter          , &! seconds since last annual accumulator turnover    
          tempavg_somhr           , &! temporary average SOM heterotrophic resp. (gC/m2/s)
          tempavg_finrw              ! respiration-weighted annual average of finundated 
+   
+   !------------------- saturated fraction ------------------------------
+   real(r8), intent(inout) :: &
+			fsat_bef                , & ! finundated from previous timestep
+         finundated_lag          , & ! time-lagged fractional inundated area [s] 
+			ch4_dfsat_tot               ! CH4 flux to atm due to decreasing finundated [mol/m2/s]
 #endif
 #endif
 
@@ -1243,6 +1250,10 @@ CONTAINS
             annsum_counter          = 0.
             tempavg_somhr           = 0.
             tempavg_finrw           = 0.
+
+            fsat_bef                = 0.
+            finundated_lag          = 1.
+            ch4_dfsat_tot           = 0.
 #endif
             IF(DEF_USE_LAIFEEDBACK)THEN
                tlai_p                (ps:pe) = slatop(pftclass(ps:pe)) * leafc_p(ps:pe)

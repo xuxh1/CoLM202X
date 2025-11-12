@@ -92,7 +92,8 @@ contains
 		!!!! --------------------------------------------------------------------------------------------------------
 		c_atm, forc_pch4m, layer_sat_lag, lake_soilc, &
 		annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
-		tempavg_agnpp, tempavg_bgnpp, annsum_counter, tempavg_somhr, tempavg_finrw)
+		tempavg_agnpp, tempavg_bgnpp, annsum_counter, tempavg_somhr, tempavg_finrw, &
+		fsat_bef, finundated_lag, ch4_dfsat_tot)
 
 		!=======================================================================
 		! !DESCRIPTION:
@@ -283,21 +284,25 @@ contains
 			tempavg_bgnpp           , & ! temporary average below-ground NPP (gC/m2/s)
 			annsum_counter          , & ! seconds since last annual accumulator turnover
 			tempavg_somhr           , & ! temporary average SOM heterotrophic respiration (gC/m2/s)
-			tempavg_finrw              ! respiration-weighted temporary average of inundated zones (gC/m2/s)
-
+			tempavg_finrw               ! respiration-weighted temporary average of inundated zones (gC/m2/s)
+			
+		!------------------- saturated fraction ------------------------------
+		real(r8), intent(inout) :: &
+			fsat_bef                , & ! finundated from previous timestep
+			finundated_lag          , & ! time-lagged fractional inundated area  
+			ch4_dfsat_tot               ! CH4 flux to atm due to decreasing finundated [mol/m2/s]
 
 		!=================== Local Variables ============================================
 		integer  :: i,j,s                     ! indices
 		integer  :: sat                     ! 0 = unsatured, 1 = saturated
-		integer  :: finundated              ! fractional inundated area, =sat(0 or 1)
 		integer  :: jwt                     ! index of the soil layer right above the water table (-)
-		real(r8) :: lon,lat                 ! lon,lat
+		real(r8) :: finundated              ! fractional inundated area
+
 		real(r8) :: total                   ! diff + aere + ebul
 		real(r8) :: total_sat                   ! diff + aere + ebul
 		real(r8) :: total_unsat                 ! diff + aere + ebul
 
 		real(r8) :: dfsat
-		real(r8) :: fsat_bef                ! finundated from previous timestep
 		real(r8) :: errch4                  ! g C / m^2
 		real(r8) :: redoxlags_vertical      ! Vertical redox lag time in s
 		integer  :: dummyfilter(1)          ! empty filter
@@ -328,28 +333,19 @@ contains
 		real(r8) :: conc_o2_aqu_porsl (1:nl_soil) ! aqueous phase O2 conc in each porosity (mol/m3)
 		! real(r8) :: conc_o2_sol_porsl (1:nl_soil) ! solid phase O2 conc in each porosity (mol/m3)
 		real(r8) :: err
-	   	real(r8) :: fsat_wetland         ! fractional area with water table at surface
+	   	! real(r8) :: fsat_wetland         ! fractional area with water table at surface
 
 		real(r8) :: zwt_sat, wice_soisno_sat(1:nl_soil), wliq_soisno_sat(1:nl_soil), wdsrf_sat
 		real(r8) :: zwt_unsat, wice_soisno_unsat(1:nl_soil), wliq_soisno_unsat(1:nl_soil), wdsrf_unsat
 		!-----------------------------------------------------------------------
-
 		! Set parameters
+		! if (dlat < 45._r8) then
+        !     qflxlags = DEF_CH4%qflxlagd * secspday ! 30 days
+		! else
+        !     qflxlags = DEF_CH4%qflxlagd * secspday * DEF_CH4%highlatfact ! 60 days
+		! end if
+		redoxlags = DEF_CH4%redoxlag*secspday ! days --> s
 		redoxlags_vertical = DEF_CH4%redoxlag_vertical*secspday ! days --> s
-		
-		totcolch4_bef = totcolch4
-		totcolch4 = 0
-		totcolch4_sat   = 0
-		totcolch4_unsat = 0
-
-		finundated = frcsat
-		! Call print_var(totcolch4_bef,'ch4 totcolch4_bef',idate)
-
-		! ! fsat_wetland = fsatmax * exp(- fsatdcf * DEF_CH4_hydrology%vdcf * zwt)
-		! ! fsat_wetland = 0.38 * exp(- 0.5 * DEF_CH4_hydrology%vdcf * zwt)
-		! Call print_var(fsat_wetland,'ch4 fsat_wetland',idate)
-		! Call print_var(fsatdcf,'ch4 fsatdcf',idate)
-		! Call print_var(fsatmax,'ch4 fsatmax',idate)
 
 		! Initialize fluxes to zero
 		ch4_surf_flux_tot       = 0._r8
@@ -387,9 +383,48 @@ contains
 		! n/V = P/RT
 		![mol/m3]=[Pa]         /[J/K/mol]/[K]
 		![mol/m3]=[J/m3]       *[K*mol/J]*[1/K]
-		do i = 1,3
-			Call print_var(c_atm(i),'ch4 c_atm',idate,i)
-		enddo
+		! do i = 1,3
+		! 	Call print_var(c_atm(i),'ch4 c_atm',idate,i)
+		! enddo
+		totcolch4_bef = totcolch4
+		totcolch4 = 0
+		totcolch4_sat   = 0
+		totcolch4_unsat = 0
+
+		finundated = frcsat
+		if (ch4_first_time) then
+			fsat_bef = finundated
+		endif
+
+		if (snowdp > 0._r8) then  !If snow_depth>0, keep finundated from the previous time step of snow season. (by Xiyan Xu, 05/2016)
+            finundated = fsat_bef
+		end if
+		
+		dfsat = finundated - fsat_bef
+  
+		! Update lagged finundated for redox calculation
+		if (redoxlags > 0._r8) then
+			finundated_lag = finundated_lag * exp(-deltim/redoxlags) &
+					+ finundated * (1._r8 - exp(-deltim/redoxlags))
+		else
+			finundated_lag = finundated
+		end if
+
+		do j=1,nl_soil
+			if (j==1) ch4_dfsat_tot = 0._r8
+
+			if (.not. ch4_first_time) then
+				if (dfsat > 0._r8) then
+					conc_ch4_sat(j) = (fsat_bef*conc_ch4_sat(j) + dfsat*conc_ch4_unsat(j)) / finundated
+				else
+					ch4_dfsat_tot = ch4_dfsat_tot - &
+						dfsat*(conc_ch4_sat(j) - conc_ch4_unsat(j)) * &
+						dz_soisno(j) / deltim
+					! [mol/m2/s]   = [-] * [mol/m3] * [m] / [s]
+				end if
+			end if
+		end do
+
 		!!!! Begin biochemistry
 		! First for soil
 		! Do CH4 Annual Averages
@@ -466,7 +501,7 @@ contains
 				! Competition for oxygen will occur here.
 				call ch4_tran ( idate, patchtype, &
 					lb, snl, jwt_unsat, sat, finundated, &
-					lon, lat, deltim, z_soisno, dz_soisno, zi_soisno, t_soisno, t_grnd, &
+					dlon, dlat, deltim, z_soisno, dz_soisno, zi_soisno, t_soisno, t_grnd, &
 					porsl, wliq_soisno_unsat, wice_soisno_unsat, wdsrf_unsat, bsw, c_atm, ch4_prod_depth_unsat, o2_aere_depth_unsat, &
 					cellorg, t_h2osfc, organic_max, k_h_cc, conc_ch4_gas_porsl_unsat, conc_ch4_aqu_porsl_unsat, conc_o2_gas_porsl_unsat, conc_o2_aqu_porsl_unsat, vol_aqu_unsat, vol_gas_unsat, &
 					o2stress_unsat, ch4stress_unsat, ch4_surf_aere_unsat, ch4_surf_ebul_unsat, ch4_surf_diff_unsat, ch4_ebul_tot_unsat, &
@@ -524,7 +559,7 @@ contains
 				! Competition for oxygen will occur here.
 				call ch4_tran ( idate, patchtype, &
 					lb, snl, jwt_sat, sat, finundated, &
-					lon, lat, deltim, z_soisno, dz_soisno, zi_soisno, t_soisno, t_grnd, &
+					dlon, dlat, deltim, z_soisno, dz_soisno, zi_soisno, t_soisno, t_grnd, &
 					porsl, wliq_soisno_sat, wice_soisno_sat, wdsrf_sat, bsw, c_atm, ch4_prod_depth_sat, o2_aere_depth_sat, &
 					cellorg, t_h2osfc, organic_max, k_h_cc, conc_ch4_gas_porsl_sat, conc_ch4_aqu_porsl_sat, conc_o2_gas_porsl_sat, conc_o2_aqu_porsl_sat, vol_aqu_sat, vol_gas_sat, &
 					o2stress_sat, ch4stress_sat, ch4_surf_aere_sat, ch4_surf_ebul_sat, ch4_surf_diff_sat, ch4_ebul_tot_sat, &
@@ -587,7 +622,7 @@ contains
 		! Column level balance
 		if (.not. ch4_first_time) then
 			! Check balance
-			errch4 = totcolch4 - totcolch4_bef - deltim*(ch4_prod_tot - ch4_oxid_tot - ch4_surf_flux_tot/fsat_wetland) 
+			errch4 = totcolch4 - totcolch4_bef - deltim*(ch4_prod_tot - ch4_oxid_tot - ch4_surf_flux_tot) 
 			! [g CH4/m2]    = [g CH4/m2] - [g CH4/m2] + [s]*[g CH4/m2/s]
 			if (abs(errch4) > 1.e-7_r8) then
 				write(6,*)'Lat,Lon,Patchtype        = ', dlat,dlon, patchtype
@@ -600,7 +635,7 @@ contains
 			end if
 		end if
 
-		ch4_first_time = .false.
+		fsat_bef = finundated
 	end subroutine ch4
 
 	!-----------------------------------------------------------------------
@@ -1020,7 +1055,7 @@ contains
 			c_atm(3)               , &! CH4, O2, CO2 atmospheric conc  (mol/m3)
 
 			! These variables help us swap between big-leaf and fates boundary conditions
-			annsum_npp             , &! annual sum NPP (g C/m2/yr)
+			annsum_npp             , &! annual sum NPP (gC/m2/yr)
 			annavg_agnpp           , &! annual avg aboveground NPP (gC/m2/s)
 			annavg_bgnpp           , &! annual avg belowground NPP (gC/m2/s)
 
@@ -1323,7 +1358,7 @@ contains
 		!---------------------------------------------------------------------------
 	subroutine ch4_tran (idate,patchtype, &
 		lb, snl, jwt, sat, finundated,&
-		lon, lat, deltim, z_soisno, dz_soisno, zi_soisno,  t_soisno, t_grnd, &
+		dlon, dlat, deltim, z_soisno, dz_soisno, zi_soisno,  t_soisno, t_grnd, &
 	 	porsl, wliq_soisno, wice_soisno, wdsrf, bsw, c_atm, ch4_prod_depth, o2_aere_depth,&
 		cellorg,t_h2osfc, organic_max, k_h_cc, conc_ch4_gas_porsl,conc_ch4_aqu_porsl,conc_o2_gas_porsl,conc_o2_aqu_porsl,vol_aqu,vol_gas,&
 		o2stress, ch4stress, ch4_surf_aere, ch4_surf_ebul, ch4_surf_diff, ch4_ebul_tot, &
@@ -1359,8 +1394,8 @@ contains
 			finundated
 
 		real(r8), intent(in) :: &
-			lon   	   				        , &! logitude 
-			lat     	   			        , &! latitude 
+			dlon   	   				        , &! logitude 
+			dlat     	   			        , &! latitude 
  
 			deltim                  	    , &! land model time step (sec)
 			z_soisno (maxsnl+1:nl_soil)   	, &! layer depth (m)
@@ -1561,14 +1596,14 @@ contains
 	
 				write(6,*) 'Methane demands exceed methane available. Error in methane competition (mol/m^3/s), j:', &
 						source(j,1) + conc_ch4(j) / deltim, j
-				write(6,*)'Lat,Lon=',lat,lon
+				write(6,*)'Lat,Lon=',dlat,dlon
 				CALL CoLM_stop ()
 	
 			else if (ch4stress(j) < 1._r8 .and. source(j,1) + conc_ch4(j) / deltim > 1.e-12_r8) then  
 	
 				write(6,*) 'Methane limited, yet some left over. Error in methane competition (mol/m^3/s), j:', &
 						source(j,1) + conc_ch4(j) / deltim, j
-				write(6,*)'Lat,Lon=',lat,lon
+				write(6,*)'Lat,Lon=',dlat,dlon
 				CALL CoLM_stop ()
 	
 			end if
@@ -1580,14 +1615,14 @@ contains
 	
 				write(6,*) 'Oxygen demands exceed oxygen available. Error in oxygen competition (mol/m^3/s), j:', &
 						source(j,2) + conc_o2(j) / deltim, j
-				write(6,*)'Lat,Lon=',lat,lon
+				write(6,*)'Lat,Lon=',dlat,dlon
 				CALL CoLM_stop ()
 	
 			else if (o2stress(j) < 1._r8 .and. source(j,2) + conc_o2(j) / deltim > 1.e-12_r8) then
 	
 				write(6,*) 'Oxygen limited, yet some left over. Error in oxygen competition (mol/m^3/s), j:', &
 						source(j,2) + conc_o2(j) / deltim, j
-				write(6,*)'Lat,Lon=',lat,lon
+				write(6,*)'Lat,Lon=',dlat,dlon
 				CALL CoLM_stop ()
 	
 			end if
@@ -1936,7 +1971,7 @@ contains
 							if (deficit > 1.e-2_r8) then
 								write(6,*)'Note: sink > source in ch4_tran, sources are changing '// &
 										' quickly relative to diffusion timestep, and/or diffusion is rapid.'
-										write(6,*)'Lat,Lon=',lat,lon
+										write(6,*)'Lat,Lon=',dlat,dlon
 								write(6,*)'This typically occurs when there is a larger than normal '// &
 										' diffusive flux.'
 								write(6,*)'If this occurs frequently, consider reducing land model (or '// &
@@ -2076,14 +2111,14 @@ contains
 		Call print_var(ch4_surf_ebul,'ch4_tran ch4_surf_ebul',idate)
 		Call print_var(ch4_surf_diff,'ch4_tran ch4_surf_diff',idate)
 		Call print_var(errch4,'ch4_tran errch4',idate)
-		Call print_var(lat,'ch4_tran lat',idate)
+		Call print_var(dlat,'ch4_tran lat',idate)
 
 		if (abs(errch4) < 1.e-6_r8) then 
 		   ch4_surf_diff = ch4_surf_diff - errch4/deltim
 		else ! errch4 > 1e-8 mol / m^2 / timestep
 		   	write(6,*)'CH4 Conservation Error in CH4Mod during diffusion, istep, errch4 (mol /m^2.timestep)', &
 			idate,errch4
-			write(6,*)'Lat,Lon=',lat,lon
+			write(6,*)'Lat,Lon=',dlat,dlon
 			CALL CoLM_stop ()
 		end if
   

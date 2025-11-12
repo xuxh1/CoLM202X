@@ -55,7 +55,8 @@
 		!!!! --------------------------------------------------------------------------------------------------------
 		c_atm, forc_pch4m, layer_sat_lag, lake_soilc, &
 		annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
-		tempavg_agnpp, tempavg_bgnpp, annsum_counter, tempavg_somhr, tempavg_finrw
+		tempavg_agnpp, tempavg_bgnpp, annsum_counter, tempavg_somhr, tempavg_finrw, &
+		fsat_bef, finundated_lag, ch4_dfsat_tot
 
 		
 
@@ -179,8 +180,8 @@
 		!!!! --------------------------------------------------------------------------------------------------------
 		c_atm(1:3,i), forc_pch4m(i), layer_sat_lag(1:nl_soil,i), lake_soilc(1:nl_soil,i), &
 		annavg_agnpp(i), annavg_bgnpp(i), annavg_somhr(i), annavg_finrw(i), &
-		tempavg_agnpp(i), tempavg_bgnpp(i), annsum_counter(i), tempavg_somhr(i), tempavg_finrw(i))
-		
+		tempavg_agnpp(i), tempavg_bgnpp(i), annsum_counter(i), tempavg_somhr(i), tempavg_finrw(i), fsat_bef(i), finundated_lag(i), ch4_dfsat_tot(i))
+
 		if (ch4_first_time) ch4_first_time = .false.
 	END SUBROUTINE ch4_driver
 #endif

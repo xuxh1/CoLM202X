@@ -403,6 +403,10 @@ MODULE MOD_BGC_Vars_TimeVariables
 	real(r8), allocatable :: annsum_counter        (:) ! seconds since last annual accumulator turnover    
 	real(r8), allocatable :: tempavg_somhr         (:) ! temporary average SOM heterotrophic resp. (gC/m2/s)
 	real(r8), allocatable :: tempavg_finrw         (:) ! respiration-weighted annual average of finundated 
+
+   real(r8), allocatable :: fsat_bef              (:) ! finundated from previous timestep
+   real(r8), allocatable :: finundated_lag        (:) ! time-lagged fractional inundated area 
+   real(r8), allocatable :: ch4_dfsat_tot         (:) ! CH4 flux to atm due to decreasing finundated [mol/m2/s]
 #endif
 !------------------------------------------------------
 
@@ -828,6 +832,11 @@ CONTAINS
             allocate (annsum_counter              (numpatch)); annsum_counter         (:) = spval
             allocate (tempavg_somhr               (numpatch)); tempavg_somhr          (:) = spval
             allocate (tempavg_finrw               (numpatch)); tempavg_finrw          (:) = spval
+
+            allocate (fsat_bef                    (numpatch)); fsat_bef               (:) = spval
+            allocate (finundated_lag              (numpatch)); finundated_lag         (:) = spval
+            allocate (ch4_dfsat_tot               (numpatch)); ch4_dfsat_tot          (:) = spval
+
 #endif
          ENDIF
       ENDIF
@@ -1215,6 +1224,10 @@ CONTAINS
             deallocate (annsum_counter         )
             deallocate (tempavg_somhr          )
             deallocate (tempavg_finrw          )
+
+            deallocate (fsat_bef               )
+            deallocate (finundated_lag         )
+            deallocate (ch4_dfsat_tot          )
 #endif
 
             deallocate (lag_npp    )
@@ -2137,6 +2150,10 @@ CONTAINS
       CALL check_vector_data ('annsum_counter     ' , annsum_counter    )
       CALL check_vector_data ('tempavg_somhr      ' , tempavg_somhr     )
       CALL check_vector_data ('tempavg_finrw      ' , tempavg_finrw     )
+
+      CALL check_vector_data ('fsat_bef           ', fsat_bef           )
+      CALL check_vector_data ('finundated_lag     ', finundated_lag     )
+      CALL check_vector_data ('ch4_dfsat_tot      ', ch4_dfsat_tot      )
 #endif
 
    END SUBROUTINE check_BGCTimeVariables

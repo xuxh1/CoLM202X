@@ -1371,6 +1371,8 @@ ENDIF
                tempavg_agnpp          (i), tempavg_bgnpp          (i), &
                annsum_counter         (i), tempavg_somhr          (i), &
                tempavg_finrw          (i), &
+!!!! --------------------------------------------------------------------------------------------------------
+               fsat_bef               (i), finundated_lag(i),  ch4_dfsat_tot(i), &
 #endif
 #endif
                ! for SOIL INIT of water, temperature, snow depth

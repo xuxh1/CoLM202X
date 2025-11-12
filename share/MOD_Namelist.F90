@@ -1006,6 +1006,10 @@ MODULE MOD_Namelist
       logical :: annsum_counter                   = .true.
       logical :: tempavg_somhr                    = .true.
       logical :: tempavg_finrw                    = .true.
+
+      logical :: fsat_bef                         = .true.
+      logical :: finundated_lag                   = .true.
+      logical :: ch4_dfsat_tot                    = .true.
 #endif
    END type history_var_type
 
@@ -2185,7 +2189,7 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%conc_o2            , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%conc_ch4           , set_defaults)
       !!!! --------------------------------------------------------------------------------------------------------
-      
+
       !!!! --------------------------------------------------------------------------------------------------------
       !!!!                                         sum data (unsaturated / saturated)
       !!!! --------------------------------------------------------------------------------------------------------
@@ -2248,6 +2252,10 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%annsum_counter     , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%tempavg_somhr      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%tempavg_finrw      , set_defaults)
+
+      CALL sync_hist_vars_one (DEF_hist_vars%fsat_bef           , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%finundated_lag     , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%ch4_dfsat_tot      , set_defaults)
 #endif
       CALL sync_hist_vars_one (DEF_hist_vars%ndep_to_sminn                   , set_defaults)
       IF(DEF_USE_NITRIF)THEN
