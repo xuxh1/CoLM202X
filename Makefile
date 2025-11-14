@@ -338,8 +338,9 @@ OBJS_MAIN = \
 				MOD_Lulcc_Initialize.o                    \
 				MOD_Lulcc_Driver.o                        \
 				MOD_Const_ch4.o		                      \
-				MOD_ch4.o                            \
-				MOD_ch4_driver.o                              \
+				MOD_debug_print.o                         \
+				MOD_ch4.o                                 \
+				MOD_ch4_driver.o                          \
 				CoLMDRIVER.o                              \
 				CoLMMAIN.o                                \
 				CoLM.o

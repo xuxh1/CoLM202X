@@ -331,8 +331,8 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: a_net_methane_sat             (:)
    real(r8), allocatable :: a_ch4_prod_depth_unsat        (:,:)
    real(r8), allocatable :: a_ch4_prod_depth_sat          (:,:)
-   real(r8), allocatable :: a_o2_decomp_depth_unsat       (:,:)
-   real(r8), allocatable :: a_o2_decomp_depth_sat         (:,:)
+   real(r8), allocatable :: a_o2_prod_decomp_depth_unsat       (:,:)
+   real(r8), allocatable :: a_o2_prod_decomp_depth_sat         (:,:)
    real(r8), allocatable :: a_ch4_oxid_depth_unsat        (:,:)
    real(r8), allocatable :: a_ch4_oxid_depth_sat          (:,:)
    real(r8), allocatable :: a_o2_oxid_depth_unsat         (:,:)
@@ -368,7 +368,7 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: a_totcolch4_sat               (:)
    real(r8), allocatable :: a_grnd_ch4_cond_unsat         (:)
    real(r8), allocatable :: a_grnd_ch4_cond_sat           (:)
-   real(r8), allocatable :: a_conc_o2_unsat               (:,:)
+   real(r8), allocatable :: a_conc_o2_ch4_unsat               (:,:)
    real(r8), allocatable :: a_conc_o2_sat                 (:,:)
    real(r8), allocatable :: a_conc_ch4_unsat              (:,:)
    real(r8), allocatable :: a_conc_ch4_sat                (:,:)
@@ -868,8 +868,8 @@ CONTAINS
             allocate (a_net_methane_sat             (numpatch))
             allocate (a_ch4_prod_depth_unsat  (nl_soil,numpatch))
             allocate (a_ch4_prod_depth_sat    (nl_soil,numpatch))
-            allocate (a_o2_decomp_depth_unsat (nl_soil,numpatch))
-            allocate (a_o2_decomp_depth_sat   (nl_soil,numpatch))
+            allocate (a_o2_prod_decomp_depth_unsat (nl_soil,numpatch))
+            allocate (a_o2_prod_decomp_depth_sat   (nl_soil,numpatch))
             allocate (a_ch4_oxid_depth_unsat  (nl_soil,numpatch))
             allocate (a_ch4_oxid_depth_sat    (nl_soil,numpatch))
             allocate (a_o2_oxid_depth_unsat   (nl_soil,numpatch))
@@ -905,7 +905,7 @@ CONTAINS
             allocate (a_totcolch4_sat               (numpatch))
             allocate (a_grnd_ch4_cond_unsat         (numpatch))
             allocate (a_grnd_ch4_cond_sat           (numpatch))
-            allocate (a_conc_o2_unsat        (nl_soil,numpatch))
+            allocate (a_conc_o2_ch4_unsat        (nl_soil,numpatch))
             allocate (a_conc_o2_sat          (nl_soil,numpatch))
             allocate (a_conc_ch4_unsat       (nl_soil,numpatch))
             allocate (a_conc_ch4_sat         (nl_soil,numpatch))
@@ -1411,8 +1411,8 @@ CONTAINS
             deallocate (a_net_methane_sat        )
             deallocate (a_ch4_prod_depth_unsat   )
             deallocate (a_ch4_prod_depth_sat     )
-            deallocate (a_o2_decomp_depth_unsat  )
-            deallocate (a_o2_decomp_depth_sat    )
+            deallocate (a_o2_prod_decomp_depth_unsat  )
+            deallocate (a_o2_prod_decomp_depth_sat    )
             deallocate (a_ch4_oxid_depth_unsat   )
             deallocate (a_ch4_oxid_depth_sat     )
             deallocate (a_o2_oxid_depth_unsat    )
@@ -1448,7 +1448,7 @@ CONTAINS
             deallocate (a_totcolch4_sat          )
             deallocate (a_grnd_ch4_cond_unsat    )
             deallocate (a_grnd_ch4_cond_sat      )
-            deallocate (a_conc_o2_unsat          )
+            deallocate (a_conc_o2_ch4_unsat          )
             deallocate (a_conc_o2_sat            )
             deallocate (a_conc_ch4_unsat         )
             deallocate (a_conc_ch4_sat           )
@@ -1954,8 +1954,8 @@ CONTAINS
             a_net_methane_sat        (:)   = spval
             a_ch4_prod_depth_unsat (:,:)  = spval
             a_ch4_prod_depth_sat   (:,:)  = spval
-            a_o2_decomp_depth_unsat(:,:)  = spval
-            a_o2_decomp_depth_sat  (:,:)  = spval
+            a_o2_prod_decomp_depth_unsat(:,:)  = spval
+            a_o2_prod_decomp_depth_sat  (:,:)  = spval
             a_ch4_oxid_depth_unsat (:,:)  = spval
             a_ch4_oxid_depth_sat   (:,:)  = spval
             a_o2_oxid_depth_unsat  (:,:)  = spval
@@ -1991,7 +1991,7 @@ CONTAINS
             a_totcolch4_sat          (:)  = spval
             a_grnd_ch4_cond_unsat    (:)  = spval
             a_grnd_ch4_cond_sat      (:)  = spval
-            a_conc_o2_unsat        (:,:) = spval
+            a_conc_o2_ch4_unsat        (:,:) = spval
             a_conc_o2_sat          (:,:) = spval
             a_conc_ch4_unsat       (:,:) = spval
             a_conc_ch4_sat         (:,:) = spval
@@ -2627,8 +2627,8 @@ CONTAINS
             CALL acc1d (net_methane_sat                     ,   a_net_methane_sat                     )
             CALL acc2d (ch4_prod_depth_unsat                ,   a_ch4_prod_depth_unsat                )
             CALL acc2d (ch4_prod_depth_sat                  ,   a_ch4_prod_depth_sat                  )
-            CALL acc2d (o2_decomp_depth_unsat               ,   a_o2_decomp_depth_unsat               )
-            CALL acc2d (o2_decomp_depth_sat                 ,   a_o2_decomp_depth_sat                 )
+            CALL acc2d (o2_prod_decomp_depth_unsat               ,   a_o2_prod_decomp_depth_unsat               )
+            CALL acc2d (o2_prod_decomp_depth_sat                 ,   a_o2_prod_decomp_depth_sat                 )
             CALL acc2d (ch4_oxid_depth_unsat                ,   a_ch4_oxid_depth_unsat                )
             CALL acc2d (ch4_oxid_depth_sat                  ,   a_ch4_oxid_depth_sat                  )
             CALL acc2d (o2_oxid_depth_unsat                 ,   a_o2_oxid_depth_unsat                 )
@@ -2663,7 +2663,7 @@ CONTAINS
             CALL acc1d (totcolch4_sat                       ,   a_totcolch4_sat                       )
             CALL acc1d (grnd_ch4_cond_unsat                 ,   a_grnd_ch4_cond_unsat                 )
             CALL acc1d (grnd_ch4_cond_sat                   ,   a_grnd_ch4_cond_sat                   )
-            CALL acc2d (conc_o2_unsat                       ,   a_conc_o2_unsat                       )
+            CALL acc2d (conc_o2_ch4_unsat                       ,   a_conc_o2_ch4_unsat                       )
             CALL acc2d (conc_o2_sat                         ,   a_conc_o2_sat                         )
             CALL acc2d (conc_ch4_unsat                      ,   a_conc_ch4_unsat                      )
             CALL acc2d (conc_ch4_sat                        ,   a_conc_ch4_sat                        )

@@ -1031,13 +1031,13 @@ ENDIF
 
 
          ! O2 consumption during decomposition in each soil layer (unsaturated)
-         CALL write_history_variable_3d ( DEF_hist_vars%o2_decomp_depth_unsat, &
-            a_o2_decomp_depth_unsat, file_hist, 'f_o2_decomp_depth_unsat', itime_in_file, 'soil', 1, nl_soil, &
+         CALL write_history_variable_3d ( DEF_hist_vars%o2_prod_decomp_depth_unsat, &
+            a_o2_prod_decomp_depth_unsat, file_hist, 'f_o2_prod_decomp_depth_unsat', itime_in_file, 'soil', 1, nl_soil, &
             sumarea, filter, 'O2 consumption during decomposition in each soil layer (unsaturated)','mol/m3/s')
 
          ! O2 consumption during decomposition in each soil layer (saturated)
-         CALL write_history_variable_3d ( DEF_hist_vars%o2_decomp_depth_sat, &
-            a_o2_decomp_depth_sat, file_hist, 'f_o2_decomp_depth_sat', itime_in_file, 'soil', 1, nl_soil, &
+         CALL write_history_variable_3d ( DEF_hist_vars%o2_prod_decomp_depth_sat, &
+            a_o2_prod_decomp_depth_sat, file_hist, 'f_o2_prod_decomp_depth_sat', itime_in_file, 'soil', 1, nl_soil, &
             sumarea, filter, 'O2 consumption during decomposition in each soil layer (saturated)','mol/m3/s')
 
 
@@ -1218,8 +1218,8 @@ ENDIF
 
 
          ! O2 conc in each soil layer (unsaturated)
-         CALL write_history_variable_3d ( DEF_hist_vars%conc_o2_unsat, &
-            a_conc_o2_unsat, file_hist, 'f_conc_o2_unsat', itime_in_file, 'soil', 1, nl_soil, &
+         CALL write_history_variable_3d ( DEF_hist_vars%conc_o2_ch4_unsat, &
+            a_conc_o2_ch4_unsat, file_hist, 'f_conc_o2_ch4_unsat', itime_in_file, 'soil', 1, nl_soil, &
             sumarea, filter, 'O2 conc in each soil layer (unsaturated)','mol/m3')
 
          ! O2 conc in each soil layer (saturated)
@@ -1323,7 +1323,7 @@ ENDIF
          ! time-lagged fractional inundated area
          CALL write_history_variable_2d ( DEF_hist_vars%finundated_lag, &
              a_finundated_lag, file_hist, 'f_finundated_lag', itime_in_file, sumarea, filter, &
-             'time-lagged fractional inundated area','s')
+             'time-lagged fractional inundated area','-')
 
          ! CH4 flux to atm due to decreasing finundated
          CALL write_history_variable_2d ( DEF_hist_vars%ch4_dfsat_tot, &

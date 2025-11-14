@@ -1333,7 +1333,7 @@ ENDIF
                o2stress             (:,i), ch4stress            (:,i), &
                ch4_surf_flux_tot      (i), ch4_surf_aere          (i), &
                ch4_surf_ebul          (i), ch4_surf_diff          (i), &
-               ch4_ebul_tot           (i), ch4_prod_tot           (i), ch4_oxid_tot           (i)  &
+               ch4_ebul_tot           (i), ch4_prod_tot           (i), ch4_oxid_tot           (i) , &
                totcolch4              (i), &
                grnd_ch4_cond          (i), conc_o2              (:,i), &
                conc_ch4             (:,i), &
@@ -1341,9 +1341,9 @@ ENDIF
 !!!! --------------------------------------------------------------------------------------------------------
 !!!!                                         sum data (unsaturated / saturated)
 !!!! --------------------------------------------------------------------------------------------------------
-               ,net_methane_unsat     (i), net_methane_sat     (i), &
+               net_methane_unsat     (i), net_methane_sat     (i), &
                ch4_prod_depth_unsat (:,i), ch4_prod_depth_sat (:,i), &
-               o2_decomp_depth_unsat(:,i), o2_decomp_depth_sat(:,i), &
+               o2_prod_decomp_depth_unsat(:,i), o2_prod_decomp_depth_sat(:,i), &
                ch4_oxid_depth_unsat (:,i), ch4_oxid_depth_sat (:,i), &
                o2_oxid_depth_unsat  (:,i), o2_oxid_depth_sat  (:,i), &
                ch4_aere_depth_unsat (:,i), ch4_aere_depth_sat (:,i), &
@@ -1361,7 +1361,7 @@ ENDIF
                ch4_oxid_tot_unsat     (i), ch4_oxid_tot_sat     (i), &
                totcolch4_unsat        (i), totcolch4_sat        (i), &
                grnd_ch4_cond_unsat    (i), grnd_ch4_cond_sat    (i), &
-               conc_o2_unsat        (:,i), conc_o2_sat        (:,i), &
+               conc_o2_ch4_unsat        (:,i), conc_o2_sat        (:,i), &
                conc_ch4_unsat       (:,i), conc_ch4_sat       (:,i), &
 !!!! --------------------------------------------------------------------------------------------------------
                c_atm                (:,i), forc_pch4m             (i), &
@@ -1372,7 +1372,7 @@ ENDIF
                annsum_counter         (i), tempavg_somhr          (i), &
                tempavg_finrw          (i), &
 !!!! --------------------------------------------------------------------------------------------------------
-               fsat_bef               (i), finundated_lag(i),  ch4_dfsat_tot(i), &
+               fsat_bef               (i), finundated_lag(i),  ch4_dfsat_tot(i) &
 #endif
 #endif
                ! for SOIL INIT of water, temperature, snow depth

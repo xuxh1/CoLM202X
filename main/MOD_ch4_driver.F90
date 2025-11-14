@@ -23,7 +23,7 @@
 		transfer_froot_gr, transfer_livecroot_gr, transfer_deadcroot_gr, &
 		somhr, lithr, hr_vr, rr, agnpp, bgnpp, annsum_npp, fphr
 
-		USE MOD_BGC_Vars_TimeVariables, only: decomp_cpools_vr
+		USE MOD_BGC_Vars_TimeVariables, only: decomp_cpools_vr, o_scalar
 	
 		USE MOD_BGC_Vars_TimeVariables, only: &
 		!!!! --------------------------------------------------------------------------------------------------------
@@ -41,7 +41,7 @@
 		!!!!                                         sum data (unsaturated / saturated)
 		!!!! --------------------------------------------------------------------------------------------------------
 		net_methane_unsat, net_methane_sat, &
-		ch4_prod_depth_unsat, ch4_prod_depth_sat, o2_decomp_depth_unsat, o2_decomp_depth_sat, &
+		ch4_prod_depth_unsat, ch4_prod_depth_sat, o2_prod_decomp_depth_unsat, o2_prod_decomp_depth_sat, &
 		ch4_oxid_depth_unsat, ch4_oxid_depth_sat, o2_oxid_depth_unsat, o2_oxid_depth_sat, &
 		ch4_aere_depth_unsat, ch4_aere_depth_sat, ch4_tran_depth_unsat, ch4_tran_depth_sat, &
 		o2_aere_depth_unsat, o2_aere_depth_sat, ch4_ebul_depth_unsat, ch4_ebul_depth_sat, &
@@ -51,7 +51,7 @@
 		ch4_ebul_tot_unsat, ch4_ebul_tot_sat, ch4_prod_tot_unsat, ch4_prod_tot_sat, &
 		ch4_oxid_tot_unsat, ch4_oxid_tot_sat, &
 		totcolch4_unsat, totcolch4_sat, grnd_ch4_cond_unsat, grnd_ch4_cond_sat, &
-		conc_o2_unsat, conc_o2_sat, conc_ch4_unsat, conc_ch4_sat, &
+		conc_o2_ch4_unsat, conc_o2_sat, conc_ch4_unsat, conc_ch4_sat, &
 		!!!! --------------------------------------------------------------------------------------------------------
 		c_atm, forc_pch4m, layer_sat_lag, lake_soilc, &
 		annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
@@ -157,7 +157,7 @@
 		!!!! --------------------------------------------------------------------------------------------------------
 		net_methane_unsat(i), net_methane_sat(i), &
 		ch4_prod_depth_unsat(1:nl_soil,i), ch4_prod_depth_sat(1:nl_soil,i), &
-		o2_decomp_depth_unsat(1:nl_soil,i), o2_decomp_depth_sat(1:nl_soil,i), &
+		o2_prod_decomp_depth_unsat(1:nl_soil,i), o2_prod_decomp_depth_sat(1:nl_soil,i), &
 		ch4_oxid_depth_unsat(1:nl_soil,i), ch4_oxid_depth_sat(1:nl_soil,i), &
 		o2_oxid_depth_unsat(1:nl_soil,i), o2_oxid_depth_sat(1:nl_soil,i), &
 		ch4_aere_depth_unsat(1:nl_soil,i), ch4_aere_depth_sat(1:nl_soil,i), &
@@ -175,7 +175,7 @@
 		ch4_oxid_tot_unsat(i), ch4_oxid_tot_sat(i), &
 		totcolch4_unsat(i), totcolch4_sat(i), &
 		grnd_ch4_cond_unsat(i), grnd_ch4_cond_sat(i), &
-		conc_o2_unsat(1:nl_soil,i), conc_o2_sat(1:nl_soil,i), &
+		conc_o2_ch4_unsat(1:nl_soil,i), conc_o2_sat(1:nl_soil,i), &
 		conc_ch4_unsat(1:nl_soil,i), conc_ch4_sat(1:nl_soil,i), &
 		!!!! --------------------------------------------------------------------------------------------------------
 		c_atm(1:3,i), forc_pch4m(i), layer_sat_lag(1:nl_soil,i), lake_soilc(1:nl_soil,i), &

@@ -951,8 +951,8 @@ MODULE MOD_Namelist
       logical :: net_methane_sat                  = .true.
       logical :: ch4_prod_depth_unsat             = .true.
       logical :: ch4_prod_depth_sat               = .true.
-      logical :: o2_decomp_depth_unsat            = .true.
-      logical :: o2_decomp_depth_sat              = .true.
+      logical :: o2_prod_decomp_depth_unsat            = .true.
+      logical :: o2_prod_decomp_depth_sat              = .true.
       logical :: ch4_oxid_depth_unsat             = .true.
       logical :: ch4_oxid_depth_sat               = .true.
       logical :: o2_oxid_depth_unsat              = .true.
@@ -987,7 +987,7 @@ MODULE MOD_Namelist
       logical :: totcolch4_sat                    = .true.
       logical :: grnd_ch4_cond_unsat              = .true.
       logical :: grnd_ch4_cond_sat                = .true.
-      logical :: conc_o2_unsat                    = .true.
+      logical :: conc_o2_ch4_unsat                    = .true.
       logical :: conc_o2_sat                      = .true.
       logical :: conc_ch4_unsat                   = .true.
       logical :: conc_ch4_sat                     = .true.
@@ -2197,8 +2197,8 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%net_methane_sat    , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%ch4_prod_depth_unsat , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%ch4_prod_depth_sat   , set_defaults)
-      CALL sync_hist_vars_one (DEF_hist_vars%o2_decomp_depth_unsat, set_defaults)
-      CALL sync_hist_vars_one (DEF_hist_vars%o2_decomp_depth_sat  , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%o2_prod_decomp_depth_unsat, set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%o2_prod_decomp_depth_sat  , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%ch4_oxid_depth_unsat , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%ch4_oxid_depth_sat   , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%o2_oxid_depth_unsat  , set_defaults)
@@ -2233,7 +2233,7 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%totcolch4_sat        , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%grnd_ch4_cond_unsat  , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%grnd_ch4_cond_sat    , set_defaults)
-      CALL sync_hist_vars_one (DEF_hist_vars%conc_o2_unsat        , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%conc_o2_ch4_unsat        , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%conc_o2_sat          , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%conc_ch4_unsat       , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%conc_ch4_sat         , set_defaults)

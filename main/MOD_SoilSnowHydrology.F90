@@ -7,7 +7,7 @@ MODULE MOD_SoilSnowHydrology
    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_USE_SNICAR,     &
                            DEF_URBAN_RUN,           DEF_USE_IRRIGATION, &
                            DEF_SPLIT_SOILSNOW,      DEF_Runoff_SCHEME,  &
-                           DEF_DA_GRACE
+                           DEF_DA_GRACE,            DEF_wetland_split_fsat
 #if (defined CaMa_Flood)
    USE YOS_CMF_INPUT,      only: LWINFILT
 #endif

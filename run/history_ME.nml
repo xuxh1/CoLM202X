@@ -1,9 +1,6 @@
 &nl_colm_history
    
    ! ! ----- history -----
-   ! DEF_hist_vars%forc_po2m           = .true.
-   ! DEF_hist_vars%forc_pco2m          = .true.
-
    DEF_hist_vars%c_atm           = .true.
    DEF_hist_vars%ch4_surf_flux_tot           = .true.
    DEF_hist_vars%net_methane           = .true.
@@ -24,7 +21,7 @@
    DEF_hist_vars%ch4_surf_aere           = .true.
    DEF_hist_vars%ch4_surf_ebul           = .true.
    DEF_hist_vars%ch4_surf_diff           = .true.
-   DEF_hist_vars%ch4_ebul_total           = .true.
+   DEF_hist_vars%ch4_ebul_tot           = .true.
    DEF_hist_vars%totcolch4           = .true.
    DEF_hist_vars%forc_pch4m           = .true.
    DEF_hist_vars%grnd_ch4_cond           = .true.

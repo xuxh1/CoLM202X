@@ -75,9 +75,9 @@ CONTAINS
 !!!! --------------------------------------------------------------------------------------------------------
 !!!!                                         sum data (unsaturated / saturated)
 !!!! --------------------------------------------------------------------------------------------------------
-                     ,net_methane_unsat, net_methane_sat, &
+                     net_methane_unsat, net_methane_sat, &
                      ch4_prod_depth_unsat, ch4_prod_depth_sat, &
-                     o2_decomp_depth_unsat, o2_decomp_depth_sat, &
+                     o2_prod_decomp_depth_unsat, o2_prod_decomp_depth_sat, &
                      ch4_oxid_depth_unsat, ch4_oxid_depth_sat, &
                      o2_oxid_depth_unsat, o2_oxid_depth_sat, &
                      ch4_aere_depth_unsat, ch4_aere_depth_sat, &
@@ -95,7 +95,7 @@ CONTAINS
                      ch4_oxid_tot_unsat, ch4_oxid_tot_sat, &
                      totcolch4_unsat, totcolch4_sat, &
                      grnd_ch4_cond_unsat, grnd_ch4_cond_sat, &
-                     conc_o2_unsat, conc_o2_sat, &
+                     conc_o2_ch4_unsat, conc_o2_sat, &
                      conc_ch4_unsat, conc_ch4_sat, &
 !!!! --------------------------------------------------------------------------------------------------------
                      c_atm, forc_pch4m, &
@@ -103,7 +103,7 @@ CONTAINS
                      annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
                      tempavg_agnpp, tempavg_bgnpp, annsum_counter, &
                      tempavg_somhr, tempavg_finrw, &
-                     fsat_bef, finundated_lag, ch4_dfsat_tot,&
+                     fsat_bef, finundated_lag, ch4_dfsat_tot&
 #endif
 #endif
                      ,use_soilini, nl_soil_ini, soil_z,   soil_t,   soil_w, use_snowini, snow_d &
@@ -411,7 +411,7 @@ CONTAINS
          totcolch4               , &! total methane in soil column, start of timestep (g C / m^2)
          grnd_ch4_cond           , &! tracer conductance for boundary layer [m/s]
          conc_o2  (1:nl_soil)    , &! O2 conc in each soil layer (mol/m3) 
-         conc_ch4   (1:nl_soil)  , &! CH4 conc in each soil layer (mol/m3) 
+         conc_ch4   (1:nl_soil)     ! CH4 conc in each soil layer (mol/m3) 
    !!!! --------------------------------------------------------------------------------------------------------
 
    !!!! --------------------------------------------------------------------------------------------------------
@@ -425,8 +425,8 @@ CONTAINS
    real(r8), intent(out) :: &            
         ch4_prod_depth_unsat (1:nl_soil)   , &! production of CH4 in each unsaturated soil layer (mol/m3/s)
         ch4_prod_depth_sat   (1:nl_soil)   , &! production of CH4 in each saturated soil layer (mol/m3/s)
-        o2_decomp_depth_unsat(1:nl_soil)   , &! O2 consumption during decomposition in each unsaturated soil layer (mol/m3/s)
-        o2_decomp_depth_sat  (1:nl_soil)      ! O2 consumption during decomposition in each saturated soil layer (mol/m3/s)
+        o2_prod_decomp_depth_unsat(1:nl_soil)   , &! O2 consumption during decomposition in each unsaturated soil layer (mol/m3/s)
+        o2_prod_decomp_depth_sat  (1:nl_soil)      ! O2 consumption during decomposition in each saturated soil layer (mol/m3/s)
      
    !------------------- ch4_oxid ------------------------------
    real(r8), intent(out) :: &
@@ -476,7 +476,7 @@ CONTAINS
          totcolch4_sat            , &! total CH4 in soil column (saturated) (g C / m^2)
          grnd_ch4_cond_unsat      , &! tracer conductance (unsaturated) [m/s]
          grnd_ch4_cond_sat        , &! tracer conductance (saturated) [m/s]
-         conc_o2_unsat  (1:nl_soil) , &! O2 conc in each unsaturated soil layer (mol/m3)
+         conc_o2_ch4_unsat  (1:nl_soil) , &! O2 conc in each unsaturated soil layer (mol/m3)
          conc_o2_sat    (1:nl_soil) , &! O2 conc in each saturated soil layer (mol/m3)
          conc_ch4_unsat (1:nl_soil) , &! CH4 conc in each unsaturated soil layer (mol/m3)
          conc_ch4_sat   (1:nl_soil)   ! CH4 conc in each saturated soil layer (mol/m3)
@@ -488,7 +488,7 @@ CONTAINS
    real(r8), intent(inout) :: &
         forc_pch4m               , &! CH4 concentration in atmos. (pascals)
         layer_sat_lag(1:nl_soil) , &
-        lake_soilc  (1:nl_soil)    ! total soil organic matter found in level (g C / m^3) (nl_soil)
+        lake_soilc  (1:nl_soil)     ! total soil organic matter found in level (g C / m^3) (nl_soil)
      
    !------------------- ch4_annualupdate ------------------------------
    real(r8), intent(out) :: &
@@ -1194,8 +1194,8 @@ CONTAINS
             net_methane_sat         = 0.
             ch4_prod_depth_unsat (:) = 0.
             ch4_prod_depth_sat   (:) = 0.
-            o2_decomp_depth_unsat(:) = 0.
-            o2_decomp_depth_sat  (:) = 0.
+            o2_prod_decomp_depth_unsat(:) = 0.
+            o2_prod_decomp_depth_sat  (:) = 0.
             ch4_oxid_depth_unsat (:) = 0.
             ch4_oxid_depth_sat   (:) = 0.
             o2_oxid_depth_unsat  (:) = 0.
@@ -1231,7 +1231,7 @@ CONTAINS
             totcolch4_sat           = 0.
             grnd_ch4_cond_unsat     = 1.e-6
             grnd_ch4_cond_sat       = 1.e-6
-            conc_o2_unsat        (:) = 0.
+            conc_o2_ch4_unsat        (:) = 0.
             conc_o2_sat          (:) = 0.
             conc_ch4_unsat       (:) = 0.
             conc_ch4_sat         (:) = 0.
