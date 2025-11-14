@@ -1,0 +1,76 @@
+&nl_colm
+!
+!------------------------------------------------------------------------------------------------
+!(1) Casename, sitedata, time period and step, directories
+ 
+ DEF_CASE_NAME = 'US-Wkg_IGBP_CB'
+
+!true  : surface data from SITE
+!false : surface data is retrieved from database.
+ USE_SITE_landtype        = .true.
+ USE_SITE_pctpfts         = .false.
+ USE_SITE_pctcrop         = .false.
+ USE_SITE_htop            = .true.
+ USE_SITE_LAI             = .true.
+ USE_SITE_lakedepth       = .false.
+ USE_SITE_soilreflectance = .false.
+ USE_SITE_soilparameters  = .true.
+ USE_SITE_topography      = .false.
+
+!for the site simulation, greenwich must be set up .FALSE.
+ DEF_simulation_time%greenwich     = .FALSE.
+ DEF_simulation_time%start_year    = 2010
+ DEF_simulation_time%start_month   = 1
+ DEF_simulation_time%start_day     = 1
+ DEF_simulation_time%start_sec     = 0
+ DEF_simulation_time%end_year      = 2014
+ DEF_simulation_time%end_month     = 12
+ DEF_simulation_time%end_day       = 31
+ DEF_simulation_time%end_sec       = 86400
+ DEF_simulation_time%spinup_year   = 2010
+ DEF_simulation_time%spinup_month  = 12
+ DEF_simulation_time%spinup_day    = 31
+ DEF_simulation_time%spinup_sec    = 86400
+ DEF_simulation_time%spinup_repeat = 0
+
+ DEF_simulation_time%timestep      = 1800.
+
+!surface data from SITE.
+ SITE_fsitedata = '/tera12/yuanhua/data/CoLMpointdata/PLUMBER2s/Sitedata/US-Wkg_2005-2014_FLUXNET2015_site.nc'
+
+!path to surface database
+ DEF_dir_rawdata = '/shr03/CoLMrawdata/'
+ DEF_dir_runtime = '/shr03/CoLMruntime/'
+ DEF_dir_output  = '/stu01/liuz21/github/cases/'
+!------------------------------------------------------------------------------------------------
+!(2) LAI setting
+ DEF_LAI_MONTHLY       = .true.
+ DEF_LAI_CHANGE_YEARLY = .true.
+
+!(3) Parameteration schemes
+ DEF_Interception_scheme         = 1 ! (default)
+ DEF_THERMAL_CONDUCTIVITY_SCHEME = 4 ! Options for soil thermal conductivity schemes
+ DEF_USE_SUPERCOOL_WATER         = .true.  ! supercooled soil water scheme, Niu & Yang (2006)
+ DEF_RSS_SCHEME                  = 5 
+ DEF_Runoff_SCHEME               = 3
+ DEF_SPLIT_SOILSNOW              = .false.
+ DEF_VEG_SNOW                    = .false.
+ DEF_USE_VariablySaturatedFlow   = .true.
+ DEF_USE_SNICAR                  = .false.
+ DEF_USE_PLANTHYDRAULICS         = .true.
+ DEF_USE_MEDLYNST                = .false.
+ DEF_USE_WUEST                   = .true.
+!------------------------------------------------------------------------------------------------
+!(3) Offilne forcing 
+ DEF_forcing_namelist = '/tera12/yuanhua/data/CoLMpointdata/PLUMBER2s/Forcingnml/US-Wkg.nml'
+
+!------------------------------------------------------------------------------------------------
+!(4) Restart and History -----
+ DEF_WRST_FREQ = 'MONTHLY'   ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+ DEF_HIST_FREQ = 'TIMESTEP'    ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+ DEF_HIST_groupby = 'YEAR'  ! history in one file: DAY/MONTH/YEAR
+
+ DEF_HIST_vars_out_default = .true.
+
+
+ /

@@ -460,7 +460,7 @@ contains
 		end if
 		
 		dfsat = finundated - fsat_bef
-		call print_var(finundated_lag, 'ch4 1 finundated_lag', idate)
+		call print_var(dfsat, 'ch4 dfsat', idate)
   
 		! Update lagged finundated for redox calculation
 		if (redoxlags > 0._r8) then
@@ -469,7 +469,6 @@ contains
 		else
 			finundated_lag = finundated
 		end if
-		call print_var(finundated_lag, 'ch4 2 finundated_lag', idate)
 
 		do j=1,nl_soil
 			if (j==1) ch4_dfsat_tot = 0._r8
@@ -644,89 +643,63 @@ contains
 
 		enddo
 
+		ch4_oxid_tot_unsat = sum( ch4_oxid_depth_unsat(1:nl_soil) * dz_soisno(1:nl_soil) )
+		ch4_prod_tot_unsat = sum( ch4_prod_depth_unsat(1:nl_soil) * dz_soisno(1:nl_soil) )
+		net_methane_unsat = -ch4_prod_tot_unsat + ch4_oxid_tot_unsat
+		ch4_surf_flux_tot_unsat = ch4_surf_diff_unsat + ch4_surf_aere_unsat + ch4_surf_ebul_unsat
+		totcolch4_unsat = sum( conc_ch4_unsat(1:nl_soil) * dz_soisno(1:nl_soil) )
 
-		do j=1,nl_soil
-			if (j == 1) then
-				ch4_surf_flux_tot_sat = ch4_surf_diff_sat + ch4_surf_aere_sat + ch4_surf_ebul_sat
-				ch4_surf_flux_tot_unsat = ch4_surf_diff_unsat + ch4_surf_aere_unsat + ch4_surf_ebul_unsat
-				ch4_surf_flux_tot = finundated*ch4_surf_flux_tot_sat + (1.-finundated)*ch4_surf_flux_tot_unsat
-				! original
-				call print_var(ch4_surf_diff,'ch4 ch4_surf_diff',idate)
-				call print_var(ch4_surf_aere,'ch4 ch4_surf_aere',idate)
-				call print_var(ch4_surf_ebul,'ch4 ch4_surf_ebul',idate)
-				call print_var(ch4_surf_flux_tot,'ch4 ch4_surf_flux_tot',idate)
+		ch4_oxid_tot_sat   = sum( ch4_oxid_depth_sat(1:nl_soil)   * dz_soisno(1:nl_soil) )
+		ch4_prod_tot_sat   = sum( ch4_prod_depth_sat(1:nl_soil)   * dz_soisno(1:nl_soil) )
+		net_methane_sat   = -ch4_prod_tot_sat   + ch4_oxid_tot_sat
+		ch4_surf_flux_tot_sat = ch4_surf_diff_sat  + ch4_surf_aere_sat  + ch4_surf_ebul_sat
+		totcolch4_sat   = sum( conc_ch4_sat  (1:nl_soil) * dz_soisno(1:nl_soil) )
 
-				! sat
-				call print_var(ch4_surf_diff_sat,'ch4 ch4_surf_diff_sat',idate)
-				call print_var(ch4_surf_aere_sat,'ch4 ch4_surf_aere_sat',idate)
-				call print_var(ch4_surf_ebul_sat,'ch4 ch4_surf_ebul_sat',idate)
-				call print_var(ch4_surf_flux_tot_sat,'ch4 ch4_surf_flux_tot_sat',idate)
+		ch4_oxid_tot = ch4_oxid_tot_sat * finundated + ch4_oxid_tot_unsat * (1.0_r8 - finundated)
+		ch4_prod_tot = ch4_prod_tot_sat * finundated + ch4_prod_tot_unsat * (1.0_r8 - finundated)
+		net_methane = net_methane_sat * finundated + net_methane_unsat * (1.0_r8 - finundated)
+		ch4_surf_flux_tot = ch4_surf_flux_tot_sat * finundated + ch4_surf_flux_tot_unsat * (1.0_r8 - finundated) + ch4_dfsat_tot
+		totcolch4 = totcolch4_sat * finundated + totcolch4_unsat * (1.0_r8 - finundated)
 
-				! unsat
-				call print_var(ch4_surf_diff_unsat,'ch4 ch4_surf_diff_unsat',idate)
-				call print_var(ch4_surf_aere_unsat,'ch4 ch4_surf_aere_unsat',idate)
-				call print_var(ch4_surf_ebul_unsat,'ch4 ch4_surf_ebul_unsat',idate)
-				call print_var(ch4_surf_flux_tot_unsat,'ch4 ch4_surf_flux_tot_unsat',idate)
-			end if
-			ch4_oxid_tot_unsat = ch4_oxid_tot_unsat + ch4_oxid_depth_unsat(j) * dz_soisno(j)
-			ch4_prod_tot_unsat = ch4_prod_tot_unsat + ch4_prod_depth_unsat(j) * dz_soisno(j)
+		call print_var(ch4_oxid_tot,'ch4 ch4_oxid_tot',idate)
+		call print_var(ch4_oxid_depth,'ch4 ch4_oxid_depth',idate)
+		call print_var(ch4_prod_tot,'ch4 ch4_prod_tot',idate)
+		call print_var(ch4_prod_depth,'ch4 ch4_prod_depth',idate)
 
-			ch4_oxid_tot_sat   = ch4_oxid_tot_sat   + ch4_oxid_depth_sat(j)   * dz_soisno(j)
-			ch4_prod_tot_sat   = ch4_prod_tot_sat   + ch4_prod_depth_sat(j)   * dz_soisno(j)
+		call print_var(ch4_oxid_tot_sat,'ch4 ch4_oxid_tot_sat',idate)
+		call print_var(ch4_oxid_depth_sat,'ch4 ch4_oxid_depth_sat',idate)
+		call print_var(ch4_prod_tot_sat,'ch4 ch4_prod_tot_sat',idate)
+		call print_var(ch4_prod_depth_sat,'ch4 ch4_prod_depth_sat',idate)
 
-			ch4_oxid_tot       = ch4_oxid_tot_sat * finundated + ch4_oxid_tot_unsat * (1.0_r8 - finundated)
-			ch4_prod_tot       = ch4_prod_tot_sat * finundated + ch4_prod_tot_unsat * (1.0_r8 - finundated)
-			! [mol/m2/s]    = [mol/m2/s] + [mol/m3/s]       * [m]
-			! original
-			call print_var(ch4_oxid_tot,'ch4 ch4_oxid_tot',idate,j,.true.)
-			call print_var(ch4_oxid_depth(j),'ch4 ch4_oxid_depth(j)',idate,j,.true.)
-			call print_var(ch4_prod_tot,'ch4 ch4_prod_tot',idate,j,.true.)
-			call print_var(ch4_prod_depth(j),'ch4 ch4_prod_depth(j)',idate,j,.true.)
+		call print_var(ch4_oxid_tot_unsat,'ch4 ch4_oxid_tot_unsat',idate)
+		call print_var(ch4_oxid_depth_unsat,'ch4 ch4_oxid_depth_unsat',idate)
+		call print_var(ch4_prod_tot_unsat,'ch4 ch4_prod_tot_unsat',idate)
+		call print_var(ch4_prod_depth_unsat,'ch4 ch4_prod_depth_unsat',idate)
 
-			! sat
-			call print_var(ch4_oxid_tot_sat,'ch4 ch4_oxid_tot_sat',idate,j,.true.)
-			call print_var(ch4_oxid_depth_sat(j),'ch4 ch4_oxid_depth_sat(j)',idate,j,.true.)
-			call print_var(ch4_prod_tot_sat,'ch4 ch4_prod_tot_sat',idate,j,.true.)
-			call print_var(ch4_prod_depth_sat(j),'ch4 ch4_prod_depth_sat(j)',idate,j,.true.)
 
-			! unsat
-			call print_var(ch4_oxid_tot_unsat,'ch4 ch4_oxid_tot_unsat',idate,j,.true.)
-			call print_var(ch4_oxid_depth_unsat(j),'ch4 ch4_oxid_depth_unsat(j)',idate,j,.true.)
-			call print_var(ch4_prod_tot_unsat,'ch4 ch4_prod_tot_unsat',idate,j,.true.)
-			call print_var(ch4_prod_depth_unsat(j),'ch4 ch4_prod_depth_unsat(j)',idate,j,.true.)
+		call print_var(ch4_surf_diff,'ch4 ch4_surf_diff',idate)
+		call print_var(ch4_surf_aere,'ch4 ch4_surf_aere',idate)
+		call print_var(ch4_surf_ebul,'ch4 ch4_surf_ebul',idate)
+		call print_var(ch4_surf_flux_tot,'ch4 ch4_surf_flux_tot',idate)
 
-			if (j == nl_soil) then
-				! Adjustment to NEE flux to atm. for methane production and oxidation
-				net_methane_unsat = net_methane_unsat - ch4_prod_tot_unsat
-				net_methane_unsat = net_methane_unsat + ch4_oxid_tot_unsat
+		call print_var(ch4_surf_diff_sat,'ch4 ch4_surf_diff_sat',idate)
+		call print_var(ch4_surf_aere_sat,'ch4 ch4_surf_aere_sat',idate)
+		call print_var(ch4_surf_ebul_sat,'ch4 ch4_surf_ebul_sat',idate)
+		call print_var(ch4_surf_flux_tot_sat,'ch4 ch4_surf_flux_tot_sat',idate)
 
-				net_methane_sat   = net_methane_sat   - ch4_prod_tot_sat
-				net_methane_sat   = net_methane_sat   + ch4_oxid_tot_sat
+		call print_var(ch4_surf_diff_unsat,'ch4 ch4_surf_diff_unsat',idate)
+		call print_var(ch4_surf_aere_unsat,'ch4 ch4_surf_aere_unsat',idate)
+		call print_var(ch4_surf_ebul_unsat,'ch4 ch4_surf_ebul_unsat',idate)
+		call print_var(ch4_surf_flux_tot_unsat,'ch4 ch4_surf_flux_tot_unsat',idate)
 
-				! Combine unsaturated and saturated contributions
-				net_methane = net_methane_sat * finundated + net_methane_unsat * (1.0_r8 - finundated)
-			end if
-		end do
+		call print_var(conc_ch4,'ch4 2 conc_ch4',idate)
+		call print_var(totcolch4,'ch4 totcolch4',idate)
 
-		do j = 1, nl_soil
-			! Accumulate total column CH4 for unsaturated and saturated zones
-			totcolch4_unsat = totcolch4_unsat + conc_ch4_unsat(j) * dz_soisno(j)
-			totcolch4_sat   = totcolch4_sat   + conc_ch4_sat(j)   * dz_soisno(j)
-			! [mol/m2]      = [mol/m2]        + [mol/m3]          * [m]
+		call print_var(conc_ch4_sat,'ch4 2 conc_ch4_sat',idate)
+		call print_var(totcolch4_sat,'ch4 totcolch4_sat',idate)
 
-			totcolch4 = totcolch4_sat * finundated + totcolch4_unsat * (1.0_r8 - finundated)
-			! original
-			call print_var(conc_ch4(j),'ch4 2 conc_ch4(j)',idate,j,.true.)
-			call print_var(totcolch4,'ch4 totcolch4',idate,j,.true.)
-
-			! sat
-			call print_var(conc_ch4_sat(j),'ch4 2 conc_ch4_sat(j)',idate,j,.true.)
-			call print_var(totcolch4_sat,'ch4 totcolch4_sat',idate,j,.true.)
-
-			! unsat
-			call print_var(conc_ch4_unsat(j),'ch4 2 conc_ch4_unsat(j)',idate,j,.true.)
-			call print_var(totcolch4_unsat,'ch4 totcolch4_unsat',idate,j,.true.)
-		end do
+		call print_var(conc_ch4_unsat,'ch4 2 conc_ch4_unsat',idate)
+		call print_var(totcolch4_unsat,'ch4 totcolch4_unsat',idate)
 
 		! Column level balance
 		if (.not. ch4_first_time) then
@@ -738,9 +711,6 @@ contains
 			call print_var(errch4_sat,'ch4 errch4_sat',idate)
 			call print_var(errch4_unsat,'ch4 errch4_unsat',idate)
 			call print_var(errch4,'ch4 errch4',idate)
-
-			call print_var(err1,'ch4 err1',idate)
-
 			! [g CH4/m2]    = [g CH4/m2] - [g CH4/m2] + [s]*[g CH4/m2/s]
 			if (abs(errch4) > 1.e-7_r8) then
 				write(6,*)'Lat,Lon,Patchtype        = ', dlat,dlon, patchtype

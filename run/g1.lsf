@@ -1,0 +1,37 @@
+#!/bin/bash
+#BSUB -J g1
+#BSUB -q normal
+#BSUB -o /share/home/dq076/mode/ME/251110_r/run/logs/g1-o.out
+#BSUB -e /share/home/dq076/mode/ME/251110_r/run/logs/g1-e.out
+#BSUB -n 480
+#BSUB -R rusage[mem=150G]
+#BSUB -R span[ptile=48]
+
+#export OMP_NUM_THREADS=45
+
+echo job start time is `date`
+echo `hostname`
+
+echo "start: ${SYEAR}" `date`  >> /share/home/dq076/mode/ME/251110_r/run/log.txt
+
+# mpirun  -np 720 ./mksrfdata.x g1.nml
+# mpirun -np 48 /share/home/dq076/mode/ME/251110_r/run/mkinidata.x /share/home/dq076/mode/ME/251110_r/run/g1.nml
+mpirun  -np 480 ./colm.x g1.nml
+
+
+echo "end:   ${SYEAR}" `date`  >> log.txt
+
+# mv ${LOGOUT} log_CaMa-${CYR}.txt
+
+#================================================
+# (6) manage spin up
+
+# if curent spinup time $ISP < required spinup time $NSP
+#   copy the restart file restart$(IYR+1) to restart${IYR}
+#   copy the outputs to directory "${IYR}-sp1"
+
+
+
+exit 0
+echo job end time is `date`
+
