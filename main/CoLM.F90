@@ -469,7 +469,7 @@ PROGRAM CoLM
 #ifdef DataAssimilation
             CALL DADRIVER (idate, deltim, dolai, doalb, dosst, oroflag)
 #else
-            CALL CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oroflag)
+            CALL CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oroflag,istep)
 #endif
          ENDIF
 

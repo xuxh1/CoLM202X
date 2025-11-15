@@ -12,7 +12,7 @@
    DEF_PIO_groupsize = 24
 
    DEF_simulation_time%greenwich    = .TRUE.
-   DEF_simulation_time%start_year   = 1950
+   DEF_simulation_time%start_year   = 1995
    DEF_simulation_time%start_month  = 1
    DEF_simulation_time%start_day    = 1
    DEF_simulation_time%start_sec    = 0
@@ -48,11 +48,10 @@
    DEF_LAI_MONTHLY = .true.
    DEF_LAI_CHANGE_YEARLY = .false.
 
-   DEF_LAI_MONTHLY = .true.
-   DEF_METHANE_only_wetland = .true.
+   DEF_METHANE_only_wetland = .false.
    DEF_wetland_split_fsat = .true.
    DEF_USE_METHANE_para = .true.
-   DEF_file_METHANE_para = '/share/home/dq076/mode/ME/251111_r/run/standard_ch4_parameter.nml'
+   DEF_file_METHANE_para = '/share/home/dq076/mode/ME/251114/run/standard_ch4_parameter.nml'
    
    DEF_USE_VariablySaturatedFlow = .true.
    DEF_Runoff_SCHEME = 0
@@ -61,12 +60,12 @@
    ! Options :
    ! PRINCETON | GSWP3   | QIAN  | CRUNCEPV4 | CRUNCEPV7 | ERA5LAND | ERA5  |  MSWX
    ! WFDE5     | CRUJRA  | WFDEI | JRA55     | GDAS      | CMFD     | POINT |  JRA3Q
-   DEF_forcing_namelist = '/share/home/dq076/mode/ME/251111_r/run/forcing/CRUJRA.nml'
+   DEF_forcing_namelist = '/share/home/dq076/mode/ME/251114/run/forcing/CRUJRA.nml'
    
    ! ----- history -----
    DEF_HIST_lon_res = 1
    DEF_HIST_lat_res = 1
-   DEF_WRST_FREQ = 'YEARLY' ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+   DEF_WRST_FREQ = 'MONTHLY' ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
    DEF_HIST_FREQ = 'DAILY' ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
    DEF_HIST_groupby = 'YEAR' ! history in one file: DAY/MONTH/YEAR
    DEF_HIST_mode = 'one' ! history in one or block
@@ -76,6 +75,6 @@
    DEF_HIST_WriteBack = .false.
 
    DEF_hist_vars_out_default = .true.
-   DEF_hist_vars_namelist    = '/share/home/dq076/mode/ME/251111_r/run/history_ME.nml'
+   DEF_hist_vars_namelist    = '/share/home/dq076/mode/ME/251114/run/history_ME.nml'
 
 /

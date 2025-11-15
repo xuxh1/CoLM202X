@@ -1,8 +1,8 @@
 #!/bin/bash
 #BSUB -J g2
 #BSUB -q normal
-#BSUB -o /share/home/dq076/mode/ME/251111_r/run/logs/g2-o.out
-#BSUB -e /share/home/dq076/mode/ME/251111_r/run/logs/g2-e.out
+#BSUB -o /share/home/dq076/mode/ME/251114/run/logs/g2_2-o.out
+#BSUB -e /share/home/dq076/mode/ME/251114/run/logs/g2_2-e.out
 #BSUB -n 480
 #BSUB -R rusage[mem=150G]
 #BSUB -R span[ptile=48]
@@ -12,10 +12,11 @@
 echo job start time is `date`
 echo `hostname`
 
-echo "start: ${SYEAR}" `date`  >> /share/home/dq076/mode/ME/251111_r/run/log.txt
+echo "start: ${SYEAR}" `date`  >> /share/home/dq076/mode/ME/251114/run/log.txt
+mkdir -p logs
 
 # mpirun  -np 720 ./mksrfdata.x g2.nml
-# mpirun -np 48 /share/home/dq076/mode/ME/251111_r/run/mkinidata.x /share/home/dq076/mode/ME/251111_r/run/g2.nml
+mpirun -np 48 ./mkinidata.x g2.nml
 mpirun  -np 480 ./colm.x g2.nml
 
 

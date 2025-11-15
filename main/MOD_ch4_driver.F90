@@ -111,7 +111,6 @@
 
 		integer :: ps, pe
 		integer j
-		logical, save :: ch4_first_time = .true.
 		real(r8):: &
 				crootfr  (1:nl_soil)     , &! fraction of roots for carbon in each soil layer
 				pH                       , &! soil water pH                                     
@@ -127,7 +126,7 @@
 		cellorg(:) = (cellorg(:) + sum(decomp_cpools_vr(1:10, 1:7, i), dim=2))*1000
 		t_h2osfc = t_grnd
 
-		CALL ch4 (idate(1:3),patchtype,lb,snl,dlon,dlat,deltim,&
+		CALL ch4 (istep,idate(1:3),patchtype,lb,snl,dlon,dlat,deltim,&
 		z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:),&
 		t_grnd,wliq_soisno(maxsnl+1:),wice_soisno(maxsnl+1:),&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&
@@ -138,7 +137,6 @@
 		agnpp(i),bgnpp(i),somhr(i),&
 		crootfr(1:nl_soil),lithr(i),hr_vr(1:nl_soil,i),o_scalar(1:nl_soil,i),fphr(1:nl_soil,i),pot_f_nit_vr(1:nl_soil,i),pH,&
 		cellorg(1:nl_soil),t_h2osfc,organic_max,&
-		ch4_first_time,&
 		!!!! --------------------------------------------------------------------------------------------------------
 		!!!!                                         sum data   
 		!!!! --------------------------------------------------------------------------------------------------------
@@ -182,6 +180,5 @@
 		annavg_agnpp(i), annavg_bgnpp(i), annavg_somhr(i), annavg_finrw(i), &
 		tempavg_agnpp(i), tempavg_bgnpp(i), annsum_counter(i), tempavg_somhr(i), tempavg_finrw(i), fsat_bef(i), finundated_lag(i), ch4_dfsat_tot(i))
 
-		if (ch4_first_time) ch4_first_time = .false.
 	END SUBROUTINE ch4_driver
 #endif

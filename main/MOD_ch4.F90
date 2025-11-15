@@ -45,7 +45,7 @@ module MOD_ch4
 contains
 
 	!-----------------------------------------------------------------------
-	subroutine ch4 (idate,patchtype,&!input
+	subroutine ch4 (istep,idate,patchtype,&!input
 		lb,snl,&
 		dlon,dlat,&
 		deltim,&
@@ -58,7 +58,6 @@ contains
 		agnpp,bgnpp,somhr,&
 		crootfr,lithr,hr_vr,o_scalar,fphr,pot_f_nit_vr,pH,&
 		cellorg,t_h2osfc,organic_max,&
-		ch4_first_time,&
 		!!!! --------------------------------------------------------------------------------------------------------
 		!!!!                                         sum data   
 		!!!! --------------------------------------------------------------------------------------------------------
@@ -98,6 +97,7 @@ contains
 
 		!===================== input ===========================================
 		integer, intent(in) :: &
+			istep            , &
 			idate(3)         , &! current date (year, days of the year, seconds of the day)
 			patchtype        , &! land patch type (0=soil, 1=urban or built-up, 2=wetland, 3=land ice, 4=land water bodies, 99=ocean)
 			
@@ -170,9 +170,6 @@ contains
 			cellorg  (1:nl_soil)   		, &! column 3D org (kg/m^3 organic matter)
 			t_h2osfc               		, &! surface water temperature               
 			organic_max               		! organic matter content (kg m-3) where soil is assumed to act like peat
-
-		logical, intent(inout) ::&
-			ch4_first_time
 
 		!!!! --------------------------------------------------------------------------------------------------------
 		!!!!                                         sum data   
@@ -290,6 +287,7 @@ contains
 
 		!=================== Local Variables ============================================
 		integer  :: i,j,s                     ! indices
+
 		integer  :: sat                     ! 0 = unsatured, 1 = saturated
 		real(r8) :: finundated              ! fractional inundated area
 
@@ -450,7 +448,7 @@ contains
 		call print_var(totcolch4_bef_unsat, 'ch4 totcolch4_bef_unsat',idate)
 
 		finundated = frcsat
-		if (ch4_first_time) then
+		if (istep == 1) then
 			fsat_bef = finundated
 			finundated_lag = finundated
 		endif
@@ -473,7 +471,7 @@ contains
 		do j=1,nl_soil
 			if (j==1) ch4_dfsat_tot = 0._r8
 
-			if (.not. ch4_first_time) then
+			if (istep /= 1) then
 				if (dfsat > 0._r8) then
 					conc_ch4_sat(j) = (fsat_bef*conc_ch4_sat(j) + dfsat*conc_ch4_unsat(j)) / finundated
 				else
@@ -702,7 +700,7 @@ contains
 		call print_var(totcolch4_unsat,'ch4 totcolch4_unsat',idate)
 
 		! Column level balance
-		if (.not. ch4_first_time) then
+		if (istep /= 1) then
 			! Check balance
 			errch4_sat = totcolch4_sat  - totcolch4_bef_sat  - deltim*(ch4_prod_tot_sat  - ch4_oxid_tot_sat  - ch4_surf_flux_tot_sat ) 
 			errch4_unsat = totcolch4_unsat  - totcolch4_bef_unsat - deltim*(ch4_prod_tot_unsat - ch4_oxid_tot_unsat - ch4_surf_flux_tot_unsat) 
@@ -1480,7 +1478,6 @@ contains
 			idate(3)         , &! current date (year, days of the year, seconds of the day)
 			patchtype        	! land patch type (0=soil, 1=urban or built-up, 2=wetland,
 										! 3=land ice, 4=land water bodies, 99=ocean
-			! istep             , &! the i time step
 
 
 		integer , intent(in) :: &
