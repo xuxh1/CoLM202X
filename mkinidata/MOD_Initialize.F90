@@ -1343,7 +1343,7 @@ ENDIF
 !!!! --------------------------------------------------------------------------------------------------------
                net_methane_unsat     (i), net_methane_sat     (i), &
                ch4_prod_depth_unsat (:,i), ch4_prod_depth_sat (:,i), &
-               o2_prod_decomp_depth_unsat(:,i), o2_prod_decomp_depth_sat(:,i), &
+               o2_decomp_depth_unsat(:,i), o2_decomp_depth_sat(:,i), &
                ch4_oxid_depth_unsat (:,i), ch4_oxid_depth_sat (:,i), &
                o2_oxid_depth_unsat  (:,i), o2_oxid_depth_sat  (:,i), &
                ch4_aere_depth_unsat (:,i), ch4_aere_depth_sat (:,i), &
@@ -1361,7 +1361,7 @@ ENDIF
                ch4_oxid_tot_unsat     (i), ch4_oxid_tot_sat     (i), &
                totcolch4_unsat        (i), totcolch4_sat        (i), &
                grnd_ch4_cond_unsat    (i), grnd_ch4_cond_sat    (i), &
-               conc_o2_ch4_unsat        (:,i), conc_o2_sat        (:,i), &
+               conc_o2_unsat        (:,i), conc_o2_sat        (:,i), &
                conc_ch4_unsat       (:,i), conc_ch4_sat       (:,i), &
 !!!! --------------------------------------------------------------------------------------------------------
                c_atm                (:,i), forc_pch4m             (i), &

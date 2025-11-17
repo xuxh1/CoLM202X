@@ -1031,13 +1031,13 @@ ENDIF
 
 
          ! O2 consumption during decomposition in each soil layer (unsaturated)
-         CALL write_history_variable_3d ( DEF_hist_vars%o2_prod_decomp_depth_unsat, &
-            a_o2_prod_decomp_depth_unsat, file_hist, 'f_o2_prod_decomp_depth_unsat', itime_in_file, 'soil', 1, nl_soil, &
+         CALL write_history_variable_3d ( DEF_hist_vars%o2_decomp_depth_unsat, &
+            a_o2_decomp_depth_unsat, file_hist, 'f_o2_decomp_depth_unsat', itime_in_file, 'soil', 1, nl_soil, &
             sumarea, filter, 'O2 consumption during decomposition in each soil layer (unsaturated)','mol/m3/s')
 
          ! O2 consumption during decomposition in each soil layer (saturated)
-         CALL write_history_variable_3d ( DEF_hist_vars%o2_prod_decomp_depth_sat, &
-            a_o2_prod_decomp_depth_sat, file_hist, 'f_o2_prod_decomp_depth_sat', itime_in_file, 'soil', 1, nl_soil, &
+         CALL write_history_variable_3d ( DEF_hist_vars%o2_decomp_depth_sat, &
+            a_o2_decomp_depth_sat, file_hist, 'f_o2_decomp_depth_sat', itime_in_file, 'soil', 1, nl_soil, &
             sumarea, filter, 'O2 consumption during decomposition in each soil layer (saturated)','mol/m3/s')
 
 
@@ -1218,8 +1218,8 @@ ENDIF
 
 
          ! O2 conc in each soil layer (unsaturated)
-         CALL write_history_variable_3d ( DEF_hist_vars%conc_o2_ch4_unsat, &
-            a_conc_o2_ch4_unsat, file_hist, 'f_conc_o2_ch4_unsat', itime_in_file, 'soil', 1, nl_soil, &
+         CALL write_history_variable_3d ( DEF_hist_vars%conc_o2_unsat, &
+            a_conc_o2_unsat, file_hist, 'f_conc_o2_unsat', itime_in_file, 'soil', 1, nl_soil, &
             sumarea, filter, 'O2 conc in each soil layer (unsaturated)','mol/m3')
 
          ! O2 conc in each soil layer (saturated)
@@ -2118,18 +2118,18 @@ ENDIF
             a_OM_density, file_hist, 'f_OM_density', itime_in_file, 'soil', 1, nl_soil, &
             sumarea, filter,'organic matter density in soil layers','kg/m3')
 
-         IF (DEF_USE_NITRIF) THEN
-            ! O2 soil Concentration for non-inundated area
-            CALL write_history_variable_3d ( DEF_hist_vars%CONC_O2_UNSAT, &
-               a_conc_o2_unsat, file_hist, 'f_CONC_O2_UNSAT', itime_in_file, 'soil', 1, nl_soil, &
-               sumarea, filter,'O2 soil Concentration for non-inundated area','mol/m3')
+         ! IF (DEF_USE_NITRIF) THEN
+         !    ! O2 soil Concentration for non-inundated area
+         !    CALL write_history_variable_3d ( DEF_hist_vars%CONC_O2_UNSAT, &
+         !       a_conc_o2_unsat, file_hist, 'f_CONC_O2_UNSAT', itime_in_file, 'soil', 1, nl_soil, &
+         !       sumarea, filter,'O2 soil Concentration for non-inundated area','mol/m3')
 
-            ! O2 consumption from HR and AR for non-inundated area
-            CALL write_history_variable_3d ( DEF_hist_vars%O2_DECOMP_DEPTH_UNSAT, &
-               a_o2_decomp_depth_unsat, file_hist, 'f_O2_DECOMP_DEPTH_UNSAT', &
-               itime_in_file, 'soil', 1, nl_soil, &
-               sumarea, filter,'O2 consumption from HR and AR for non-inundated area','mol/m3/s')
-         ENDIF
+         !    ! O2 consumption from HR and AR for non-inundated area
+         !    CALL write_history_variable_3d ( DEF_hist_vars%O2_DECOMP_DEPTH_UNSAT, &
+         !       a_o2_decomp_depth_unsat, file_hist, 'f_O2_DECOMP_DEPTH_UNSAT', &
+         !       itime_in_file, 'soil', 1, nl_soil, &
+         !       sumarea, filter,'O2 consumption from HR and AR for non-inundated area','mol/m3/s')
+         ! ENDIF
 
          IF (DEF_USE_FIRE) THEN
             CALL write_history_variable_2d ( DEF_hist_vars%abm, &

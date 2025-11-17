@@ -73,7 +73,7 @@ contains
 		!!!!                                         sum data (unsaturated / saturated)
 		!!!! --------------------------------------------------------------------------------------------------------
 		net_methane_unsat, net_methane_sat, &
-		ch4_prod_depth_unsat, ch4_prod_depth_sat, o2_prod_decomp_depth_unsat, o2_prod_decomp_depth_sat, &
+		ch4_prod_depth_unsat, ch4_prod_depth_sat, o2_decomp_depth_unsat, o2_decomp_depth_sat, &
 		ch4_oxid_depth_unsat, ch4_oxid_depth_sat, o2_oxid_depth_unsat, o2_oxid_depth_sat, &
 		ch4_aere_depth_unsat, ch4_aere_depth_sat, ch4_tran_depth_unsat, ch4_tran_depth_sat, &
 		o2_aere_depth_unsat, o2_aere_depth_sat, ch4_ebul_depth_unsat, ch4_ebul_depth_sat, &
@@ -83,7 +83,7 @@ contains
 		ch4_ebul_tot_unsat, ch4_ebul_tot_sat, ch4_prod_tot_unsat, ch4_prod_tot_sat, &
 		ch4_oxid_tot_unsat, ch4_oxid_tot_sat, &
 		totcolch4_unsat, totcolch4_sat, grnd_ch4_cond_unsat, grnd_ch4_cond_sat, &
-		conc_o2_ch4_unsat, conc_o2_sat, conc_ch4_unsat, conc_ch4_sat, &
+		conc_o2_unsat, conc_o2_sat, conc_ch4_unsat, conc_ch4_sat, &
 		!!!! --------------------------------------------------------------------------------------------------------
 		c_atm, forc_pch4m, layer_sat_lag, lake_soilc, &
 		annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
@@ -212,8 +212,8 @@ contains
 			net_methane_sat                 , & ! average saturated net methane correction to CO2 flux (mol/m2/s)
 			ch4_prod_depth_unsat (1:nl_soil), & ! CH4 production rate in unsaturated soil layer (mol/m3/s)
 			ch4_prod_depth_sat   (1:nl_soil), & ! CH4 production rate in saturated soil layer (mol/m3/s)
-			o2_prod_decomp_depth_unsat(1:nl_soil), & ! O2 consumption during decomposition (unsaturated) (mol/m3/s)
-			o2_prod_decomp_depth_sat  (1:nl_soil), & ! O2 consumption during decomposition (saturated) (mol/m3/s)
+			o2_decomp_depth_unsat(1:nl_soil), & ! O2 consumption during decomposition (unsaturated) (mol/m3/s)
+			o2_decomp_depth_sat  (1:nl_soil), & ! O2 consumption during decomposition (saturated) (mol/m3/s)
 			ch4_oxid_depth_unsat (1:nl_soil), & ! CH4 oxidation rate in unsaturated soil layer (mol/m3/s)
 			ch4_oxid_depth_sat   (1:nl_soil), & ! CH4 oxidation rate in saturated soil layer (mol/m3/s)
 			o2_oxid_depth_unsat  (1:nl_soil), & ! O2 oxidation rate in unsaturated soil layer (mol/m3/s)
@@ -251,7 +251,7 @@ contains
 			totcolch4_sat           , & ! total methane in soil column (saturated) (mol/m2)
 			grnd_ch4_cond_unsat     , & ! tracer conductance for boundary layer (unsaturated) [m/s]
 			grnd_ch4_cond_sat       , & ! tracer conductance for boundary layer (saturated) [m/s]
-			conc_o2_ch4_unsat (1:nl_soil), & ! O2 conc in unsaturated soil layer (mol/m3)
+			conc_o2_unsat (1:nl_soil), & ! O2 conc in unsaturated soil layer (mol/m3)
 			conc_o2_sat   (1:nl_soil), & ! O2 conc in saturated soil layer (mol/m3)
 			conc_ch4_unsat(1:nl_soil), & ! CH4 conc in unsaturated soil layer (mol/m3)
 			conc_ch4_sat  (1:nl_soil)   ! CH4 conc in saturated soil layer (mol/m3)
@@ -530,7 +530,7 @@ contains
 				end do
 
 				call split_ch4_o2_phases( dz_soisno, wliq_soisno_unsat, porsl, &
-					conc_ch4_unsat, conc_o2_ch4_unsat, k_h_cc, idate, &
+					conc_ch4_unsat, conc_o2_unsat, k_h_cc, idate, &
 					vol_aqu_unsat, vol_gas_unsat, f_aqu_unsat, f_gas_unsat, &
 					conc_ch4_gas_unsat, conc_ch4_aqu_unsat, conc_ch4_porsl_unsat, conc_ch4_gas_porsl_unsat, conc_ch4_aqu_porsl_unsat, &
 					conc_o2_gas_unsat, conc_o2_aqu_unsat, conc_o2_porsl_unsat, conc_o2_gas_porsl_unsat, conc_o2_aqu_porsl_unsat )
@@ -538,9 +538,9 @@ contains
 				! Calculate CH4 production in each soil layer
 				call ch4_prod ( idate, patchtype, sat, jwt_unsat, finundated, finundated_lag, rr, deltim, &
 					z_soisno, dz_soisno, zi_soisno, t_soisno, &
-					lai, conc_o2_ch4_unsat, rootfr, annavg_finrw, &
+					lai, conc_o2_unsat, rootfr, annavg_finrw, &
 					crootfr, somhr, lithr, hr_vr, o_scalar, fphr, pot_f_nit_vr, pH, layer_sat_lag, &
-					ch4_prod_depth_unsat, o2_prod_decomp_depth_unsat )
+					ch4_prod_depth_unsat, o2_decomp_depth_unsat )
 
 				! Calculate CH4 oxidation in each soil layer
 				call ch4_oxid ( idate, jwt_unsat, sat, t_soisno, smp, vol_aqu_unsat, &
@@ -569,7 +569,7 @@ contains
 					cellorg, t_h2osfc, organic_max, k_h_cc, conc_ch4_gas_porsl_unsat, conc_ch4_aqu_porsl_unsat, conc_o2_gas_porsl_unsat, conc_o2_aqu_porsl_unsat, vol_aqu_unsat, vol_gas_unsat, &
 					o2stress_unsat, ch4stress_unsat, ch4_surf_aere_unsat, ch4_surf_ebul_unsat, ch4_surf_diff_unsat, ch4_ebul_tot_unsat, &
 					ch4_oxid_depth_unsat, ch4_aere_depth_unsat, ch4_ebul_depth_unsat, &
-					grnd_ch4_cond_unsat, o2_oxid_depth_unsat, o2_prod_decomp_depth_unsat, conc_o2_ch4_unsat, conc_ch4_unsat )
+					grnd_ch4_cond_unsat, o2_oxid_depth_unsat, o2_decomp_depth_unsat, conc_o2_unsat, conc_ch4_unsat )
 
 			elseif (sat==1) then ! saturated
 				zwt_sat=0
@@ -606,7 +606,7 @@ contains
 					z_soisno, dz_soisno, zi_soisno, t_soisno, &
 					lai, conc_o2_sat, rootfr, annavg_finrw, &
 					crootfr, somhr, lithr, hr_vr, o_scalar, fphr, pot_f_nit_vr, pH, layer_sat_lag, &
-					ch4_prod_depth_sat, o2_prod_decomp_depth_sat )
+					ch4_prod_depth_sat, o2_decomp_depth_sat )
 
 				! Calculate CH4 oxidation in each soil layer
 				call ch4_oxid ( idate, jwt_sat, sat, t_soisno, smp, vol_aqu_sat, &
@@ -635,7 +635,7 @@ contains
 					cellorg, t_h2osfc, organic_max, k_h_cc, conc_ch4_gas_porsl_sat, conc_ch4_aqu_porsl_sat, conc_o2_gas_porsl_sat, conc_o2_aqu_porsl_sat, vol_aqu_sat, vol_gas_sat, &
 					o2stress_sat, ch4stress_sat, ch4_surf_aere_sat, ch4_surf_ebul_sat, ch4_surf_diff_sat, ch4_ebul_tot_sat, &
 					ch4_oxid_depth_sat, ch4_aere_depth_sat, ch4_ebul_depth_sat, &
-					grnd_ch4_cond_sat, o2_oxid_depth_sat, o2_prod_decomp_depth_sat, conc_o2_sat, conc_ch4_sat )
+					grnd_ch4_cond_sat, o2_oxid_depth_sat, o2_decomp_depth_sat, conc_o2_sat, conc_ch4_sat )
 
 			endif
 

@@ -31,7 +31,7 @@ MODULE MOD_BGC_Soil_BiogeochemNitrifDenitrif
  
    USE MOD_BGC_Vars_TimeVariables, only: &
        ! decomposition carbon & nitrogen pools
-       to2_decomp_depth_unsat, tconc_o2_unsat, smin_nh4_vr, smin_no3_vr
+       o2_decomp_depth_unsat, conc_o2_unsat, smin_nh4_vr, smin_no3_vr
  
  
        ! other variables
@@ -105,10 +105,10 @@ CONTAINS
          vol_ice = min(porsl(j,i), wice_soisno(j,i)/(dz_soi(j)*denice))
          eff_porosity =  max(0.01, porsl(j,i)-vol_ice)
          vol_liq = min(eff_porosity, wliq_soisno(j,i)/(dz_soi(j)*denh2o))
-         IF (to2_decomp_depth_unsat(j,i) > 0._r8) THEN
+         IF (o2_decomp_depth_unsat(j,i) > 0._r8) THEN
             anaerobic_frac = exp(-rij_kro_a * r_psi(j)**(-rij_kro_alpha) * &
-                 to2_decomp_depth_unsat(j,i)**(-rij_kro_beta) * &
-                 tconc_o2_unsat(j,i)**rij_kro_gamma * (vol_liq + ratio_diffusivity_water_gas(j) * &
+                 o2_decomp_depth_unsat(j,i)**(-rij_kro_beta) * &
+                 conc_o2_unsat(j,i)**rij_kro_gamma * (vol_liq + ratio_diffusivity_water_gas(j) * &
                  porsl(j,i))**rij_kro_delta)
          ELSE
             anaerobic_frac = 0._r8

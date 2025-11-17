@@ -28,8 +28,8 @@
    DEF_hist_vars%net_methane_sat                  = .true.
    DEF_hist_vars%ch4_prod_depth_unsat             = .true.
    DEF_hist_vars%ch4_prod_depth_sat               = .true.
-   DEF_hist_vars%o2_prod_decomp_depth_unsat       = .true.
-   DEF_hist_vars%o2_prod_decomp_depth_sat         = .true.
+   DEF_hist_vars%o2_decomp_depth_unsat            = .true.
+   DEF_hist_vars%o2_decomp_depth_sat              = .true.
    DEF_hist_vars%ch4_oxid_depth_unsat             = .true.
    DEF_hist_vars%ch4_oxid_depth_sat               = .true.
    DEF_hist_vars%o2_oxid_depth_unsat              = .true.
@@ -64,7 +64,7 @@
    DEF_hist_vars%totcolch4_sat                    = .true.
    DEF_hist_vars%grnd_ch4_cond_unsat              = .true.
    DEF_hist_vars%grnd_ch4_cond_sat                = .true.
-   DEF_hist_vars%conc_o2_ch4_unsat                = .true.
+   DEF_hist_vars%conc_o2_unsat                    = .true.
    DEF_hist_vars%conc_o2_sat                      = .true.
    DEF_hist_vars%conc_ch4_unsat                   = .true.
    DEF_hist_vars%conc_ch4_sat                     = .true.

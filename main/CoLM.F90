@@ -71,7 +71,7 @@ PROGRAM CoLM
    USE MOD_LAIReadin
 
 #ifdef BGC
-   USE MOD_NitrifData
+   ! USE MOD_NitrifData
    USE MOD_NdepData
    USE MOD_FireData
    USE MOD_LightningData
@@ -349,9 +349,9 @@ PROGRAM CoLM
       ENDIF
 
 #ifdef BGC
-      IF (DEF_USE_NITRIF) THEN
-         CALL init_nitrif_data (ststamp)
-      ENDIF
+      ! IF (DEF_USE_NITRIF) THEN
+      !    CALL init_nitrif_data (ststamp)
+      ! ENDIF
 
       IF (DEF_NDEP_FREQUENCY==1)THEN ! Initial annual ndep data readin
          CALL init_ndep_data_annually (sdate(1))
@@ -416,9 +416,9 @@ PROGRAM CoLM
          IF(DEF_USE_NITRIF) THEN
             time_prev = itstamp + int(-deltim)
             CALL julian2monthday(time_prev%year,time_prev%day,month_prev,mday_prev)
-            if(month_p /= month_prev)then
-               CALL update_nitrif_data (month_p)
-            end if
+            ! if(month_p /= month_prev)then
+            !    CALL update_nitrif_data (month_p)
+            ! end if
          ENDIF
          IF(DEF_USE_FIRE)THEN
             CALL update_lightning_data (itstamp, deltim)

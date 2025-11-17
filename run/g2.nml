@@ -9,7 +9,7 @@
 
    DEF_nx_blocks = 18
    DEF_ny_blocks = 9
-   DEF_PIO_groupsize = 24
+   DEF_PIO_groupsize = 15
 
    DEF_simulation_time%greenwich    = .TRUE.
    DEF_simulation_time%start_year   = 1995
@@ -34,8 +34,8 @@
 
    ! ----- land units and land sets -----
    ! for GRIDBASED
-   DEF_GRIDBASED_lon_res = 1  
-   DEF_GRIDBASED_lat_res = 1
+   DEF_GRIDBASED_lon_res = 2  
+   DEF_GRIDBASED_lat_res = 2
 
    ! soil state init
    DEF_USE_SoilInit  = .true.
@@ -63,10 +63,10 @@
    DEF_forcing_namelist = '/share/home/dq076/mode/ME/251114/run/forcing/CRUJRA.nml'
    
    ! ----- history -----
-   DEF_HIST_lon_res = 1
-   DEF_HIST_lat_res = 1
-   DEF_WRST_FREQ = 'MONTHLY' ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
-   DEF_HIST_FREQ = 'DAILY' ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+   DEF_HIST_lon_res = 2
+   DEF_HIST_lat_res = 2
+   DEF_WRST_FREQ = 'YEARLY' ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+   DEF_HIST_FREQ = 'MONTHLY' ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
    DEF_HIST_groupby = 'YEAR' ! history in one file: DAY/MONTH/YEAR
    DEF_HIST_mode = 'one' ! history in one or block
    DEF_REST_CompressLevel = 1
