@@ -43,6 +43,7 @@
 
    DEF_USE_CN_INIT  = .true.
    DEF_file_cn_init = '/share/home/dq013/zhwei/colm/data/CoLMruntime/cnsteadystate.nc' 
+   DEF_USE_NITRIF = .false.
 
    ! LAI setting
    DEF_LAI_MONTHLY = .true.

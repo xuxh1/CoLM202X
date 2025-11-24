@@ -1,8 +1,8 @@
 #!/bin/bash
 #BSUB -J g1
 #BSUB -q normal
-#BSUB -o /share/home/dq076/mode/ME/251114/run/logs/g1-o.out
-#BSUB -e /share/home/dq076/mode/ME/251114/run/logs/g1-e.out
+#BSUB -o /share/home/dq076/mode/ME/251114/run/logs/g1_3-o.out
+#BSUB -e /share/home/dq076/mode/ME/251114/run/logs/g1_3-e.out
 #BSUB -n 480
 #BSUB -R rusage[mem=150G]
 #BSUB -R span[ptile=48]

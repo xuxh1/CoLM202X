@@ -97,7 +97,7 @@
     
       plant_ndemand(i) = sum( plant_ndemand_p(ps:pe)*pftfrac(ps:pe) )
   
-      CALL SoilBiogeochemCompetition(i,deltim,nl_soil,dz_soi)
+      CALL SoilBiogeochemCompetition(i,deltim,nl_soil,dz_soi,idate,dlat,dlon)
       CALL calc_plant_nutrient_competition_CLM45_default(i,ps,pe,npcropmin,npcropmax)
 #ifdef CROP
       IF(DEF_USE_CNSOYFIXN)THEN

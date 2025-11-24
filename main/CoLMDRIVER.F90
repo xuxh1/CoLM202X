@@ -57,6 +57,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
 
    integer  :: patchtype_reset
   
+   logical :: run_ch4
 ! ======================================================================
 
 #ifdef OPENMP
@@ -209,27 +210,25 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
             !               ***** Call CoLM BGC model *****
             !
             CALL bgc_driver (i,idate(1:3),deltim, patchlatr(i)*180/PI,patchlonr(i)*180/PI)
+
 #if(defined CH4)
+            ! Determine whether this patch should run ch4_driver
+            run_ch4 = .false.
             IF (DEF_METHANE_only_wetland) THEN
-              IF (patchtype(i) .eq. 2) THEN
-                CALL ch4_driver(istep,i,idate(1:3),patchtype(i),deltim,lb,snl,&!input
-                patchlonr(i)*180/PI,patchlatr(i)*180/PI,&
-                z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:,i),&
-                t_grnd(i),wliq_soisno(maxsnl+1:,i),wice_soisno(maxsnl+1:,i),&
-                forc_t(i),forc_pbot(i),forc_po2m(i),forc_pco2m(i),&
-                zwt(i),rootfr(1:,m),snowdp(i),wat(i),rsur(i),etr(i),lakedepth(i),lake_icefrac(1:,i),wdsrf(i),bsw(1:,i),&
-                smp(1:,i),porsl(1:,i),lai(i),rootr(1:,i),fsatmax(i),fsatdcf(i),frcsat(i))
-              ENDIF
+                IF (patchtype(i) == 2) run_ch4 = .true.
             ELSE
-              IF ((patchtype(i) .eq. 2) .or. (patchtype(i) .eq. 0)) THEN
+                IF ((patchtype(i) == 2) .or. (patchtype(i) == 0)) run_ch4 = .true.
+            ENDIF
+            ! Execute CH4 driver if condition is met
+            IF (run_ch4) THEN
                 CALL ch4_driver(istep,i,idate(1:3),patchtype(i),deltim,lb,snl,&!input
                 patchlonr(i)*180/PI,patchlatr(i)*180/PI,&
                 z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:,i),&
                 t_grnd(i),wliq_soisno(maxsnl+1:,i),wice_soisno(maxsnl+1:,i),&
                 forc_t(i),forc_pbot(i),forc_po2m(i),forc_pco2m(i),&
-                zwt(i),rootfr(1:,m),snowdp(i),wat(i),rsur(i),etr(i),lakedepth(i),lake_icefrac(1:,i),wdsrf(i),bsw(1:,i),&
-                smp(1:,i),porsl(1:,i),lai(i),rootr(1:,i),fsatmax(i),fsatdcf(i),frcsat(i))
-              ENDIF
+                zwt(i),rootfr(1:,m),snowdp(i),wat(i),rsur(i),etr(i),lakedepth(i), &
+                lake_icefrac(1:,i),wdsrf(i),bsw(1:,i),smp(1:,i),porsl(1:,i),lai(i), &
+                rootr(1:,i),fsatmax(i),fsatdcf(i),frcsat(i))
             ENDIF
 #endif
          ENDIF

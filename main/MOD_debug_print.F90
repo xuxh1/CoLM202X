@@ -73,13 +73,15 @@ contains
       should_print = .false.
 
       ! Force print if specific variable name
-      if (trim(varname) == "ch4 errch4") then
+      ! if (trim(varname) == "ch4 errch4") then
+      if (index(trim(varname), "SoilBiogeochemCompetition") > 0) then
          should_print = .true.
          return
       endif
 
       ! Only print at specific DOY
-      if (idate(2) /= 92) return
+      ! if (idate(2) /= 92) return
+      return
 
       ! Restrict by layer index
       if (present(j)) then
