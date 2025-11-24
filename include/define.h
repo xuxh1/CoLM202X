@@ -68,7 +68,7 @@
 #endif
 
 ! 7.2 If defined, CH4 model is used
-#define CH4
+#undef CH4
 !    Conflicts : only used when BGC is defined
 #ifndef BGC
 #undef CH4

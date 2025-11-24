@@ -25,7 +25,7 @@ MODULE MOD_BGC_Soil_BiogeochemCompetition
    USE MOD_BGC_Vars_TimeInvariants,only: &
        bdnr, compet_plant_no3, compet_plant_nh4, compet_decomp_no3, compet_decomp_nh4, compet_denit, compet_nit, &
        nitrif_n2o_loss_frac
-	use MOD_debug_print, only: print_var
+	! use MOD_debug_print, only: print_var
    IMPLICIT NONE
 
    PUBLIC SoilBiogeochemCompetition
@@ -378,7 +378,7 @@ CONTAINS
                IF (nlimit_no3(j) .eq. 0) THEN
                   residual_smin_no3_vr(j) = max(smin_no3_vr(j,i) - (actual_immob_no3_vr(j,i) + &
                                              smin_no3_to_plant_vr(j,i) + f_denit_vr(j,i) ) * deltim, 0._r8)
-                  if (residual_smin_no3_vr(j) < 1e-20) residual_smin_no3_vr(j) = 0._r8
+                  ! if (residual_smin_no3_vr(j) < 1e-20) residual_smin_no3_vr(j) = 0._r8
                   residual_smin_no3 = residual_smin_no3 + residual_smin_no3_vr(j) * dz_soi(j)
                ELSE
                   residual_smin_no3_vr(j)  = 0._r8

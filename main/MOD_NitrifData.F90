@@ -1,6 +1,7 @@
 #include <define.h>
 
 #ifdef BGC
+#ifndef CH4
 MODULE MOD_NitrifData
 !-----------------------------------------------------------------------
 ! !DESCRIPTION:
@@ -12,7 +13,7 @@ MODULE MOD_NitrifData
 
    USE MOD_Grid
    USE MOD_SpatialMapping
-   USE MOD_BGC_Vars_TimeVariables, only: tCONC_O2_UNSAT, tO2_DECOMP_DEPTH_UNSAT
+   USE MOD_BGC_Vars_TimeVariables, only: CONC_O2_UNSAT, O2_DECOMP_DEPTH_UNSAT
    IMPLICIT NONE
 
    type(grid_type) :: grid_nitrif
@@ -78,14 +79,14 @@ CONTAINS
    ! Local Variables
    character(len=256) :: file_nitrif
    type(block_data_real8_2d) :: f_xy_nitrif
-   real(r8), allocatable :: tCONC_O2_UNSAT_tmp(:)
-   real(r8), allocatable :: tO2_DECOMP_DEPTH_UNSAT_tmp(:)
+   real(r8), allocatable :: CONC_O2_UNSAT_tmp(:)
+   real(r8), allocatable :: O2_DECOMP_DEPTH_UNSAT_tmp(:)
    character(len=2) :: cx
    integer :: nsl, npatch, m
 
       IF (p_is_worker) THEN
-         allocate(tCONC_O2_UNSAT_tmp        (numpatch))
-         allocate(tO2_DECOMP_DEPTH_UNSAT_tmp(numpatch))
+         allocate(CONC_O2_UNSAT_tmp        (numpatch))
+         allocate(O2_DECOMP_DEPTH_UNSAT_tmp(numpatch))
       ENDIF
 
       IF (p_is_io) THEN
@@ -102,19 +103,19 @@ CONTAINS
                'CONC_O2_UNSAT', grid_nitrif, month, f_xy_nitrif)
          ENDIF
 
-         CALL mg2p_nitrif%grid2pset (f_xy_nitrif, tCONC_O2_UNSAT_tmp)
+         CALL mg2p_nitrif%grid2pset (f_xy_nitrif, CONC_O2_UNSAT_tmp)
 
          IF (p_is_worker) THEN
             IF (numpatch > 0) THEN
                DO npatch = 1, numpatch
                   m = patchclass(npatch)
                   IF( m == 0 )THEN
-                     tCONC_O2_UNSAT(nsl,npatch)  = 0.
+                     CONC_O2_UNSAT(nsl,npatch)  = 0.
                   ELSE
-                     tCONC_O2_UNSAT(nsl,npatch)  = tCONC_O2_UNSAT_tmp(npatch)
+                     CONC_O2_UNSAT(nsl,npatch)  = CONC_O2_UNSAT_tmp(npatch)
                   ENDIF
-                  IF (tCONC_O2_UNSAT(nsl,npatch) < 1E-10) THEN
-                     tCONC_O2_UNSAT(nsl,npatch)=0.0
+                  IF (CONC_O2_UNSAT(nsl,npatch) < 1E-10) THEN
+                     CONC_O2_UNSAT(nsl,npatch)=0.0
                   ENDIF
                ENDDO
 
@@ -123,7 +124,7 @@ CONTAINS
       ENDDO
 
 #ifdef RangeCheck
-      CALL check_vector_data ('CONC_O2_UNSAT', tCONC_O2_UNSAT)
+      CALL check_vector_data ('CONC_O2_UNSAT', CONC_O2_UNSAT)
 #endif
 
       DO nsl = 1, nl_soil
@@ -136,19 +137,19 @@ CONTAINS
                'O2_DECOMP_DEPTH_UNSAT', grid_nitrif, month, f_xy_nitrif)
          ENDIF
 
-         CALL mg2p_nitrif%grid2pset (f_xy_nitrif, tO2_DECOMP_DEPTH_UNSAT_tmp)
+         CALL mg2p_nitrif%grid2pset (f_xy_nitrif, O2_DECOMP_DEPTH_UNSAT_tmp)
 
          IF (p_is_worker) THEN
             IF (numpatch > 0) THEN
                DO npatch = 1, numpatch
                   m = patchclass(npatch)
                   IF( m == 0 )THEN
-                     tO2_DECOMP_DEPTH_UNSAT(nsl,npatch)  = 0.
+                     O2_DECOMP_DEPTH_UNSAT(nsl,npatch)  = 0.
                   ELSE
-                     tO2_DECOMP_DEPTH_UNSAT(nsl,npatch)  = tO2_DECOMP_DEPTH_UNSAT_tmp(npatch)
+                     O2_DECOMP_DEPTH_UNSAT(nsl,npatch)  = O2_DECOMP_DEPTH_UNSAT_tmp(npatch)
                   ENDIF
-                  IF (tO2_DECOMP_DEPTH_UNSAT(nsl,npatch) < 1E-10) THEN
-                     tO2_DECOMP_DEPTH_UNSAT(nsl,npatch)=0.0
+                  IF (O2_DECOMP_DEPTH_UNSAT(nsl,npatch) < 1E-10) THEN
+                     O2_DECOMP_DEPTH_UNSAT(nsl,npatch)=0.0
                   ENDIF
                ENDDO
 
@@ -157,15 +158,16 @@ CONTAINS
       ENDDO
 
 #ifdef RangeCheck
-      CALL check_vector_data ('O2_DECOMP_DEPTH_UNSAT', tO2_DECOMP_DEPTH_UNSAT)
+      CALL check_vector_data ('O2_DECOMP_DEPTH_UNSAT', O2_DECOMP_DEPTH_UNSAT)
 #endif
 
       IF (p_is_worker) THEN
-         deallocate (tCONC_O2_UNSAT_tmp)
-         deallocate (tO2_DECOMP_DEPTH_UNSAT_tmp)
+         deallocate (CONC_O2_UNSAT_tmp)
+         deallocate (O2_DECOMP_DEPTH_UNSAT_tmp)
       ENDIF
 
    END SUBROUTINE update_nitrif_data
 
 END MODULE MOD_NitrifData
+#endif
 #endif

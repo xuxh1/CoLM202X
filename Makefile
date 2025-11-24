@@ -132,6 +132,7 @@ OBJS_BASIC =    \
 				 MOD_LAIEmpirical.o             \
 				 MOD_LAIReadin.o                \
 				 MOD_CropReadin.o               \
+				 MOD_NitrifData.o               \
 				 MOD_NdepData.o                 \
 				 MOD_FireData.o                 \
 				 MOD_OrbCoszen.o                \

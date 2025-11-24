@@ -1392,7 +1392,7 @@ ENDIF
              'soil surface resistance','s/m')
 
 #ifdef BGC
-
+#ifdef CH4
          CALL write_history_variable_2d ( DEF_hist_vars%annsum_npp, &
              a_annsum_npp, file_hist, 'f_annsum_npp', itime_in_file, sumarea, filter, &
              'annual sum NPP','gC/m2/yr')
@@ -1416,7 +1416,7 @@ ENDIF
          CALL write_history_variable_2d ( DEF_hist_vars%lithr, &
              a_lithr, file_hist, 'f_lithr', itime_in_file, sumarea, filter, &
              'litter heterotrophic respiration','gC/m2/s')
-             
+#endif
          ! leaf carbon display pool
          CALL write_history_variable_2d ( DEF_hist_vars%leafc, &
              a_leafc, file_hist, 'f_leafc', itime_in_file, sumarea, filter, &
@@ -2117,20 +2117,20 @@ ENDIF
          CALL write_history_variable_3d ( DEF_hist_vars%OM_density, &
             a_OM_density, file_hist, 'f_OM_density', itime_in_file, 'soil', 1, nl_soil, &
             sumarea, filter,'organic matter density in soil layers','kg/m3')
+#ifndef CH4
+         IF (DEF_USE_NITRIF) THEN
+            ! O2 soil Concentration for non-inundated area
+            CALL write_history_variable_3d ( DEF_hist_vars%CONC_O2_UNSAT, &
+               a_conc_o2_unsat, file_hist, 'f_CONC_O2_UNSAT', itime_in_file, 'soil', 1, nl_soil, &
+               sumarea, filter,'O2 soil Concentration for non-inundated area','mol/m3')
 
-         ! IF (DEF_USE_NITRIF) THEN
-         !    ! O2 soil Concentration for non-inundated area
-         !    CALL write_history_variable_3d ( DEF_hist_vars%CONC_O2_UNSAT, &
-         !       a_conc_o2_unsat, file_hist, 'f_CONC_O2_UNSAT', itime_in_file, 'soil', 1, nl_soil, &
-         !       sumarea, filter,'O2 soil Concentration for non-inundated area','mol/m3')
-
-         !    ! O2 consumption from HR and AR for non-inundated area
-         !    CALL write_history_variable_3d ( DEF_hist_vars%O2_DECOMP_DEPTH_UNSAT, &
-         !       a_o2_decomp_depth_unsat, file_hist, 'f_O2_DECOMP_DEPTH_UNSAT', &
-         !       itime_in_file, 'soil', 1, nl_soil, &
-         !       sumarea, filter,'O2 consumption from HR and AR for non-inundated area','mol/m3/s')
-         ! ENDIF
-
+            ! O2 consumption from HR and AR for non-inundated area
+            CALL write_history_variable_3d ( DEF_hist_vars%O2_DECOMP_DEPTH_UNSAT, &
+               a_o2_decomp_depth_unsat, file_hist, 'f_O2_DECOMP_DEPTH_UNSAT', &
+               itime_in_file, 'soil', 1, nl_soil, &
+               sumarea, filter,'O2 consumption from HR and AR for non-inundated area','mol/m3/s')
+         ENDIF
+#endif
          IF (DEF_USE_FIRE) THEN
             CALL write_history_variable_2d ( DEF_hist_vars%abm, &
                  vecacc, file_hist, 'f_abm', itime_in_file, sumarea, filter, &

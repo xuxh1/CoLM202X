@@ -1,6 +1,6 @@
 &nl_colm
 
-   DEF_CASE_NAME = 'g1'
+   DEF_CASE_NAME = 'g1_noCH4'
 
    DEF_domain%edges = -90.0
    DEF_domain%edgen = 90.0
@@ -49,10 +49,10 @@
    DEF_LAI_MONTHLY = .true.
    DEF_LAI_CHANGE_YEARLY = .false.
 
-   DEF_METHANE_only_wetland = .true.
-   DEF_wetland_split_fsat = .true.
-   DEF_USE_METHANE_para = .true.
-   DEF_file_METHANE_para = '/share/home/dq076/mode/ME/251114/run/standard_ch4_parameter.nml'
+   ! DEF_METHANE_only_wetland = .true.
+   ! DEF_wetland_split_fsat = .true.
+   ! DEF_USE_METHANE_para = .true.
+   ! DEF_file_METHANE_para = '/share/home/dq076/mode/ME/251124/run/standard_ch4_parameter.nml'
    
    DEF_USE_VariablySaturatedFlow = .true.
    DEF_Runoff_SCHEME = 0
@@ -61,7 +61,7 @@
    ! Options :
    ! PRINCETON | GSWP3   | QIAN  | CRUNCEPV4 | CRUNCEPV7 | ERA5LAND | ERA5  |  MSWX
    ! WFDE5     | CRUJRA  | WFDEI | JRA55     | GDAS      | CMFD     | POINT |  JRA3Q
-   DEF_forcing_namelist = '/share/home/dq076/mode/ME/251114/run/forcing/CRUJRA.nml'
+   DEF_forcing_namelist = '/share/home/dq076/mode/ME/251124/run/forcing/CRUJRA.nml'
    
    ! ----- history -----
    DEF_HIST_lon_res = 2
@@ -76,6 +76,6 @@
    DEF_HIST_WriteBack = .false.
 
    DEF_hist_vars_out_default = .true.
-   DEF_hist_vars_namelist    = '/share/home/dq076/mode/ME/251114/run/history_ME.nml'
+   ! DEF_hist_vars_namelist    = '/share/home/dq076/mode/ME/251124/run/history_ME.nml'
 
 /

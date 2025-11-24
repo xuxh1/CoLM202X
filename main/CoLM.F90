@@ -105,6 +105,8 @@ PROGRAM CoLM
 
 #ifdef CH4
    USE MOD_Const_ch4, only: read_ch4_namelist
+#else
+   USE MOD_NitrifData, only: init_nitrif_data
 #endif
    IMPLICIT NONE
 
@@ -349,10 +351,11 @@ PROGRAM CoLM
       ENDIF
 
 #ifdef BGC
-      ! IF (DEF_USE_NITRIF) THEN
-      !    CALL init_nitrif_data (ststamp)
-      ! ENDIF
-
+#ifndef CH4
+      IF (DEF_USE_NITRIF) THEN
+         CALL init_nitrif_data (ststamp)
+      ENDIF
+#endif
       IF (DEF_NDEP_FREQUENCY==1)THEN ! Initial annual ndep data readin
          CALL init_ndep_data_annually (sdate(1))
       ELSEIF(DEF_NDEP_FREQUENCY==2)THEN ! Initial monthly ndep data readin

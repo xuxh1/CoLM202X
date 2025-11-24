@@ -1,4 +1,5 @@
 #include "define.h"
+#ifdef CH4
 
 module MOD_ch4
     !=======================================================================
@@ -2370,6 +2371,6 @@ contains
 
 		end do
 	end subroutine split_ch4_o2_phases
-
 END MODULE MOD_ch4
+#endif
 ! --------- EOP ----------

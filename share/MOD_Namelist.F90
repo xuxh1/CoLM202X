@@ -238,10 +238,10 @@ MODULE MOD_Namelist
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #ifdef CH4
    logical :: DEF_METHANE_only_wetland = .true.
-   logical :: DEF_wetland_split_fsat = .false.
    logical :: DEF_USE_METHANE_para = .false.
    character(len=256) :: DEF_file_METHANE_para = 'null'
 #endif
+   logical :: DEF_wetland_split_fsat = .false.
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! ----- Part 12: parameterization schemes -----
@@ -773,8 +773,10 @@ MODULE MOD_Namelist
       logical :: sum_irrig_count                  = .true.
 
       logical :: ndep_to_sminn                    = .true.
-      ! logical :: CONC_O2_UNSAT                    = .false.
-      ! logical :: O2_DECOMP_DEPTH_UNSAT            = .false.
+#ifndef CH4
+      logical :: CONC_O2_UNSAT                    = .false.
+      logical :: O2_DECOMP_DEPTH_UNSAT            = .false.
+#endif
       logical :: abm                              = .false.
       logical :: gdp                              = .false.
       logical :: peatf                            = .false.
@@ -1134,10 +1136,10 @@ CONTAINS
 
 #ifdef CH4
       DEF_METHANE_only_wetland,               & !add by Xionghui Xu @sysu 2025/08/19
-      DEF_wetland_split_fsat,                 & !add by Xionghui Xu @sysu 2025/11/12
       DEF_USE_METHANE_para,                   & !add by Xionghui Xu @sysu 2025/10/21
       DEF_file_METHANE_para,                  & !add by Xionghui Xu @sysu 2025/10/21
 #endif
+      DEF_wetland_split_fsat,                 & !add by Xionghui Xu @sysu 2025/11/12
 
       DEF_USE_Dynamic_Lake,                   & !add by Shupeng Zhang @ sysu 2024/09/12
       DEF_CheckEquilibrium,                   & !add by Shupeng Zhang @ sysu 2024/11/26
@@ -1699,11 +1701,11 @@ CONTAINS
       ! 10/2025, added by Xionghui Xu
       CALL mpi_bcast (DEF_METHANE_only_wetland               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
-      CALL mpi_bcast (DEF_wetland_split_fsat                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
  
       CALL mpi_bcast (DEF_USE_METHANE_para                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_file_METHANE_para                  ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
 #endif 
+      CALL mpi_bcast (DEF_wetland_split_fsat                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_USE_Dynamic_Lake                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_CheckEquilibrium                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
@@ -2258,10 +2260,12 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%ch4_dfsat_tot      , set_defaults)
 #endif
       CALL sync_hist_vars_one (DEF_hist_vars%ndep_to_sminn                   , set_defaults)
-      ! IF(DEF_USE_NITRIF)THEN
-      !    CALL sync_hist_vars_one (DEF_hist_vars%CONC_O2_UNSAT                , set_defaults)
-      !    CALL sync_hist_vars_one (DEF_hist_vars%O2_DECOMP_DEPTH_UNSAT        , set_defaults)
-      ! ENDIF
+#ifndef CH4
+      IF(DEF_USE_NITRIF)THEN
+         CALL sync_hist_vars_one (DEF_hist_vars%CONC_O2_UNSAT                , set_defaults)
+         CALL sync_hist_vars_one (DEF_hist_vars%O2_DECOMP_DEPTH_UNSAT        , set_defaults)
+      ENDIF
+#endif
       IF(DEF_USE_FIRE)THEN
          CALL sync_hist_vars_one (DEF_hist_vars%abm                          , set_defaults)
          CALL sync_hist_vars_one (DEF_hist_vars%gdp                          , set_defaults)

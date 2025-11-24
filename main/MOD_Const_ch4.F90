@@ -1,3 +1,5 @@
+#include <define.h>
+#ifdef CH4
 MODULE MOD_Const_ch4
 !=======================================================================
 ! ch4 constants
@@ -235,4 +237,5 @@ CONTAINS
 
    END SUBROUTINE read_ch4_namelist
 END MODULE MOD_Const_ch4
+#endif
     

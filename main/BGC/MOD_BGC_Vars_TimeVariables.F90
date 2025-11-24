@@ -165,8 +165,10 @@ MODULE MOD_BGC_Vars_TimeVariables
    real(r8), allocatable :: sminn                    (:)      ! soil mineral nitrogen (gN m-2)
    real(r8), allocatable :: ndep                     (:)      ! atmospheric nitrogen deposition (gN m-2)
 
-   ! real(r8), allocatable :: to2_decomp_depth_unsat   (:,:)    ! vertical resolved: O2 soil consumption from heterotrophic respiration and autotrophic respiration (mol m-3 s-1)
-   ! real(r8), allocatable :: tconc_o2_unsat           (:,:)    ! vertical resolved: O2 soil consumption (mol m-3 s-1)
+#ifndef CH4
+   real(r8), allocatable :: o2_decomp_depth_unsat   (:,:)    ! vertical resolved: O2 soil consumption from heterotrophic respiration and autotrophic respiration (mol m-3 s-1)
+   real(r8), allocatable :: conc_o2_unsat           (:,:)    ! vertical resolved: O2 soil consumption (mol m-3 s-1)
+#endif
 
    real(r8), allocatable :: ndep_prof                (:,:)    ! vertical resolved: atmospheric N deposition input to soil (m-1)
    real(r8), allocatable :: nfixation_prof           (:,:)    ! vertical resolved: N fixation input to soil (m-1)
@@ -591,9 +593,10 @@ CONTAINS
             allocate (sminn                        (numpatch))                            ; sminn                 (:) = spval
             allocate (ndep                         (numpatch))                            ; ndep                  (:) = spval
 
-            ! allocate (to2_decomp_depth_unsat       (nl_soil,numpatch))                    ; to2_decomp_depth_unsat (:,:) = spval
-            ! allocate (tconc_o2_unsat               (nl_soil,numpatch))                    ; tconc_o2_unsat         (:,:) = spval
-
+#ifndef CH4
+            allocate (o2_decomp_depth_unsat       (nl_soil,numpatch))                    ; o2_decomp_depth_unsat (:,:) = spval
+            allocate (conc_o2_unsat               (nl_soil,numpatch))                    ; conc_o2_unsat         (:,:) = spval
+#endif
             allocate (ndep_prof                    (nl_soil,numpatch))                    ; ndep_prof           (:,:) = spval
             allocate (nfixation_prof               (nl_soil,numpatch))                    ; nfixation_prof      (:,:) = spval
 
@@ -1005,10 +1008,10 @@ CONTAINS
             deallocate (smin_nh4_vr                  )
             deallocate (sminn                        )
             deallocate (ndep                         )
-
-            ! deallocate (to2_decomp_depth_unsat       )
-            ! deallocate (tconc_o2_unsat               )
-
+#ifndef CH4
+            deallocate (o2_decomp_depth_unsat       )
+            deallocate (conc_o2_unsat               )
+#endif
             deallocate (ndep_prof                    )
             deallocate (nfixation_prof               )
 
@@ -1310,10 +1313,12 @@ CONTAINS
       CALL ncio_write_vector (file_restart, 'smin_nh4_vr          ', 'soil' ,   nl_soil, 'patch', landpatch, smin_nh4_vr )
       CALL ncio_write_vector (file_restart, 'lag_npp              ', 'patch', landpatch, lag_npp              )
 
-      ! IF(DEF_USE_NITRIF)THEN
-      !    CALL ncio_write_vector (file_restart, 'tCONC_O2_UNSAT       ', 'soil'  ,   nl_soil, 'patch', landpatch, tconc_o2_unsat)
-      !    CALL ncio_write_vector (file_restart, 'tO2_DECOMP_DEPTH_UNSAT','soil'  ,   nl_soil, 'patch', landpatch, to2_decomp_depth_unsat)
-      ! ENDIF
+#ifndef CH4
+      IF(DEF_USE_NITRIF)THEN
+         CALL ncio_write_vector (file_restart, 'CONC_O2_UNSAT       ', 'soil'  ,   nl_soil, 'patch', landpatch, conc_o2_unsat)
+         CALL ncio_write_vector (file_restart, 'O2_DECOMP_DEPTH_UNSAT','soil'  ,   nl_soil, 'patch', landpatch, o2_decomp_depth_unsat)
+      ENDIF
+#endif
 
       CALL ncio_write_vector (file_restart, 'prec10               ', 'patch', landpatch, prec10               )
       CALL ncio_write_vector (file_restart, 'prec60               ', 'patch', landpatch, prec60               )
@@ -1571,10 +1576,12 @@ CONTAINS
       CALL ncio_read_vector (file_restart, 'smin_nh4_vr          ',   nl_soil, landpatch, smin_nh4_vr)
       CALL ncio_read_vector (file_restart, 'lag_npp              ', landpatch, lag_npp, defval =1.0  )
 
-      ! IF(DEF_USE_NITRIF)THEN
-      !    CALL ncio_read_vector (file_restart, 'tCONC_O2_UNSAT       ',   nl_soil, landpatch, tconc_o2_unsat         )
-      !    CALL ncio_read_vector (file_restart, 'tO2_DECOMP_DEPTH_UNSAT',  nl_soil, landpatch, to2_decomp_depth_unsat )
-      ! ENDIF
+#ifndef CH4
+      IF(DEF_USE_NITRIF)THEN
+         CALL ncio_read_vector (file_restart, 'CONC_O2_UNSAT       ',   nl_soil, landpatch, conc_o2_unsat         )
+         CALL ncio_read_vector (file_restart, 'O2_DECOMP_DEPTH_UNSAT',  nl_soil, landpatch, o2_decomp_depth_unsat )
+      ENDIF
+#endif
 
       CALL ncio_read_vector (file_restart, 'prec10               ', landpatch, prec10               )
       CALL ncio_read_vector (file_restart, 'prec60               ', landpatch, prec60               )
@@ -1928,10 +1935,12 @@ CONTAINS
       CALL check_vector_data ('smin_no3_vr              ', smin_no3_vr              )
       CALL check_vector_data ('smin_nh4_vr              ', smin_nh4_vr              )
 
-      ! IF(DEF_USE_NITRIF)THEN
-      !    CALL check_vector_data ('tCONC_O2_UNSAT           ', tconc_o2_unsat        )
-      !    CALL check_vector_data ('tO2_DECOMP_DEPTH_UNSAT   ', to2_decomp_depth_unsat)
-      ! ENDIF
+#ifndef CH4
+      IF(DEF_USE_NITRIF)THEN
+         CALL check_vector_data ('CONC_O2_UNSAT           ', conc_o2_unsat        )
+         CALL check_vector_data ('O2_DECOMP_DEPTH_UNSAT   ', o2_decomp_depth_unsat)
+      ENDIF
+#endif
 
       CALL check_vector_data ('sminn                    ', sminn                    )
       CALL check_vector_data ('ndep                     ', ndep                     )

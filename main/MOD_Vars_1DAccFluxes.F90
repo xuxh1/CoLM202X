@@ -234,8 +234,11 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: a_leafc_c3arcgrass   (:) !12
    real(r8), allocatable :: a_leafc_c3grass      (:) !13
    real(r8), allocatable :: a_leafc_c4grass      (:) !14
-   ! real(r8), allocatable :: a_O2_DECOMP_DEPTH_UNSAT (:,:)
-   ! real(r8), allocatable :: a_CONC_O2_UNSAT         (:,:)
+
+#ifndef CH4
+   real(r8), allocatable :: a_O2_DECOMP_DEPTH_UNSAT (:,:)
+   real(r8), allocatable :: a_CONC_O2_UNSAT         (:,:)
+#endif
 
 #ifdef CH4
    ! real(r8), allocatable :: a_fsatmax               (:)
@@ -772,9 +775,10 @@ CONTAINS
             allocate (a_leafc_c3arcgrass   (numpatch)) !12
             allocate (a_leafc_c3grass      (numpatch)) !13
             allocate (a_leafc_c4grass      (numpatch)) !14
-
-            ! allocate (a_O2_DECOMP_DEPTH_UNSAT (1:nl_soil,numpatch))
-            ! allocate (a_CONC_O2_UNSAT         (1:nl_soil,numpatch))
+#ifndef CH4
+            allocate (a_O2_DECOMP_DEPTH_UNSAT (1:nl_soil,numpatch))
+            allocate (a_CONC_O2_UNSAT         (1:nl_soil,numpatch))
+#endif
 #ifdef CH4
             ! allocate (a_fsatmax               (numpatch))
             ! allocate (a_fsatdcf               (numpatch))
@@ -1315,8 +1319,10 @@ CONTAINS
             deallocate (a_leafc_c3grass      ) !13
             deallocate (a_leafc_c4grass      ) !14
 
-            ! deallocate (a_O2_DECOMP_DEPTH_UNSAT )
-            ! deallocate (a_CONC_O2_UNSAT         )
+#ifndef CH4
+            deallocate (a_O2_DECOMP_DEPTH_UNSAT )
+            deallocate (a_CONC_O2_UNSAT         )
+#endif
 #ifdef CH4
             ! deallocate (a_fsatmax               )
             ! deallocate (a_fsatdcf               )
@@ -1858,9 +1864,10 @@ CONTAINS
             a_leafc_c3arcgrass   (:) = spval
             a_leafc_c3grass      (:) = spval
             a_leafc_c4grass      (:) = spval
-
-            ! a_O2_DECOMP_DEPTH_UNSAT (:,:) = spval
-            ! a_CONC_O2_UNSAT         (:,:) = spval
+#ifndef CH4
+            a_O2_DECOMP_DEPTH_UNSAT (:,:) = spval
+            a_CONC_O2_UNSAT         (:,:) = spval
+#endif
 #ifdef CH4
             ! a_fsatmax               (:) = spval
             ! a_fsatdcf               (:) = spval
@@ -2525,10 +2532,12 @@ CONTAINS
             CALL acc1d (leafc_c3arcgrass   , a_leafc_c3arcgrass    )
             CALL acc1d (leafc_c3grass      , a_leafc_c3grass       )
             CALL acc1d (leafc_c4grass      , a_leafc_c4grass       )
-            ! IF(DEF_USE_NITRIF)THEN
-            !    CALL acc2d (to2_decomp_depth_unsat, a_O2_DECOMP_DEPTH_UNSAT)
-            !    CALL acc2d (tconc_o2_unsat        , a_CONC_O2_UNSAT        )
-            ! ENDIF
+#ifndef CH4
+            IF(DEF_USE_NITRIF)THEN
+               CALL acc2d (o2_decomp_depth_unsat, a_O2_DECOMP_DEPTH_UNSAT)
+               CALL acc2d (conc_o2_unsat        , a_CONC_O2_UNSAT        )
+            ENDIF
+#endif
 #ifdef CH4
             ! CALL acc1d (fsatmax            , a_fsatmax             )
             ! CALL acc1d (fsatdcf            , a_fsatdcf             )
