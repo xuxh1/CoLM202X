@@ -52,7 +52,8 @@ def run_colm(run_path, nml_path, log_path, nml_name, updated_env):
                     env=updated_env, 
                     stdout=log, 
                     stderr=subprocess.STDOUT, 
-                    text=True
+                    text=True,
+                    timeout=3600  # 1小时超时
                 )
                 
                 if result.returncode != 0:
@@ -67,6 +68,11 @@ def run_colm(run_path, nml_path, log_path, nml_name, updated_env):
         
         return True
     
+    except subprocess.TimeoutExpired:
+        with open(log_file, 'a', encoding='utf-8') as log:
+            log.write(f"\n=== {nml_name} 超时 ===\n")
+        return False
+    
     except Exception as e:
         with open(log_file, 'a', encoding='utf-8') as log:
             log.write(f"\n=== {nml_name} 异常: {str(e)} ===\n")
@@ -74,7 +80,7 @@ def run_colm(run_path, nml_path, log_path, nml_name, updated_env):
 
 def main(sample_idx, forcing, mode):
     """主函数：处理指定sample的所有站点"""
-    sample = 'standard'
+    sample = f'sample{sample_idx+1}'
     
     print(f"=" * 60)
     print(f"Worker启动: {sample}")
@@ -110,75 +116,43 @@ def main(sample_idx, forcing, mode):
     print(f"使用 {max_workers} 个并行进程")
     print("=" * 60)
     
+    success_count = 0
+    fail_count = 0
+    
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        # 提交所有任务
         future_to_nml = {
             executor.submit(run_colm, run_path, nml_path, log_path, nml_name, updated_env): nml_name
             for nml_name in nml_names
         }
         
+        # 监控完成情况
         for future in as_completed(future_to_nml):
             nml_name = future_to_nml[future]
             try:
-                future.result()
-                print(f"✓ {nml_name}: 已完成执行阶段")
-            except Exception as exc:
-                print(f"✗ {nml_name}: 执行阶段异常 - {exc}")
-    
-    # ----------------------------------------------------------
-    # 运行结束后：统一扫描所有 log 判断最终成功或失败
-    # ----------------------------------------------------------
-    print("=" * 60)
-    print("开始扫描所有日志以确认最终成功/失败...")
-
-    success_list = []
-    fail_list = []
-
-    required_markers = [
-        "Successful in surface data making.",
-        "CoLM Initialization Execution Completed",
-        "CoLM Execution Completed."
-    ]
-
-    for nml_name in nml_names:
-        log_file = f"{log_path}{nml_name}.txt"
-
-        if not os.path.exists(log_file):
-            fail_list.append(nml_name)
-            continue
-        
-        try:
-            with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
-
-                # 三个关键词全部存在才算成功
-                if all(marker in content for marker in required_markers):
-                    success_list.append(nml_name)
+                success = future.result()
+                if success:
+                    success_count += 1
+                    status = "✓"
                 else:
-                    fail_list.append(nml_name)
-
-        except:
-            fail_list.append(nml_name)
-
-    # ----------------------------------------------------------
-    # 打印总结
-    # ----------------------------------------------------------
-    print("=" * 60)
-    print(f"{sample} 运行总结（基于日志检查）")
-    print(f"成功: {len(success_list)} / {len(nml_names)}")
-    print(f"失败: {len(fail_list)} / {len(nml_names)}\n")
+                    fail_count += 1
+                    status = "✗"
+                
+                print(f"{status} {nml_name}: 完成 ({success_count + fail_count}/{len(nml_names)})")
+                
+            except Exception as exc:
+                fail_count += 1
+                print(f"✗ {nml_name}: 异常 - {exc}")
     
-    if fail_list:
-        print("失败站点：")
-        for name in fail_list:
-            print("  -", name)
-    else:
-        print("所有站点均完成！")
-
+    # 汇总结果
     print("=" * 60)
-
-    # 返回退出码
-    return 0 if len(fail_list) == 0 else 1
-
+    print(f"{sample} 处理完成")
+    print(f"成功: {success_count}/{len(nml_names)}")
+    print(f"失败: {fail_count}/{len(nml_names)}")
+    print("=" * 60)
+    
+    # 返回适当的退出码
+    return 0 if fail_count == 0 else 1
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:

@@ -11,12 +11,11 @@ from pathlib import Path
 
 def submit_sample_job(sample_idx, forcing='FLUXNET-CH4', mode='no_spin_up'):
     """提交单个sample的LSF任务"""
-    # sample = f'sample{sample_idx+1}'
-    sample = 'standard'
+    sample = f'sample{sample_idx+1}'
     
     # LSF任务脚本路径
     run_path = '/share/home/dq076/mode/ME/251030_r/run/'
-    worker_script = f'/share/home/dq076/mode/ME/251030_r/scripts/worker_sample.py'
+    worker_script = f'/share/home/dq076/mode/ME/251030_r/run/scripts/worker_sample.py'
     # worker_script = f'/share/home/dq076/mode/ME/251030_r/run/scripts/test.py'
     log_dir = f'{run_path}site/{forcing}/{mode}/{sample}/bsub_logs/'
     os.makedirs(log_dir, exist_ok=True)
@@ -80,10 +79,9 @@ def check_job_status(job_ids):
 def main():
     forcing = 'FLUXNET-CH4'
     mode = 'no_spin_up'
-    # num_samples = 120
+    num_samples = 120
     # num_samples = 5
-    num_samples = 1
-
+    
     print(f"=" * 60)
     print(f"开始提交 {num_samples} 个sample任务到LSF队列")
     print(f"每个任务使用1个节点48核")
