@@ -851,26 +851,34 @@ ENDIF
          ! Mapping the fluxes and state variables at patch [numpatch] to grid
          ! ------------------------------------------------------------------
 #ifdef CH4
+         ! IF (p_is_worker) THEN
+         !    IF (numpatch > 0) THEN
+         !       DO i=1,numpatch
+         !          IF (DEF_METHANE_only_wetland) THEN
+         !             IF(patchtype(i) .eq. 2)THEN
+         !                filter(i) = .true.
+         !             ELSE
+         !                filter(i) = .false.
+         !             ENDIF
+         !          ELSE
+         !             IF(patchtype(i) .eq. 0 .or. patchtype(i) .eq. 2)THEN
+         !                filter(i) = .true.
+         !             ELSE
+         !                filter(i) = .false.
+         !             ENDIF
+         !          ENDIF
+         !       ENDDO
+         !    ENDIF
+         ! ENDIF
          IF (p_is_worker) THEN
             IF (numpatch > 0) THEN
-               DO i=1,numpatch
-                  IF (DEF_METHANE_only_wetland) THEN
-                     IF(patchtype(i) .eq. 2)THEN
-                        filter(i) = .true.
-                     ELSE
-                        filter(i) = .false.
-                     ENDIF
-                  ELSE
-                     IF(patchtype(i) .eq. 0 .or. patchtype(i) .eq. 2)THEN
-                        filter(i) = .true.
-                     ELSE
-                        filter(i) = .false.
-                     ENDIF
-                  ENDIF
-               ENDDO
+               filter(:) = patchtype < 99
+               IF (DEF_forcing%has_missing_value) THEN
+                  filter = filter .and. forcmask_pch
+               ENDIF
             ENDIF
          ENDIF
-
+         
          IF (HistForm == 'Gridded') THEN
             CALL mp2g_hist%get_sumarea (sumarea, filter)
          ENDIF

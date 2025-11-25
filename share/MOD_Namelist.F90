@@ -240,6 +240,11 @@ MODULE MOD_Namelist
    logical :: DEF_METHANE_only_wetland = .true.
    logical :: DEF_USE_METHANE_para = .false.
    character(len=256) :: DEF_file_METHANE_para = 'null'
+
+   ! Options for wetland finundation scheme
+   ! 0: Use runoff scheme fsat 
+   ! 1: Use CLM5.0 prognostic hsosfc
+   integer :: DEF_wetland_finundation_scheme = 0
 #endif
    logical :: DEF_wetland_split_fsat = .false.
 
@@ -1138,6 +1143,7 @@ CONTAINS
       DEF_METHANE_only_wetland,               & !add by Xionghui Xu @sysu 2025/08/19
       DEF_USE_METHANE_para,                   & !add by Xionghui Xu @sysu 2025/10/21
       DEF_file_METHANE_para,                  & !add by Xionghui Xu @sysu 2025/10/21
+      DEF_wetland_finundation_scheme,         & !add by Xionghui Xu @sysu 2025/11/25
 #endif
       DEF_wetland_split_fsat,                 & !add by Xionghui Xu @sysu 2025/11/12
 
@@ -1704,6 +1710,8 @@ CONTAINS
  
       CALL mpi_bcast (DEF_USE_METHANE_para                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_file_METHANE_para                  ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+
+      CALL mpi_bcast (DEF_wetland_finundation_scheme         ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
 #endif 
       CALL mpi_bcast (DEF_wetland_split_fsat                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 

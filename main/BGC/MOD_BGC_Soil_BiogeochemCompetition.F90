@@ -378,37 +378,14 @@ CONTAINS
                IF (nlimit_no3(j) .eq. 0) THEN
                   residual_smin_no3_vr(j) = max(smin_no3_vr(j,i) - (actual_immob_no3_vr(j,i) + &
                                              smin_no3_to_plant_vr(j,i) + f_denit_vr(j,i) ) * deltim, 0._r8)
-                  ! if (residual_smin_no3_vr(j) < 1e-20) residual_smin_no3_vr(j) = 0._r8
+                  if (residual_smin_no3_vr(j) < 1e-18) residual_smin_no3_vr(j) = 0._r8
                   residual_smin_no3 = residual_smin_no3 + residual_smin_no3_vr(j) * dz_soi(j)
                ELSE
                   residual_smin_no3_vr(j)  = 0._r8
                ENDIF
             ENDIF
          ENDDO
-! IF (residual_plant_ndemand > 0._r8 ) THEN
-!    IF ( residual_smin_no3 > 0._r8) THEN
-!       call print_var(residual_plant_ndemand, 'SoilBiogeochemCompetition residual_plant_ndemand',idate)
-!       call print_var(residual_smin_no3,'SoilBiogeochemCompetition residual_smin_no3',idate)
-!       call print_var(residual_smin_no3_vr,'SoilBiogeochemCompetition residual_smin_no3_vr',idate)
-!       call print_var(smin_no3_to_plant_vr(:,i),'SoilBiogeochemCompetition smin_no3_to_plant_vr(:,i)',idate)
-!       call print_var(nlimit_no3,'SoilBiogeochemCompetition nlimit_no3',idate)
-!    ENDIF
-! ENDIF
-if ((idate(2) == 127) .and. (idate(3) == 41400)) then
-if (residual_plant_ndemand>0._r8) then
-   if (residual_plant_ndemand < 1.e-27 .and. residual_plant_ndemand>0._r8) then
-   ! if (residual_smin_no3 > 0._r8) then
-      err1 = residual_plant_ndemand *  deltim / residual_smin_no3
-      write(6,*)'Lat,Lon,i,1        = ', dlat,dlon,i
-      print*, 'residual_plant_ndemand',residual_plant_ndemand
-      print*, 'residual_smin_no3',residual_smin_no3
-      print*, 'residual_plant_ndemand *  deltim / residual_smin_no3',err1
-      print*, 'residual_smin_no3_vr',residual_smin_no3_vr
-      print*, 'smin_no3_to_plant_vr',smin_no3_to_plant_vr(:,i)
-      print*, 'nlimit_no3',nlimit_no3
-   endif
-endif
-endif
+
          DO j = 1, nl_soil
             IF (residual_plant_ndemand > 0._r8 ) THEN
                IF ( residual_smin_no3 > 0._r8 .and. nlimit_no3(j) .eq. 0) THEN
@@ -418,14 +395,6 @@ endif
             ENDIF
          ENDDO
          
-if ((idate(2) == 127) .and. (idate(3) == 41400)) then
-if (residual_plant_ndemand>0._r8) then
-! if (residual_plant_ndemand < 1.e-27 .and. residual_plant_ndemand>0._r8) then
-   if (residual_smin_no3 > 0._r8) then
-      write(6,*)'Lat,Lon,i,2        = ', dlat,dlon,i
-   endif
-endif
-endif
          ! re-sum up N fluxes to plant after second passes of both no3 and nh4
          sminn_to_plant(i) = 0._r8
          DO j = 1, nl_soil

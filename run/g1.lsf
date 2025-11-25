@@ -3,7 +3,7 @@
 #BSUB -q normal
 #BSUB -o /share/home/dq076/mode/ME/251124/run/logs/g1_noCH4-o.out
 #BSUB -e /share/home/dq076/mode/ME/251124/run/logs/g1_noCH4-e.out
-#BSUB -n 720
+#BSUB -n 480
 #BSUB -R rusage[mem=150G]
 #BSUB -R span[ptile=48]
 
@@ -15,9 +15,9 @@ echo `hostname`
 echo "start: ${SYEAR}" `date`  >> /share/home/dq076/mode/ME/251124/run/log.txt
 mkdir -p logs
 
-mpirun  -np 720 ./mksrfdata.x g1.nml
-mpirun -np 48 ./mkinidata.x g1.nml
-# mpirun  -np 480 ./colm.x g1.nml
+# mpirun  -np 720 ./mksrfdata.x g1.nml
+# mpirun -np 48 ./mkinidata.x g1.nml
+mpirun  -np 480 ./colm.x g1.nml
 
 
 echo "end:   ${SYEAR}" `date`  >> log.txt

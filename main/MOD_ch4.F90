@@ -26,6 +26,7 @@ module MOD_ch4
 	use MOD_SPMD_Task
 	use MOD_TimeManager
    	use MOD_Vars_TimeInvariants, only: wetwatmax
+	use MOD_Vars_TimeInvariants, only: slpratio
 	use MOD_Vars_Global, only : maxsnl,nl_soil,nl_lake,spval,PI,deg2rad
 	use MOD_Const_Physical, only: rgas, denh2o, denice, tfrz, grav
 	use MOD_Const_ch4
@@ -386,6 +387,8 @@ contains
 		real(r8) :: zwt_sat, wice_soisno_sat(maxsnl+1:nl_soil), wliq_soisno_sat(maxsnl+1:nl_soil), wdsrf_sat
 		real(r8) :: zwt_unsat, wice_soisno_unsat(maxsnl+1:nl_soil), wliq_soisno_unsat(maxsnl+1:nl_soil), wdsrf_unsat
 
+		real(r8) :: micro_sigma, min_wdsrf, d, sigma, fd, dfdd,  
+
 		real(r8) :: err1,err2,err3,err4,err5,err6,err7,err8,err9,err10
 
 		!-----------------------------------------------------------------------
@@ -448,7 +451,37 @@ contains
 		call print_var(totcolch4_bef_sat, 'ch4 totcolch4_bef_sat',idate)
 		call print_var(totcolch4_bef_unsat, 'ch4 totcolch4_bef_unsat',idate)
 
-		finundated = frcsat
+		if (DEF_wetland_finundation_scheme == 0) then
+			finundated = frcsat
+		elseif (DEF_wetland_finundation_scheme == 1) then
+			micro_sigma = (atan(slpratio) + DEF_CH4_hydrology%slopemax**(1._r8/DEF_CH4_hydrology%slopebeta))**DEF_CH4_hydrology%slopebeta
+			min_wdsrf = 1.e-8_r8
+			if (wdsrf > min_wdsrf) then
+				! a cutoff is needed for numerical reasons...(nonconvergence after 5 iterations)
+				d=0.0_r8
+
+				sigma=1.0e3 * micro_sigma ! convert to mm
+				do l=1,10
+					fd = 0.5_r8*d*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8)))) &
+						+sigma/sqrt(2.0_r8*PI)*exp(-d**2/(2.0_r8*sigma**2)) &
+						-wdsrf
+					dfdd = 0.5_r8*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8))))
+
+					d = d - fd/dfdd
+				enddo
+				!--  update the submerged areal fraction using the new d value
+				finundated = 0.5_r8*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8))))
+
+			else
+				finundated = 0._r8
+				! The update of h2osfc is deferred to later, keeping with our standard
+				! separation of flux calculations from state updates, and because the state
+				! update needs to happen for tracers as well as bulk. However, it's important
+				! that this flux be applied soon after this routine, so that h2osfc remains in
+				! sync with frac_h2osfc.
+			endif
+		endif
+
 		if (istep == 1) then
 			fsat_bef = finundated
 			finundated_lag = finundated
@@ -1086,9 +1119,11 @@ contains
 				vmax_eff = DEF_CH4%vmax_oxid_unsat
 			end if
 
-			if (j <= jwt .and. smp(j) < 0._r8) then
+			if (j <= jwt .and. smp(j) < -1e-8) then
 				smp_fact = exp(-smp(j)/DEF_CH4%smp_crit)
 				! Schnell & King, 1996, Figure 3
+			elseif (j <= jwt .and. (smp(j) >= -1e-8 .and. smp(j) < 0._r8)) then
+				smp_fact = 0
 			else
 				smp_fact = 1._r8
 			end if
