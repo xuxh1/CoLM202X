@@ -832,7 +832,6 @@ ENDIF
 #endif
 
          IF (use_cnini) THEN
-
             CALL gcn%define_from_file (fcndat,"lat","lon")
             CALL mc2p%build_arealweighted (gcn, landpatch)
             CALL mc2f%build_arealweighted (gcn, landpft)
@@ -973,33 +972,32 @@ ENDIF
 
             IF (p_is_worker) THEN
                DO i = 1, numpatch
-                  ps = patch_pft_s(i)
-                  pe = patch_pft_e(i)
-                  DO nsl = 1, nl_soil
-                     decomp_cpools_vr(nsl, i_met_lit, i) = litr1c_vr(nsl, i)
-                     decomp_cpools_vr(nsl, i_cel_lit, i) = litr2c_vr(nsl, i)
-                     decomp_cpools_vr(nsl, i_lig_lit, i) = litr3c_vr(nsl, i)
-                     decomp_cpools_vr(nsl, i_cwd    , i) = cwdc_vr  (nsl, i)
-                     decomp_cpools_vr(nsl, i_soil1  , i) = soil1c_vr(nsl, i)
-                     decomp_cpools_vr(nsl, i_soil2  , i) = soil2c_vr(nsl, i)
-                     decomp_cpools_vr(nsl, i_soil3  , i) = soil3c_vr(nsl, i)
-                     decomp_npools_vr(nsl, i_met_lit, i) = litr1n_vr(nsl, i)
-                     decomp_npools_vr(nsl, i_cel_lit, i) = litr2n_vr(nsl, i)
-                     decomp_npools_vr(nsl, i_lig_lit, i) = litr3n_vr(nsl, i)
-                     decomp_npools_vr(nsl, i_cwd    , i) = cwdn_vr  (nsl, i)
-                     decomp_npools_vr(nsl, i_soil1  , i) = soil1n_vr(nsl, i)
-                     decomp_npools_vr(nsl, i_soil2  , i) = soil2n_vr(nsl, i)
-                     decomp_npools_vr(nsl, i_soil3  , i) = soil3n_vr(nsl, i)
-                     smin_nh4_vr     (nsl, i)            = min_nh4_vr(nsl,i)
-                     smin_no3_vr     (nsl, i)            = min_no3_vr(nsl,i)
-                     sminn_vr        (nsl, i)            = min_nh4_vr(nsl,i)+min_no3_vr(nsl,i)
-                  ENDDO
-
 #ifndef CH4
                   IF (patchtype(i) == 0)THEN
 #else
                   IF (patchtype(i) == 0 .or. patchtype(i) == 2)THEN
 #endif
+                     ps = patch_pft_s(i)
+                     pe = patch_pft_e(i)
+                     DO nsl = 1, nl_soil
+                        decomp_cpools_vr(nsl, i_met_lit, i) = litr1c_vr(nsl, i)
+                        decomp_cpools_vr(nsl, i_cel_lit, i) = litr2c_vr(nsl, i)
+                        decomp_cpools_vr(nsl, i_lig_lit, i) = litr3c_vr(nsl, i)
+                        decomp_cpools_vr(nsl, i_cwd    , i) = cwdc_vr  (nsl, i)
+                        decomp_cpools_vr(nsl, i_soil1  , i) = soil1c_vr(nsl, i)
+                        decomp_cpools_vr(nsl, i_soil2  , i) = soil2c_vr(nsl, i)
+                        decomp_cpools_vr(nsl, i_soil3  , i) = soil3c_vr(nsl, i)
+                        decomp_npools_vr(nsl, i_met_lit, i) = litr1n_vr(nsl, i)
+                        decomp_npools_vr(nsl, i_cel_lit, i) = litr2n_vr(nsl, i)
+                        decomp_npools_vr(nsl, i_lig_lit, i) = litr3n_vr(nsl, i)
+                        decomp_npools_vr(nsl, i_cwd    , i) = cwdn_vr  (nsl, i)
+                        decomp_npools_vr(nsl, i_soil1  , i) = soil1n_vr(nsl, i)
+                        decomp_npools_vr(nsl, i_soil2  , i) = soil2n_vr(nsl, i)
+                        decomp_npools_vr(nsl, i_soil3  , i) = soil3n_vr(nsl, i)
+                        smin_nh4_vr     (nsl, i)            = min_nh4_vr(nsl,i)
+                        smin_no3_vr     (nsl, i)            = min_no3_vr(nsl,i)
+                        sminn_vr        (nsl, i)            = min_nh4_vr(nsl,i)+min_no3_vr(nsl,i)
+                     ENDDO
                      DO m = ps, pe
                         ivt = pftclass(m)
                         IF(isevg(ivt))THEN

@@ -26,10 +26,10 @@ module MOD_ch4
 	use MOD_SPMD_Task
 	use MOD_TimeManager
    	use MOD_Vars_TimeInvariants, only: wetwatmax
-	use MOD_Vars_TimeInvariants, only: slpratio
 	use MOD_Vars_Global, only : maxsnl,nl_soil,nl_lake,spval,PI,deg2rad
 	use MOD_Const_Physical, only: rgas, denh2o, denice, tfrz, grav
 	use MOD_Const_ch4
+	USE MOD_Namelist, only: DEF_wetland_finundation_scheme
 	! use MOD_ch4varcon
 	!-----------------------------------------------------------------------
 	implicit none
@@ -90,7 +90,8 @@ contains
 		c_atm, forc_pch4m, layer_sat_lag, lake_soilc, &
 		annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
 		tempavg_agnpp, tempavg_bgnpp, annsum_counter, tempavg_somhr, tempavg_finrw, &
-		fsat_bef, finundated_lag, ch4_dfsat_tot)
+		fsat_bef, finundated_lag, ch4_dfsat_tot,&
+		slpratio)
 
 		!=======================================================================
 		! !DESCRIPTION:
@@ -287,8 +288,11 @@ contains
 			finundated_lag          , & ! time-lagged fractional inundated area  
 			ch4_dfsat_tot               ! CH4 flux to atm due to decreasing finundated [mol/m2/s]
 
+		real(r8), intent(in) :: &
+			slpratio                    ! the slope ratio
+
 		!=================== Local Variables ============================================
-		integer  :: i,j,s                     ! indices
+		integer  :: i,j,s,l                     ! indices
 
 		integer  :: sat                     ! 0 = unsatured, 1 = saturated
 		real(r8) :: finundated              ! fractional inundated area
@@ -387,7 +391,7 @@ contains
 		real(r8) :: zwt_sat, wice_soisno_sat(maxsnl+1:nl_soil), wliq_soisno_sat(maxsnl+1:nl_soil), wdsrf_sat
 		real(r8) :: zwt_unsat, wice_soisno_unsat(maxsnl+1:nl_soil), wliq_soisno_unsat(maxsnl+1:nl_soil), wdsrf_unsat
 
-		real(r8) :: micro_sigma, min_wdsrf, d, sigma, fd, dfdd,  
+		real(r8) :: micro_sigma, min_wdsrf, d, sigma, fd, dfdd  
 
 		real(r8) :: err1,err2,err3,err4,err5,err6,err7,err8,err9,err10
 
@@ -1119,10 +1123,10 @@ contains
 				vmax_eff = DEF_CH4%vmax_oxid_unsat
 			end if
 
-			if (j <= jwt .and. smp(j) < -1e-8) then
+			if (j <= jwt .and. (smp(j) > -1e-8 .and. smp(j) < 0._r8)) then
 				smp_fact = exp(-smp(j)/DEF_CH4%smp_crit)
 				! Schnell & King, 1996, Figure 3
-			elseif (j <= jwt .and. (smp(j) >= -1e-8 .and. smp(j) < 0._r8)) then
+			elseif (j <= jwt .and. smp(j) <= -1e-8) then
 				smp_fact = 0
 			else
 				smp_fact = 1._r8

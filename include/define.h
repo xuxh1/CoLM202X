@@ -1,9 +1,9 @@
 ! 1. Spatial structure:
 !    Select one of the following options.
-#define GRIDBASED
+#undef GRIDBASED
 #undef CATCHMENT
 #undef UNSTRUCTURED
-#undef SinglePoint
+#define SinglePoint
 
 ! 2. Land subgrid type classification:
 !    Select one of the following options.
@@ -68,7 +68,7 @@
 #endif
 
 ! 7.2 If defined, CH4 model is used
-#undef CH4
+#define CH4
 !    Conflicts : only used when BGC is defined
 #ifndef BGC
 #undef CH4

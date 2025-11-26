@@ -59,6 +59,7 @@
 		fsat_bef, finundated_lag, ch4_dfsat_tot
 
 		
+		use MOD_Vars_TimeInvariants, only: slpratio
 
 		USE MOD_BGC_Vars_TimeInvariants, only: organic_max
 
@@ -178,7 +179,8 @@
 		!!!! --------------------------------------------------------------------------------------------------------
 		c_atm(1:3,i), forc_pch4m(i), layer_sat_lag(1:nl_soil,i), lake_soilc(1:nl_soil,i), &
 		annavg_agnpp(i), annavg_bgnpp(i), annavg_somhr(i), annavg_finrw(i), &
-		tempavg_agnpp(i), tempavg_bgnpp(i), annsum_counter(i), tempavg_somhr(i), tempavg_finrw(i), fsat_bef(i), finundated_lag(i), ch4_dfsat_tot(i))
+		tempavg_agnpp(i), tempavg_bgnpp(i), annsum_counter(i), tempavg_somhr(i), tempavg_finrw(i), fsat_bef(i), finundated_lag(i), ch4_dfsat_tot(i),&
+		slpratio(i))
 
 	END SUBROUTINE ch4_driver
 #endif
