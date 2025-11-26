@@ -14,7 +14,7 @@ MODULE MOD_BGC_Soil_BiogeochemCompetition
 ! Xingjie Lu, 2022, modify original CLM5 to be compatible with CoLM code structure.
 
    USE MOD_Precision
-   USE MOD_Vars_Global, only: npcropmin
+   USE MOD_Vars_Global, only: npcropmin, npcropmax
    USE MOD_Namelist, only: DEF_USE_NITRIF, DEF_USE_NOSTRESSNITROGEN
    USE MOD_LandPFT, only: patch_pft_s, patch_pft_e
    USE MOD_Vars_PFTimeInvariants, only: pftclass

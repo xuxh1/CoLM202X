@@ -504,10 +504,13 @@ MODULE MOD_Const_PFT
         , 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08&
         , 0.08, 0.08, 0.08, 0.05, 0.05, 0.08, 0.08  &
 #endif
+#ifdef CH4
+        , 0.08&
+#endif 
          /)
 
       !C3C4 switch 1: C3, 0: C4
-   integer, parameter :: c3c4_p(0:N_PFT+N_CFT-1) &
+   integer, parameter :: c3c4_p(0:N_PFT+N_CFT+N_WFT-1) &
       = (/1, 1, 1, 1, 1, 1, 1, 1&
         , 1, 1, 1, 1, 1, 1, 0, 1&
 #ifdef CROP
@@ -521,7 +524,7 @@ MODULE MOD_Const_PFT
         , 1, 1, 1, 0, 0, 1, 1  &
 #endif
 #ifdef CH4
-        , 0.08&
+        , 1&
 #endif  
          /)
 

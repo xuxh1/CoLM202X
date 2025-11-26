@@ -133,6 +133,9 @@ MODULE MOD_BGC_CNSummary
        m_livecrootc_to_fire_p, m_livecrootc_storage_to_fire_p, m_livecrootc_xfer_to_fire_p, &
        m_deadcrootc_to_fire_p, m_deadcrootc_storage_to_fire_p, m_deadcrootc_xfer_to_fire_p, &
        m_gresp_storage_to_fire_p, m_gresp_xfer_to_fire_p,rr_p, agnpp_p, bgnpp_p 
+   USE MOD_BGC_Vars_1DPFTFluxes, only: &
+       cpool_to_leafc_storage_p
+
    USE MOD_Vars_TimeVariables, only: &
        irrig_method_corn  , irrig_method_swheat, irrig_method_wwheat, irrig_method_soybean  , &
        irrig_method_cotton, irrig_method_rice1 , irrig_method_rice2 , irrig_method_sugarcane, &
