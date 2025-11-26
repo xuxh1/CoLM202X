@@ -691,6 +691,9 @@ contains
 		ch4_surf_flux_tot_sat = ch4_surf_diff_sat  + ch4_surf_aere_sat  + ch4_surf_ebul_sat
 		totcolch4_sat   = sum( conc_ch4_sat  (1:nl_soil) * dz_soisno(1:nl_soil) )
 
+		ch4_surf_diff = ch4_surf_diff_sat * finundated + ch4_surf_diff_unsat * (1.0_r8 - finundated)
+		ch4_surf_ebul = ch4_surf_ebul_sat * finundated + ch4_surf_ebul_unsat * (1.0_r8 - finundated)
+		ch4_surf_aere = ch4_surf_aere_sat * finundated + ch4_surf_aere_unsat * (1.0_r8 - finundated)
 		ch4_oxid_tot = ch4_oxid_tot_sat * finundated + ch4_oxid_tot_unsat * (1.0_r8 - finundated)
 		ch4_prod_tot = ch4_prod_tot_sat * finundated + ch4_prod_tot_unsat * (1.0_r8 - finundated)
 		net_methane = net_methane_sat * finundated + net_methane_unsat * (1.0_r8 - finundated)

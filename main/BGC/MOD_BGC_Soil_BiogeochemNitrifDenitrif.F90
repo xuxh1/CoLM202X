@@ -128,6 +128,7 @@ CONTAINS
   
          ! first-order decay of ammonium pool with scalar defined above
          pot_f_nit_vr(j,i) = max(smin_nh4_vr(j,i) * k_nitr_vr, 0._r8)
+         if (pot_f_nit_vr(j,i)<1e-18) pot_f_nit_vr(j,i) = 0._r8
   
          ! limit to oxic fraction of soils
          pot_f_nit_vr(j,i)  = pot_f_nit_vr(j,i) * (1._r8 - anaerobic_frac)
