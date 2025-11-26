@@ -50,7 +50,7 @@ MODULE MOD_Catch_SubsurfaceFlow
 CONTAINS
 
    ! ----------
-   SUBROUTINE subsurface_network_init ()
+   SUBROUTINE subsurface_network_init (patcharea)
 
    USE MOD_SPMD_Task
    USE MOD_Utils
@@ -59,12 +59,15 @@ CONTAINS
    USE MOD_LandElm
    USE MOD_LandPatch
    USE MOD_ElementNeighbour
-   USE MOD_Catch_BasinNetwork,     only: worker_push_data, iam_bsn, iam_elm
+   USE MOD_WorkerPushData,         only: worker_push_data
+   USE MOD_Catch_BasinNetwork,     only: push_bsn2elm
    USE MOD_Catch_RiverLakeNetwork, only: lake_id, riverdpth
    USE MOD_Vars_TimeInvariants,    only: patchtype, lakedepth
    IMPLICIT NONE
 
-   integer :: ielm, inb, i, ihru, ps, pe, ipatch, ipxl
+   real(r8), intent(in) :: patcharea (:)
+
+   integer :: ielm, inb, i, ihru, ps, pe, ipatch
 
    real(r8), allocatable :: agwt_b(:)
    real(r8), allocatable :: islake(:)
@@ -94,26 +97,23 @@ CONTAINS
          IF (numelm > 0) allocate (lakedepth_elm(numelm))
          IF (numelm > 0) allocate (wdsrf_elm    (numelm))
 
-         CALL worker_push_data (iam_bsn, iam_elm, lake_id,   lake_id_elm  )
-         CALL worker_push_data (iam_bsn, iam_elm, riverdpth, riverdpth_elm)
+         CALL worker_push_data (push_bsn2elm, lake_id,   lake_id_elm,   -9999)
+         CALL worker_push_data (push_bsn2elm, riverdpth, riverdpth_elm, spval)
 
          DO ielm = 1, numelm
             IF (lake_id_elm(ielm) <= 0) THEN
                DO i = 1, hillslope_element(ielm)%nhru
 
                   hillslope_element(ielm)%agwt(i) = 0
+                  hillslope_element(ielm)%area(i) = 0
 
                   ihru = hillslope_element(ielm)%ihru(i)
                   ps = hru_patch%substt(ihru)
                   pe = hru_patch%subend(ihru)
                   DO ipatch = ps, pe
+                     hillslope_element(ielm)%area(i) = hillslope_element(ielm)%area(i) + patcharea(ipatch)
                      IF (patchtype(ipatch) <= 2) THEN
-                        DO ipxl = landpatch%ipxstt(ipatch), landpatch%ipxend(ipatch)
-                           hillslope_element(ielm)%agwt(i) = hillslope_element(ielm)%agwt(i) &
-                              + 1.0e6 * areaquad ( &
-                              pixel%lat_s(mesh(ielm)%ilat(ipxl)), pixel%lat_n(mesh(ielm)%ilat(ipxl)), &
-                              pixel%lon_w(mesh(ielm)%ilon(ipxl)), pixel%lon_e(mesh(ielm)%ilon(ipxl)) )
-                        ENDDO
+                        hillslope_element(ielm)%agwt(i) = hillslope_element(ielm)%agwt(i) + patcharea(ipatch)
                      ENDIF
                   ENDDO
 

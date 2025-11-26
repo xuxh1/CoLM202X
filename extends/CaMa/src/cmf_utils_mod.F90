@@ -224,7 +224,6 @@ DO ISEQ=1,NSEQMAX
   IX=I1SEQX(ISEQ)
   IY=I1SEQY(ISEQ)
   D2VAR(ISEQ,1) = REAL(P2TEMP(IX,IY),KIND=JPRB)
-
 ENDDO
 !$OMP END PARALLEL DO
 END SUBROUTINE mapP2vecD
@@ -440,8 +439,8 @@ INTEGER(KIND=JPIM)              :: IY,IX
 DO IY=1, NY
   DO IX=1, NY
     CALL ENDIAN4R(R2TEMP(IX,IY))
-  END DO
-END DO
+  ENDDO
+ENDDO
 END SUBROUTINE CONV_END
 !==========================================================
 !+
@@ -460,8 +459,8 @@ INTEGER(KIND=JPIM)                :: IY,IX
 DO IY=1, NY
   DO IX=1, NY
     CALL ENDIAN4I(I2TEMP(IX,IY))
-  END DO
-END DO
+  ENDDO
+ENDDO
 END SUBROUTINE CONV_ENDI
 !==========================================================
 !+
@@ -550,7 +549,6 @@ END FUNCTION INQUIRE_FID
 !+
 !+
 !==========================================================
-#ifdef UseCDF_CMF
 SUBROUTINE NCERROR(STATUS,STRING)
 !! NETCDF error handling 
 USE NETCDF
@@ -565,7 +563,6 @@ IF ( STATUS /= 0 ) THEN
   STOP 10
 ENDIF
 END SUBROUTINE NCERROR
-#endif
 !####################################################################
 
 !####################################################################

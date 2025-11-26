@@ -9,8 +9,8 @@
 !    Select one of the following options.
 #undef LULC_USGS
 #undef LULC_IGBP
-#define LULC_IGBP_PFT
-#undef LULC_IGBP_PC
+#undef LULC_IGBP_PFT
+#define LULC_IGBP_PC
 
 ! 2.1 3D Urban model (put it temporarily here):
 #undef URBAN_MODEL
@@ -50,9 +50,21 @@
 
 ! 6. If defined, CaMa-Flood model will be used.
 #undef CaMa_Flood
+#if (defined SinglePoint)
+#undef CaMa_Flood
+#endif
+#ifndef USEMPI
+#undef CaMa_Flood
+#endif
+
+#define GridRiverLakeFlow
+!    Conflicts :
+#if (defined CATCHMENT || defined SinglePoint)
+#undef GridRiverLakeFlow
+#endif
 
 ! 7. If defined, BGC model is used.
-#define BGC
+#undef BGC
 
 !    Conflicts :  only used when LULC_IGBP_PFT is defined.
 #ifndef LULC_IGBP_PFT

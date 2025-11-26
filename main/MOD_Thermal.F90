@@ -37,7 +37,7 @@ CONTAINS
                        rss           ,gssun_out     ,gssha_out     ,assimsun_out  ,&
                        etrsun_out    ,assimsha_out  ,etrsha_out    ,&
 !photosynthesis and plant hydraulic variables
-                       effcon        ,vmax25        ,hksati        ,smp     ,hk   ,&
+                       effcon        ,vmax25        ,c3c4          ,hksati        ,smp     ,hk   ,&
                        kmax_sun      ,kmax_sha      ,kmax_xyl      ,kmax_root     ,&
                        psi50_sun     ,psi50_sha     ,psi50_xyl     ,psi50_root    ,&
                        ck            ,vegwp         ,gs0sun        ,gs0sha        ,&
@@ -118,6 +118,9 @@ CONTAINS
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
    USE MOD_LandPFT, only: patch_pft_s, patch_pft_e
    USE MOD_Vars_TimeInvariants, only: patchclass
+   USE MOD_Vars_TimeVariables, only: &
+       lai_enftemp, lai_enfboreal, lai_dnfboreal, lai_ebftrop, lai_ebftemp, lai_dbftrop, lai_dbftemp, &
+       lai_dbfboreal, lai_ebstemp, lai_dbstemp, lai_dbsboreal, lai_c3arcgrass, lai_c3grass, lai_c4grass
    USE MOD_Vars_PFTimeInvariants
    USE MOD_Vars_PFTimeVariables
    USE MOD_Vars_1DPFTFluxes
@@ -251,6 +254,9 @@ CONTAINS
        dz_soisno(lb:nl_soil),    &! layer thickness [m]
        z_soisno (lb:nl_soil),    &! node depth [m]
        zi_soisno(lb-1:nl_soil)    ! interface depth [m]
+
+   integer , intent(in) :: &
+       c3c4 ! C3/C4 plant type
 
    real(r8), intent(in) :: &
        sabg_snow_lyr(lb:1)        ! snow layer absorption
@@ -663,7 +669,7 @@ ENDIF
          rstfacsha_out = rstfac
          CALL LeafTemperature(ipatch,1,deltim,csoilc   ,dewmx       ,htvp        ,&
                  lai         ,sai         ,htop        ,hbot        ,sqrtdi      ,&
-                 effcon      ,vmax25      ,slti        ,hlti        ,shti        ,&
+                 effcon      ,vmax25      ,c3c4        ,slti        ,hlti        ,shti        ,&
                  hhti        ,trda        ,trdm        ,trop        ,g1          ,&
                  g0          ,gradm       ,binter      ,extkn       ,extkb       ,&
                  extkd       ,forc_hgt_u  ,forc_hgt_t  ,forc_hgt_q  ,forc_us     ,&
@@ -811,6 +817,54 @@ ENDIF
          ENDIF
       ENDDO
 
+      IF (.not. DEF_USE_LAIFEEDBACK)THEN
+         lai_enftemp      (ipatch) = 0._r8
+         lai_enfboreal    (ipatch) = 0._r8
+         lai_dnfboreal    (ipatch) = 0._r8
+         lai_ebftrop      (ipatch) = 0._r8
+         lai_ebftemp      (ipatch) = 0._r8
+         lai_dbftrop      (ipatch) = 0._r8
+         lai_dbftemp      (ipatch) = 0._r8
+         lai_dbfboreal    (ipatch) = 0._r8
+         lai_ebstemp      (ipatch) = 0._r8
+         lai_dbstemp      (ipatch) = 0._r8
+         lai_dbsboreal    (ipatch) = 0._r8
+         lai_c3arcgrass   (ipatch) = 0._r8
+         lai_c3grass      (ipatch) = 0._r8
+         lai_c4grass      (ipatch) = 0._r8
+         DO i = ps, pe
+            p = pftclass(i)
+            IF(p .eq. 1)THEN
+               lai_enftemp   (ipatch) = lai_p(i)
+            ELSE IF(p .eq. 2)THEN
+               lai_enfboreal (ipatch) = lai_p(i)
+            ELSE IF(p .eq. 3)THEN
+               lai_dnfboreal (ipatch) = lai_p(i)
+            ELSE IF(p .eq. 4)THEN
+               lai_ebftrop   (ipatch) = lai_p(i)
+            ELSE IF(p .eq. 5)THEN
+               lai_ebftemp   (ipatch) = lai_p(i)
+            ELSE IF(p .eq. 6)THEN
+               lai_dbftrop   (ipatch) = lai_p(i)
+            ELSE IF(p .eq. 7)THEN
+               lai_dbftemp   (ipatch) = lai_p(i)
+            ELSE IF(p .eq. 8)THEN
+               lai_dbfboreal (ipatch) = lai_p(i)
+            ELSE IF(p .eq. 9)THEN
+               lai_ebstemp   (ipatch) = lai_p(i)
+            ELSE IF(p .eq. 10)THEN
+               lai_dbstemp   (ipatch) = lai_p(i)
+            ELSE IF(p .eq. 11)THEN
+               lai_dbsboreal (ipatch) = lai_p(i)
+            ELSE IF(p .eq. 12)THEN
+               lai_c3arcgrass(ipatch) = lai_p(i)
+            ELSE IF(p .eq. 13)THEN
+               lai_c3grass   (ipatch) = lai_p(i)
+            ELSE IF(p .eq. 14)THEN
+               lai_c4grass   (ipatch) = lai_p(i)
+            ENDIF
+         ENDDO
+      ENDIF
 
       DO i = ps, pe
          p = pftclass(i)
@@ -825,7 +879,7 @@ ENDIF
          IF (lai_p(i)+sai_p(i) > 1e-6) THEN
             CALL LeafTemperature(ipatch,p,deltim  ,csoilc          ,dewmx           ,htvp           ,&
                  lai_p(i)        ,sai_p(i)        ,htop_p(i)       ,hbot_p(i)       ,sqrtdi_p(p)    ,&
-                 effcon_p(p)     ,vmax25_p(p)     ,slti_p(p)       ,hlti_p(p)       ,shti_p(p)      ,&
+                 effcon_p(p)     ,vmax25_p(p)     ,c3c4_p(p)       ,slti_p(p)       ,hlti_p(p)       ,shti_p(p)      ,&
                  hhti_p(p)       ,trda_p(p)       ,trdm_p(p)       ,trop_p(p)       ,g1_p(p)        ,&
                  g0_p(p)         ,gradm_p(p)      ,binter_p(p)     ,extkn_p(p)      ,extkb_p(i)     ,&
                  extkd_p(i)      ,forc_hgt_u      ,forc_hgt_t      ,forc_hgt_q      ,forc_us        ,&

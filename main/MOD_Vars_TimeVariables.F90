@@ -133,7 +133,7 @@ CONTAINS
             allocate (o3uptakesun_p(numpft)) ; o3uptakesun_p(:) = spval !Ozone does, sunlit leaf (mmol O3/m^2)
             allocate (o3uptakesha_p(numpft)) ; o3uptakesha_p(:) = spval !Ozone does, shaded leaf (mmol O3/m^2)
 ! END allocate Ozone Stress Variables
-            allocate (irrig_method_p(numpft))! irrigation method
+            allocate (irrig_method_p(numpft)); irrig_method_p(:) = 0! irrigation method
 
          ENDIF
       ENDIF
@@ -188,7 +188,7 @@ IF(DEF_USE_OZONESTRESS)THEN
       CALL ncio_read_vector (file_restart, 'o3uptakesha_p', landpft, o3uptakesha_p, defval = 0._r8)
 ENDIF
 IF(DEF_USE_IRRIGATION)THEN
-      CALL ncio_read_vector (file_restart,'irrig_method_p', landpft,irrig_method_p, defval = 1)
+      CALL ncio_read_vector (file_restart,'irrig_method_p', landpft,irrig_method_p, defval = 0)
 ENDIF
 
 #ifdef BGC
@@ -396,6 +396,9 @@ MODULE MOD_Vars_TimeVariables
 #ifdef CatchLateralFlow
    USE MOD_Catch_Vars_TimeVariables
 #endif
+#ifdef GridRiverLakeFlow
+   USE MOD_Grid_RiverLakeTimeVars
+#endif
 #ifdef URBAN_MODEL
    USE MOD_Urban_Vars_TimeVariables
 #endif
@@ -460,6 +463,23 @@ MODULE MOD_Vars_TimeVariables
    real(r8), allocatable :: laisha        (:) ! leaf area index for shaded leaf
    real(r8), allocatable :: tsai          (:) ! stem area index
    real(r8), allocatable :: sai           (:) ! stem area index
+#if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
+   real(r8), allocatable :: lai_enftemp   (:) ! lai for needleleaf evergreen temperate tree (m2 m-2)
+   real(r8), allocatable :: lai_enfboreal (:) ! lai for needleleaf evergreen boreal tree (m2 m-2)
+   real(r8), allocatable :: lai_dnfboreal (:) ! lai for needleleaf deciduous boreal tree (m2 m-2)
+   real(r8), allocatable :: lai_ebftrop   (:) ! lai for broadleaf evergreen tropical tree (m2 m-2)
+   real(r8), allocatable :: lai_ebftemp   (:) ! lai for broadleaf evergreen temperate tree (m2 m-2)
+   real(r8), allocatable :: lai_dbftrop   (:) ! lai for broadleaf deciduous tropical tree (m2 m-2)
+   real(r8), allocatable :: lai_dbftemp   (:) ! lai for broadleaf deciduous temperate tree (m2 m-2)
+   real(r8), allocatable :: lai_dbfboreal (:) ! lai for broadleaf deciduous boreal tree (m2 m-2)
+   real(r8), allocatable :: lai_ebstemp   (:) ! lai for broadleaf evergreen temperate shrub (m2 m-2)
+   real(r8), allocatable :: lai_dbstemp   (:) ! lai for broadleaf deciduous temperate shrub (m2 m-2)
+   real(r8), allocatable :: lai_dbsboreal (:) ! lai for broadleaf deciduous boreal shrub (m2 m-2)
+   real(r8), allocatable :: lai_c3arcgrass(:) ! lai for c3 arctic grass (m2 m-2)
+   real(r8), allocatable :: lai_c3grass   (:) ! lai for c3 grass (m2 m-2)
+   real(r8), allocatable :: lai_c4grass   (:) ! lai for c4 grass (m2 m-2)
+#endif
+
    real(r8), allocatable :: coszen        (:) ! cosine of solar zenith angle
    real(r8), allocatable :: alb       (:,:,:) ! averaged albedo [-]
    real(r8), allocatable :: ssun      (:,:,:) ! sunlit canopy absorption for solar radiation (0-1)
@@ -507,11 +527,23 @@ MODULE MOD_Vars_TimeVariables
    real(r8), allocatable :: fm            (:) ! integral of profile FUNCTION for momentum
    real(r8), allocatable :: fh            (:) ! integral of profile FUNCTION for heat
    real(r8), allocatable :: fq            (:) ! integral of profile FUNCTION for moisture
-   real(r8), allocatable :: irrig_rate          (:) ! irrigation rate [mm s-1]
-   real(r8), allocatable :: deficit_irrig       (:) ! irrigation amount [kg/m2]
-   real(r8), allocatable :: sum_irrig           (:) ! total irrigation amount [kg/m2]
-   real(r8), allocatable :: sum_irrig_count     (:) ! total irrigation counts [-]
-   integer , allocatable :: n_irrig_steps_left  (:) ! left steps for once irrigation [-]
+
+   real(r8), allocatable :: irrig_rate           (:) ! irrigation rate [mm s-1]
+   real(r8), allocatable :: actual_irrig         (:) ! actual irrigation amount [kg/m2]
+   real(r8), allocatable :: deficit_irrig        (:) ! irrigation amount [kg/m2]
+   real(r8), allocatable :: sum_irrig            (:) ! total irrigation amount [kg/m2]
+   real(r8), allocatable :: sum_deficit_irrig    (:) ! total irrigation amount demand [kg/m2]
+   real(r8), allocatable :: sum_irrig_count      (:) ! total irrigation counts [-]
+   integer , allocatable :: n_irrig_steps_left   (:) ! left steps for once irrigation [-]
+   real(r8), allocatable :: waterstorage         (:) ! water of water storage pool (from reservoir and river) [kg/m2]
+   real(r8), allocatable :: waterstorage_supply  (:) ! irrigation supply from water storage pool [kg/m2]
+   real(r8), allocatable :: groundwater_demand   (:) ! irrigation demand for ground water [kg/m2]
+   real(r8), allocatable :: groundwater_supply   (:) ! irrigation supply from ground water [kg/m2]
+   real(r8), allocatable :: reservoirriver_demand(:)! irrigation demand for reservoir or river [kg/m2]
+   real(r8), allocatable :: reservoirriver_supply(:)! irrigation supply from reservoir or river [kg/m2]
+   real(r8), allocatable :: reservoir_supply     (:)! irrigation supply from reservoir [kg/m2]
+   real(r8), allocatable :: river_supply         (:)! irrigation supply from river [kg/m2]
+   real(r8), allocatable :: runoff_supply        (:)! irrigation supply from runoff [kg/m2]
    real(r8), allocatable :: tairday                       (:) ! daily mean temperature [degree C]
    real(r8), allocatable :: usday                         (:) ! daily mean wind component in eastward direction [m/s]
    real(r8), allocatable :: vsday                         (:) ! daily mean wind component in northward direction [m/s]
@@ -528,6 +560,10 @@ MODULE MOD_Vars_TimeVariables
    integer , allocatable :: irrig_method_rice1     (:) ! irrigation method for rice1 (0-3)
    integer , allocatable :: irrig_method_rice2     (:) ! irrigation method for rice2 (0-3)
    integer , allocatable :: irrig_method_sugarcane (:) ! irrigation method for sugarcane (0-3)
+
+   real(r8), allocatable :: irrig_gw_alloc         (:) ! irrigation demand allocated to groundwater [kg/kg]
+   real(r8), allocatable :: irrig_sw_alloc         (:) ! irrigation demand allocated to surfacewater [kg/kg]
+   real(r8), allocatable :: zwt_stand              (:) ! initial the depth to water table [m]
 
    ! PUBLIC MEMBER FUNCTIONS:
    PUBLIC :: allocate_TimeVariables
@@ -571,7 +607,6 @@ CONTAINS
             allocate (h2osoi            (1:nl_soil,numpatch)); h2osoi      (:,:) = spval
             allocate (rootr             (1:nl_soil,numpatch)); rootr       (:,:) = spval
             allocate (rootflux          (1:nl_soil,numpatch)); rootflux    (:,:) = spval
-            
 !Plant Hydraulic variables
             allocate (vegwp             (1:nvegwcs,numpatch)); vegwp       (:,:) = spval
             allocate (gs0sun                      (numpatch)); gs0sun        (:) = spval
@@ -615,6 +650,23 @@ CONTAINS
             allocate (laisha                      (numpatch)); laisha        (:) = spval
             allocate (tsai                        (numpatch)); tsai          (:) = spval
             allocate (sai                         (numpatch)); sai           (:) = spval
+
+#if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
+            allocate (lai_enftemp                 (numpatch)); lai_enftemp   (:) = spval
+            allocate (lai_enfboreal               (numpatch)); lai_enfboreal (:) = spval
+            allocate (lai_dnfboreal               (numpatch)); lai_dnfboreal (:) = spval
+            allocate (lai_ebftrop                 (numpatch)); lai_ebftrop   (:) = spval
+            allocate (lai_ebftemp                 (numpatch)); lai_ebftemp   (:) = spval
+            allocate (lai_dbftrop                 (numpatch)); lai_dbftrop   (:) = spval
+            allocate (lai_dbftemp                 (numpatch)); lai_dbftemp   (:) = spval
+            allocate (lai_dbfboreal               (numpatch)); lai_dbfboreal (:) = spval
+            allocate (lai_ebstemp                 (numpatch)); lai_ebstemp   (:) = spval
+            allocate (lai_dbstemp                 (numpatch)); lai_dbstemp   (:) = spval
+            allocate (lai_dbsboreal               (numpatch)); lai_dbsboreal (:) = spval
+            allocate (lai_c3arcgrass              (numpatch)); lai_c3arcgrass(:) = spval
+            allocate (lai_c3grass                 (numpatch)); lai_c3grass   (:) = spval
+            allocate (lai_c4grass                 (numpatch)); lai_c4grass   (:) = spval
+#endif
             allocate (coszen                      (numpatch)); coszen        (:) = spval
             allocate (alb                     (2,2,numpatch)); alb       (:,:,:) = spval
             allocate (ssun                    (2,2,numpatch)); ssun      (:,:,:) = spval
@@ -663,9 +715,20 @@ CONTAINS
             allocate (fq                          (numpatch)); fq            (:) = spval
             allocate ( irrig_rate                 (numpatch)); irrig_rate             (:) = spval
             allocate ( deficit_irrig              (numpatch)); deficit_irrig          (:) = spval
+            allocate ( actual_irrig               (numpatch)); actual_irrig           (:) = spval
             allocate ( sum_irrig                  (numpatch)); sum_irrig              (:) = spval
+            allocate ( sum_deficit_irrig          (numpatch)); sum_deficit_irrig      (:) = spval
             allocate ( sum_irrig_count            (numpatch)); sum_irrig_count        (:) = spval
             allocate ( n_irrig_steps_left         (numpatch)); n_irrig_steps_left     (:) = spval_i4
+            allocate ( waterstorage               (numpatch)); waterstorage           (:) = spval
+            allocate ( waterstorage_supply        (numpatch)); waterstorage_supply    (:) = spval
+            allocate ( groundwater_demand         (numpatch)); groundwater_demand     (:) = spval
+            allocate ( groundwater_supply         (numpatch)); groundwater_supply     (:) = spval
+            allocate ( reservoirriver_demand      (numpatch)); reservoirriver_demand  (:) = spval
+            allocate ( reservoirriver_supply      (numpatch)); reservoirriver_supply  (:) = spval
+            allocate ( reservoir_supply           (numpatch)); reservoir_supply       (:) = spval
+            allocate ( river_supply               (numpatch)); river_supply           (:) = spval
+            allocate ( runoff_supply              (numpatch)); runoff_supply          (:) = spval
             allocate ( tairday                    (numpatch)); tairday                (:) = spval
             allocate ( usday                      (numpatch)); usday                  (:) = spval
             allocate ( vsday                      (numpatch)); vsday                  (:) = spval
@@ -683,6 +746,9 @@ CONTAINS
             allocate ( irrig_method_rice2         (numpatch)); irrig_method_rice2     (:) = spval_i4
             allocate ( irrig_method_sugarcane     (numpatch)); irrig_method_sugarcane (:) = spval_i4
 
+            allocate ( irrig_gw_alloc             (numpatch)); irrig_gw_alloc         (:) = spval
+            allocate ( irrig_sw_alloc             (numpatch)); irrig_sw_alloc         (:) = spval
+            allocate ( zwt_stand                  (numpatch)); zwt_stand              (:) = spval
          ENDIF
       ENDIF
 
@@ -696,6 +762,10 @@ CONTAINS
 
 #ifdef CatchLateralFlow
       CALL allocate_CatchTimeVariables
+#endif
+
+#ifdef GridRiverLakeFlow
+      CALL allocate_GridRiverLakeTimeVars
 #endif
 
 #ifdef URBAN_MODEL
@@ -776,6 +846,22 @@ CONTAINS
             deallocate (laisha                 )
             deallocate (tsai                   )
             deallocate (sai                    )
+#if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
+            deallocate (lai_enftemp            )
+            deallocate (lai_enfboreal          )
+            deallocate (lai_dnfboreal          )
+            deallocate (lai_ebftrop            )
+            deallocate (lai_ebftemp            )
+            deallocate (lai_dbftrop            )
+            deallocate (lai_dbftemp            )
+            deallocate (lai_dbfboreal          )
+            deallocate (lai_ebstemp            )
+            deallocate (lai_dbstemp            )
+            deallocate (lai_dbsboreal          )
+            deallocate (lai_c3arcgrass         )
+            deallocate (lai_c3grass            )
+            deallocate (lai_c4grass            )
+#endif
             deallocate (coszen                 )
             deallocate (alb                    )
             deallocate (ssun                   )
@@ -825,10 +911,20 @@ CONTAINS
             deallocate (fq                     )
             deallocate (irrig_rate             )
             deallocate (deficit_irrig          )
+            deallocate (actual_irrig           )
             deallocate (sum_irrig              )
+            deallocate (sum_deficit_irrig      )
             deallocate (sum_irrig_count        )
             deallocate (n_irrig_steps_left     )
-
+            deallocate (waterstorage           )
+            deallocate (waterstorage_supply    )
+            deallocate (groundwater_demand     )
+            deallocate (groundwater_supply     )
+            deallocate (reservoirriver_demand  )
+            deallocate (reservoirriver_supply  )
+            deallocate (reservoir_supply       )
+            deallocate (river_supply           )
+            deallocate (runoff_supply          )
             deallocate (tairday                )
             deallocate (usday                  )
             deallocate (vsday                  )
@@ -846,6 +942,10 @@ CONTAINS
             deallocate (irrig_method_rice2     )
             deallocate (irrig_method_sugarcane )
 
+            deallocate (irrig_gw_alloc         )
+            deallocate (irrig_sw_alloc         )
+            deallocate (zwt_stand              )
+
          ENDIF
       ENDIF
 
@@ -859,6 +959,10 @@ CONTAINS
 
 #ifdef CatchLateralFlow
       CALL deallocate_CatchTimeVariables
+#endif
+
+#ifdef GridRiverLakeFlow
+      CALL deallocate_GridRiverLakeTimeVars
 #endif
 
 #if (defined URBAN_MODEL)
@@ -1055,19 +1159,12 @@ ENDIF
       CALL ncio_write_vector (file_restart, 'fq   ', 'patch', landpatch, fq   , compress) ! integral of profile FUNCTION for moisture
 
 IF (DEF_USE_IRRIGATION) THEN
-      CALL ncio_write_vector (file_restart, 'irrig_rate            ' , 'patch',landpatch,irrig_rate            , compress)
-      CALL ncio_write_vector (file_restart, 'deficit_irrig         ' , 'patch',landpatch,deficit_irrig         , compress)
-      CALL ncio_write_vector (file_restart, 'sum_irrig             ' , 'patch',landpatch,sum_irrig             , compress)
-      CALL ncio_write_vector (file_restart, 'sum_irrig_count       ' , 'patch',landpatch,sum_irrig_count       , compress)
-      CALL ncio_write_vector (file_restart, 'n_irrig_steps_left    ' , 'patch',landpatch,n_irrig_steps_left    , compress)
-      CALL ncio_write_vector (file_restart, 'tairday               ' , 'patch',landpatch,tairday               , compress)
-      CALL ncio_write_vector (file_restart, 'usday                 ' , 'patch',landpatch,usday                 , compress)
-      CALL ncio_write_vector (file_restart, 'vsday                 ' , 'patch',landpatch,vsday                 , compress)
-      CALL ncio_write_vector (file_restart, 'pairday               ' , 'patch',landpatch,pairday               , compress)
-      CALL ncio_write_vector (file_restart, 'rnetday               ' , 'patch',landpatch,rnetday               , compress)
-      CALL ncio_write_vector (file_restart, 'fgrndday              ' , 'patch',landpatch,fgrndday              , compress)
-      CALL ncio_write_vector (file_restart, 'potential_evapotranspiration', 'patch',landpatch, &
-                                                                                   potential_evapotranspiration, compress)
+      CALL Ncio_write_vector (file_restart, 'irrig_rate            ' , 'patch',landpatch,irrig_rate            , compress)
+      CALL Ncio_write_vector (file_restart, 'sum_irrig             ' , 'patch',landpatch,sum_irrig             , compress)
+      CALL Ncio_write_vector (file_restart, 'sum_deficit_irrig     ' , 'patch',landpatch,sum_deficit_irrig     , compress)
+      CALL Ncio_write_vector (file_restart, 'sum_irrig_count       ' , 'patch',landpatch,sum_irrig_count       , compress)
+      CALL Ncio_write_vector (file_restart, 'n_irrig_steps_left    ' , 'patch',landpatch,n_irrig_steps_left    , compress)
+      CALL Ncio_write_vector (file_restart, 'waterstorage          ' , 'patch',landpatch,waterstorage          , compress)
       CALL ncio_write_vector (file_restart, 'irrig_method_corn     ' , 'patch',landpatch,irrig_method_corn     , compress)
       CALL ncio_write_vector (file_restart, 'irrig_method_swheat   ' , 'patch',landpatch,irrig_method_swheat   , compress)
       CALL ncio_write_vector (file_restart, 'irrig_method_wwheat   ' , 'patch',landpatch,irrig_method_wwheat   , compress)
@@ -1076,6 +1173,9 @@ IF (DEF_USE_IRRIGATION) THEN
       CALL ncio_write_vector (file_restart, 'irrig_method_rice1    ' , 'patch',landpatch,irrig_method_rice1    , compress)
       CALL ncio_write_vector (file_restart, 'irrig_method_rice2    ' , 'patch',landpatch,irrig_method_rice2    , compress)
       CALL ncio_write_vector (file_restart, 'irrig_method_sugarcane' , 'patch',landpatch,irrig_method_sugarcane, compress)
+      CALL Ncio_write_vector (file_restart, 'irrig_gw_alloc        ' , 'patch',landpatch,irrig_gw_alloc        , compress)
+      CALL Ncio_write_vector (file_restart, 'irrig_sw_alloc        ' , 'patch',landpatch,irrig_sw_alloc        , compress)
+      CALL Ncio_write_vector (file_restart, 'zwt_stand             ' , 'patch',landpatch,zwt_stand             , compress)
 ENDIF
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
@@ -1102,6 +1202,11 @@ ENDIF
 #if (defined CatchLateralFlow)
       file_restart = trim(dir_restart)// '/'//trim(cdate)//'/' // trim(site) //'_restart_basin_'//trim(cdate)//'_lc'//trim(cyear)//'.nc'
       CALL WRITE_CatchTimeVariables (file_restart)
+#endif
+
+#ifdef GridRiverLakeFlow
+      file_restart = trim(dir_restart)// '/'//trim(cdate)//'/' // trim(site) //'_restart_gridriver_'//trim(cdate)//'_lc'//trim(cyear)//'.nc'
+      CALL WRITE_GridRiverLakeTimeVars (file_restart)
 #endif
 
 #if (defined URBAN_MODEL)
@@ -1244,18 +1349,11 @@ ENDIF
 
 IF (DEF_USE_IRRIGATION) THEN
       CALL ncio_read_vector (file_restart, 'irrig_rate            ' , landpatch, irrig_rate            )
-      CALL ncio_read_vector (file_restart, 'deficit_irrig         ' , landpatch, deficit_irrig         )
       CALL ncio_read_vector (file_restart, 'sum_irrig             ' , landpatch, sum_irrig             )
+      CALL ncio_read_vector (file_restart, 'sum_deficit_irrig     ' , landpatch, sum_deficit_irrig     )
       CALL ncio_read_vector (file_restart, 'sum_irrig_count       ' , landpatch, sum_irrig_count       )
       CALL ncio_read_vector (file_restart, 'n_irrig_steps_left    ' , landpatch, n_irrig_steps_left    )
-      CALL ncio_read_vector (file_restart, 'tairday               ' , landpatch, tairday               )
-      CALL ncio_read_vector (file_restart, 'usday                 ' , landpatch, usday                 )
-      CALL ncio_read_vector (file_restart, 'vsday                 ' , landpatch, vsday                 )
-      CALL ncio_read_vector (file_restart, 'pairday               ' , landpatch, pairday               )
-      CALL ncio_read_vector (file_restart, 'rnetday               ' , landpatch, rnetday               )
-      CALL ncio_read_vector (file_restart, 'fgrndday              ' , landpatch, fgrndday              )
-      CALL ncio_read_vector (file_restart, 'potential_evapotranspiration' , landpatch,&
-                                                                           potential_evapotranspiration)
+      CALL ncio_read_vector (file_restart, 'waterstorage          ' , landpatch, waterstorage          )
       CALL ncio_read_vector (file_restart, 'irrig_method_corn     ' , landpatch, irrig_method_corn     )
       CALL ncio_read_vector (file_restart, 'irrig_method_swheat   ' , landpatch, irrig_method_swheat   )
       CALL ncio_read_vector (file_restart, 'irrig_method_wwheat   ' , landpatch, irrig_method_wwheat   )
@@ -1264,6 +1362,9 @@ IF (DEF_USE_IRRIGATION) THEN
       CALL ncio_read_vector (file_restart, 'irrig_method_rice1    ' , landpatch, irrig_method_rice1    )
       CALL ncio_read_vector (file_restart, 'irrig_method_rice2    ' , landpatch, irrig_method_rice2    )
       CALL ncio_read_vector (file_restart, 'irrig_method_sugarcane' , landpatch, irrig_method_sugarcane)
+      CALL ncio_read_vector (file_restart, 'irrig_gw_alloc        ' , landpatch, irrig_gw_alloc        )
+      CALL ncio_read_vector (file_restart, 'irrig_sw_alloc        ' , landpatch, irrig_sw_alloc        )
+      CALL ncio_read_vector (file_restart, 'zwt_stand             ' , landpatch, zwt_stand             )
 ENDIF
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
@@ -1290,6 +1391,11 @@ ENDIF
 #if (defined CatchLateralFlow)
       file_restart = trim(dir_restart)// '/'//trim(cdate)//'/' // trim(site) //'_restart_basin_'//trim(cdate)//'_lc'//trim(cyear)//'.nc'
       CALL READ_CatchTimeVariables (file_restart)
+#endif
+
+#ifdef GridRiverLakeFlow
+      file_restart = trim(dir_restart)// '/'//trim(cdate)//'/' // trim(site) //'_restart_gridriver_'//trim(cdate)//'_lc'//trim(cyear)//'.nc'
+      CALL READ_GridRiverLakeTimeVars (file_restart)
 #endif
 
 #if (defined URBAN_MODEL)
@@ -1405,17 +1511,17 @@ ENDIF
 IF (DEF_USE_IRRIGATION) THEN
       CALL check_vector_data ('irrig_rate            ' , irrig_rate            )
       CALL check_vector_data ('deficit_irrig         ' , deficit_irrig         )
+      CALL check_vector_data ('actual_irrig          ' , actual_irrig          )
       CALL check_vector_data ('sum_irrig             ' , sum_irrig             )
+      CALL check_vector_data ('sum_deficit_irrig     ' , sum_deficit_irrig     )
       CALL check_vector_data ('sum_irrig_count       ' , sum_irrig_count       )
       CALL check_vector_data ('n_irrig_steps_left    ' , n_irrig_steps_left    )
-      CALL check_vector_data ('tairday               ' , tairday               )
-      CALL check_vector_data ('usday                 ' , usday                 )
-      CALL check_vector_data ('vsday                 ' , vsday                 )
-      CALL check_vector_data ('pairday               ' , pairday               )
-      CALL check_vector_data ('rnetday               ' , rnetday               )
-      CALL check_vector_data ('fgrndday              ' , fgrndday              )
-      CALL check_vector_data ('potential_evapotranspiration' ,&
-                                                   potential_evapotranspiration)
+      CALL check_vector_data ('waterstorage          ' , waterstorage          )
+      CALL check_vector_data ('waterstorage_supply   ' , waterstorage_supply   )
+      CALL check_vector_data ('groundwater_demand    ' , groundwater_demand    )
+      CALL check_vector_data ('groundwater_supply    ' , groundwater_supply    )
+      CALL check_vector_data ('reservoirriver_demand ' , reservoirriver_demand )
+      CALL check_vector_data ('reservoirriver_supply ' , reservoirriver_supply )
       CALL check_vector_data ('irrig_method_corn     ' , irrig_method_corn     )
       CALL check_vector_data ('irrig_method_swheat   ' , irrig_method_swheat   )
       CALL check_vector_data ('irrig_method_wwheat   ' , irrig_method_wwheat   )
@@ -1424,6 +1530,9 @@ IF (DEF_USE_IRRIGATION) THEN
       CALL check_vector_data ('irrig_method_rice1    ' , irrig_method_rice1    )
       CALL check_vector_data ('irrig_method_rice2    ' , irrig_method_rice2    )
       CALL check_vector_data ('irrig_method_sugarcane' , irrig_method_sugarcane)
+      CALL check_vector_data ('irrig_gw_alloc        ' , irrig_gw_alloc        )
+      CALL check_vector_data ('irrig_sw_alloc        ' , irrig_sw_alloc        )
+      CALL check_vector_data ('zwt_stand             ' , zwt_stand             )
 ENDIF
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)

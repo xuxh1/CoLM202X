@@ -10,7 +10,6 @@ NETCDF_INC = /share/home/dq089/soft/netcdf-fortran-4.6.1-intel/include
 
 MOD_CMD = -module  
 
-#<<<<<<< HEAD
 #FOPTS = -qopenmp -g -traceback -r8 -free -check uninit 
        # -r8 -free -O0 -check uninit -check bounds -check pointers \
        # -traceback  -assume byterecl -pthread -heap-arrays #-nogen-interface

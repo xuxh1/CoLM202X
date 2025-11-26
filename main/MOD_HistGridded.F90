@@ -116,7 +116,7 @@ CONTAINS
 
    SUBROUTINE flux_map_and_write_2d ( &
          acc_vec, file_hist, varname, itime_in_file, sumarea, filter, &
-         longname, units)
+         longname, units, input_mode)
 
    USE MOD_Block
    USE MOD_Vars_Global, only: spval
@@ -133,6 +133,7 @@ CONTAINS
 
    type(block_data_real8_2d), intent(in) :: sumarea
    logical, intent(in) :: filter(:)
+   character(len=*), intent(in), optional :: input_mode
 
    ! Local variables
    type(block_data_real8_2d) :: flux_xy_2d
@@ -141,7 +142,11 @@ CONTAINS
 
       IF (p_is_io)      CALL allocate_block_data (ghist, flux_xy_2d)
 
-      CALL mp2g_hist%pset2grid (acc_vec, flux_xy_2d, spv = spval, msk = filter)
+      IF (present(input_mode)) THEN
+         CALL mp2g_hist%pset2grid (acc_vec, flux_xy_2d, spv = spval, msk = filter, input_mode = input_mode)
+      ELSE
+         CALL mp2g_hist%pset2grid (acc_vec, flux_xy_2d, spv = spval, msk = filter)
+      ENDIF
 
       IF (p_is_io) THEN
          DO iblkme = 1, gblock%nblkme
