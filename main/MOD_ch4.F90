@@ -458,7 +458,9 @@ contains
 		
 		if (DEF_wetland_finundation_scheme == 0 .and. patchtype == 2) then
 			finundated = 1._r8
-		elseif (DEF_wetland_finundation_scheme == 1 .or. (DEF_wetland_finundation_scheme == 0 .and. patchtype /= 2)) then
+		elseif (DEF_wetland_finundation_scheme == 0 .and. patchtype /= 2) then
+			finundated = 0._r8
+		elseif (DEF_wetland_finundation_scheme == 1) then
 			finundated = frcsat
 		elseif (DEF_wetland_finundation_scheme == 2) then
 			micro_sigma = (atan(slpratio) + DEF_CH4_hydrology%slopemax**(1._r8/DEF_CH4_hydrology%slopebeta))**DEF_CH4_hydrology%slopebeta
