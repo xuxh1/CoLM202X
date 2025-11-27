@@ -389,6 +389,7 @@ contains
         integer  :: jwt_sat            ! index of the soil layer right above the water table (-), saturated zone
         integer  :: jwt_unsat          ! index of the soil layer right above the water table (-), unsaturated zone
 		real(r8) :: zwt_sat, wice_soisno_sat(maxsnl+1:nl_soil), wliq_soisno_sat(maxsnl+1:nl_soil), wdsrf_sat
+		! real(r8), save :: wdsrf_sat = 0._r8, wetwat_sat = 200._r8, wa_sat = 0._r8
 		real(r8) :: zwt_unsat, wice_soisno_unsat(maxsnl+1:nl_soil), wliq_soisno_unsat(maxsnl+1:nl_soil), wdsrf_unsat
 
 		real(r8) :: micro_sigma, min_wdsrf, d, sigma, fd, dfdd  
@@ -454,10 +455,12 @@ contains
 		call print_var(totcolch4_bef, 'ch4 totcolch4_bef',idate)
 		call print_var(totcolch4_bef_sat, 'ch4 totcolch4_bef_sat',idate)
 		call print_var(totcolch4_bef_unsat, 'ch4 totcolch4_bef_unsat',idate)
-
-		if (DEF_wetland_finundation_scheme == 0) then
+		
+		if (DEF_wetland_finundation_scheme == 0 .and. patchtype == 2) then
+			finundated = 1._r8
+		elseif (DEF_wetland_finundation_scheme == 1 .or. (DEF_wetland_finundation_scheme == 0 .and. patchtype /= 2)) then
 			finundated = frcsat
-		elseif (DEF_wetland_finundation_scheme == 1) then
+		elseif (DEF_wetland_finundation_scheme == 2) then
 			micro_sigma = (atan(slpratio) + DEF_CH4_hydrology%slopemax**(1._r8/DEF_CH4_hydrology%slopebeta))**DEF_CH4_hydrology%slopebeta
 			min_wdsrf = 1.e-8_r8
 			if (wdsrf > min_wdsrf) then
@@ -614,6 +617,29 @@ contains
 				wliq_soisno_sat = wliq_soisno
 				wice_soisno_sat = wice_soisno
 
+				! IF (.not.DEF_SPLIT_SOILSNOW) THEN
+				! 	IF (lb >= 1) THEN
+				! 		wetwat_sat = wdsrf_sat + wa_sat + wetwat_sat + (gwat - etr + qsdew + qfros - qsubl) * deltim
+				! 	ELSE
+				! 		wetwat_sat = wdsrf_sat + wa_sat + wetwat_sat + (gwat - etr) * deltim
+				! 	ENDIF
+				! ELSE
+				! 	wetwat_sat = wdsrf_sat + wa_sat + wetwat_sat + (gwat - etr + qsdew_soil + qfros_soil - qsubl_soil) * deltim
+				! ENDIF
+
+				! IF (wetwat_sat > wetwatmax) THEN
+				! 	wdsrf_sat  = wetwat_sat - wetwatmax
+				! 	wetwat_sat = wetwatmax
+            	! 	wa_sat     = 0.
+				! ELSEIF (wetwat_sat < 0) THEN
+	            ! 	wa_sat     = wetwat_sat
+				! 	wdsrf_sat  = 0.
+				! 	wetwat_sat = 0.
+				! ELSE
+				! 	wdsrf_sat = 0.
+		        !     wa_sat    = 0.
+				! ENDIF
+
 				DO j = 1, nl_soil
 					IF(t_soisno(j)>tfrz)THEN
 						wliq_soisno_sat(j) = porsl(j)*dz_soisno(j)*denh2o
@@ -623,8 +649,8 @@ contains
 						wice_soisno_sat(j) = porsl(j)*dz_soisno(j)*denice
 					ENDIF
 				ENDDO
-			
-				wdsrf_sat = 0.
+				
+				wdsrf_sat = 200
 				jwt_sat = 0
 
 				call print_var(zwt_sat, 'ch4 sat zwt_sat', idate)

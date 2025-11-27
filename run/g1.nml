@@ -52,8 +52,7 @@
    DEF_METHANE_only_wetland = .true.
    DEF_USE_METHANE_para = .true.
    DEF_file_METHANE_para = '/share/home/dq076/mode/ME/251124/run/standard_ch4_parameter.nml'
-   DEF_wetland_split_fsat = .true.
-   DEF_wetland_finundation_scheme = 0
+   DEF_wetland_finundation_scheme = 1
 
    DEF_USE_VariablySaturatedFlow = .true.
    DEF_Runoff_SCHEME = 0

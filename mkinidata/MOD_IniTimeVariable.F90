@@ -535,7 +535,7 @@ CONTAINS
                CALL polint(soil_z,soil_t,nl_soil_ini,z_soisno(j),t_soisno(j))
             ENDDO
 
-            IF (patchtype <= 1 .or. (DEF_wetland_split_fsat .and. patchtype==2)) THEN ! soil or urban
+            IF (patchtype <= 1 .or. (DEF_wetland_finundation_scheme /= 0 .and. patchtype==2)) THEN ! soil or urban
 
                DO j = 1, nl_soil
 
@@ -569,7 +569,7 @@ CONTAINS
                   wa = 0.
                ENDIF
 
-            ELSEIF (((.not.DEF_wetland_split_fsat) .and. patchtype == 2) .or. (patchtype == 4)) THEN ! (2) wetland or (4) lake
+            ELSEIF (((DEF_wetland_finundation_scheme == 0) .and. patchtype == 2) .or. (patchtype == 4)) THEN ! (2) wetland or (4) lake
 
                DO j = 1, nl_soil
                   IF(t_soisno(j).ge.tfrz)THEN
@@ -615,7 +615,7 @@ CONTAINS
                ENDIF
             ENDDO
 
-            IF (patchtype <= 1 .or. (DEF_wetland_split_fsat .and. patchtype==2)) THEN
+            IF (patchtype <= 1 .or. (DEF_wetland_finundation_scheme /= 0 .and. patchtype==2)) THEN
                CALL get_water_equilibrium_state (zwtmm, nl_soil, wliq_soisno(1:nl_soil), smp, hk, wa, &
                   zc_soimm, zi_soimm, porsl, vliq_r, psi0, hksati, nprms, prms)
             ELSE
@@ -642,7 +642,7 @@ CONTAINS
                ENDIF
             ENDDO
 
-            IF (patchtype <= 1 .or. (DEF_wetland_split_fsat .and. patchtype==2)) THEN
+            IF (patchtype <= 1 .or. (DEF_wetland_finundation_scheme /= 0 .and. patchtype==2)) THEN
                IF (DEF_USE_VariablySaturatedFlow) THEN
                   wa  = 0.
                   zwt = zi_soimm(nl_soil)/1000.

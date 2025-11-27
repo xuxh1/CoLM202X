@@ -347,7 +347,7 @@ ENDIF
             wdsrf(:) = 0._r8
 
             wetwat(:) = 0._r8
-            WHERE ((.not.DEF_wetland_split_fsat) .and. patchtype == 2) wetwat = 200._r8 ! for wetland
+            WHERE ((DEF_wetland_finundation_scheme == 0) .and. patchtype == 2) wetwat = 200._r8 ! for wetland
          ENDIF
       ENDIF
 ! ------------------------------------------

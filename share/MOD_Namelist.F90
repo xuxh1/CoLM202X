@@ -243,11 +243,11 @@ MODULE MOD_Namelist
    character(len=256) :: DEF_file_METHANE_para = 'null'
 
    ! Options for wetland finundation scheme
-   ! 0: Use runoff scheme fsat 
-   ! 1: Use CLM5.0 prognostic hsosfc
-   integer :: DEF_wetland_finundation_scheme = 0
+   ! 0: Use CoLM original finundation scheme - all wetland frcsat is 1
+   ! 1: Use CoLM runoff scheme frcsat 
+   ! 2: Use CLM5.0 prognostic hsosfc
+   integer :: DEF_wetland_finundation_scheme = 1
 #endif
-   logical :: DEF_wetland_split_fsat = .false.
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! ----- Part 12: parameterization schemes -----
@@ -1193,7 +1193,6 @@ CONTAINS
       DEF_file_METHANE_para,                  & !add by Xionghui Xu @sysu 2025/10/21
       DEF_wetland_finundation_scheme,         & !add by Xionghui Xu @sysu 2025/11/25
 #endif
-      DEF_wetland_split_fsat,                 & !add by Xionghui Xu @sysu 2025/11/12
 
       DEF_USE_Dynamic_Lake,                   & !add by Shupeng Zhang @ sysu 2024/09/12
       DEF_CheckEquilibrium,                   & !add by Shupeng Zhang @ sysu 2024/11/26
@@ -1779,7 +1778,6 @@ CONTAINS
 
       CALL mpi_bcast (DEF_wetland_finundation_scheme         ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
 #endif 
-      CALL mpi_bcast (DEF_wetland_split_fsat                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_USE_Dynamic_Lake                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_CheckEquilibrium                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
