@@ -1,8 +1,8 @@
 #!/bin/bash
-#BSUB -J g1_noCH4
+#BSUB -J g1_wetland_sat
 #BSUB -q normal
-#BSUB -o /share/home/dq076/mode/ME/251124/run/logs/g1_noCH4-o.out
-#BSUB -e /share/home/dq076/mode/ME/251124/run/logs/g1_noCH4-e.out
+#BSUB -o g1_wetland_sat-o.out
+#BSUB -e g1_wetland_sat-e.out
 #BSUB -n 480
 #BSUB -R rusage[mem=150G]
 #BSUB -R span[ptile=48]
@@ -12,10 +12,10 @@
 echo job start time is `date`
 echo `hostname`
 
-echo "start: ${SYEAR}" `date`  >> /share/home/dq076/mode/ME/251124/run/log.txt
+echo "start: ${SYEAR}" `date`  >> log.txt
 mkdir -p logs
 
-# mpirun  -np 720 ./mksrfdata.x g1.nml
+# mpirun  -np 480 ./mksrfdata.x g1.nml
 # mpirun -np 48 ./mkinidata.x g1.nml
 mpirun  -np 480 ./colm.x g1.nml
 

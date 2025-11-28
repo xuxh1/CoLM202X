@@ -456,13 +456,17 @@ contains
 		call print_var(totcolch4_bef_sat, 'ch4 totcolch4_bef_sat',idate)
 		call print_var(totcolch4_bef_unsat, 'ch4 totcolch4_bef_unsat',idate)
 		
-		if (DEF_wetland_finundation_scheme == 0 .and. patchtype == 2) then
-			finundated = 1._r8
-		elseif (DEF_wetland_finundation_scheme == 0 .and. patchtype /= 2) then
-			finundated = 0._r8
+		if (DEF_wetland_finundation_scheme == 0) then
+			if (patchtype == 2) then
+				finundated = 1._r8
+			else
+				finundated = 0._r8
+			endif
 		elseif (DEF_wetland_finundation_scheme == 1) then
-			finundated = frcsat
+			finundated = 0._r8
 		elseif (DEF_wetland_finundation_scheme == 2) then
+			finundated = frcsat
+		elseif (DEF_wetland_finundation_scheme == 3) then
 			micro_sigma = (atan(slpratio) + DEF_CH4_hydrology%slopemax**(1._r8/DEF_CH4_hydrology%slopebeta))**DEF_CH4_hydrology%slopebeta
 			min_wdsrf = 1.e-8_r8
 			if (wdsrf > min_wdsrf) then

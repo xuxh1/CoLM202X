@@ -1,8 +1,8 @@
 #!/bin/bash
-#BSUB -J g2
+#BSUB -J g2_wetland_unsat_and_soil_unsat
 #BSUB -q normal
-#BSUB -o /share/home/dq076/mode/ME/251114/run/logs/g2-o.out
-#BSUB -e /share/home/dq076/mode/ME/251114/run/logs/g2-e.out
+#BSUB -o g2_wetland_unsat_and_soil_unsat-o.out
+#BSUB -e g2_wetland_unsat_and_soil_unsat-e.out
 #BSUB -n 480
 #BSUB -R rusage[mem=150G]
 #BSUB -R span[ptile=48]
@@ -12,7 +12,7 @@
 echo job start time is `date`
 echo `hostname`
 
-echo "start: ${SYEAR}" `date`  >> /share/home/dq076/mode/ME/251114/run/log.txt
+echo "start: ${SYEAR}" `date`  >> log.txt
 mkdir -p logs
 
 # mpirun  -np 480 ./mksrfdata.x g2.nml

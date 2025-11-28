@@ -243,10 +243,11 @@ MODULE MOD_Namelist
    character(len=256) :: DEF_file_METHANE_para = 'null'
 
    ! Options for wetland finundation scheme
-   ! 0: Use CoLM original finundation scheme - all wetland frcsat is 1
-   ! 1: Use CoLM runoff scheme frcsat 
-   ! 2: Use CLM5.0 prognostic hsosfc
-   integer :: DEF_wetland_finundation_scheme = 1
+   ! 0: Use CoLM original finundation scheme - all wetland is sat, and soil is unsat
+   ! 1: Use CoLM revised finundation scheme - all wetland and soil is unsat
+   ! 2: Use CoLM runoff scheme frcsat 
+   ! 3: Use CLM5.0 prognostic hsosfc
+   integer :: DEF_wetland_finundation_scheme = 0
 #endif
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
