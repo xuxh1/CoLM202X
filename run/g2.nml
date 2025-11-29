@@ -1,6 +1,6 @@
 &nl_colm
 
-   DEF_CASE_NAME = 'g2_wetland_unsat_and_soil_unsat'
+   DEF_CASE_NAME = 'g2_wetland_h2osfc_and_soil_h2osfc'
 
    DEF_domain%edges = -90.0
    DEF_domain%edgen = 90.0
@@ -54,7 +54,7 @@
    DEF_METHANE_only_wetland = .false.
    DEF_USE_METHANE_para = .true.
    DEF_file_METHANE_para = './standard_ch4_parameter.nml'
-   DEF_wetland_finundation_scheme = 1
+   DEF_wetland_finundation_scheme = 3
    
    ! Water setting
    DEF_USE_VariablySaturatedFlow = .true.

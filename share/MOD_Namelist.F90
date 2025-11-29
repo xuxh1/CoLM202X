@@ -238,7 +238,7 @@ MODULE MOD_Namelist
 ! ----- Part 11: Methane model related ------
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #ifdef CH4
-   logical :: DEF_METHANE_only_wetland = .true.
+   logical :: DEF_METHANE_only_wetland = .false.
    logical :: DEF_USE_METHANE_para = .false.
    character(len=256) :: DEF_file_METHANE_para = 'null'
 
@@ -247,7 +247,7 @@ MODULE MOD_Namelist
    ! 1: Use CoLM revised finundation scheme - all wetland and soil is unsat
    ! 2: Use CoLM runoff scheme frcsat 
    ! 3: Use CLM5.0 prognostic hsosfc
-   integer :: DEF_wetland_finundation_scheme = 0
+   integer :: DEF_wetland_finundation_scheme = 3
 #endif
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

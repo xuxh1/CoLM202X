@@ -1,8 +1,8 @@
 #!/bin/bash
-#BSUB -J g2_wetland_unsat_and_soil_unsat
+#BSUB -J g2_wetland_h2osfc_and_soil_h2osfc
 #BSUB -q normal
-#BSUB -o g2_wetland_unsat_and_soil_unsat-o.out
-#BSUB -e g2_wetland_unsat_and_soil_unsat-e.out
+#BSUB -o g2_wetland_h2osfc_and_soil_h2osfc-o.out
+#BSUB -e g2_wetland_h2osfc_and_soil_h2osfc-e.out
 #BSUB -n 480
 #BSUB -R rusage[mem=150G]
 #BSUB -R span[ptile=48]
