@@ -456,6 +456,7 @@ contains
 		call print_var(totcolch4_bef_sat, 'ch4 totcolch4_bef_sat',idate)
 		call print_var(totcolch4_bef_unsat, 'ch4 totcolch4_bef_unsat',idate)
 		
+		finundated = 1._r8
 		if (DEF_wetland_finundation_scheme == 0) then
 			if (patchtype == 2) then
 				finundated = 1._r8
