@@ -1,6 +1,6 @@
 #include <define.h>
 #ifdef CH4
-	SUBROUTINE ch4_driver (istep,i,idate,patchtype,deltim,lb,snl,dlon,dlat,&!input
+	SUBROUTINE ch4_driver (istep,i,idate,patchclass,patchtype,deltim,lb,snl,dlon,dlat,&!input
 		z_soisno,dz_soisno,zi_soisno,t_soisno,t_grnd,wliq_soisno,wice_soisno,&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&
 		zwt,rootfr,snowdp,wat,rsur,etr,lakedepth,lake_icefrac,wdsrf,bsw,&
@@ -70,8 +70,10 @@
 
 		integer ,intent(in) :: i         ! patch index
 		integer ,intent(in) :: idate(1:3)  ! current date (year, day of the year, seconds of the day)
-		integer ,intent(in) :: patchtype ! land patch type (0=soil, 1=urban and built-up,
-								         ! 2=wetland, 3=land ice, 4=land water bodies, 99 = ocean)
+		integer, intent(in) :: &
+							patchclass  ,&! land patch class of USGS classification or others
+							patchtype     ! land patch type (0=soil, 1=urban and built-up,
+								          ! 2=wetland, 3=land ice, 4=land water bodies, 99 = ocean)
 		real(r8),intent(in) :: deltim    ! time step in seconds
 		integer ,intent(in) :: &
 				lb,&
@@ -122,12 +124,12 @@
 		pe = patch_pft_e(i)
 
 		crootfr(:) = rootfr(:)
-		pH = 7
+		pH = 6.5
 		cellorg = 0.
 		cellorg(:) = (cellorg(:) + sum(decomp_cpools_vr(1:10, 1:7, i), dim=2))*1000
 		t_h2osfc = t_grnd
 
-		CALL ch4 (istep,idate(1:3),patchtype,lb,snl,dlon,dlat,deltim,&
+		CALL ch4 (istep,idate(1:3),patchclass,patchtype,lb,snl,dlon,dlat,deltim,&
 		z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:),&
 		t_grnd,wliq_soisno(maxsnl+1:),wice_soisno(maxsnl+1:),&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&

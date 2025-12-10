@@ -16,7 +16,6 @@
 
     ! ! ch4 aerenchyma constants
     DEF_CH4%poros_tiller = 0.3
-    DEF_CH4%poros_tiller_unsat = 0.05
     DEF_CH4%aere_radius = 2.9e-3
     DEF_CH4%rob = 3.
     DEF_CH4%scale_factor_aere = 1.
@@ -26,4 +25,5 @@
     DEF_CH4%scale_factor_liqdiff = 1.
 
     DEF_CH4%use_vertical_redoxlag = .true.
+    DEF_CH4%anoxicmicrosites = .true.
 /

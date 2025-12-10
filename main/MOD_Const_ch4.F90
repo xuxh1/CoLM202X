@@ -81,11 +81,11 @@ MODULE MOD_Const_ch4
       real(r8) :: vgc_max  =0.15_r8            ! ratio of saturation pressure triggering ebullition (params:0.15) (doc:Ce,max Ce,min Baseline:0.15 Unit:mol m-3 ?)
 
       ! ! ch4 aerenchyma constants
-      ! real(r8) :: nongrassporosratio = 1/3   ! Ratio of root porosity in non-grass to grass, used for aerenchyma transport (params:0.33)
+      real(r8) :: nongrassporosratio = 1/3   ! Ratio of root porosity in non-grass to grass, used for aerenchyma transport (params:0.33)
       real(r8) :: poros_tiller = 0.3_r8    ! Porosity for grass tiller
-      real(r8) :: poros_tiller_unsat = 0.05_r8    ! Porosity for grass tiller unsaturate (poros_tiller/6)
-      ! real(r8) :: poros_tiller_unsat = 0.05_r8/0.3_r8    ! Ratio to multiply upland vegetation aerenchyma porosity by compared to inundated systems (params:0.1666666667 code:0.05_r8 / 0.3_r8)
-      ! real(r8) :: porosmin = 0.05_r8            ! minimum aerenchyma porosity (unitless)(params:0.05 code:0.05_r8) 
+      ! real(r8) :: poros_tiller_unsat = 0.05_r8    ! Porosity for grass tiller unsaturate (poros_tiller/6)
+      real(r8) :: unsat_aere_ratio = 0.05_r8/0.3_r8    ! Ratio to multiply upland vegetation aerenchyma porosity by compared to inundated systems (params:0.1666666667 code:0.05_r8 / 0.3_r8)
+      real(r8) :: porosmin = 0.05_r8            ! minimum aerenchyma porosity (unitless)(params:0.05 code:0.05_r8) 
       real(r8) :: aere_radius = 2.9e-3_r8 ! Aerenchyma radius
       real(r8) :: rob = 3._r8                 ! ratio of root length to vertical depth ("root obliquity") (params:3. code:3._r8)
       real(r8) :: scale_factor_aere = 1._r8   ! scale factor on the aerenchyma area for sensitivity tests (1 params:1.) (doc:Fa Baseline:1 Range:0.5~1.5)
@@ -127,8 +127,8 @@ MODULE MOD_Const_ch4
 
       ! ! additional constants
       ! real(r8) :: f_sat =0.95               ! volumetric soil water defining top of water table or where production is allowed (params:0.95 code:0.95)
-      real(r8) :: qflxlagd  = 30._r8          ! days to lag qflx_surf_lag in the tropics (days) (params:30 code:30._r8)
-      real(r8) :: highlatfact = 2._r8         ! multiple of qflxlagd for high latitudes	(params:2. code:2._r8)	
+      ! real(r8) :: qflxlagd  = 30._r8          ! days to lag qflx_surf_lag in the tropics (days) (params:30 code:30._r8)
+      ! real(r8) :: highlatfact = 2._r8         ! multiple of qflxlagd for high latitudes	(params:2. code:2._r8)	
       real(r8) :: atmch4  = 1.7e-6_r8         ! Atmospheric CH4 mixing ratio to prescribe if not provided by the atmospheric model (params:1.7e-6 code:1.7e-6_r8 search:1.9e-6) (mol/mol) could change with year
       real(r8) :: om_frac_sf = 1._r8          ! Scale factor for organic matter fraction (unitless)(? params:NA)
 
@@ -137,7 +137,7 @@ MODULE MOD_Const_ch4
       ! the parameter file and may be modifed by the user (default aereoxid on the
       ! file is 0.0).
 
-      logical :: transpirationloss = .false. ! switch for activating CH4 loss from transpiration
+      logical :: transpirationloss = .true. ! switch for activating CH4 loss from transpiration
                                     ! Transpiration loss assumes that the methane concentration in dissolved soil
                                     ! water remains constant through the plant and is released when the water evaporates
                                     ! from the stomata.

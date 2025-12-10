@@ -80,16 +80,17 @@ contains
       endif
 
       ! Only print at specific DOY
-      ! if (idate(2) /= 92) return
+      if (idate(2) /= 120) return
       return
 
       ! Restrict by layer index
       if (present(j)) then
-         if (j == 0 .or. j == 1 .or. j == 10) then
-            should_print = .true.
-         else
-            should_print = .false.
-         endif
+         ! if (j == 0 .or. j == 1 .or. j == 10) then
+         !    should_print = .true.
+         ! else
+         !    should_print = .false.
+         ! endif
+         should_print=.true.
       else
          should_print = .true.
       endif

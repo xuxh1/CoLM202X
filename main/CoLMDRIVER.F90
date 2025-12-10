@@ -221,7 +221,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
             ENDIF
             ! Execute CH4 driver if condition is met
             IF (run_ch4) THEN
-                CALL ch4_driver(istep,i,idate(1:3),patchtype(i),deltim,lb,snl,&!input
+                CALL ch4_driver(istep,i,idate(1:3),patchclass(i),patchtype(i),deltim,lb,snl,&!input
                 patchlonr(i)*180/PI,patchlatr(i)*180/PI,&
                 z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:,i),&
                 t_grnd(i),wliq_soisno(maxsnl+1:,i),wice_soisno(maxsnl+1:,i),&
