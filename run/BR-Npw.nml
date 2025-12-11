@@ -57,7 +57,7 @@
    DEF_wetland_finundation_scheme = 3
 
    DEF_USE_VariablySaturatedFlow = .true.
-   DEF_Runoff_SCHEME = 0
+   DEF_Runoff_SCHEME = 3
 
    ! ----- forcing -----
    ! Options :
