@@ -24,7 +24,7 @@
    DEF_simulation_time%end_month     = 12
    DEF_simulation_time%end_day       = 31
    DEF_simulation_time%end_sec       = 82800
-   DEF_simulation_time%spinup_year   = 2015
+   DEF_simulation_time%spinup_year   = 2012
    DEF_simulation_time%spinup_month  = 1
    DEF_simulation_time%spinup_day    = 1
    DEF_simulation_time%spinup_sec    = 0

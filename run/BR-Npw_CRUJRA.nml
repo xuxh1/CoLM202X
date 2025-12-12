@@ -3,7 +3,7 @@
 ! Author: Shupeng Zhang 
 ! Description : an example for SinglePoint with all surface data from database instead of observations.
 
-   DEF_CASE_NAME = 'BR-Npw_FLUXNET-CH4'
+   DEF_CASE_NAME = 'BR-Npw_CRUJRA'
 
    USE_SITE_landtype        = .true.
    USE_SITE_pctpfts         = .false.
@@ -16,15 +16,15 @@
    USE_SITE_topography      = .false.
 
    DEF_simulation_time%greenwich     = .false.
-   DEF_simulation_time%start_year    = 2013
+   DEF_simulation_time%start_year    = 1900
    DEF_simulation_time%start_month   = 12
    DEF_simulation_time%start_day     = 6
    DEF_simulation_time%start_sec     = 0
-   DEF_simulation_time%end_year      = 2016
+   DEF_simulation_time%end_year      = 2024
    DEF_simulation_time%end_month     = 12
    DEF_simulation_time%end_day       = 31
    DEF_simulation_time%end_sec       = 82800
-   DEF_simulation_time%spinup_year   = 2015
+   DEF_simulation_time%spinup_year   = 0
    DEF_simulation_time%spinup_month  = 1
    DEF_simulation_time%spinup_day    = 1
    DEF_simulation_time%spinup_sec    = 0
@@ -64,7 +64,8 @@
    ! Options :
    ! PRINCETON | GSWP3   | QIAN  | CRUNCEPV4 | CRUNCEPV7 | ERA5LAND | ERA5  |  MSWX
    ! WFDE5     | CRUJRA  | WFDEI | JRA55     | GDAS      | CMFD     | POINT |  JRA3Q
-   DEF_forcing_namelist = '/share/home/dq076/mode/ME/251203/run/forcing/SINGLE_BR-Npw.nml'
+   ! DEF_forcing_namelist = '/share/home/dq076/mode/ME/251203/run/forcing/SINGLE_BR-Npw.nml'
+   DEF_forcing_namelist = '/share/home/dq076/mode/ME/251203/run/forcing/CRUJRA.nml'
    
    ! ----- history -----
    DEF_WRST_FREQ = 'YEARLY'   ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY

@@ -288,127 +288,132 @@ CONTAINS
 
    END SUBROUTINE SurfaceRunoff_TOPMOD_CLM
 
-   SUBROUTINE split_h2osfc_from_surface_soil(nl_soil, wimp, hksati, z_soisno, dz_soisno,   &
-                                          zi_soisno, eff_porosity, icefrac,  &
-                                          gwat, rsur, frcsat, slpratio, deltim, pondmx, f_h2osfc, wdsrf, &                                                                                 
-                                          q_soil, q_excess, q_h2osfc, q_drain_h2osfc, q_h2osfc_surf)
-   IMPLICIT NONE
-
-   integer, intent(in) :: nl_soil   ! number of soil layers
-   real(r8), intent(in) :: &
-         ! wtfact,                 &! (updated to gridded 'fsatmax' data)
-                                    ! fraction of model area with high water table
-         wimp,                     &! water impermeable if porosity less than wimp
-         hksati(1:nl_soil),        &! hydraulic conductivity at saturation (mm h2o/s)
-         z_soisno(1:nl_soil),      &! layer depth (m)
-         dz_soisno(1:nl_soil),     &! layer thickness (m)
-         zi_soisno(0:nl_soil),     &! interface level below a "z" level (m)
-         eff_porosity(1:nl_soil),  &! effective porosity = porosity - vol_ice
-         icefrac(1:nl_soil),       &! ice fraction (-)
-         gwat,                     &! net water input from top
-         rsur,                     &! surface runoff (mm h2o/s)
-         frcsat,                   &! fractional area with water table at surface
-         slpratio,                 &! the slope ratio
-         deltim,                   &
-         pondmx
-
-   real(r8), intent(inout) :: &
-         f_h2osfc ,& ! fractional inundated area
-         wdsrf       ! surface water (mm)
-
-   real(r8), intent(out) :: q_soil, &
-         q_excess, &
-         q_h2osfc, &
-         q_drain_h2osfc, &
-         q_h2osfc_surf
-
-   real(r8) :: qinmax
-   real(r8) :: micro_sigma, sigma, d
-   real(r8) :: fd, dfdd
-   real(r8) :: pondmin
-   real(r8) :: f_connected
-   real(r8) :: k_h2osfc
-   real(r8) :: 
-   integer :: l
+   ! SUBROUTINE split_h2osfc_from_surface_soil(nl_soil, wimp, hksati, z_soisno, dz_soisno,   &
+   !                                        zi_soisno, eff_porosity, icefrac,  &
+   !                                        gwat, rsur, frcsat, slpratio, deltim, pondmx, f_h2osfc, wdsrf, &                                                                                 
+   !                                        q_soil, q_excess, q_h2osfc, q_drain_h2osfc, q_h2osfc_surf)
    
-      !--------------------------------------------------
-      ! 1. Maximum infiltration capacity
-      !--------------------------------------------------
-      qinmax = (1-frcsat)*minval(10.0_r8**(-6.0_r8*icefrac(1:min(3,nl_soil))) * &
-                                 hksati(1:min(3,nl_soil)))
+   ! USE MOD_Const_ch4
+   ! USE MOD_Vars_Global, only : PI
+   ! IMPLICIT NONE
+   
 
-      IF(eff_porosity(1) < wimp) qinmax = 0.0_r8
+
+   ! integer, intent(in) :: nl_soil   ! number of soil layers
+   ! real(r8), intent(in) :: &
+   !       ! wtfact,                 &! (updated to gridded 'fsatmax' data)
+   !                                  ! fraction of model area with high water table
+   !       wimp,                     &! water impermeable if porosity less than wimp
+   !       hksati(1:nl_soil),        &! hydraulic conductivity at saturation (mm h2o/s)
+   !       z_soisno(1:nl_soil),      &! layer depth (m)
+   !       dz_soisno(1:nl_soil),     &! layer thickness (m)
+   !       zi_soisno(0:nl_soil),     &! interface level below a "z" level (m)
+   !       eff_porosity(1:nl_soil),  &! effective porosity = porosity - vol_ice
+   !       icefrac(1:nl_soil),       &! ice fraction (-)
+   !       gwat,                     &! net water input from top
+   !       rsur,                     &! surface runoff (mm h2o/s)
+   !       frcsat,                   &! fractional area with water table at surface
+   !       slpratio,                 &! the slope ratio
+   !       deltim,                   &
+   !       pondmx
+
+   ! real(r8), intent(inout) :: &
+   !       f_h2osfc ,& ! fractional inundated area
+   !       wdsrf       ! surface water (mm)
+
+   ! real(r8), intent(out) :: q_soil, &
+   !       q_excess, &
+   !       q_h2osfc, &
+   !       q_drain_h2osfc, &
+   !       q_h2osfc_surf
+
+   ! real(r8) :: qinmax
+   ! real(r8) :: micro_sigma, sigma, d
+   ! real(r8) :: fd, dfdd
+   ! real(r8) :: pondmin
+   ! real(r8) :: f_connected
+   ! real(r8) :: k_h2osfc
+   ! real(r8) :: 
+   ! integer :: l
+   
+   !    !--------------------------------------------------
+   !    ! 1. Maximum infiltration capacity
+   !    !--------------------------------------------------
+   !    qinmax = (1-frcsat)*minval(10.0_r8**(-6.0_r8*icefrac(1:min(3,nl_soil))) * &
+   !                               hksati(1:min(3,nl_soil)))
+
+   !    IF(eff_porosity(1) < wimp) qinmax = 0.0_r8
       
-      !--------------------------------------------------
-      ! 2. Partition incoming water
-      !--------------------------------------------------
-      q_soil = (1.0_r8 - f_h2osfc) * (gwat - rsur)
-      q_excess = max(q_soil - qinmax, 0.0_r8)
-      q_h2osfc = f_h2osfc*(gwat - rsur) + q_excess
+   !    !--------------------------------------------------
+   !    ! 2. Partition incoming water
+   !    !--------------------------------------------------
+   !    q_soil = (1.0_r8 - f_h2osfc) * (gwat - rsur)
+   !    q_excess = max(q_soil - qinmax, 0.0_r8)
+   !    q_h2osfc = f_h2osfc*(gwat - rsur) + q_excess
 
-      !--------------------------------------------------
-      ! 3. Connectivity function (CLM-style)
-      !--------------------------------------------------
-      IF (f_h2osfc <= 0.4_r8) THEN
-         f_connected = 0.0_r8
-      ELSE
-         f_connected = (f_h2osfc - 0.4_r8)**0.14_r8
-      END IF
+   !    !--------------------------------------------------
+   !    ! 3. Connectivity function (CLM-style)
+   !    !--------------------------------------------------
+   !    IF (f_h2osfc <= 0.4_r8) THEN
+   !       f_connected = 0.0_r8
+   !    ELSE
+   !       f_connected = (f_h2osfc - 0.4_r8)**0.14_r8
+   !    END IF
 
-      !--------------------------------------------------
-      ! 4. h2osfc runoff related to slope
-      !--------------------------------------------------
-      if (wdsrf > pondmx) then
-         k_h2osfc = 1.0e-4_r8 * sin(atan(slpratio))
-         q_h2osfc_surf = k_h2osfc*f_connected*(wdsrf-pondmx)
-         q_h2osfc_surf = min(q_h2osfc_surf, (wdsrf-pondmx)/deltim)
-      else
-         q_h2osfc_surf = 0._r8
-      endif
+   !    !--------------------------------------------------
+   !    ! 4. h2osfc runoff related to slope
+   !    !--------------------------------------------------
+   !    if (wdsrf > pondmx) then
+   !       k_h2osfc = 1.0e-4_r8 * sin(atan(slpratio))
+   !       q_h2osfc_surf = k_h2osfc*f_connected*(wdsrf-pondmx)
+   !       q_h2osfc_surf = min(q_h2osfc_surf, (wdsrf-pondmx)/deltim)
+   !    else
+   !       q_h2osfc_surf = 0._r8
+   !    endif
 
-      if (q_h2osfc_surf<1.e-8) q_h2osfc_surf = 0._r8
+   !    if (q_h2osfc_surf<1.e-8) q_h2osfc_surf = 0._r8
 
-      wdsrf = wdsrf + (q_h2osfc - q_h2osfc_surf)*deltim
+   !    wdsrf = wdsrf + (q_h2osfc - q_h2osfc_surf)*deltim
 
-      !--------------------------------------------------
-      ! 5. h2osfc drainage
-      !--------------------------------------------------
-      q_drain_h2osfc = min(f_h2osfc*qinmax,wdsrf/deltim)
+   !    !--------------------------------------------------
+   !    ! 5. h2osfc drainage
+   !    !--------------------------------------------------
+   !    q_drain_h2osfc = min(f_h2osfc*qinmax,wdsrf/deltim)
 
-      wdsrf = wdsrf - q_drain_h2osfc*deltim
+   !    wdsrf = wdsrf - q_drain_h2osfc*deltim
 
-      !--------------------------------------------------
-      ! 6. Update inundation fraction (using CLM h2osfc scheme)
-      !--------------------------------------------------
-      micro_sigma = (atan(slpratio) + DEF_CH4_hydrology%slopemax**(1._r8/DEF_CH4_hydrology%slopebeta))**DEF_CH4_hydrology%slopebeta
+   !    !--------------------------------------------------
+   !    ! 6. Update inundation fraction (using CLM h2osfc scheme)
+   !    !--------------------------------------------------
+   !    micro_sigma = (atan(slpratio) + DEF_CH4_hydrology%slopemax**(1._r8/DEF_CH4_hydrology%slopebeta))**DEF_CH4_hydrology%slopebeta
 
-      pondmin = 1.e-8_r8
-      if (wdsrf > pondmin) then
-         ! a cutoff is needed for numerical reasons...(nonconvergence after 5 iterations)
-         d=0.0_r8
+   !    pondmin = 1.e-8_r8
+   !    if (wdsrf > pondmin) then
+   !       ! a cutoff is needed for numerical reasons...(nonconvergence after 5 iterations)
+   !       d=0.0_r8
 
-         sigma=1.0e3 * micro_sigma ! convert to mm
-         do l=1,10
-            fd = 0.5_r8*d*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8)))) &
-               +sigma/sqrt(2.0_r8*PI)*exp(-d**2/(2.0_r8*sigma**2)) &
-               -wdsrf
-            dfdd = 0.5_r8*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8))))
+   !       sigma=1.0e3 * micro_sigma ! convert to mm
+   !       do l=1,10
+   !          fd = 0.5_r8*d*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8)))) &
+   !             +sigma/sqrt(2.0_r8*PI)*exp(-d**2/(2.0_r8*sigma**2)) &
+   !             -wdsrf
+   !          dfdd = 0.5_r8*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8))))
 
-            d = d - fd/dfdd
-         enddo
-         !--  update the submerged areal fraction using the new d value
-         f_h2osfc = 0.5_r8*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8))))
+   !          d = d - fd/dfdd
+   !       enddo
+   !       !--  update the submerged areal fraction using the new d value
+   !       f_h2osfc = 0.5_r8*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8))))
 
-      else
-         f_h2osfc = 0._r8
-         ! The update of h2osfc is deferred to later, keeping with our standard
-         ! separation of flux calculations from state updates, and because the state
-         ! update needs to happen for tracers as well as bulk. However, it's important
-         ! that this flux be applied soon after this routine, so that h2osfc remains in
-         ! sync with frac_h2osfc.
-      endif
-   END SUBROUTINE
-   
+   !    else
+   !       f_h2osfc = 0._r8
+   !       ! The update of h2osfc is deferred to later, keeping with our standard
+   !       ! separation of flux calculations from state updates, and because the state
+   !       ! update needs to happen for tracers as well as bulk. However, it's important
+   !       ! that this flux be applied soon after this routine, so that h2osfc remains in
+   !       ! sync with frac_h2osfc.
+   !    endif
+   ! END SUBROUTINE
+
 ! -------------------------------------------------------------------------
    SUBROUTINE SubsurfaceRunoff_TOPMOD (nl_soil, icefrac, dz_soisno, zi_soisno, zwt, rsubst, &
          hksati, topoweti, eta)
