@@ -25,7 +25,9 @@ SUBROUTINE CoLMMAIN ( &
            ! flood re-infiltration
            flddepth,     fldfrc,       fevpg_fld,    qinfl_fld,    &
 #endif
-
+#ifdef CH4
+            f_h2osfc, &
+#endif
          ! vegetation information
            htop,         hbot,         sqrtdi,       &
            effcon,       vmax25,       c3c4,                       &
@@ -332,6 +334,9 @@ SUBROUTINE CoLMMAIN ( &
    real(r8), intent(out)   :: fevpg_fld !effective evaporation from inundation [mm/s]
    real(r8), intent(out)   :: qinfl_fld !effective re-infiltration from inundation [mm/s]
 #endif
+#ifdef CH4
+   real(r8), intent(inout) :: f_h2osfc
+#endif
 ! Variables required for restart run
 !-----------------------------------------------------------------------
    integer, intent(in) :: &
@@ -574,6 +579,7 @@ SUBROUTINE CoLMMAIN ( &
    real(r8) :: qflx_irrig_sprinkler    ! sprinkler irrigation rate [mm/s]
    real(r8) :: qflx_irrig_flood        ! flood irrigation rate [mm/s]
    real(r8) :: qflx_irrig_paddy        ! paddy irrigation rate [mm/s]
+
    !----------------------------------------------------------------------
    real(r8) :: a, aa, gwat
    real(r8) :: wextra, t_rain, t_snow
@@ -832,7 +838,11 @@ SUBROUTINE CoLMMAIN ( &
                  mss_bcpho(lbsn:0) ,mss_bcphi(lbsn:0) ,mss_ocpho(lbsn:0) ,mss_ocphi(lbsn:0) ,&
                  mss_dst1(lbsn:0)  ,mss_dst2(lbsn:0)  ,mss_dst3(lbsn:0)  ,mss_dst4(lbsn:0)  ,&
 !  irrigation variables
-                 qflx_irrig_drip   ,qflx_irrig_flood  ,qflx_irrig_paddy)
+                 qflx_irrig_drip   ,qflx_irrig_flood  ,qflx_irrig_paddy, &
+#ifdef CH4
+                 f_h2osfc &
+#endif
+                 )
          ELSE
 
             CALL WATER_VSF (ipatch ,patchtype,is_dry_lake,   lb          ,nl_soil           ,&

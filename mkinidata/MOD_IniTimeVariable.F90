@@ -103,7 +103,7 @@ CONTAINS
                      annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
                      tempavg_agnpp, tempavg_bgnpp, annsum_counter, &
                      tempavg_somhr, tempavg_finrw, &
-                     fsat_bef, finundated_lag, ch4_dfsat_tot&
+                     fsat_bef, finundated_lag, ch4_dfsat_tot, f_h2osfc&
 #endif
 #endif
                      ,use_soilini, nl_soil_ini, soil_z,   soil_t,   soil_w, use_snowini, snow_d &
@@ -508,7 +508,8 @@ CONTAINS
    real(r8), intent(inout) :: &
 			fsat_bef                , & ! finundated from previous timestep
          finundated_lag          , & ! time-lagged fractional inundated area [s] 
-			ch4_dfsat_tot               ! CH4 flux to atm due to decreasing finundated [mol/m2/s]
+			ch4_dfsat_tot           , & ! CH4 flux to atm due to decreasing finundated [mol/m2/s]
+         f_h2osfc
 #endif
 #endif
 
@@ -1254,6 +1255,7 @@ CONTAINS
             fsat_bef                = 0.
             finundated_lag          = 1.
             ch4_dfsat_tot           = 0.
+            f_h2osfc                = 1.
 #endif
             IF(DEF_USE_LAIFEEDBACK)THEN
                tlai_p                (ps:pe) = slatop(pftclass(ps:pe)) * leafc_p(ps:pe)

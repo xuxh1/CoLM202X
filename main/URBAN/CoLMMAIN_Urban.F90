@@ -143,6 +143,9 @@
            ! flood evaporation [mm/s], flood re-infiltration [mm/s]
            flddepth     ,fldfrc       ,fevpg_fld    ,qinfl_fld    ,&
 #endif
+#ifdef CH4
+            f_h2osfc, &
+#endif
          ! additional diagnostic variables for output
            laisun       ,laisha       ,rss                        ,&
            rstfac       ,h2osoi       ,wat                        ,&
@@ -356,7 +359,9 @@
    real(r8), intent(out)   :: fevpg_fld !effective evaporation from inundation [mm/s]
    real(r8), intent(out)   :: qinfl_fld !effective re-infiltration from inundation [mm/s]
 #endif
-
+#ifdef CH4
+   real(r8), intent(inout) :: f_h2osfc
+#endif
 ! Variables required for restart run
 ! ----------------------------------------------------------------------
    real(r8), intent(inout) :: &
@@ -1092,6 +1097,9 @@
          fioldl             ,w_old                                                      ,&
 #if (defined CaMa_Flood)
          flddepth           ,fldfrc             ,qinfl_fld                              ,&
+#endif
+#ifdef CH4
+         f_h2osfc, &
 #endif
          forc_us            ,forc_vs                                                    ,&
 

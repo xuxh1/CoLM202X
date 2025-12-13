@@ -1477,6 +1477,15 @@ CONTAINS
             ENDIF
          ENDIF
 
+#ifdef CH4
+         IF(DEF_wetland_finundation_scheme == 3)THEN
+            DEF_USE_VariablySaturatedFlow = .false.
+            DEF_Runoff_SCHEME = 0
+            write(*,*) '                  *****                  '
+            write(*,*) 'Warning: configure conflict, if set DEF_wetland_finundation_scheme = 3.'
+            write(*,*) 'set both WATER_2014 and TOPMODEL.'
+         ENDIF
+#endif
 ! ----- SNICAR model ------ Macros&Namelist conflicts and dependency management
 
          DEF_file_snowoptics = trim(DEF_dir_runtime)//'/snicar/snicar_optics_5bnd_mam_c211006.nc'

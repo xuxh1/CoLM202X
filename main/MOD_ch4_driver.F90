@@ -4,7 +4,7 @@
 		z_soisno,dz_soisno,zi_soisno,t_soisno,t_grnd,wliq_soisno,wice_soisno,&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&
 		zwt,rootfr,snowdp,wat,rsur,etr,lakedepth,lake_icefrac,wdsrf,bsw,&
-		smp,porsl,lai,rootr,fsatmax,fsatdcf,frcsat)
+		smp,porsl,lai,rootr,fsatmax,fsatdcf,frcsat,f_h2osfc)
 
 		use MOD_Precision
 		use MOD_Const_Physical, only: rgas, denh2o, denice, tfrz, grav
@@ -59,8 +59,6 @@
 		fsat_bef, finundated_lag, ch4_dfsat_tot
 
 		
-		use MOD_Vars_TimeInvariants, only: slpratio
-
 		USE MOD_BGC_Vars_TimeInvariants, only: organic_max
 
 		! USE MOD_BGC_Vars_PFTimeVariables, only: annsum_npp_p
@@ -110,7 +108,8 @@
 
 				fsatmax                       , &! maximum saturated area fraction [-]
 				fsatdcf                       , &! decay factor in calculation of saturated area fraction [1/m]
-        		frcsat                           ! fraction of saturation area
+        		frcsat                        , &! fraction of saturation area
+				f_h2osfc
 
 		integer :: ps, pe
 		integer j
@@ -181,8 +180,7 @@
 		!!!! --------------------------------------------------------------------------------------------------------
 		c_atm(1:3,i), forc_pch4m(i), layer_sat_lag(1:nl_soil,i), lake_soilc(1:nl_soil,i), &
 		annavg_agnpp(i), annavg_bgnpp(i), annavg_somhr(i), annavg_finrw(i), &
-		tempavg_agnpp(i), tempavg_bgnpp(i), annsum_counter(i), tempavg_somhr(i), tempavg_finrw(i), fsat_bef(i), finundated_lag(i), ch4_dfsat_tot(i),&
-		slpratio(i))
+		tempavg_agnpp(i), tempavg_bgnpp(i), annsum_counter(i), tempavg_somhr(i), tempavg_finrw(i), fsat_bef(i), finundated_lag(i), ch4_dfsat_tot(i), f_h2osfc)
 
 	END SUBROUTINE ch4_driver
 #endif

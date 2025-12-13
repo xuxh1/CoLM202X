@@ -409,6 +409,7 @@ MODULE MOD_BGC_Vars_TimeVariables
    real(r8), allocatable :: fsat_bef              (:) ! finundated from previous timestep
    real(r8), allocatable :: finundated_lag        (:) ! time-lagged fractional inundated area 
    real(r8), allocatable :: ch4_dfsat_tot         (:) ! CH4 flux to atm due to decreasing finundated [mol/m2/s]
+   real(r8), allocatable :: f_h2osfc              (:)
 #endif
 !------------------------------------------------------
 
@@ -839,6 +840,7 @@ CONTAINS
             allocate (fsat_bef                    (numpatch)); fsat_bef               (:) = spval
             allocate (finundated_lag              (numpatch)); finundated_lag         (:) = spval
             allocate (ch4_dfsat_tot               (numpatch)); ch4_dfsat_tot          (:) = spval
+            allocate (f_h2osfc               (numpatch)); f_h2osfc          (:) = spval
 
 #endif
          ENDIF
@@ -1231,6 +1233,8 @@ CONTAINS
             deallocate (fsat_bef               )
             deallocate (finundated_lag         )
             deallocate (ch4_dfsat_tot          )
+            deallocate (f_h2osfc          )
+
 #endif
 
             deallocate (lag_npp    )
@@ -1512,6 +1516,8 @@ CONTAINS
       CALL ncio_write_vector (file_restart, 'fsat_bef            ' , 'patch', landpatch, fsat_bef              , compress)
       CALL ncio_write_vector (file_restart, 'finundated_lag      ' , 'patch', landpatch, finundated_lag        , compress)
       CALL ncio_write_vector (file_restart, 'ch4_dfsat_tot       ' , 'patch', landpatch, ch4_dfsat_tot         , compress)
+      CALL ncio_write_vector (file_restart, 'f_h2osfc       ' , 'patch', landpatch, f_h2osfc         , compress)
+
 #endif
 
    END SUBROUTINE WRITE_BGCTimeVariables
@@ -2167,6 +2173,8 @@ CONTAINS
       CALL check_vector_data ('fsat_bef           ', fsat_bef           )
       CALL check_vector_data ('finundated_lag     ', finundated_lag     )
       CALL check_vector_data ('ch4_dfsat_tot      ', ch4_dfsat_tot      )
+      CALL check_vector_data ('f_h2osfc      ', f_h2osfc      )
+
 #endif
 
    END SUBROUTINE check_BGCTimeVariables

@@ -90,8 +90,7 @@ contains
 		c_atm, forc_pch4m, layer_sat_lag, lake_soilc, &
 		annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
 		tempavg_agnpp, tempavg_bgnpp, annsum_counter, tempavg_somhr, tempavg_finrw, &
-		fsat_bef, finundated_lag, ch4_dfsat_tot,&
-		slpratio)
+		fsat_bef, finundated_lag, ch4_dfsat_tot, f_h2osfc)
 
 		!=======================================================================
 		! !DESCRIPTION:
@@ -290,7 +289,7 @@ contains
 			ch4_dfsat_tot               ! CH4 flux to atm due to decreasing finundated [mol/m2/s]
 
 		real(r8), intent(in) :: &
-			slpratio                    ! the slope ratio
+            f_h2osfc
 
 		!=================== Local Variables ============================================
 		integer  :: i,j,s,l                     ! indices
@@ -393,7 +392,7 @@ contains
 		! real(r8), save :: wdsrf_sat = 0._r8, wetwat_sat = 200._r8, wa_sat = 0._r8
 		real(r8) :: zwt_unsat, wice_soisno_unsat(maxsnl+1:nl_soil), wliq_soisno_unsat(maxsnl+1:nl_soil), wdsrf_unsat
 
-		real(r8) :: micro_sigma, min_wdsrf, d, sigma, fd, dfdd  
+		! real(r8) :: micro_sigma, min_wdsrf, d, sigma, fd, dfdd  
 
 		real(r8) :: err1,err2,err3,err4,err5,err6,err7,err8,err9,err10
 
@@ -464,33 +463,9 @@ contains
 		elseif (DEF_wetland_finundation_scheme == 2) then
 			finundated = frcsat
 		elseif (DEF_wetland_finundation_scheme == 3) then
-			micro_sigma = (atan(slpratio) + DEF_CH4_hydrology%slopemax**(1._r8/DEF_CH4_hydrology%slopebeta))**DEF_CH4_hydrology%slopebeta
-			min_wdsrf = 1.e-8_r8
-			if (wdsrf > min_wdsrf) then
-				! a cutoff is needed for numerical reasons...(nonconvergence after 5 iterations)
-				d=0.0_r8
-
-				sigma=1.0e3 * micro_sigma ! convert to mm
-				do l=1,10
-					fd = 0.5_r8*d*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8)))) &
-						+sigma/sqrt(2.0_r8*PI)*exp(-d**2/(2.0_r8*sigma**2)) &
-						-wdsrf
-					dfdd = 0.5_r8*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8))))
-
-					d = d - fd/dfdd
-				enddo
-				!--  update the submerged areal fraction using the new d value
-				finundated = 0.5_r8*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8))))
-
-			else
-				finundated = 0._r8
-				! The update of h2osfc is deferred to later, keeping with our standard
-				! separation of flux calculations from state updates, and because the state
-				! update needs to happen for tracers as well as bulk. However, it's important
-				! that this flux be applied soon after this routine, so that h2osfc remains in
-				! sync with frac_h2osfc.
-			endif
+			finundated = f_h2osfc
 		endif
+		if (finundated<1e-10) finundated=0.
 
 		if (istep == 1) then
 			fsat_bef = finundated
@@ -500,7 +475,6 @@ contains
 		if (snowdp > 0._r8) then  !If snow_depth>0, keep finundated from the previous time step of snow season. (by Xiyan Xu, 05/2016)
             finundated = fsat_bef
 		end if
-		
 		dfsat = finundated - fsat_bef
 		call print_var(dfsat, 'ch4 dfsat', idate)
   
@@ -733,6 +707,8 @@ contains
 		ch4_surf_flux_tot = ch4_surf_flux_tot_sat * finundated + ch4_surf_flux_tot_unsat * (1.0_r8 - finundated) + ch4_dfsat_tot
 		totcolch4 = totcolch4_sat * finundated + totcolch4_unsat * (1.0_r8 - finundated)
 
+		call print_var(ch4_dfsat_tot,'ch4 ch4_dfsat_tot',idate)
+		
 		call print_var(ch4_oxid_tot,'ch4 ch4_oxid_tot',idate)
 		call print_var(ch4_oxid_depth,'ch4 ch4_oxid_depth',idate)
 		call print_var(ch4_prod_tot,'ch4 ch4_prod_tot',idate)

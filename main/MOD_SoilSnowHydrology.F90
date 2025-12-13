@@ -7,7 +7,8 @@ MODULE MOD_SoilSnowHydrology
    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_USE_SNICAR,     &
                            DEF_URBAN_RUN,           DEF_USE_IRRIGATION, &
                            DEF_SPLIT_SOILSNOW,      DEF_Runoff_SCHEME,  &
-                           DEF_DA_GRACE,            DEF_wetland_finundation_scheme
+                           DEF_DA_GRACE,            DEF_wetland_finundation_scheme, &
+                           DEF_METHANE_only_wetland
 #if (defined CaMa_Flood)
    USE YOS_CMF_INPUT,      only: LWINFILT
 #endif
@@ -55,7 +56,11 @@ CONTAINS
               forc_aer                                                        ,&
               mss_bcpho   ,mss_bcphi   ,mss_ocpho   ,mss_ocphi                ,&
               mss_dst1    ,mss_dst2    ,mss_dst3    ,mss_dst4                 ,&
-              qflx_irrig_drip  ,qflx_irrig_flood ,qflx_irrig_paddy               )
+              qflx_irrig_drip  ,qflx_irrig_flood ,qflx_irrig_paddy,&
+#ifdef CH4
+              f_h2osfc &  
+#endif
+              )
 
 !=======================================================================
 !  this is the main SUBROUTINE to execute the calculation of
@@ -81,7 +86,9 @@ CONTAINS
    use MOD_LandPFT, only : patch_pft_s, patch_pft_e
    use MOD_Vars_PFTimeVariables, only: irrig_method_p
 #endif
-
+#ifdef CH4
+   use MOD_Vars_TimeInvariants, only: slpratio
+#endif
    IMPLICIT NONE
 
 !-------------------------- Dummy Arguments ----------------------------
@@ -182,6 +189,10 @@ CONTAINS
         qflx_irrig_flood , &! irrigation flux from flood irrigation [mm/s]
         qflx_irrig_paddy    ! irrigation flux from paddy irrigation [mm/s]
 
+#ifdef CH4
+   real(r8), intent(inout) :: &
+         f_h2osfc
+#endif
 !-------------------------- Local Variables ----------------------------
 
    integer j                      ! loop counter
@@ -207,6 +218,12 @@ CONTAINS
    integer  :: ps, pe, m
 
    real(r8) :: wliq_soisno_tmp(1:nl_soil)
+   logical :: run_TOPMOD_CLM
+   real(r8) :: q_soil, &
+         q_excess, &
+         q_h2osfc, &
+         q_drain_h2osfc, &
+         q_h2osfc_surf
 
 !=======================================================================
 ! [1] update the liquid water within snow layer and the water onto soil
@@ -288,11 +305,31 @@ IF(patchtype<=1 .or. (DEF_wetland_finundation_scheme /= 0 .and. patchtype==2))TH
 
       IF (DEF_Runoff_SCHEME  == 0) THEN
          ! 0: runoff scheme from TOPMODEL
-
+         print*, 'gwat',gwat
          IF (gwat > 0.) THEN
-            CALL SurfaceRunoff_TOPMOD (nl_soil,wimp,porsl,psi0,hksati,fsatmax,fsatdcf,&
-               z_soisno(1:),dz_soisno(1:),zi_soisno(0:),&
-               eff_porosity,icefrac,zwt,gwat,rsur)
+            run_TOPMOD_CLM = .false.
+#ifdef CH4
+            IF(DEF_wetland_finundation_scheme == 3) then
+               IF((DEF_METHANE_only_wetland .and. patchtype==2) .or. (.not. DEF_METHANE_only_wetland .and. (patchtype==2 .or. patchtype==0)))THEN
+                  run_TOPMOD_CLM = .true.
+               ENDIF
+            ENDIF
+#endif
+            IF(run_TOPMOD_CLM)THEN
+               CALL SurfaceRunoff_TOPMOD_CLM (nl_soil,wimp,porsl,psi0,hksati,&
+                  fsatmax,fsatdcf,&
+                  z_soisno(1:),dz_soisno(1:),zi_soisno(0:),&
+                  eff_porosity,icefrac,gwat,zwt,slpratio(ipatch),deltim,pondmx,&
+                  f_h2osfc,wdsrf,rsur,q_soil,q_excess,q_h2osfc,q_drain_h2osfc,q_h2osfc_surf)
+               print*, "rsur",rsur
+               print*, "qinfl",gwat - rsur - (q_h2osfc - q_h2osfc_surf - q_drain_h2osfc)
+               print*, "wdsrf",wdsrf
+               print*, "f_h2osfc",f_h2osfc
+            ELSE   
+               CALL SurfaceRunoff_TOPMOD (nl_soil,wimp,porsl,psi0,hksati,fsatmax,fsatdcf,&
+                  z_soisno(1:),dz_soisno(1:),zi_soisno(0:),&
+                  eff_porosity,icefrac,zwt,gwat,rsur)
+            ENDIF
          ELSE
             rsur = 0.
          ENDIF
@@ -340,7 +377,13 @@ IF(patchtype<=1 .or. (DEF_wetland_finundation_scheme /= 0 .and. patchtype==2))TH
 #endif
       ! infiltration into surface soil layer
       qinfl = gwat - rsur - wdsrf/deltim
-
+#ifdef CH4
+      IF(DEF_wetland_finundation_scheme == 3) then
+         IF((DEF_METHANE_only_wetland .and. patchtype==2) .or. (.not. DEF_METHANE_only_wetland .and. (patchtype==2 .or. patchtype==0)))THEN
+            qinfl = gwat - rsur - (q_h2osfc - q_h2osfc_surf - q_drain_h2osfc)
+         ENDIF
+      ENDIF
+#endif
 #if (defined CaMa_Flood)
       IF (LWINFILT) THEN
          !  re-infiltration [mm/s] calculation.

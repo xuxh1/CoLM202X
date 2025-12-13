@@ -116,7 +116,9 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
              ! flood variables [mm, m2/m2, mm/s, mm/s]
                flddepth_cama(i),fldfrc_cama(i),  fevpg_fld(i),    finfg_fld(i),    &
 #endif
-
+#ifdef CH4
+            f_h2osfc(i), &
+#endif
              ! VEGETATION INFORMATION
                htop(i),         hbot(i),         sqrtdi(m),                        &
                effcon(m),       vmax25(m),       c3c4(m),                          &
@@ -228,7 +230,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
                 forc_t(i),forc_pbot(i),forc_po2m(i),forc_pco2m(i),&
                 zwt(i),rootfr(1:,m),snowdp(i),wat(i),rsur(i),etr(i),lakedepth(i), &
                 lake_icefrac(1:,i),wdsrf(i),bsw(1:,i),smp(1:,i),porsl(1:,i),lai(i), &
-                rootr(1:,i),fsatmax(i),fsatdcf(i),frcsat(i))
+                rootr(1:,i),fsatmax(i),fsatdcf(i),frcsat(i),f_h2osfc(i))
             ENDIF
 #endif
          ENDIF
@@ -337,7 +339,9 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep)
           ! flood variables [mm, m2/m2, mm/s, mm/s]
             flddepth_cama(i),fldfrc_cama(i)  ,fevpg_fld(i)    ,finfg_fld(i)    ,&
 #endif
-
+#ifdef CH4
+            f_h2osfc(i), &
+#endif
           ! additional diagnostic variables for output
             laisun(i)       ,laisha(i)       ,rss(i)                           ,&
             rstfacsun_out(i),h2osoi(1:,i)    ,wat(i)                           ,&

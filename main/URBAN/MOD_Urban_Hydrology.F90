@@ -65,6 +65,9 @@ CONTAINS
 #if (defined CaMa_Flood)
         flddepth       ,fldfrc         ,qinfl_fld                      ,&
 #endif
+#ifdef CH4
+            f_h2osfc, &
+#endif
         forc_us        ,forc_vs                                        ,&
 ! SNICAR model variables
         forc_aer                                                       ,&
@@ -163,7 +166,9 @@ CONTAINS
    real(r8), intent(in)    :: fldfrc    ! inundation water depth [0-1]
    real(r8), intent(out)   :: qinfl_fld ! grid averaged inundation water input from top (mm/s)
 #endif
-
+#ifdef CH4
+   real(r8), intent(inout) :: f_h2osfc
+#endif
    real(r8), intent(in) :: forc_us
    real(r8), intent(in) :: forc_vs
 
@@ -286,12 +291,17 @@ CONTAINS
 #if (defined CaMa_Flood)
              flddepth    ,fldfrc      ,qinfl_fld                             ,&
 #endif
+
 ! SNICAR model variables
              forc_aer                                                        ,&
              mss_bcpho   ,mss_bcphi   ,mss_ocpho   ,mss_ocphi                ,&
              mss_dst1    ,mss_dst2    ,mss_dst3    ,mss_dst4                 ,&
 !  irrigation variables
-             qflx_irrig_drip   ,qflx_irrig_flood  ,qflx_irrig_paddy            )
+             qflx_irrig_drip   ,qflx_irrig_flood  ,qflx_irrig_paddy  ,&
+#ifdef CH4
+                 f_h2osfc &
+#endif
+             )
 
 !=======================================================================
 ! [2] for roof and impervious road

@@ -3,7 +3,7 @@
 ! Author: Shupeng Zhang 
 ! Description : an example for SinglePoint with all surface data from database instead of observations.
 
-   DEF_CASE_NAME = 'BR-Npw_FLUXNET-CH4'
+   DEF_CASE_NAME = 'BR-Npw'
 
    USE_SITE_landtype        = .true.
    USE_SITE_pctpfts         = .false.
@@ -24,11 +24,11 @@
    DEF_simulation_time%end_month     = 12
    DEF_simulation_time%end_day       = 31
    DEF_simulation_time%end_sec       = 82800
-   DEF_simulation_time%spinup_year   = 2015
+   DEF_simulation_time%spinup_year   = 0
    DEF_simulation_time%spinup_month  = 1
    DEF_simulation_time%spinup_day    = 1
    DEF_simulation_time%spinup_sec    = 0
-   DEF_simulation_time%spinup_repeat = 10
+   DEF_simulation_time%spinup_repeat = 0
 
    DEF_simulation_time%timestep     = 1800.
 
@@ -53,25 +53,25 @@
    ! ch4 state
    DEF_METHANE_only_wetland = .false.
    DEF_USE_METHANE_para = .true.
-   DEF_file_METHANE_para = '/share/home/dq076/mode/ME/251203/run/standard_ch4_parameter.nml'
+   DEF_file_METHANE_para = '/share/home/dq076/mode/ME/251212/run/standard_ch4_parameter.nml'
    DEF_wetland_finundation_scheme = 3
 
-   DEF_USE_VariablySaturatedFlow = .true.
-   DEF_Runoff_SCHEME = 3
+   DEF_USE_VariablySaturatedFlow = .false.
+   DEF_Runoff_SCHEME = 0
 
    DEF_CheckEquilibrium = .true.
    ! ----- forcing -----
    ! Options :
    ! PRINCETON | GSWP3   | QIAN  | CRUNCEPV4 | CRUNCEPV7 | ERA5LAND | ERA5  |  MSWX
    ! WFDE5     | CRUJRA  | WFDEI | JRA55     | GDAS      | CMFD     | POINT |  JRA3Q
-   DEF_forcing_namelist = '/share/home/dq076/mode/ME/251203/run/forcing/SINGLE_BR-Npw.nml'
+   DEF_forcing_namelist = '/share/home/dq076/mode/ME/251212/run/forcing/SINGLE_BR-Npw.nml'
    
    ! ----- history -----
    DEF_WRST_FREQ = 'YEARLY'   ! write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
-   DEF_HIST_FREQ = 'DAILY'    ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+   DEF_HIST_FREQ = 'MONTHLY'    ! write history file frequency: HOURLY/DAILY/MONTHLY/YEARLY
    DEF_HIST_groupby = 'YEAR'  ! history in one file: DAY/MONTH/YEAR
 
    DEF_hist_vars_out_default = .true.
-   DEF_hist_vars_namelist    = '/share/home/dq076/mode/ME/251203/run/history_ME.nml'
+   DEF_hist_vars_namelist    = '/share/home/dq076/mode/ME/251212/run/history_ME.nml'
 
 /

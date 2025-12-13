@@ -1410,7 +1410,7 @@ ENDIF
                annsum_counter         (i), tempavg_somhr          (i), &
                tempavg_finrw          (i), &
 !!!! --------------------------------------------------------------------------------------------------------
-               fsat_bef               (i), finundated_lag(i),  ch4_dfsat_tot(i) &
+               fsat_bef               (i), finundated_lag(i),  ch4_dfsat_tot(i), f_h2osfc(i) &
 #endif
 #endif
                ! for SOIL INIT of water, temperature, snow depth
