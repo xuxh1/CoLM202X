@@ -637,15 +637,15 @@ MODULE MOD_Namelist
       logical :: hr                               = .true.
       logical :: fpg                              = .true.
       logical :: fpi                              = .true.
-      logical :: annsum_npp                       = .false. 
-      logical :: rr                               = .false. 
-      logical :: agnpp                            = .false. 
-      logical :: bgnpp                            = .false. 
-      logical :: somhr                            = .false. 
-      logical :: lithr                            = .false. 
-      logical :: hr_vr                            = .false. 
-      logical :: fphr                             = .false. 
-      logical :: pot_f_nit_vr                     = .false. 
+      logical :: annsum_npp                       = .true. 
+      logical :: rr                               = .true. 
+      logical :: agnpp                            = .true. 
+      logical :: bgnpp                            = .true. 
+      logical :: somhr                            = .true. 
+      logical :: lithr                            = .true. 
+      logical :: hr_vr                            = .true. 
+      logical :: fphr                             = .true. 
+      logical :: pot_f_nit_vr                     = .true. 
       logical :: totvegc                          = .true.
       logical :: totlitc                          = .true.
       logical :: totcwdc                          = .true.
@@ -1484,6 +1484,12 @@ CONTAINS
             write(*,*) '                  *****                  '
             write(*,*) 'Warning: configure conflict, if set DEF_wetland_finundation_scheme = 3.'
             write(*,*) 'set both WATER_2014 and TOPMODEL.'
+#if (defined vanGenuchten_Mualem_SOIL_MODEL)
+            write(*,*) '                  *****                  '
+            write(*,*) 'Note: DEF_USE_VariablySaturatedFlow is set to .false.  '
+            write(*,*) 'need to undefine vanGenuchten_Mualem_SOIL_MODEL. '
+            CALL CoLM_stop ()
+#endif
          ENDIF
 #endif
 ! ----- SNICAR model ------ Macros&Namelist conflicts and dependency management

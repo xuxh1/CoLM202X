@@ -207,6 +207,7 @@ MODULE MOD_Const_ch4
       real(r8) :: vdcf = 2._r8
       real(r8) :: slopebeta = -3._r8
       real(r8) :: slopemax = 0.4_r8
+      real(r8) :: pc = 0.4_r8
    END type CH4_hydrology_type
 
    type (CH4_type) :: DEF_CH4

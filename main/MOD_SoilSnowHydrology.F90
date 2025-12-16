@@ -37,8 +37,6 @@ CONTAINS
 
 !-----------------------------------------------------------------------
 
-
-
    SUBROUTINE WATER_2014 (ipatch,patchtype,lb       ,nl_soil     ,deltim      ,&
               z_soisno    ,dz_soisno   ,zi_soisno   ,bsw         ,porsl       ,&
               psi0        ,hksati      ,theta_r     ,fsatmax     ,fsatdcf     ,&
@@ -224,6 +222,7 @@ CONTAINS
          q_h2osfc, &
          q_drain_h2osfc, &
          q_h2osfc_surf
+   real(r8) :: wdsrf0
 
 !=======================================================================
 ! [1] update the liquid water within snow layer and the water onto soil
@@ -283,9 +282,13 @@ ENDIF
 
 IF(patchtype<=1 .or. (DEF_wetland_finundation_scheme /= 0 .and. patchtype==2))THEN   ! soil ground only
 
-      ! For water balance check, the sum of water in soil column before the calculation
-      w_sum = sum(wliq_soisno(1:)) + sum(wice_soisno(1:)) + wa
-
+      ! For water balance check: include initial surface water store (wdsrf)
+      wdsrf0 = wdsrf
+      w_sum  = sum(wliq_soisno(1:)) + sum(wice_soisno(1:)) + wa + wdsrf0
+      ! print*, 'wliq_soisno 1',sum(wliq_soisno(1:))
+      ! print*, 'wice_soisno 1',sum(wice_soisno(1:))
+      ! print*, 'wa 1',wa
+      ! print*, 'wdsrf 1',wdsrf
       ! porosity of soil, partial volume of ice and liquid
       DO j = 1, nl_soil
          vol_ice(j) = min(porsl(j), wice_soisno(j)/(dz_soisno(j)*denice))
@@ -304,10 +307,9 @@ IF(patchtype<=1 .or. (DEF_wetland_finundation_scheme /= 0 .and. patchtype==2))TH
       rsubst = 0.
 
       IF (DEF_Runoff_SCHEME  == 0) THEN
+         run_TOPMOD_CLM = .false.
          ! 0: runoff scheme from TOPMODEL
-         print*, 'gwat',gwat
          IF (gwat > 0.) THEN
-            run_TOPMOD_CLM = .false.
 #ifdef CH4
             IF(DEF_wetland_finundation_scheme == 3) then
                IF((DEF_METHANE_only_wetland .and. patchtype==2) .or. (.not. DEF_METHANE_only_wetland .and. (patchtype==2 .or. patchtype==0)))THEN
@@ -321,10 +323,10 @@ IF(patchtype<=1 .or. (DEF_wetland_finundation_scheme /= 0 .and. patchtype==2))TH
                   z_soisno(1:),dz_soisno(1:),zi_soisno(0:),&
                   eff_porosity,icefrac,gwat,zwt,slpratio(ipatch),deltim,pondmx,&
                   f_h2osfc,wdsrf,rsur,q_soil,q_excess,q_h2osfc,q_drain_h2osfc,q_h2osfc_surf)
-               print*, "rsur",rsur
-               print*, "qinfl",gwat - rsur - (q_h2osfc - q_h2osfc_surf - q_drain_h2osfc)
-               print*, "wdsrf",wdsrf
-               print*, "f_h2osfc",f_h2osfc
+               ! print*, "rsur",rsur
+               ! print*, "qinfl",gwat - rsur - (q_h2osfc - q_h2osfc_surf - q_drain_h2osfc)
+               ! print*, "wdsrf",wdsrf
+               ! print*, "f_h2osfc",f_h2osfc
             ELSE   
                CALL SurfaceRunoff_TOPMOD (nl_soil,wimp,porsl,psi0,hksati,fsatmax,fsatdcf,&
                   z_soisno(1:),dz_soisno(1:),zi_soisno(0:),&
@@ -360,18 +362,20 @@ IF(patchtype<=1 .or. (DEF_wetland_finundation_scheme /= 0 .and. patchtype==2))TH
 #ifdef CROP
       IF(patchtype==0)THEN
          IF(DEF_USE_IRRIGATION)THEN
-            ps = patch_pft_s(ipatch)
-            pe = patch_pft_e(ipatch)
-            DO m = ps, pe
-               IF(irrig_method_p(m) == irrig_method_paddy)THEN
-                  wdsrf = rsur*deltim
-                  rsur = 0.
-                  IF(wdsrf.gt.pondmxc)THEN
-                     wdsrf = pondmxc
-                     rsur = rsur + (wdsrf - pondmxc)/deltim
+            IF (.not. run_TOPMOD_CLM) THEN
+               ps = patch_pft_s(ipatch)
+               pe = patch_pft_e(ipatch)
+               DO m = ps, pe
+                  IF(irrig_method_p(m) == irrig_method_paddy)THEN
+                     wdsrf = rsur*deltim
+                     rsur = 0.
+                     IF(wdsrf.gt.pondmxc)THEN
+                        wdsrf = pondmxc
+                        rsur = rsur + (wdsrf - pondmxc)/deltim
+                     ENDIF
                   ENDIF
-               ENDIF
-            ENDDO
+               ENDDO
+            ENDIF
          ENDIF
       ENDIF
 #endif
@@ -380,7 +384,11 @@ IF(patchtype<=1 .or. (DEF_wetland_finundation_scheme /= 0 .and. patchtype==2))TH
 #ifdef CH4
       IF(DEF_wetland_finundation_scheme == 3) then
          IF((DEF_METHANE_only_wetland .and. patchtype==2) .or. (.not. DEF_METHANE_only_wetland .and. (patchtype==2 .or. patchtype==0)))THEN
-            qinfl = gwat - rsur - (q_h2osfc - q_h2osfc_surf - q_drain_h2osfc)
+            IF (run_TOPMOD_CLM) THEN
+               qinfl = max(0._r8, q_soil + q_drain_h2osfc)
+            ELSE
+               qinfl = 0.
+            ENDIF
          ENDIF
       ENDIF
 #endif
@@ -447,8 +455,9 @@ IF(patchtype<=1 .or. (DEF_wetland_finundation_scheme /= 0 .and. patchtype==2))TH
       ! update the mass of liquid water
       DO j= 1, nl_soil
          wliq_soisno(j) = wliq_soisno(j)+dwat(j)*dzmm(j)
+         if (wliq_soisno(j)<1e-100) wliq_soisno(j) = 0.
       ENDDO
-
+      ! print*, 'wliq_soisno 2 ',wliq_soisno
 
 !=======================================================================
 ! [4] subsurface runoff and the corrections
@@ -459,6 +468,7 @@ IF(patchtype<=1 .or. (DEF_wetland_finundation_scheme /= 0 .and. patchtype==2))TH
                         wice_soisno(1:),wliq_soisno(1:),&
                         porsl,psi0,bsw,zwt,wa,&
                         qcharge,rsubst)
+      ! print*, 'wliq_soisno 3 ',wliq_soisno
 
       ! total runoff (mm/s)
       rnof = rsubst + rsur
@@ -475,7 +485,15 @@ IF ((.not.DEF_SPLIT_SOILSNOW) .or. (patchtype==1 .and. DEF_URBAN_RUN)) THEN
 
       IF(lb >= 1)THEN
          err_solver = err_solver-(qsdew+qfros-qsubl)*deltim
+         print*, 'err_solver3',w_sum + (gwat-etr-rnof)*deltim + (qsdew+qfros-qsubl)*deltim
       ENDIF
+      ! print*, 'wliq_soisno 2',sum(wliq_soisno(1:))
+      ! print*, 'wice_soisno 2',sum(wice_soisno(1:))
+      ! print*, 'wa 2',wa
+      ! print*, 'wdsrf 2',wdsrf
+
+      ! print*, 'err_solver1',(sum(wliq_soisno(1:))+sum(wice_soisno(1:))+wa+wdsrf)
+      ! print*, 'err_solver2',w_sum + (gwat-etr-rnof)*deltim
 
 ELSE
       wliq_soisno(1) = max(0., wliq_soisno(1) + qsdew_soil * deltim)

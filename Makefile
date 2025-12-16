@@ -298,6 +298,7 @@ OBJS_MAIN = \
 				MOD_SoilThermalParameters.o               \
 				MOD_Hydro_VIC_Variables.o                 \
 				MOD_Hydro_VIC.o                           \
+				MOD_Const_ch4.o		                      \
 				MOD_Runoff.o                              \
 				MOD_SoilSnowHydrology.o                   \
 				MOD_SnowLayersCombineDivide.o             \
@@ -349,7 +350,6 @@ OBJS_MAIN = \
 				MOD_Lulcc_MassEnergyConserve.o            \
 				MOD_Lulcc_Initialize.o                    \
 				MOD_Lulcc_Driver.o                        \
-				MOD_Const_ch4.o		                      \
 				MOD_debug_print.o                         \
 				MOD_ch4.o                                 \
 				MOD_ch4_driver.o                          \

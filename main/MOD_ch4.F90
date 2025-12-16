@@ -53,7 +53,7 @@ contains
 		deltim,&
 		z_soisno,dz_soisno,zi_soisno,t_soisno,t_grnd,wliq_soisno,wice_soisno,&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&
-		zwt,rootfr,snowdp,wat,rsur,etr,wdsrf,bsw,&
+		zwt,rootfr,snowdp,wat,rsur,etr,wdsrf,wetwat,bsw,&
 		smp,porsl,lai,rootr,&
 		annsum_npp,rr,&
 		fsatmax,fsatdcf,frcsat,&
@@ -135,6 +135,7 @@ contains
 			rsur                    , &! surface runoff [mm/s]
 			etr                     , &! transpiration rate [mm/s]
 			wdsrf                   , &! depth of surface water [mm]
+			wetwat                  , &! water storage in wetland [mm]
 			bsw      (1:nl_soil)   	, &! Clapp and Hornberger "b" (nlevgrnd)             
 
 			smp      (1:nl_soil)    , &! soil matrix potential [mm]
@@ -624,8 +625,11 @@ contains
 						wice_soisno_sat(j) = porsl(j)*dz_soisno(j)*denice
 					ENDIF
 				ENDDO
-				
-				wdsrf_sat = 200.
+				IF((DEF_wetland_finundation_scheme == 0) .and. patchtype==2)THEN
+					wdsrf_sat = wdsrf + wetawt
+				ELSE
+					wdsrf_sat = wdsrf
+				ENDIF
 				jwt_sat = 0
 				layer_sat_lag = 1.
 
@@ -707,6 +711,8 @@ contains
 		ch4_surf_flux_tot = ch4_surf_flux_tot_sat * finundated + ch4_surf_flux_tot_unsat * (1.0_r8 - finundated) + ch4_dfsat_tot
 		totcolch4 = totcolch4_sat * finundated + totcolch4_unsat * (1.0_r8 - finundated)
 
+		conc_ch4 = conc_ch4_sat * finundated + conc_ch4_unsat * (1._r8 - finundated)
+		conc_o2 = conc_o2_sat * finundated + conc_o2_unsat * (1._r8 - finundated)
 		call print_var(ch4_dfsat_tot,'ch4 ch4_dfsat_tot',idate)
 		
 		call print_var(ch4_oxid_tot,'ch4 ch4_oxid_tot',idate)

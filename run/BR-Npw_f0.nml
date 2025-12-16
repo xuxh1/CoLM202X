@@ -20,7 +20,7 @@
    DEF_simulation_time%start_month   = 12
    DEF_simulation_time%start_day     = 6
    DEF_simulation_time%start_sec     = 0
-   DEF_simulation_time%end_year      = 2023
+   DEF_simulation_time%end_year      = 2022
    DEF_simulation_time%end_month     = 12
    DEF_simulation_time%end_day       = 31
    DEF_simulation_time%end_sec       = 82800
@@ -28,7 +28,7 @@
    DEF_simulation_time%spinup_month  = 1
    DEF_simulation_time%spinup_day    = 1
    DEF_simulation_time%spinup_sec    = 0
-   DEF_simulation_time%spinup_repeat = 10
+   DEF_simulation_time%spinup_repeat = 0
 
    DEF_simulation_time%timestep     = 1800.
 

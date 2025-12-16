@@ -174,7 +174,7 @@ CONTAINS
    USE MOD_Namelist,        only: DEF_TOPMOD_method
    USE MOD_IncompleteGamma, only: GRATIO
    USE MOD_SPMD_Task
-   USE MOD_Const_ch4
+   USE MOD_Const_ch4, only: DEF_CH4_hydrology
    USE MOD_Vars_Global, only : PI
    IMPLICIT NONE
 
@@ -197,7 +197,7 @@ CONTAINS
         icefrac(1:nl_soil),       &! ice fraction (-)
         gwat,                     &! net water input from top
         zwt                      ,&! the depth from ground (soil) surface to water table [m]
-        slpratio,                 &! the slope ratioc
+        slpratio,                 &! the slope ratio
         deltim,                   &
         pondmx
 
@@ -235,11 +235,16 @@ CONTAINS
    real(r8) :: pondmin
    real(r8) :: f_connected
    real(r8) :: k_h2osfc
-   integer :: l
+   integer :: l, p
 
+   real(r8) :: q_liq0, q_over, q_in_surface
+   real(r8) :: q_soil_pot, q_soil_final
+   real(r8) :: sigma_mm, fd_tol, wdsrf_thresh
    ! updated to gridded 'fsatdcf' (by Shupeng Zhang)
    ! real(r8), parameter :: fff = 0.5   ! runoff decay factor (m-1)
-
+   real(r8) :: wdsrf_old, f_h2osfc_old
+   real(r8) :: chk_bal, q_in, q_out, q_store
+   real(r8) :: rsur_old
 !-----------------------------------------------------------------------
 
 !  fraction of saturated area (updated to gridded 'fsatmax' and 'fsatdcf')
@@ -296,92 +301,211 @@ CONTAINS
 ! Maximum infiltration capacity
       qinmax = minval(10.**(-6.0*icefrac(1:min(3,nl_soil)))*hksati(1:min(3,nl_soil)))
       IF(eff_porosity(1)<wimp) qinmax = 0.
+      wdsrf_old   = wdsrf
+      f_h2osfc_old = f_h2osfc
+      rsur_old    = rsur
 
-! Surface runoff
-      rsur = fsat*max(0.0,gwat)
+      ! Surface Water
 
-      IF (present(rsur_se)) THEN
-         rsur_se = fsat*max(0.0,gwat)
-      ENDIF
-
-      IF (present(rsur_ie)) THEN
-         rsur_ie = 0
-      ENDIF
+      fd_tol = 1.e-10_r8
 
       !--------------------------------------------------
-      ! 1. Partition incoming water
+      ! 0) Define available liquid input (no negative rain input into runoff)
       !--------------------------------------------------
-      q_soil = (1.0_r8 - f_h2osfc) * (gwat - rsur)
-      q_excess = max(q_soil - qinmax, 0.0_r8)
-      q_h2osfc = f_h2osfc*(gwat - rsur) + q_excess
+      q_liq0 = max(0._r8, gwat)
 
       !--------------------------------------------------
-      ! 2. Connectivity function (CLM-style)
+      ! 1) Saturation-excess runoff (TOPMODEL)
       !--------------------------------------------------
-      IF (f_h2osfc <= 0.4_r8) THEN
-         f_connected = 0.0_r8
-      ELSE
-         f_connected = (f_h2osfc - 0.4_r8)**0.14_r8
-      END IF
+      q_over = fsat * q_liq0
+      q_in_surface = (1._r8 - fsat) * q_liq0
 
       !--------------------------------------------------
-      ! 3. h2osfc runoff related to slope
+      ! 2) Diagnose f_h2osfc from current wdsrf (OLD state) before flux partition
+      !    (Newton solve with guards)
       !--------------------------------------------------
-      if (wdsrf > pondmx) then
+      pondmin = 1.e-8_r8
+
+      ! compute micro_sigma (unit should be meters); keep your formula but clamp
+      micro_sigma = (atan(slpratio) + DEF_CH4_hydrology%slopemax**(1._r8/DEF_CH4_hydrology%slopebeta))**DEF_CH4_hydrology%slopebeta
+      micro_sigma = max(0._r8, min(DEF_CH4_hydrology%slopemax, micro_sigma))
+      sigma_mm = 1.0e3_r8 * micro_sigma   ! m -> mm
+
+      if (sigma_mm > 1.e-3_r8) then   ! 1e-6 m == 1e-3 mm
+
+         d = 0.0_r8   ! d is now in mm
+
+         do p = 1, 4
+            fd   = 0.5_r8 * (1.0_r8 + erf(d / (sigma_mm * sqrt(2.0_r8)))) &
+               - DEF_CH4_hydrology%pc
+
+            dfdd = exp( -d**2 / (2.0_r8 * sigma_mm**2) ) &
+               / ( sigma_mm * sqrt(2.0_r8 * PI) )
+
+            d = d - fd / dfdd
+         enddo
+
+         ! W(d) in mm (CLM fill-and-spill formula)
+         wdsrf_thresh = 0.5_r8 * d * (1.0_r8 + erf(d / (sigma_mm * sqrt(2.0_r8)))) + &
+                        sigma_mm / sqrt(2.0_r8 * PI) * &
+                        exp( -d**2 / (2.0_r8 * sigma_mm**2) )
+
+      else
+         wdsrf_thresh = 0._r8
+      endif
+
+      ! if (wdsrf > pondmin .and. sigma_mm > 1.e-9_r8) then
+      !    ! initial guess: d ~ wdsrf (both in mm)
+      !    d = max(0._r8, wdsrf)
+
+      !    do l = 1, 20
+      !       fd = 0.5_r8*d*(1.0_r8+erf(d/(sigma_mm*sqrt(2.0_r8)))) &
+      !          + sigma_mm/sqrt(2.0_r8*PI)*exp(-d**2/(2.0_r8*sigma_mm**2)) &
+      !          - wdsrf
+
+      !       dfdd = 0.5_r8*(1.0_r8+erf(d/(sigma_mm*sqrt(2.0_r8))))
+
+      !       if (abs(fd) < fd_tol) exit
+      !       if (dfdd < 1.e-12_r8) exit
+
+      !       d = d - fd/dfdd
+
+      !       ! guard against runaway
+      !       d = max(-10._r8*sigma_mm, min(10._r8*sigma_mm, d))
+      !    enddo
+
+      !    f_h2osfc = 0.5_r8*(1.0_r8+erf(d/(sigma_mm*sqrt(2.0_r8))))
+      !    f_h2osfc = min(1._r8, max(0._r8, f_h2osfc))
+      ! else
+      !    f_h2osfc = 0._r8
+      ! endif
+
+      !--------------------------------------------------
+      ! 3) Partition incoming water between soil and h2osfc (CLM-consistent)
+      !    - q_soil: FINAL soil infiltration flux (excluding h2osfc drainage)
+      !    - q_excess: Hortonian excess moved into h2osfc
+      !--------------------------------------------------
+      q_soil_pot = (1._r8 - f_h2osfc) * q_in_surface
+
+      ! IMPORTANT: threshold must include non-inundated fraction
+      q_excess   = max( q_soil_pot - (1._r8 - f_h2osfc)*qinmax, 0._r8 )
+
+      q_h2osfc   = f_h2osfc * q_in_surface + q_excess
+      q_soil_final = q_soil_pot - q_excess
+
+      ! return q_soil as FINAL soil-side infiltration (excluding drainage)
+      q_soil = max(0._r8, q_soil_final)
+
+      !--------------------------------------------------
+      ! 4) Connectivity function (CLM-style)
+      !--------------------------------------------------
+      if (f_h2osfc <= DEF_CH4_hydrology%pc) then
+         f_connected = 0._r8
+      else
+         f_connected = (f_h2osfc - DEF_CH4_hydrology%pc)**0.14
+      endif
+
+      !--------------------------------------------------
+      ! 5) h2osfc surface outflow (only when ponding above pondmx)
+      !    NOTE: q_h2osfc_surf is a RUNOFF component and must be counted in rsur.
+      !--------------------------------------------------
+      if (wdsrf > wdsrf_thresh) then
          k_h2osfc = 1.0e-4_r8 * sin(atan(slpratio))
-         q_h2osfc_surf = k_h2osfc*f_connected*(wdsrf-pondmx)
-         q_h2osfc_surf = min(q_h2osfc_surf, (wdsrf-pondmx)/deltim)
+         q_h2osfc_surf = k_h2osfc * f_connected * (wdsrf - wdsrf_thresh)
+         q_h2osfc_surf = min(q_h2osfc_surf, (wdsrf - wdsrf_thresh)/deltim)
       else
          q_h2osfc_surf = 0._r8
       endif
-
-      if (q_h2osfc_surf<1.e-8) q_h2osfc_surf = 0._r8
-
-      wdsrf = wdsrf + (q_h2osfc - q_h2osfc_surf)*deltim
+      if (q_h2osfc_surf < 1.e-12_r8) q_h2osfc_surf = 0._r8
 
       !--------------------------------------------------
-      ! 4. h2osfc drainage
+      ! 6) Update wdsrf by adding h2osfc inflow and subtracting surface outflow
       !--------------------------------------------------
-      q_drain_h2osfc = min(f_h2osfc*qinmax,wdsrf/deltim)
-
-      wdsrf = wdsrf - q_drain_h2osfc*deltim
+      wdsrf = wdsrf + (q_h2osfc - q_h2osfc_surf) * deltim
+      wdsrf = max(0._r8, wdsrf)
 
       !--------------------------------------------------
-      ! 5. Update inundation fraction (using CLM h2osfc scheme)
+      ! 7) h2osfc drainage to soil (adds to soil infiltration later)
       !--------------------------------------------------
-      micro_sigma = (atan(slpratio) + DEF_CH4_hydrology%slopemax**(1._r8/DEF_CH4_hydrology%slopebeta))**DEF_CH4_hydrology%slopebeta
+      q_drain_h2osfc = min( f_h2osfc*qinmax, wdsrf/deltim )
+      q_drain_h2osfc = max(0._r8, q_drain_h2osfc)
 
-      pondmin = 1.e-8_r8
-      if (wdsrf > pondmin) then
-         ! a cutoff is needed for numerical reasons...(nonconvergence after 5 iterations)
-         d=0.0_r8
+      wdsrf = wdsrf - q_drain_h2osfc * deltim
+      wdsrf = max(0._r8, wdsrf)
 
-         sigma=1.0e3 * micro_sigma ! convert to mm
-         do l=1,10
-            fd = 0.5_r8*d*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8)))) &
-               +sigma/sqrt(2.0_r8*PI)*exp(-d**2/(2.0_r8*sigma**2)) &
-               -wdsrf
-            dfdd = 0.5_r8*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8))))
+      !--------------------------------------------------
+      ! 8) Re-diagnose f_h2osfc from UPDATED wdsrf (NEW state)
+      !--------------------------------------------------
+      if (wdsrf > pondmin .and. micro_sigma > 1.e-12_r8) then
+         sigma_mm = 1.0e3_r8 * micro_sigma
+         d = max(0._r8, wdsrf)
+
+         do l = 1, 20
+            fd = 0.5_r8*d*(1.0_r8+erf(d/(sigma_mm*sqrt(2.0_r8)))) &
+               + sigma_mm/sqrt(2.0_r8*PI)*exp(-d**2/(2.0_r8*sigma_mm**2)) &
+               - wdsrf
+            dfdd = 0.5_r8*(1.0_r8+erf(d/(sigma_mm*sqrt(2.0_r8))))
+
+            if (abs(fd) < fd_tol) exit
+            if (dfdd < 1.e-12_r8) exit
 
             d = d - fd/dfdd
+            d = max(-10._r8*sigma_mm, min(10._r8*sigma_mm, d))
          enddo
-         !--  update the submerged areal fraction using the new d value
-         f_h2osfc = 0.5_r8*(1.0_r8+erf(d/(sigma*sqrt(2.0_r8))))
 
+         f_h2osfc = 0.5_r8*(1.0_r8+erf(d/(sigma_mm*sqrt(2.0_r8))))
+         f_h2osfc = min(1._r8, max(0._r8, f_h2osfc))
       else
          f_h2osfc = 0._r8
-         ! The update of h2osfc is deferred to later, keeping with our standard
-         ! separation of flux calculations from state updates, and because the state
-         ! update needs to happen for tracers as well as bulk. However, it's important
-         ! that this flux be applied soon after this routine, so that h2osfc remains in
-         ! sync with frac_h2osfc.
       endif
-      print*, "q_soil",q_soil
-      print*, "q_excess",q_excess
-      print*, "q_h2osfc",q_h2osfc
-      print*, "q_drain_h2osfc",q_drain_h2osfc
-      print*, "q_h2osfc_surf",q_h2osfc_surf
 
+      !--------------------------------------------------
+      ! 9) FINAL surface runoff returned to WATER_2014
+      !--------------------------------------------------
+      rsur = q_over + q_h2osfc_surf
+
+      if (present(rsur_se)) rsur_se = q_over
+      if (present(rsur_ie)) rsur_ie = q_h2osfc_surf
+
+
+      ! q_in    = q_liq0
+      ! q_out   = rsur + q_soil + q_drain_h2osfc
+      ! q_store = (wdsrf - wdsrf_old) / deltim
+      ! chk_bal = q_in - q_out - q_store   ! mm/s, should be ~0
+      ! write(6,'(A)') '---------------- SurfaceRunoff_TOPMOD_CLM DEBUG ----------------'
+      ! write(6,'(A,1PE12.4)') 'deltim [s]              = ', deltim
+      ! write(6,'(A,1PE12.4)') 'slpratio [-]            = ', slpratio
+      ! write(6,'(A,1PE12.4)') 'zwt [m]                 = ', zwt
+
+      ! write(6,'(A,1PE12.4)') 'fsat [-]                = ', fsat
+      ! write(6,'(A,1PE12.4)') 'qinmax [mm/s]           = ', qinmax
+      ! write(6,'(A,1PE12.4)') 'q_liq0 [mm/s]           = ', q_liq0
+      ! write(6,'(A,1PE12.4)') 'q_over [mm/s]           = ', q_over
+      ! write(6,'(A,1PE12.4)') 'q_in_surface [mm/s]     = ', q_in_surface
+
+      ! write(6,'(A,1PE12.4)') 'micro_sigma [m]         = ', micro_sigma
+      ! write(6,'(A,1PE12.4)') 'sigma_mm [mm]           = ', sigma_mm
+      ! write(6,'(A,1PE12.4)') 'wdsrf_thresh [mm]       = ', wdsrf_thresh
+      ! write(6,'(A,1PE12.4)') 'pondmx [mm]             = ', pondmx
+      ! write(6,'(A,1PE12.4)') 'pondmin [mm]            = ', pondmin
+
+      ! write(6,'(A,1PE12.4)') 'f_h2osfc_old [-]        = ', f_h2osfc_old
+      ! write(6,'(A,1PE12.4)') 'f_h2osfc_new [-]        = ', f_h2osfc
+      ! write(6,'(A,1PE12.4)') 'f_connected [-]         = ', f_connected
+
+      ! write(6,'(A,1PE12.4)') 'q_soil_pot [mm/s]       = ', q_soil_pot
+      ! write(6,'(A,1PE12.4)') 'q_excess [mm/s]         = ', q_excess
+      ! write(6,'(A,1PE12.4)') 'q_h2osfc [mm/s]         = ', q_h2osfc
+      ! write(6,'(A,1PE12.4)') 'q_h2osfc_surf [mm/s]    = ', q_h2osfc_surf
+      ! write(6,'(A,1PE12.4)') 'q_drain_h2osfc [mm/s]   = ', q_drain_h2osfc
+      ! write(6,'(A,1PE12.4)') 'q_soil(final) [mm/s]    = ', q_soil
+
+      ! write(6,'(A,1PE12.4)') 'wdsrf_old [mm]          = ', wdsrf_old
+      ! write(6,'(A,1PE12.4)') 'wdsrf_new [mm]          = ', wdsrf
+      ! write(6,'(A,1PE12.4)') 'dwdsrf/dt [mm/s]        = ', q_store
+
+      ! write(6,'(A,1PE12.4)') 'rsur(final) [mm/s]      = ', rsur
+      ! write(6,'(A,1PE12.4)') 'CHECK: q_in-q_out-q_sto = ', chk_bal
    END SUBROUTINE SurfaceRunoff_TOPMOD_CLM
 
 ! -------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 	SUBROUTINE ch4_driver (istep,i,idate,patchclass,patchtype,deltim,lb,snl,dlon,dlat,&!input
 		z_soisno,dz_soisno,zi_soisno,t_soisno,t_grnd,wliq_soisno,wice_soisno,&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&
-		zwt,rootfr,snowdp,wat,rsur,etr,lakedepth,lake_icefrac,wdsrf,bsw,&
+		zwt,rootfr,snowdp,wat,rsur,etr,lakedepth,lake_icefrac,wdsrf,wetwat,bsw,&
 		smp,porsl,lai,rootr,fsatmax,fsatdcf,frcsat,f_h2osfc)
 
 		use MOD_Precision
@@ -100,6 +100,7 @@
 				lakedepth                     , &! lake depth (m)
 				lake_icefrac(1:nl_lake)       , &! lake mass fraction of lake layer that is frozen
 				wdsrf                         , &! depth of surface water [mm]
+        		wetwat                        , &! water storage in wetland [mm]
 				bsw         (1:nl_soil)       , &! clapp and hornbereger "b" parameter [-]
 				smp         (1:nl_soil)       , &! soil matrix potential [mm]
 				porsl       (1:nl_soil)       , &! fraction of soil that is voids [-]
@@ -132,7 +133,7 @@
 		z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:),&
 		t_grnd,wliq_soisno(maxsnl+1:),wice_soisno(maxsnl+1:),&
 		forc_t,forc_pbot,forc_po2m,forc_pco2m,&
-		zwt,rootfr,snowdp,wat,rsur,etr,wdsrf,bsw,&
+		zwt,rootfr,snowdp,wat,rsur,etr,wdsrf,wetwat,bsw,&
 		smp,porsl,lai,rootr,&
 		annsum_npp(i),rr(i),&
 		fsatmax,fsatdcf,frcsat,&

@@ -104,8 +104,9 @@ CONTAINS
             ! calculate the dissolved mineral N concentration (gN/kg water)
             ! assumes that 10% of mineral nitrogen is soluble
             disn_conc = 0._r8
-            print*, smin_no3_vr(:,i)
-            print*, wliq_soisno(:,i)
+            ! print*, 'sf_no3',sf_no3
+            ! print*, 'smin_no3_vr',smin_no3_vr(:,i)
+            ! print*, 'wliq_soisno',wliq_soisno(:,i)
             IF (wliq_soisno(j,i) > 0._r8) THEN
                disn_conc = (sf_no3 * smin_no3_vr(j,i) * dz_soi(j) )/(wliq_soisno(j,i) )
             ENDIF

@@ -1255,7 +1255,7 @@ CONTAINS
             fsat_bef                = 0.
             finundated_lag          = 1.
             ch4_dfsat_tot           = 0.
-            f_h2osfc                = 1.
+            f_h2osfc                = 0.4
 #endif
             IF(DEF_USE_LAIFEEDBACK)THEN
                tlai_p                (ps:pe) = slatop(pftclass(ps:pe)) * leafc_p(ps:pe)

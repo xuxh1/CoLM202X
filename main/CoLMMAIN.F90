@@ -813,7 +813,6 @@ SUBROUTINE CoLMMAIN ( &
               qintr_snow        ,snofrz(lbsn:0)    ,sabg_snow_lyr(lb:1)                   )
 
          IF (.not. DEF_USE_VariablySaturatedFlow) THEN
-
             CALL WATER_2014 (ipatch,patchtype         ,lb                ,nl_soil           ,&
                  deltim            ,z_soisno(lb:)     ,dz_soisno(lb:)    ,zi_soisno(lb-1:)  ,&
                  bsw               ,porsl             ,psi0              ,hksati            ,&
@@ -844,7 +843,6 @@ SUBROUTINE CoLMMAIN ( &
 #endif
                  )
          ELSE
-
             CALL WATER_VSF (ipatch ,patchtype,is_dry_lake,   lb          ,nl_soil           ,&
                  deltim            ,z_soisno(lb:)     ,dz_soisno(lb:)    ,zi_soisno(lb-1:)  ,&
                  bsw               ,theta_r           ,fsatmax           ,fsatdcf           ,&
