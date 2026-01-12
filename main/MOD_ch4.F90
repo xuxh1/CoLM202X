@@ -626,7 +626,7 @@ contains
 					ENDIF
 				ENDDO
 				IF((DEF_wetland_finundation_scheme == 0) .and. patchtype==2)THEN
-					wdsrf_sat = wdsrf + wetawt
+					wdsrf_sat = wdsrf + wetwat
 				ELSE
 					wdsrf_sat = wdsrf
 				ENDIF

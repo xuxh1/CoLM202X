@@ -485,7 +485,7 @@ IF ((.not.DEF_SPLIT_SOILSNOW) .or. (patchtype==1 .and. DEF_URBAN_RUN)) THEN
 
       IF(lb >= 1)THEN
          err_solver = err_solver-(qsdew+qfros-qsubl)*deltim
-         print*, 'err_solver3',w_sum + (gwat-etr-rnof)*deltim + (qsdew+qfros-qsubl)*deltim
+         ! print*, 'err_solver3',w_sum + (gwat-etr-rnof)*deltim + (qsdew+qfros-qsubl)*deltim
       ENDIF
       ! print*, 'wliq_soisno 2',sum(wliq_soisno(1:))
       ! print*, 'wice_soisno 2',sum(wice_soisno(1:))
