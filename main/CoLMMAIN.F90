@@ -35,6 +35,12 @@ SUBROUTINE CoLMMAIN ( &
            hhti,         trda,         trdm,         trop,         &
            g1,           g0,           gradm,        binter,       &
            extkn,        chil,         rho,          tau,          &
+#ifdef HYPERSPECTRAL
+           ! variables for hyperspectral scheme
+           clr_frac,    cld_frac,                                   &
+           reflectance, transmittance,                              &
+           soil_alb,    kw, nw,                                     &
+#endif
 
          ! atmospheric forcing
            forc_pco2m,   forc_po2m,    forc_us,      forc_vs,      &
@@ -43,6 +49,10 @@ SUBROUTINE CoLMMAIN ( &
            forc_sols,    forc_soll,    forc_solsd,   forc_solld,   &
            forc_frl,     forc_hgt_u,   forc_hgt_t,   forc_hgt_q,   &
            forc_rhoair,  &
+#ifdef HYPERSPECTRAL
+           forc_solarin,                                         &
+#endif
+
            ! cbl forcing
            forc_hpbl,    &
            ! aerosol deposition
@@ -58,7 +68,14 @@ SUBROUTINE CoLMMAIN ( &
            ssha,         ssoi,         ssno,         thermk,       &
            extkb,        extkd,        vegwp,        gs0sun,       &
            gs0sha,       &
+#ifdef HYPERSPECTRAL
+           alb_hires,    &
+           sol_dir_ln_hires, sol_dif_ln_hires ,&
+           sr_dir_ln_hires , sr_dif_ln_hires  ,&
+           reflectance_out , transmittance_out,&
+#endif
            !Ozone stress variables
+           o3coefv_sun,  o3coefv_sha,  o3coefg_sun,  o3coefg_sha,  &
            lai_old,      o3uptakesun,  o3uptakesha,  forc_ozone,   &
            !End ozone stress variables
            !WUE stomata model parameter
@@ -83,9 +100,10 @@ SUBROUTINE CoLMMAIN ( &
            lfevpa,       fsenl,        fevpl,        etr,          &
            fseng,        fevpg,        olrg,         fgrnd,        &
            trad,         tref,         qref,         t2m_wmo,      &
-           frcsat,       rsur,         &
-           rsur_se,      rsur_ie,      rnof,         qintr,        &
-           qinfl,        qdrip,        rst,          assim,        &
+           frcsat,       rsur,         rsur_se,      rsur_ie,      &
+           rsub,                                                   &
+           rnof,         qintr,        qinfl,        qlayer,       &
+           lake_deficit, qdrip,        rst,          assim,        &
            respc,        sabvsun,      sabvsha,      sabg,         &
            sr,           solvd,        solvi,        solnd,        &
            solni,        srvd,         srvi,         srnd,         &
@@ -153,7 +171,11 @@ SUBROUTINE CoLMMAIN ( &
    USE MOD_Vars_PFTimeVariables
 #endif
    USE MOD_RainSnowTemp
+#ifdef HYPERSPECTRAL
+   USE MOD_NetSolar_Hyper
+#else
    USE MOD_NetSolar
+#endif
    USE MOD_OrbCoszen
    USE MOD_NewSnow
    USE MOD_Thermal
@@ -163,7 +185,12 @@ SUBROUTINE CoLMMAIN ( &
    USE MOD_Glacier
    USE MOD_Lake
    USE MOD_SimpleOcean
+#ifdef HYPERSPECTRAL
+   USE MOD_Albedo_hires
+   USE MOD_HighRes_Parameters, only: get_loc_params
+#else
    USE MOD_Albedo
+#endif
    USE MOD_LAIEmpirical
    USE MOD_TimeManager
    USE MOD_Namelist, only: DEF_Interception_scheme, DEF_USE_VariablySaturatedFlow, &
@@ -279,6 +306,16 @@ SUBROUTINE CoLMMAIN ( &
         chil        ,&! leaf angle distribution factor
         rho(2,2)    ,&! leaf reflectance (iw=iband, il=life and dead)
         tau(2,2)    ,&! leaf transmittance (iw=iband, il=life and dead)
+#ifdef HYPERSPECTRAL
+        ! hyperspectral scheme parameters
+        clr_frac     ( 211, 90, 5 ),&
+        cld_frac     ( 211, 5 )    ,&
+        reflectance  ( 0:15, 211, 2 ),&
+        transmittance( 0:15, 211, 2 ),&
+        soil_alb     ( 211 )       ,&
+        kw           ( 211 )       ,&
+        nw           ( 211 )       ,&
+#endif
 
         ! tunable parameters
         zlnd        ,&! roughness length for soil [m]
@@ -298,6 +335,18 @@ SUBROUTINE CoLMMAIN ( &
 
    integer , intent(in) :: &
         c3c4          ! 1 for C3, 2 for C4
+
+#ifdef HYPERSPECTRAL
+   ! Urban hyperspectral albedo
+   REAL(r8), ALLOCATABLE :: urban_albedo( :, :, : )    ! (cluster_id, season wavelength)
+   REAL(r8), ALLOCATABLE :: mean_albedo ( :, : )       ! (season, wavelength)
+   REAL(r8), ALLOCATABLE :: lat_north   ( :    )       ! (cluster_id)
+   REAL(r8), ALLOCATABLE :: lat_south   ( :    )       ! (cluster_id)
+   REAL(r8), ALLOCATABLE :: lon_east    ( :    )       ! (cluster_id)
+   REAL(r8), ALLOCATABLE :: lon_west    ( :    )       ! (cluster_id)
+
+#endif
+
 ! Forcing
 !-----------------------------------------------------------------------
    real(r8), intent(in) :: &
@@ -315,6 +364,9 @@ SUBROUTINE CoLMMAIN ( &
         forc_soll   ,&! atm nir direct beam solar rad onto srf [W/m2]
         forc_solsd  ,&! atm vis diffuse solar rad onto srf [W/m2]
         forc_solld  ,&! atm nir diffuse solar rad onto srf [W/m2]
+#ifdef HYPERSPECTRAL
+        forc_solarin,&! atm solar rad onto srf [W/m2]
+#endif
         forc_frl    ,&! atmospheric infrared (longwave) radiation [W/m2]
         forc_hgt_u  ,&! observational height of wind [m]
         forc_hgt_t  ,&! observational height of temperature [m]
@@ -357,6 +409,10 @@ SUBROUTINE CoLMMAIN ( &
         o3uptakesun ,&! Ozone does, sunlit leaf (mmol O3/m^2)
         o3uptakesha ,&! Ozone does, shaded leaf (mmol O3/m^2)
         forc_ozone  ,&
+        o3coefv_sun ,&! Ozone stress factor for photosynthesis on sunlit leaf
+        o3coefv_sha ,&! Ozone stress factor for photosynthesis on sunlit leaf
+        o3coefg_sun ,&! Ozone stress factor for stomata on shaded leaf
+        o3coefg_sha ,&! Ozone stress factor for stomata on shaded leaf
         !End ozone stress variables
         !WUE stomata model parameter
         lambda      ,&! Marginal water cost of carbon gain ((mol h2o) (mol co2)-1)
@@ -392,6 +448,9 @@ SUBROUTINE CoLMMAIN ( &
         green       ,&! greenness
         lai         ,&! leaf area index
         sai         ,&! stem area index
+#ifdef HYPERSPECTRAL
+        alb_hires(211, 2),& ! hyperspectral albedo
+#endif
 
         coszen      ,&! cosine of solar zenith angle
         alb(2,2)    ,&! averaged albedo [-]
@@ -417,7 +476,13 @@ SUBROUTINE CoLMMAIN ( &
         rootr(nl_soil)   ,&! water uptake fraction from different layers, all layers add to 1.0
         rootflux(nl_soil),&! water exchange between soil and root in different layers
                            ! Positive: soil->root[?]
-        h2osoi(nl_soil)    ! volumetric soil water in layers [m3/m3]
+#ifdef HYPERSPECTRAL
+        reflectance_out  (211, 0:15)  ,&! high resolution reflectance
+        transmittance_out(211, 0:15)  ,&! high resolution transmittance
+#endif
+        h2osoi(nl_soil)  ,&! volumetric soil water in layers [m3/m3]
+        qlayer(0:nl_soil),&! water flux at between soil layer [mm h2o/s]
+        lake_deficit       ! lake deficit due to evaporation (mm h2o/s)
 
    real(r8), intent(out) :: &
         assimsun_out,&
@@ -450,6 +515,7 @@ SUBROUTINE CoLMMAIN ( &
         rsur        ,&! surface runoff (mm h2o/s)
         rsur_se     ,&! saturation excess surface runoff (mm h2o/s)
         rsur_ie     ,&! infiltration excess surface runoff (mm h2o/s)
+        rsub        ,&! subsurface runoff (mm h2o/s)
         rnof        ,&! total runoff (mm h2o/s)
         qintr       ,&! interception (mm h2o/s)
         qinfl       ,&! infiltration (mm h2o/s)
@@ -480,6 +546,12 @@ SUBROUTINE CoLMMAIN ( &
         srviln      ,&! reflected diffuse beam vis solar radiation at local noon(W/m2)
         srndln      ,&! reflected direct beam nir solar radiation at local noon(W/m2)
         srniln      ,&! reflected diffuse beam nir solar radiation at local noon(W/m2)
+#ifdef HYPERSPECTRAL
+        sol_dir_ln_hires(211)  ,&! incident direct beam vis solar radiation at local noon(W/m2)
+        sol_dif_ln_hires(211)  ,&! incident diffuse beam vis solar radiation at local noon(W/m2)
+        sr_dir_ln_hires(211)   ,&! reflected direct beam nir solar radiation at local noon(W/m2)
+        sr_dif_ln_hires(211)   ,&! reflected diffuse beam nir solar radiation at local noon(W/m2)
+#endif
 
         forc_rain   ,&! rain [mm/s]
         forc_snow   ,&! snow [mm/s]
@@ -545,6 +617,12 @@ SUBROUTINE CoLMMAIN ( &
         qintr_rain  ,&! rainfall interception (mm h2o/s)
         qintr_snow    ! snowfall interception (mm h2o/s)
 
+#ifdef HYPERSPECTRAL
+  real(r8) :: &
+        dir_frac(211),&! direct beam fraction
+        dif_frac(211)  ! diffuse beam fraction
+#endif
+
    integer snl      ,&! number of snow layers
         imelt(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happened=0
         lb ,lbsn    ,&! lower bound of arrays
@@ -559,7 +637,7 @@ SUBROUTINE CoLMMAIN ( &
    real(r8) dz_soisno_   (maxsnl+1:1)  !layer thickness (m)
    real(r8) sabg_snow_lyr(maxsnl+1:1)  !snow layer absorption [W/m-2]
    !----------------------------------------------------------------------
-   !  For irrigation 
+   !  For irrigation
    !----------------------------------------------------------------------
    real(r8) :: qflx_irrig_drip         ! drip irrigation rate [mm/s]
    real(r8) :: qflx_irrig_sprinkler    ! sprinkler irrigation rate [mm/s]
@@ -616,13 +694,28 @@ SUBROUTINE CoLMMAIN ( &
 !  [1] Solar absorbed by vegetation and ground
 !      and precipitation information (rain/snow fall and precip temperature
 !======================================================================
+#ifdef HYPERSPECTRAL
+      CALL get_loc_params(forc_solarin, idate, coszen, patchlatr, patchlonr, clr_frac, cld_frac, dir_frac, dif_frac)
 
+      CALL netsolar_hyper (ipatch,idate,deltim,patchlonr,patchtype,&
+                     forc_sols,forc_soll,forc_solsd,forc_solld,&
+                     alb,ssun,ssha,lai,sai,rho,tau,ssoi,ssno,ssno_lyr,fsno,&
+                     parsun,parsha,sabvsun,sabvsha,sabg,sabg_soil,sabg_snow,sabg_snow_lyr,&
+                     sr,solvd,solvi,solnd,solni,srvd,srvi,srnd,srni,&
+                     solvdln,solviln,solndln,solniln,srvdln,srviln,srndln,srniln,&
+                     ! new variables for hyperspectral scheme
+                     dir_frac, dif_frac, alb_hires    ,&
+                     sol_dir_ln_hires,sol_dif_ln_hires,&
+                     sr_dir_ln_hires ,sr_dif_ln_hires  )
+
+#else
       CALL netsolar (ipatch,idate,deltim,patchlonr,patchtype,&
                      forc_sols,forc_soll,forc_solsd,forc_solld,&
                      alb,ssun,ssha,lai,sai,rho,tau,ssoi,ssno,ssno_lyr,fsno,&
                      parsun,parsha,sabvsun,sabvsha,sabg,sabg_soil,sabg_snow,sabg_snow_lyr,&
                      sr,solvd,solvi,solnd,solni,srvd,srvi,srnd,srni,&
                      solvdln,solviln,solndln,solniln,srvdln,srviln,srndln,srniln)
+#endif
 
       CALL rain_snow_temp (patchtype, &
                            forc_t,forc_q,forc_psrf,forc_prc,forc_prl,forc_us,forc_vs,tcrit,&
@@ -663,7 +756,7 @@ SUBROUTINE CoLMMAIN ( &
          ENDDO
 
          totwb = ldew + scv + sum(wice_soisno(1:)+wliq_soisno(1:)) + wa
-#ifdef CROP      
+#ifdef CROP
          if(DEF_USE_IRRIGATION) totwb = totwb + waterstorage(ipatch)
 #endif
          totwb = totwb + wdsrf
@@ -679,7 +772,7 @@ SUBROUTINE CoLMMAIN ( &
          ENDIF
 
 !----------------------------------------------------------------------
-! [2] Irrigation 
+! [2] Irrigation
 !----------------------------------------------------------------------
          qflx_irrig_drip = 0._r8
          qflx_irrig_sprinkler = 0._r8
@@ -688,7 +781,7 @@ SUBROUTINE CoLMMAIN ( &
 #ifdef CROP
          IF (DEF_USE_IRRIGATION) THEN
             IF (patchtype == 0) THEN
-               CALL CalIrrigationApplicationFluxes(ipatch,deltim,qflx_irrig_drip,qflx_irrig_sprinkler,qflx_irrig_flood,qflx_irrig_paddy)   
+               CALL CalIrrigationApplicationFluxes(ipatch,deltim,qflx_irrig_drip,qflx_irrig_sprinkler,qflx_irrig_flood,qflx_irrig_paddy)
             ENDIF
          ENDIF
 #endif
@@ -760,6 +853,7 @@ SUBROUTINE CoLMMAIN ( &
               psi50_sun         ,psi50_sha         ,psi50_xyl         ,psi50_root        ,&
               ck                ,vegwp             ,gs0sun            ,gs0sha            ,&
               !Ozone stress variables
+              o3coefv_sun       ,o3coefv_sha       ,o3coefg_sun       ,o3coefg_sha       ,&
               lai_old           ,o3uptakesun       ,o3uptakesha       ,forc_ozone        ,&
               !End ozone stress variables
               !WUE stomata model parameter
@@ -819,6 +913,7 @@ SUBROUTINE CoLMMAIN ( &
                  mss_dst1(lbsn:0)  ,mss_dst2(lbsn:0)  ,mss_dst3(lbsn:0)  ,mss_dst4(lbsn:0)  ,&
 !  irrigation variables
                  qflx_irrig_drip   ,qflx_irrig_flood  ,qflx_irrig_paddy)
+                 rsub = rnof - rsur
          ELSE
 
             CALL WATER_VSF (ipatch ,patchtype,is_dry_lake,   lb          ,nl_soil           ,&
@@ -837,10 +932,10 @@ SUBROUTINE CoLMMAIN ( &
                  qfros             ,qseva_soil        ,qsdew_soil        ,qsubl_soil        ,&
                  qfros_soil        ,qseva_snow        ,qsdew_snow        ,qsubl_snow        ,&
                  qfros_snow        ,fsno              ,frcsat            ,rsur              ,&
-                 rsur_se           ,&
-                 rsur_ie           ,rnof              ,qinfl             ,ssi               ,&
-                 pondmx            ,wimp              ,zwt               ,wdsrf             ,&
-                 wa                ,wetwat            ,&
+                 rsur_se           ,rsur_ie           ,rsub              ,rnof              ,&
+                 qinfl                                                                      ,&
+                 qlayer            ,ssi               ,pondmx            ,wimp              ,&
+                 zwt               ,wdsrf             ,wa                ,wetwat            ,&
 #if (defined CaMa_Flood)
                  !add variables for flood depth [mm], flood fraction [0-1]
                  !and re-infiltration [mm/s] calculation.
@@ -1098,6 +1193,7 @@ SUBROUTINE CoLMMAIN ( &
 
          IF (.not. DEF_USE_VariablySaturatedFlow) THEN
             rsur = max(0.0,gwat)
+            rsub = 0.
             rnof = rsur
          ELSE
             a = wdsrf + wliq_soisno(1) + gwat * deltim
@@ -1115,6 +1211,7 @@ SUBROUTINE CoLMMAIN ( &
             ELSE
                rsur = 0.
             ENDIF
+            rsub = 0.
             rnof = rsur
             rsur_se = rsur
             rsur_ie = 0.
@@ -1306,9 +1403,11 @@ SUBROUTINE CoLMMAIN ( &
             a = (sum(wliq_soisno(1:))+sum(wice_soisno(1:))+scv-w_old-scvold)/deltim
             aa = qseva+qsubl-qsdew-qfros
             rsur = max(0., pg_rain + pg_snow - aa - a)
+            rsub = 0.
             rnof = rsur
             rsur_se = rsur
             rsur_ie = 0.
+            lake_deficit = - min(0., pg_rain + pg_snow - aa - a)
          ELSE
 
             wdsrf = sum(dz_lake) * 1.e3
@@ -1322,6 +1421,7 @@ SUBROUTINE CoLMMAIN ( &
             ELSE
                rsur = 0.
             ENDIF
+            rsub = 0.
             rnof = rsur
             rsur_se = rsur
             rsur_ie = 0.
@@ -1331,6 +1431,8 @@ SUBROUTINE CoLMMAIN ( &
          endwb  = scv + sum(wice_soisno(1:)+wliq_soisno(1:)) + wa
          IF (DEF_USE_Dynamic_Lake) THEN
             endwb  = endwb  + wdsrf
+         ELSE
+            endwb  = endwb  - lake_deficit * deltim
          ENDIF
 
          errorw = (endwb-totwb) - (forc_prc+forc_prl-fevpa) * deltim
@@ -1339,11 +1441,9 @@ SUBROUTINE CoLMMAIN ( &
 #endif
 
 #if (defined CoLMDEBUG)
-         IF (DEF_USE_Dynamic_Lake) THEN
-            IF (abs(errorw) > 1.e-3) THEN
-               write(*,*) 'Warning: water balance violation in CoLMMAIN (lake) ', errorw
-               CALL CoLM_stop ()
-            ENDIF
+         IF (abs(errorw) > 1.e-3) THEN
+            write(*,*) 'Warning: water balance violation in CoLMMAIN (lake) ', errorw
+            CALL CoLM_stop ()
          ENDIF
 #endif
 
@@ -1379,7 +1479,7 @@ SUBROUTINE CoLMMAIN ( &
 
                   ! null data for sea component
                     z_soisno   (:) = 0.0
-                    dz_soisno  (:) = 0.0
+                    dz_soisno  (maxsnl+1:0) = 0.
                     t_soisno   (:) = 0.0
                     t_soisno (1:7) = tssub(1:7)
                     wliq_soisno(:) = 0.0
@@ -1392,6 +1492,7 @@ SUBROUTINE CoLMMAIN ( &
                     rsur    = 0.0
                     rsur_se = 0.0
                     rsur_ie = 0.0
+                    rsub    = 0.0
                     rnof    = 0.0
                     xerr    = 0.0
 
@@ -1520,6 +1621,26 @@ SUBROUTINE CoLMMAIN ( &
          ! we supposed CALL it every time-step, because
          ! other vegetation related parameters are needed to create
          IF (doalb) THEN
+#ifdef HYPERSPECTRAL
+            CALL albland_HiRes (ipatch, patchtype,deltim,&
+                 soil_s_v_alb,soil_d_v_alb,soil_s_n_alb,soil_d_n_alb,&
+                 chil,rho,tau,fveg,green,lai,sai,fwet_snow,coszen,&
+                 wt,fsno,scv,scvold,sag,ssw,pg_snow,forc_t,t_grnd,t_soisno_,dz_soisno_,&
+                 snl,wliq_soisno,wice_soisno,snw_rds,snofrz,&
+                 mss_bcpho,mss_bcphi,mss_ocpho,mss_ocphi,&
+                 mss_dst1,mss_dst2,mss_dst3,mss_dst4,&
+                 alb,ssun,ssha,ssoi,ssno,ssno_lyr,thermk,extkb,extkd,&
+
+                 ! new parameters for hyperspectral scheme
+                 alb_hires                         ,&
+                 dir_frac    , dif_frac            ,&
+                 reflectance , transmittance       ,&
+                 soil_alb, kw, nw, porsl(1)        ,&
+                 reflectance_out, transmittance_out,&
+                 idate(2), patchlatr, patchlonr    ,&
+                 urban_albedo, mean_albedo, lat_north, lat_south, lon_west, lon_east )
+
+#else
             CALL albland (ipatch,patchtype,deltim,&
                  soil_s_v_alb,soil_d_v_alb,soil_s_n_alb,soil_d_n_alb,&
                  chil,rho,tau,fveg,green,lai,sai,fwet_snow,coszen,&
@@ -1528,6 +1649,7 @@ SUBROUTINE CoLMMAIN ( &
                  mss_bcpho,mss_bcphi,mss_ocpho,mss_ocphi,&
                  mss_dst1,mss_dst2,mss_dst3,mss_dst4,&
                  alb,ssun,ssha,ssoi,ssno,ssno_lyr,thermk,extkb,extkd)
+#endif
          ENDIF
 
       ELSE                   !OCEAN
@@ -1567,6 +1689,7 @@ SUBROUTINE CoLMMAIN ( &
          zerr          = 0.
 
          qinfl         = 0.
+         qlayer        = 0.
          qdrip         = forc_rain + forc_snow
          qintr         = 0.
          frcsat        = 1.

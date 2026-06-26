@@ -202,7 +202,7 @@ CONTAINS
 
             ENDIF
 
-            CALL mpi_wait(request(1), MPI_STATUSES_IGNORE, p_err)
+            CALL mpi_wait(request(1), MPI_STATUS_IGNORE, p_err)
             IF (n_req_uniq  > 0) CALL mpi_wait(request(2), MPI_STATUSES_IGNORE, p_err)
             IF (n_req_other > 0) CALL mpi_wait(request(3), MPI_STATUSES_IGNORE, p_err)
 
@@ -886,8 +886,10 @@ CONTAINS
 
       IF (p_is_worker) THEN
 
+         ! Always allocate (zero-length if no requests) to avoid passing
+         ! unallocated array to worker_push_data_uniq_real8.
+         allocate (vec_recv_uniq (pushdata%num_req_uniq))
          IF (pushdata%num_req_uniq > 0) THEN
-            allocate (vec_recv_uniq (pushdata%num_req_uniq))
             vec_recv_uniq(:) = fillvalue
          ENDIF
 
@@ -895,8 +897,8 @@ CONTAINS
 
          IF (pushdata%num_req_uniq > 0) THEN
             vec_recv = vec_recv_uniq(pushdata%addr_single)
-            deallocate (vec_recv_uniq)
          ENDIF
+         deallocate (vec_recv_uniq)
 
       ENDIF
 
@@ -922,8 +924,10 @@ CONTAINS
 
       IF (p_is_worker) THEN
 
+         ! Always allocate (zero-length if no requests) to avoid passing
+         ! unallocated array to worker_push_data_uniq_real8.
+         allocate (vec_recv_uniq (pushdata%num_req_uniq))
          IF (pushdata%num_req_uniq > 0) THEN
-            allocate (vec_recv_uniq (pushdata%num_req_uniq))
             vec_recv_uniq(:) = fillvalue
          ENDIF
 
@@ -956,8 +960,8 @@ CONTAINS
                ENDIF
             ENDDO
 
-            deallocate (vec_recv_uniq)
          ENDIF
+         deallocate (vec_recv_uniq)
 
       ENDIF
 
@@ -979,8 +983,8 @@ CONTAINS
 
       IF (p_is_worker) THEN
 
+         allocate (vec_recv_uniq (pushdata%num_req_uniq))
          IF (pushdata%num_req_uniq > 0) THEN
-            allocate (vec_recv_uniq (pushdata%num_req_uniq))
             vec_recv_uniq(:) = fillvalue
          ENDIF
 
@@ -988,8 +992,8 @@ CONTAINS
 
          IF (pushdata%num_req_uniq > 0) THEN
             vec_recv = vec_recv_uniq(pushdata%addr_single)
-            deallocate (vec_recv_uniq)
          ENDIF
+         deallocate (vec_recv_uniq)
 
       ENDIF
 
@@ -1103,10 +1107,12 @@ CONTAINS
       IF (allocated(this%sum_area    )) deallocate(this%sum_area    )
       IF (allocated(this%self_from   )) deallocate(this%self_from   )
       IF (allocated(this%self_to     )) deallocate(this%self_to     )
+#ifdef USEMPI
       IF (allocated(this%n_to_other  )) deallocate(this%n_to_other  )
       IF (allocated(this%n_from_other)) deallocate(this%n_from_other)
       IF (allocated(this%to_other    )) deallocate(this%to_other    )
       IF (allocated(this%other_to    )) deallocate(this%other_to    )
+#endif
 
    END SUBROUTINE worker_pushdata_free_mem
 

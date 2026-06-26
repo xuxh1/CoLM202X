@@ -108,7 +108,7 @@ MODULE MOD_NetCDFSerial
       MODULE procedure ncio_write_serial_real8_4d
       MODULE procedure ncio_write_serial_real8_5d
    END INTERFACE ncio_write_serial
-   
+
    PUBLIC :: ncio_write_serial
    PUBLIC :: ncio_write_time
    PUBLIC :: ncio_write_lastdim
@@ -212,7 +212,7 @@ CONTAINS
    integer :: ncid, varid
 
       CALL nccheck( nf90_open (trim(filename), NF90_WRITE, ncid) )
-      CALL nccheck (nf90_inq_varid (ncid, trim(varname), varid))
+      CALL nccheck (nf90_inq_varid (ncid, trim(varname), varid), trim(varname))
       CALL nccheck (nf90_redef (ncid))
       CALL nccheck (nf90_put_att (ncid, varid, trim(attrname), trim(attrval)))
       CALL nccheck (nf90_enddef (ncid))
@@ -233,7 +233,7 @@ CONTAINS
    integer :: ncid, varid
 
       CALL nccheck( nf90_open (trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck (nf90_inq_varid (ncid, trim(varname), varid))
+      CALL nccheck (nf90_inq_varid (ncid, trim(varname), varid), trim(varname))
       CALL nccheck (nf90_get_att   (ncid, varid, trim(attrname), attrval))
       CALL nccheck( nf90_close (ncid))
 
@@ -252,7 +252,7 @@ CONTAINS
    integer :: ncid, varid
 
       CALL nccheck( nf90_open (trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck (nf90_inq_varid (ncid, trim(varname), varid))
+      CALL nccheck (nf90_inq_varid (ncid, trim(varname), varid), trim(varname))
       CALL nccheck (nf90_get_att (ncid, varid, trim(attrname), attrval))
       CALL nccheck (nf90_close (ncid))
 
@@ -271,7 +271,7 @@ CONTAINS
    integer :: ncid, varid
 
       CALL nccheck( nf90_open (trim(filename), NF90_WRITE, ncid) )
-      CALL nccheck (nf90_inq_varid (ncid, trim(varname), varid))
+      CALL nccheck (nf90_inq_varid (ncid, trim(varname), varid), trim(varname))
       CALL nccheck (nf90_redef (ncid))
       CALL nccheck (nf90_put_att (ncid, varid, trim(attrname), attrval))
       CALL nccheck (nf90_enddef (ncid))
@@ -295,7 +295,7 @@ CONTAINS
    integer, allocatable :: dimids(:)
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
 
       CALL nccheck( nf90_inquire_variable(ncid, varid, ndims = ndims) )
       allocate (dimids(ndims))
@@ -361,7 +361,7 @@ CONTAINS
    integer, allocatable :: dimids(:)
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
 
       CALL nccheck( nf90_inquire_variable(ncid, varid, ndims = ndims) )
       allocate (dimids(ndims))
@@ -388,7 +388,7 @@ CONTAINS
       CALL check_ncfile_exist (filename)
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -411,7 +411,7 @@ CONTAINS
       CALL check_ncfile_exist (filename)
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -437,7 +437,7 @@ CONTAINS
       allocate (rdata (varsize(1)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -465,7 +465,7 @@ CONTAINS
       allocate (rdata (varsize(1)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -493,7 +493,7 @@ CONTAINS
       allocate (rdata (varsize(1)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -523,7 +523,7 @@ CONTAINS
       allocate (rdata (varsize(1)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -551,7 +551,7 @@ CONTAINS
       allocate (rdata (varsize(1), varsize(2)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -579,7 +579,7 @@ CONTAINS
       allocate (rdata (varsize(1), varsize(2)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -608,7 +608,7 @@ CONTAINS
       allocate (rdata (varsize(1), varsize(2)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
 
       IF ((varsize(1) > 1000) .and. (varsize(2) > 100000)) THEN
          dsp = 0
@@ -649,7 +649,7 @@ CONTAINS
       allocate (rdata (varsize(1), varsize(2)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -679,7 +679,7 @@ CONTAINS
       allocate (rdata (varsize(1), varsize(2)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
 
       IF ((varsize(1) > 1000) .and. (varsize(2) > 100000)) THEN
          dsp = 0
@@ -719,7 +719,7 @@ CONTAINS
       allocate (rdata (varsize(1), varsize(2), varsize(3)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -748,7 +748,7 @@ CONTAINS
       allocate (rdata (varsize(1), varsize(2), varsize(3)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -777,7 +777,7 @@ CONTAINS
       allocate (rdata (varsize(1), varsize(2), varsize(3), varsize(4)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -806,7 +806,7 @@ CONTAINS
       allocate (rdata (varsize(1), varsize(2), varsize(3), varsize(4), varsize(5)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata) )
       CALL nccheck( nf90_close(ncid) )
 
@@ -1083,7 +1083,7 @@ CONTAINS
       allocate (rdata (datastt(1):dataend(1), datastt(2):dataend(2)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata, &
          (/datastt(1),datastt(2)/), (/dataend(1)-datastt(1)+1, dataend(2)-datastt(2)+1/)) )
       CALL nccheck( nf90_close(ncid) )
@@ -1109,7 +1109,7 @@ CONTAINS
       allocate (rdata (datastt(1):dataend(1), datastt(2):dataend(2)) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata, &
          (/datastt(1),datastt(2)/), (/dataend(1)-datastt(1)+1, dataend(2)-datastt(2)+1/)) )
       CALL nccheck( nf90_close(ncid) )
@@ -1139,7 +1139,7 @@ CONTAINS
       allocate (rdata (varsize(1), varsize(2), timestt:timeend) )
 
       CALL nccheck( nf90_open(trim(filename), NF90_NOWRITE, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid) )
+      CALL nccheck( nf90_inq_varid(ncid, trim(dataname), varid), trim(dataname) )
       CALL nccheck( nf90_get_var(ncid, varid, rdata, &
          (/1,1,timestt/), (/varsize(1),varsize(2), timeend-timestt+1/)) )
       CALL nccheck( nf90_close(ncid) )
@@ -1327,6 +1327,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. present(dimname)) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1369,6 +1370,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. present(dimname)) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1411,6 +1413,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. present(dimname)) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1454,6 +1457,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. present(dimname)) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1530,6 +1534,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. (present(dim1name) .and. present(dim2name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1574,6 +1579,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. (present(dim1name) .and. present(dim2name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1618,6 +1624,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. (present(dim1name) .and. present(dim2name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1662,6 +1669,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. (present(dim1name) .and. present(dim2name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1707,6 +1715,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. (present(dim1name) .and. present(dim2name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1752,6 +1761,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. (present(dim1name) .and. present(dim2name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1796,6 +1806,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. (present(dim1name) .and. present(dim2name) .and. present(dim3name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1842,6 +1853,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. (present(dim1name) .and. present(dim2name) .and. present(dim3name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1889,6 +1901,7 @@ CONTAINS
          IF (.not. (present(dim1name) .and. present(dim2name) &
             .and. present(dim3name) .and. present(dim4name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -1938,6 +1951,7 @@ CONTAINS
          IF (.not. (present(dim1name) .and. present(dim2name) .and. present(dim3name) &
             .and. present(dim4name) .and. present(dim5name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -2116,6 +2130,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. present(dim1name)) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -2158,6 +2173,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. (present(dim1name) .and. present(dim2name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -2207,6 +2223,7 @@ CONTAINS
       IF (status /= NF90_NOERR) THEN
          IF (.not. (present(dim1name) .and. present(dim2name) .and. present(dim3name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -2257,6 +2274,7 @@ CONTAINS
          IF (.not. (present(dim1name) .and. present(dim2name) &
             .and. present(dim3name) .and. present(dim4name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -2310,6 +2328,7 @@ CONTAINS
          IF (.not. (present(dim1name) .and. present(dim2name) &
             .and. present(dim3name) .and. present(dim4name) .and. present(dim5name))) THEN
             write(*,*) 'Warning: no dimension name for ', trim(dataname)
+            CALL nccheck( nf90_close(ncid) )
             RETURN
          ENDIF
 
@@ -2347,6 +2366,7 @@ CONTAINS
 
    ! Local Variables
    integer :: soillayers(1:nl_soil)
+   integer :: soilinterfaces(0:nl_soil)
    integer :: soilsnowlayers(-maxsnl+nl_soil)
    integer :: lakelayers(1:nl_lake)
    integer :: vegnodes(1:nvegwcs)
@@ -2357,6 +2377,11 @@ CONTAINS
       CALL ncio_define_dimension (filename, 'soil', nl_soil)
       CALL ncio_write_serial (filename, 'soil', soillayers, 'soil')
       CALL ncio_put_attr_str (filename, 'soil', 'long_name', 'soil layers')
+
+      soilinterfaces = (/(i, i = 0,nl_soil)/)
+      CALL ncio_define_dimension (filename, 'soilinterface', nl_soil+1)
+      CALL ncio_write_serial (filename, 'soilinterface', soilinterfaces, 'soilinterface')
+      CALL ncio_put_attr_str (filename, 'soilinterface', 'long_name', 'soil layer interfaces')
 
       soilsnowlayers = (/(i, i = maxsnl+1,nl_soil)/)
       CALL ncio_define_dimension (filename, 'soilsnow', -maxsnl+nl_soil)

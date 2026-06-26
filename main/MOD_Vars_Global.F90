@@ -25,6 +25,7 @@ MODULE MOD_Vars_Global
    integer, parameter :: WATERBODY = 16
    integer, parameter :: WETLAND   = 17
    integer, parameter :: CROPLAND  = 7
+   integer, parameter :: GLACIERS  = 24
 #else
    ! MODIS IGBP number of land cover category
    integer, parameter :: N_land_classification = 17
@@ -57,7 +58,7 @@ MODULE MOD_Vars_Global
    integer, parameter :: nl_roof   = 10
    integer, parameter :: nl_wall   = 10
    integer, parameter :: nvegwcs   = 4  ! number of vegetation water potential nodes
-
+   integer, parameter :: nwl       = 211  ! number of hyperspectral wavelengths
    ! used for downscaling
    integer, parameter :: num_slope_type       = 4
    integer, parameter :: num_aspect_type      = 9

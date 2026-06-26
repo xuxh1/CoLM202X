@@ -290,13 +290,24 @@ MODULE MOD_Namelist
    logical :: DEF_USE_BEDROCK               = .false.
 
    ! ----- Ozone stress -----
-   logical :: DEF_USE_OZONESTRESS = .false.
-   logical :: DEF_USE_OZONEDATA   = .false.
+   logical :: DEF_USE_OZONESTRESS = .true.
+   logical :: DEF_USE_OZONEDATA   = .true.
 
    ! ----- SNICAR model related -----
    logical :: DEF_USE_SNICAR                  = .false.
    character(len=256) :: DEF_file_snowoptics  = 'null'
    character(len=256) :: DEF_file_snowaging   = 'null'
+
+   ! ----- Hyperspectral related -----
+   logical :: DEF_HighResSoil                      = .true.
+   logical :: DEF_HighResVeg                       = .true.
+   logical :: DEF_PROSPECT                         = .false.
+
+   CHARACTER(LEN=256) :: DEF_HighResUrban_albedo   = 'null'
+   ! logical :: DEF_Satellite_Params                 = .false.
+   ! character(len=256) :: DEF_file_soiloptics       = 'null'
+   ! character(len=256) :: DEF_file_satellite_params = 'null'
+   ! character(len=256) :: DEF_sla_varname           = 'null'
 
    ! .true. read aerosol deposition data from file or .false. set in the code
    logical :: DEF_Aerosol_Readin              = .true.
@@ -317,9 +328,29 @@ MODULE MOD_Namelist
    character(len=256) :: DEF_ElementNeighbour_file = 'null'
    character(len=256) :: DEF_UnitCatchment_file    = 'null'
    character(len=256) :: DEF_ReservoirPara_file    = 'null'
-   logical :: DEF_USE_EstimatedRiverDepth = .true.
-   integer :: DEF_Reservoir_Method = 0
+
+   logical  :: DEF_USE_EstimatedRiverDepth  = .true.
+   integer  :: DEF_Reservoir_Method         = 0
    real(r8) :: DEF_GRIDBASED_ROUTING_MAX_DT = 3600.
+
+   ! ----- sediment module -----
+   logical  :: DEF_USE_SEDIMENT        = .false.
+   real(r8) :: DEF_SED_LAMBDA          = 0.4
+   real(r8) :: DEF_SED_LYRDPH          = 0.00005
+   real(r8) :: DEF_SED_DENSITY         = 2.65
+   real(r8) :: DEF_SED_WATER_DENSITY   = 1.0
+   real(r8) :: DEF_SED_VISKIN          = 1.0e-6
+   real(r8) :: DEF_SED_VONKAR          = 0.4
+   real(r8) :: DEF_SED_PSET            = 1.0
+   integer  :: DEF_SED_TOTLYRNUM       = 5
+   real(r8) :: DEF_SED_CFL_ADV         = 0.5
+   real(r8) :: DEF_SED_IGNORE_DPH      = 0.05
+   real(r8) :: DEF_SED_DT_MAX          = 3600.
+   character(len=256) :: DEF_SED_DIAMETER = "0.0002,0.002,0.02"
+   real(r8) :: DEF_SED_PYLD            = 0.01
+   real(r8) :: DEF_SED_PYLDC           = 2.0
+   real(r8) :: DEF_SED_PYLDPC          = 2.0
+   real(r8) :: DEF_SED_DSYLUNIT        = 1.0e-6
 
    ! ----- others -----
    character(len=5)   :: DEF_precip_phase_discrimination_scheme = 'II'
@@ -347,6 +378,8 @@ MODULE MOD_Namelist
    logical :: DEF_USE_FIRE              = .false. ! Fire MODULE
 
    logical :: DEF_USE_Dynamic_Lake      = .false. ! Dynamic Lake model
+
+   logical :: DEF_USE_Dynamic_Wetland   = .false. ! Dynamic wetland model
 
    logical :: DEF_CheckEquilibrium      = .false.
 
@@ -432,6 +465,8 @@ MODULE MOD_Namelist
    character(len=5)  :: DEF_DS_precipitation_adjust_scheme = 'I'
    character(len=5)  :: DEF_DS_longwave_adjust_scheme      = 'II'
 
+   logical           :: DEF_USE_ClimForcing_for_Spinup     = .false.
+
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! ----- Part 13: data assimilation -----
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -447,8 +482,14 @@ MODULE MOD_Namelist
    integer            :: DEF_DA_RTM_diel   = 0
    integer            :: DEF_DA_RTM_rough  = 0
 
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+! ----- Part 14: parameter optimization -----
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   logical :: DEF_Optimize_Baseflow = .false.
+
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-! ----- Part 14: history and restart -----
+! ----- Part 15: history and restart -----
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    logical  :: DEF_HISTORY_IN_VECTOR            = .false.
@@ -519,6 +560,7 @@ MODULE MOD_Namelist
       logical :: wat_inst                         = .true.
       logical :: wetwat                           = .true.
       logical :: wetwat_inst                      = .true.
+      logical :: wetzwt                           = .true.
       logical :: assim                            = .true.
       logical :: respc                            = .true.
       logical :: qcharge                          = .true.
@@ -536,6 +578,9 @@ MODULE MOD_Namelist
       logical :: laisha                           = .true.
       logical :: sai                              = .true.
       logical :: alb                              = .true.
+      logical :: alb_hires                        = .true.
+      logical :: reflectance_out                  = .true.
+      logical :: transmittance_out                = .true.
       logical :: emis                             = .true.
       logical :: z0m                              = .true.
       logical :: trad                             = .true.
@@ -846,6 +891,8 @@ MODULE MOD_Namelist
       logical :: wice_soisno                      = .true.
 
       logical :: h2osoi                           = .true.
+      logical :: qlayer                           = .true.
+      logical :: lake_deficit                     = .true.
       logical :: rstfacsun                        = .true.
       logical :: rstfacsha                        = .true.
       logical :: gssun                            = .true.
@@ -945,6 +992,11 @@ MODULE MOD_Namelist
       logical :: srndln                           = .true.
       logical :: srniln                           = .true.
 
+      logical :: sol_dir_ln_hires                 = .true.
+      logical :: sol_dif_ln_hires                 = .true.
+      logical :: sr_dir_ln_hires                  = .true.
+      logical :: sr_dif_ln_hires                  = .true.
+
       logical :: xsubs_bsn                        = .true.
       logical :: xsubs_hru                        = .true.
       logical :: riv_height                       = .true.
@@ -957,6 +1009,14 @@ MODULE MOD_Namelist
       logical :: volresv                          = .true.
       logical :: qresv_in                         = .true.
       logical :: qresv_out                        = .true.
+
+      logical :: sedcon                           = .true.
+      logical :: sedout                           = .true.
+      logical :: bedout                           = .true.
+      logical :: sedinp                           = .true.
+      logical :: netflw                           = .true.
+      logical :: sedlayer                         = .true.
+      logical :: shearvel                         = .false.
 
       logical :: sensors                          = .true.
 
@@ -977,6 +1037,7 @@ CONTAINS
    logical :: fexists
    integer :: ivar
    integer :: ierr
+   character(len=256) :: iomesg
 
    namelist /nl_colm/                         &
       DEF_CASE_NAME,                          &
@@ -1087,6 +1148,8 @@ CONTAINS
       DEF_USE_FIRE,                           & !add by Xingjie Lu @ sysu 2023/06/27
 
       DEF_USE_Dynamic_Lake,                   & !add by Shupeng Zhang @ sysu 2024/09/12
+      DEF_USE_Dynamic_Wetland,                & !add by Shupeng Zhang @ sysu 2026/01/09
+
       DEF_CheckEquilibrium,                   & !add by Shupeng Zhang @ sysu 2024/11/26
       DEF_Output_2mWMO,                       &
 
@@ -1103,10 +1166,37 @@ CONTAINS
       DEF_Reservoir_Method,                   &
       DEF_GRIDBASED_ROUTING_MAX_DT,           &
 
+      DEF_USE_SEDIMENT,                       &
+      DEF_SED_LAMBDA,                         &
+      DEF_SED_LYRDPH,                         &
+      DEF_SED_DENSITY,                        &
+      DEF_SED_WATER_DENSITY,                  &
+      DEF_SED_VISKIN,                         &
+      DEF_SED_VONKAR,                         &
+      DEF_SED_PSET,                           &
+      DEF_SED_TOTLYRNUM,                      &
+      DEF_SED_CFL_ADV,                        &
+      DEF_SED_IGNORE_DPH,                     &
+      DEF_SED_DT_MAX,                         &
+      DEF_SED_DIAMETER,                       &
+      DEF_SED_PYLD,                           &
+      DEF_SED_PYLDC,                          &
+      DEF_SED_PYLDPC,                         &
+      DEF_SED_DSYLUNIT,                       &
+
       DEF_precip_phase_discrimination_scheme, &
 
       DEF_USE_SoilInit,                       &
       DEF_file_SoilInit,                      &
+
+      DEF_HighResSoil,                        &
+      DEF_HighResVeg,                         &
+      DEF_PROSPECT,                           &
+      DEF_HighResUrban_albedo,                &
+      ! DEF_Satellite_Params,                   &
+      ! DEF_file_soiloptics,                    &
+      ! DEF_file_satellite_params,              &
+      ! DEF_sla_varname,                        &
 
       DEF_USE_SnowInit,                       &
       DEF_file_SnowInit,                      &
@@ -1138,6 +1228,8 @@ CONTAINS
       DEF_DA_RTM_diel,                        &
       DEF_DA_RTM_rough,                       &
 
+      DEF_Optimize_Baseflow,                  &
+
       DEF_forcing_namelist,                   &
 
       DEF_Forcing_Interp_Method,              &
@@ -1147,6 +1239,7 @@ CONTAINS
       DEF_DS_HiresTopographyDataDir,          &
       DEF_DS_precipitation_adjust_scheme,     &
       DEF_DS_longwave_adjust_scheme,          &
+      DEF_USE_ClimForcing_for_Spinup,         &
 
       DEF_HISTORY_IN_VECTOR,                  &
       DEF_HIST_lon_res,                       &
@@ -1169,21 +1262,24 @@ CONTAINS
       IF (p_is_master) THEN
 
          open(10, status='OLD', file=nlfile, form="FORMATTED")
-         read(10, nml=nl_colm, iostat=ierr)
+         read(10, nml=nl_colm, iostat=ierr, iomsg=iomesg)
          IF (ierr /= 0) THEN
+            write(*,*) 'ERROR in ', trim(nlfile), ' : ', trim(iomesg)
             CALL CoLM_Stop (' ***** ERROR: Problem reading namelist: '// trim(nlfile))
          ENDIF
          close(10)
 
          open(10, status='OLD', file=trim(DEF_forcing_namelist), form="FORMATTED")
-         read(10, nml=nl_colm_forcing, iostat=ierr)
+         read(10, nml=nl_colm_forcing, iostat=ierr, iomsg=iomesg)
          IF (ierr /= 0) THEN
+            write(*,*) 'ERROR in ', trim(DEF_forcing_namelist), ' : ', trim(iomesg)
             CALL CoLM_Stop (' ***** ERROR: Problem reading namelist: '// trim(DEF_forcing_namelist))
          ENDIF
          close(10)
-#ifdef SinglePoint
-         DEF_forcing%has_missing_value = .false.
-#endif
+
+         IF (trim(DEF_forcing%dataset) == 'POINT') THEN
+            DEF_forcing%has_missing_value = .false.
+         ENDIF
 
          DEF_dir_landdata = trim(DEF_dir_output) // '/' // trim(adjustl(DEF_CASE_NAME)) // '/landdata'
          DEF_dir_restart  = trim(DEF_dir_output) // '/' // trim(adjustl(DEF_CASE_NAME)) // '/restart'
@@ -1662,6 +1758,8 @@ CONTAINS
       CALL mpi_bcast (DEF_USE_FIRE                           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_USE_Dynamic_Lake                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_USE_Dynamic_Wetland                ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+
       CALL mpi_bcast (DEF_CheckEquilibrium                   ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_LANDONLY                           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
@@ -1675,6 +1773,11 @@ CONTAINS
 
       CALL mpi_bcast (DEF_USE_SoilInit                       ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_file_SoilInit                      ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+
+      CALL mpi_bcast (DEF_HighResSoil                        ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_HighResVeg                         ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_PROSPECT                           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_HighResUrban_albedo                ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_USE_SnowInit                       ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_file_SnowInit                      ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
@@ -1707,12 +1810,32 @@ CONTAINS
       CALL mpi_bcast (DEF_DA_RTM_diel                        ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_DA_RTM_rough                       ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
 
+      CALL mpi_bcast (DEF_Optimize_Baseflow                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+
       CALL mpi_bcast (DEF_Aerosol_Readin                     ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_Aerosol_Clim                       ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_USE_EstimatedRiverDepth            ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_Reservoir_Method                   ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_GRIDBASED_ROUTING_MAX_DT           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+
+      CALL mpi_bcast (DEF_USE_SEDIMENT                       ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_LAMBDA                         ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_LYRDPH                         ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_DENSITY                        ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_WATER_DENSITY                  ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_VISKIN                         ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_VONKAR                         ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_PSET                           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_TOTLYRNUM                      ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_CFL_ADV                        ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_IGNORE_DPH                     ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_DT_MAX                         ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_DIAMETER                       ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_PYLD                           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_PYLDC                          ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_PYLDPC                         ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_SED_DSYLUNIT                       ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_HISTORY_IN_VECTOR                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
@@ -1735,6 +1858,7 @@ CONTAINS
       CALL mpi_bcast (DEF_DS_HiresTopographyDataDir          ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_DS_precipitation_adjust_scheme     ,5   ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_DS_longwave_adjust_scheme          ,5   ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_USE_ClimForcing_for_Spinup         ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_forcing%dataset                    ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_forcing%solarin_all_band           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
@@ -1784,8 +1908,9 @@ CONTAINS
             write(*,*) 'History namelist file: ', trim(DEF_HIST_vars_namelist), ' does not exist.'
          ELSE
             open(10, status='OLD', file=trim(DEF_HIST_vars_namelist), form="FORMATTED")
-            read(10, nml=nl_colm_history, iostat=ierr)
+            read(10, nml=nl_colm_history, iostat=ierr, iomsg=iomesg)
             IF (ierr /= 0) THEN
+               write(*,*) 'ERROR in ', trim(DEF_HIST_vars_namelist), ' : ', trim(iomesg)
                CALL CoLM_Stop (' ***** ERROR: Problem reading namelist: ' &
                   // trim(DEF_HIST_vars_namelist))
             ENDIF
@@ -1907,6 +2032,7 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%wat_inst    , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%wetwat      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%wetwat_inst , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%wetzwt      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%assim       , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%respc       , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%qcharge     , set_defaults)
@@ -1924,6 +2050,11 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%laisha      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%sai         , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%alb         , set_defaults)
+#ifdef HYPERSPECTRAL
+      CALL sync_hist_vars_one (DEF_hist_vars%alb_hires   , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%reflectance_out   , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%transmittance_out , set_defaults)
+#endif
       CALL sync_hist_vars_one (DEF_hist_vars%emis        , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%z0m         , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%trad        , set_defaults)
@@ -2260,6 +2391,8 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%wice_soisno , set_defaults)
 
       CALL sync_hist_vars_one (DEF_hist_vars%h2osoi      , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%qlayer      , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%lake_deficit, set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%rstfacsun   , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%rstfacsha   , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%gssun       , set_defaults)
@@ -2327,6 +2460,12 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%srviln      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%srndln      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%srniln      , set_defaults)
+#ifdef HYPERSPECTRAL
+      CALL sync_hist_vars_one (DEF_hist_vars%sol_dir_ln_hires, set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%sol_dif_ln_hires, set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%sr_dir_ln_hires , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%sr_dif_ln_hires , set_defaults)
+#endif
 
       CALL sync_hist_vars_one (DEF_hist_vars%xsubs_bsn   , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%xsubs_hru   , set_defaults)
@@ -2340,6 +2479,14 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%volresv     , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%qresv_in    , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%qresv_out   , set_defaults)
+
+      CALL sync_hist_vars_one (DEF_hist_vars%sedcon      , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%sedout      , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%bedout      , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%sedinp      , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%netflw      , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%sedlayer    , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%shearvel    , set_defaults)
 
       CALL sync_hist_vars_one (DEF_hist_vars%sensors     , set_defaults)
 

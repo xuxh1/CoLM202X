@@ -159,12 +159,12 @@ CONTAINS
    END SUBROUTINE get_water_equilibrium_state
 
    ! --- soil water movement ---
-   SUBROUTINE soil_water_vertical_movement (                      &
-         nlev,       dt,    sp_zc,  sp_zi,    is_permeable,  porsl,    &
-         vl_r,       psi_s, hksat,  nprm,     prms,          porsl_wa, &
-         qgtop,      etr,   rootr,  rootflux, rsubst,        qinfl,    &
-         ss_dp,      zwt,   wa,     ss_vliq,  smp,           hk,       &
-         tolerance,  wblc)
+   SUBROUTINE soil_water_vertical_movement (                                &
+         nlev,       dt,         sp_zc,  sp_zi,    is_permeable,  porsl,    &
+         vl_r,       psi_s,      hksat,  nprm,     prms,          porsl_wa, &
+         qgtop,      etr,        rootr,  rootflux, rsubst,        qinfl,    &
+         ss_dp,      zwt,        wa,     ss_vliq,  smp,           hk,       &
+         qlayer,     tolerance,  wblc)
 
    !=======================================================================
    ! this is the main subroutine to execute the calculation of
@@ -211,7 +211,9 @@ CONTAINS
    real(r8), intent(out) :: smp(1:nlev) ! soil matrix potential (mm)
    real(r8), intent(out) :: hk (1:nlev) ! hydraulic conductivity (mm/s)
 
-   real(r8), intent(in) :: tolerance
+   real(r8), intent(out) :: qlayer(0:nlev) ! water flux at interface of soil layers (mm/s)
+
+   real(r8), intent(in)  :: tolerance
 
    real(r8), intent(out) :: wblc
 
@@ -224,7 +226,6 @@ CONTAINS
    real(r8) :: sp_dz  (1:nlev)
    real(r8) :: etroot (1:nlev)
    real(r8) :: ss_wt  (1:nlev)
-   real(r8) :: ss_q   (0:nlev)
 
    integer  :: ubc_typ_sub
    real(r8) :: ubc_val_sub
@@ -334,7 +335,7 @@ CONTAINS
 
          DO WHILE (.not. is_permeable(ub))
 
-            ss_q(ub-1:ub) = 0._r8
+            qlayer(ub-1:ub) = 0._r8
 
             IF (ub > 1) THEN
                ub = ub - 1
@@ -373,7 +374,7 @@ CONTAINS
             porsl(lb:ub), vl_r(lb:ub), psi_s(lb:ub), hksat(lb:ub), nprm, prms(:,lb:ub), &
             porsl_wa, &
             ubc_typ_sub, ubc_val_sub, lbc_typ_sub, lbc_val_sub, &
-            ss_dp, wa, ss_vliq(lb:ub), ss_wt(lb:ub), ss_q(lb-1:ub), &
+            ss_dp, wa, ss_vliq(lb:ub), ss_wt(lb:ub), qlayer(lb-1:ub), &
             tol_q, tol_z, tol_v, tol_p)
 
          ub = lb - 1
@@ -1292,7 +1293,7 @@ CONTAINS
                CASE (BC_DRAINAGE)
                   has_wt(ub) = (wt(ub) >= tol_z)
                CASE (BC_FIX_HEAD)
-                  has_wt(ub) = (lbc_val > psi_s(lb)) .or. (wt(ub) >= tol_z)
+                  has_wt(ub) = (lbc_val > psi_s(ub)) .or. (wt(ub) >= tol_z)
 
                   IF ((has_wt(ub)) .and. (wt(ub) < tol_z)) THEN
                      wt(ub) = 0.01 * (dz(ub)-wf(ub))
@@ -3581,12 +3582,12 @@ CONTAINS
             count_wet2dry_accum  = count_wet2dry_accum  + count_wet2dry
 
 #ifdef USEMPI
-            CALL mpi_send (count_implicit,       1, MPI_INTEGER, p_address_master, mpi_tag_mesg, p_comm_glb, p_err)
-            CALL mpi_send (count_explicit,       1, MPI_INTEGER, p_address_master, mpi_tag_mesg, p_comm_glb, p_err)
-            CALL mpi_send (count_wet2dry,        1, MPI_INTEGER, p_address_master, mpi_tag_mesg, p_comm_glb, p_err)
-            CALL mpi_send (count_implicit_accum, 1, MPI_INTEGER, p_address_master, mpi_tag_mesg, p_comm_glb, p_err)
-            CALL mpi_send (count_explicit_accum, 1, MPI_INTEGER, p_address_master, mpi_tag_mesg, p_comm_glb, p_err)
-            CALL mpi_send (count_wet2dry_accum,  1, MPI_INTEGER, p_address_master, mpi_tag_mesg, p_comm_glb, p_err)
+            CALL mpi_send (count_implicit,       1, MPI_INTEGER8, p_address_master, mpi_tag_mesg, p_comm_glb, p_err)
+            CALL mpi_send (count_explicit,       1, MPI_INTEGER8, p_address_master, mpi_tag_mesg, p_comm_glb, p_err)
+            CALL mpi_send (count_wet2dry,        1, MPI_INTEGER8, p_address_master, mpi_tag_mesg, p_comm_glb, p_err)
+            CALL mpi_send (count_implicit_accum, 1, MPI_INTEGER8, p_address_master, mpi_tag_mesg, p_comm_glb, p_err)
+            CALL mpi_send (count_explicit_accum, 1, MPI_INTEGER8, p_address_master, mpi_tag_mesg, p_comm_glb, p_err)
+            CALL mpi_send (count_wet2dry_accum,  1, MPI_INTEGER8, p_address_master, mpi_tag_mesg, p_comm_glb, p_err)
 #endif
          ENDIF
       ENDIF
@@ -3595,12 +3596,12 @@ CONTAINS
 
 #ifdef USEMPI
          iwork = p_address_worker(p_root)
-         CALL mpi_recv (count_implicit, 1, MPI_INTEGER, iwork, mpi_tag_mesg, p_comm_glb, p_stat, p_err)
-         CALL mpi_recv (count_explicit, 1, MPI_INTEGER, iwork, mpi_tag_mesg, p_comm_glb, p_stat, p_err)
-         CALL mpi_recv (count_wet2dry , 1, MPI_INTEGER, iwork, mpi_tag_mesg, p_comm_glb, p_stat, p_err)
-         CALL mpi_recv (count_implicit_accum, 1, MPI_INTEGER, iwork, mpi_tag_mesg, p_comm_glb, p_stat, p_err)
-         CALL mpi_recv (count_explicit_accum, 1, MPI_INTEGER, iwork, mpi_tag_mesg, p_comm_glb, p_stat, p_err)
-         CALL mpi_recv (count_wet2dry_accum , 1, MPI_INTEGER, iwork, mpi_tag_mesg, p_comm_glb, p_stat, p_err)
+         CALL mpi_recv (count_implicit,       1, MPI_INTEGER8, iwork, mpi_tag_mesg, p_comm_glb, p_stat, p_err)
+         CALL mpi_recv (count_explicit,       1, MPI_INTEGER8, iwork, mpi_tag_mesg, p_comm_glb, p_stat, p_err)
+         CALL mpi_recv (count_wet2dry ,       1, MPI_INTEGER8, iwork, mpi_tag_mesg, p_comm_glb, p_stat, p_err)
+         CALL mpi_recv (count_implicit_accum, 1, MPI_INTEGER8, iwork, mpi_tag_mesg, p_comm_glb, p_stat, p_err)
+         CALL mpi_recv (count_explicit_accum, 1, MPI_INTEGER8, iwork, mpi_tag_mesg, p_comm_glb, p_stat, p_err)
+         CALL mpi_recv (count_wet2dry_accum , 1, MPI_INTEGER8, iwork, mpi_tag_mesg, p_comm_glb, p_stat, p_err)
 #endif
 
          write(*,"(/,A,I13,A,I13,A,I13,A)") 'VSF scheme this step: ',    &

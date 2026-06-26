@@ -42,6 +42,7 @@ CONTAINS
                        psi50_sun     ,psi50_sha     ,psi50_xyl     ,psi50_root    ,&
                        ck            ,vegwp         ,gs0sun        ,gs0sha        ,&
 !Ozone stress variables
+                       o3coefv_sun   ,o3coefv_sha   ,o3coefg_sun   ,o3coefg_sha   ,&
                        lai_old       ,o3uptakesun   ,o3uptakesha   ,forc_ozone    ,&
 !end ozone stress variables
 !Ozone WUE stomata model parameter
@@ -365,6 +366,15 @@ CONTAINS
        fh,                       &! integral of profile function for heat
        fq                         ! integral of profile function for moisture
 
+!Ozone stress variables
+   real(r8),intent(inout) ::     &
+        o3coefv_sun,&! Ozone stress factor for photosynthesis on sunlit leaf
+        o3coefv_sha,&! Ozone stress factor for photosynthesis on sunlit leaf
+        o3coefg_sun,&! Ozone stress factor for stomata on shaded leaf
+        o3coefg_sha  ! Ozone stress factor for stomata on shaded leaf
+!end ozone stress variables
+
+
 !-------------------------- Local Variables ----------------------------
 
    integer i,j
@@ -425,9 +435,6 @@ CONTAINS
 
    real(r8) :: z0m_g,z0h_g,zol_g,obu_g,rib_g,ustar_g,qstar_g,tstar_g
    real(r8) :: fm10m,fm_g,fh_g,fq_g,fh2m,fq2m,um,obu
-!Ozone stress variables
-   real(r8) :: o3coefv_sun, o3coefv_sha, o3coefg_sun, o3coefg_sha
-!end ozone stress variables
 
    integer p, ps, pe, pn
 
@@ -536,7 +543,8 @@ ENDIF
       qred = 1.
       hr   = 1.
 
-      IF ((patchtype<=1) .or. is_dry_lake) THEN            !soil ground
+      IF ((patchtype<=1) .or. is_dry_lake &
+         .or. (DEF_USE_Dynamic_Wetland .and. (patchtype==2))) THEN  !soil ground
          wx   = (wliq_soisno(1)/denh2o + wice_soisno(1)/denice)/dz_soisno(1)
          IF (porsl(1) < 1.e-6) THEN     !bed rock
             fac  = 0.001
