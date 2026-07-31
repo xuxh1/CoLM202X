@@ -115,10 +115,19 @@ CONTAINS
 
       ! Wetland patches use the soil-decomposition cascade so methane
       ! can read patch-level heterotrophic respiration even without PFTs.
+      !
+      ! Under WETLAND_PFT the wetland owns a WFT sub-tile and bgc_driver has
+      ! already run the same cascade (decomp_rate_constants_bgc,
+      ! SoilBiogeochemPotential, SoilBiogeochemCompetition, SoilBiogeochemDecomp)
+      ! for this patch. Running it again would decompose twice in one step.
+#ifdef WETLAND_PFT
+      RETURN
+#else
       IF (igas_ch4 <= 0) RETURN
       IF (patchtype(ipatch) /= 2) RETURN
 
       CALL reactive_bgc_run_wetland_decomp (ipatch, deltim)
+#endif
 
    END SUBROUTINE ch4_impl_wetland_decomp
 

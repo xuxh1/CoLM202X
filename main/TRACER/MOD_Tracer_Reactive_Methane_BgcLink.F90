@@ -101,6 +101,12 @@ CONTAINS
 
       IF (patchtype /= 0 .and. patchtype /= 2) RETURN
 
+#ifndef WETLAND_PFT
+      ! Wetland has no PFT and never entered bgc_driver, so the decomposition
+      ! state update has to be driven from here. Under WETLAND_PFT bgc_driver
+      ! runs for patchtype 2 as well and has already done it (CStateUpdate1 /
+      ! SoilBiogeochemNStateUpdate1 / CNDriverSummarizeStates); repeating it
+      ! would advance the soil pools twice per step.
       IF (patchtype == 2) THEN
          CALL CDecompStateUpdate(ipatch, deltim, nl_soil, size(decomp_hr_vr,2), .true.)
          CALL SoilBiogeochemNDecompStateUpdate(ipatch, deltim, nl_soil, &
@@ -108,6 +114,7 @@ CONTAINS
          CALL CNDriverSummarizeNonvegetatedSoilStates(ipatch, nl_soil, dz_soi, &
             size(decomp_cpools_vr,2))
       ENDIF
+#endif
 
       total_hr = sum(sum(decomp_hr_vr(1:nl_soil,:,ipatch), dim=2) * dz_soi(1:nl_soil))
       IF (.not. ieee_is_finite(total_hr) .or. total_hr < -1.e-12_r8 .or. &
@@ -124,7 +131,12 @@ CONTAINS
       ! molar correction and must not be added to offline CO2 ER/NEE again.
       ! Total decomposed pool C is f_hr - catomw * f_net_methane.
       decomp_hr(ipatch) = max(co2_hr, 0._r8)
+#ifndef WETLAND_PFT
+      ! No PFT on wetland means no autotrophic respiration to report. Under
+      ! WETLAND_PFT the WFT sub-tile produces a real ar; zeroing it here would
+      ! discard it and break the ER budget.
       IF (patchtype == 2) ar(ipatch) = 0._r8
+#endif
       er(ipatch) = ar(ipatch) + decomp_hr(ipatch)
 
    END SUBROUTINE tracer_ch4_bgc_finalize_step

@@ -168,6 +168,16 @@ CONTAINS
          ELSE
             tlai(:) = SITE_LAI_monthly(time,iyear)
             tsai(:) = SITE_SAI_monthly(time,iyear)
+#ifdef WETLAND_PFT
+            ! The wetland's single WFT tile covers the whole patch, so the tile
+            ! LAI is the patch LAI. There is no per-PFT LAI for IGBP class 11 in
+            ! the plant_15s dataset; the patch value is the aggregated
+            ! Yuan et al. (2011) MODIS LAI, which does carry a seasonal cycle.
+            IF (patchtypes(SITE_landtype) == 2) THEN
+               tlai_p(:) = SITE_LAI_monthly(time,iyear)
+               tsai_p(:) = SITE_SAI_monthly(time,iyear)
+            ENDIF
+#endif
          ENDIF
       ELSE
          IF (patchtypes(SITE_landtype) == 0) THEN
@@ -175,6 +185,11 @@ CONTAINS
             tsai(:)   = sum (SITE_SAI_pfts_monthly(:,time,iyear) * SITE_pctpfts)
          ELSE
             tsai(:) = SITE_SAI_monthly(time,iyear)
+#ifdef WETLAND_PFT
+            IF (patchtypes(SITE_landtype) == 2) THEN
+               tsai_p(:) = SITE_SAI_monthly(time,iyear)
+            ENDIF
+#endif
          ENDIF
       ENDIF
 #endif

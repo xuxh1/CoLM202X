@@ -412,6 +412,18 @@ CONTAINS
          SITE_pfttyp  = SITE_croptyp + N_PFT - 1
          SITE_pctpfts = 1.
 #endif
+#ifdef WETLAND_PFT
+      ELSEIF (SITE_landtype == WETLAND) THEN
+         ! One wetland functional type covering the whole patch, synthesised
+         ! rather than read: the site files carry no pfttyp/pctpfts. Mirrors
+         ! the gridded branch in MOD_LandPFT so both paths stay identical.
+         u_site_pfts = .false.
+         numpft = 1
+         allocate (SITE_pfttyp  (numpft))
+         allocate (SITE_pctpfts (numpft))
+         SITE_pfttyp  = nwetlandpft
+         SITE_pctpfts = 1.
+#endif
       ELSE
          numpft = 0
       ENDIF
@@ -1395,7 +1407,8 @@ CONTAINS
             pft2patch   = 1
 #endif
          ELSE
-            ! Non-vegetated single point (wetland/water/urban/ice: numpft==0).
+            ! Non-vegetated single point (water/urban/ice: numpft==0). Wetland
+            ! leaves this branch once WETLAND_PFT gives it a WFT tile.
             ! Gridded mode (MOD_LandPFT) always allocates patch_pft_s/e over all
             ! patches and marks non-PFT patches with the -1 sentinel; the runtime
             ! and CN-init code read patch_pft_s(ipatch) unconditionally and rely

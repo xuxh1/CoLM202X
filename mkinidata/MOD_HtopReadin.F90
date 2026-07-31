@@ -113,7 +113,7 @@ CONTAINS
             t = patchtype(npatch)
             m = patchclass(npatch)
 
-            IF (t == 0) THEN
+            IF (patch_has_pft(t)) THEN
                ps = patch_pft_s(npatch)
                pe = patch_pft_e(npatch)
 
