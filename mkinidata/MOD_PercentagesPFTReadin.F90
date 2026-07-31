@@ -43,9 +43,7 @@ CONTAINS
 #ifdef SinglePoint
       ! Wetland owns a WFT tile under WETLAND_PFT, so it must not bail out
       ! here: pftfrac would stay unset and the tile would carry no area.
-      ! nint: MOD_Const_LC declares the runtime patchtypes array as real(r8)
-      ! even though it is filled from an integer parameter table.
-      IF (.not. patch_has_pft(nint(patchtypes(SITE_landtype)))) RETURN
+      IF (.not. patch_has_pft(patchtypes(SITE_landtype))) RETURN
 #endif
 
 #ifndef SinglePoint
