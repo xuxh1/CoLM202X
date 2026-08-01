@@ -249,7 +249,7 @@ CONTAINS
       ssno      (:,:) = 0. !set initial snow absorption
       ssno_lyr(:,:,:) = 0. !set initial snow layer absorption
 
-IF (patchtype == 0) THEN
+IF (patch_has_pft(patchtype)) THEN
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
       ps = patch_pft_s(ipatch)
       pe = patch_pft_e(ipatch)
@@ -408,7 +408,7 @@ ENDIF
          ! initialization
          albv(:,:) = albg(:,:)
 
-         IF (patchtype == 0) THEN  !soil patches
+         IF (patch_has_pft(patchtype)) THEN  !soil patches
 
 #if (defined LULC_USGS || defined LULC_IGBP)
             CALL twostream (chil,rho,tau,green,lai,sai,fwet_snow,&
@@ -428,7 +428,7 @@ ENDIF
       ENDIF
 
 
-      IF (patchtype == 0) THEN
+      IF (patch_has_pft(patchtype)) THEN
 #ifdef LULC_IGBP_PFT
          CALL twostream_wrap (ipatch, czen, albg, albv, tran, ssun, ssha)
          alb(:,:) = albv(:,:)

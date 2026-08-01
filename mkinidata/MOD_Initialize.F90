@@ -1145,7 +1145,12 @@ ENDIF
                      ENDIF
                   ENDIF
 #endif
-                  IF (patchtype(i) == 0)THEN
+                  IF (patch_has_pft(patchtype(i)))THEN
+                     ! Do not inherit ps/pe from the soil-pool block above: it
+                     ! is gated on TRACER, so wetland would carry stale bounds
+                     ! in a non-TRACER build.
+                     ps = patch_pft_s(i)
+                     pe = patch_pft_e(i)
                      DO m = ps, pe
                         ivt = pftclass(m)
                         IF(isevg(ivt))THEN
@@ -1336,7 +1341,7 @@ ENDIF
                   pe = patch_pft_e(i)
                   DO m = ps, pe
                      ivt = pftclass(m)
-                     IF(ivt >= npcropmin)THEN
+                     IF(ivt >= npcropmin .and. ivt <= npcropmax)THEN
                        leafc_p (m) = 0._r8
                        frootc_p(m) = 0._r8
                        tlai    (i) = 0._r8

@@ -519,7 +519,7 @@ CONTAINS
          !     variables: snowdp, sag, scv, fsno, snl, z_soisno, dz_soisno
          z0m = htop * z0mr
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-         IF(patchtype==0)THEN
+         IF(patch_has_pft(patchtype))THEN
             ps = patch_pft_s(ipatch)
             pe = patch_pft_e(ipatch)
             IF (ps>0 .and. pe>0) THEN
@@ -543,7 +543,7 @@ CONTAINS
             lai = tlai(ipatch)
             sai = tsai(ipatch) * sigf
 
-            IF (patchtype == 0) THEN
+            IF (patch_has_pft(patchtype)) THEN
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
                ps = patch_pft_s(ipatch)
                pe = patch_pft_e(ipatch)
@@ -619,7 +619,7 @@ CONTAINS
             gs0sha = 1.0e4
          ENDIF
 
-         IF (patchtype == 0) THEN
+         IF (patch_has_pft(patchtype)) THEN
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
             ps = patch_pft_s(ipatch)
             pe = patch_pft_e(ipatch)
@@ -646,7 +646,7 @@ CONTAINS
          ! Variables: sigf, lai, sai
 
          IF (.not. use_snowini) THEN
-            IF (patchtype == 0) THEN
+            IF (patch_has_pft(patchtype)) THEN
 #if (defined LULC_USGS || defined LULC_IGBP)
                sigf = fveg
                lai  = tlai(ipatch)
@@ -819,7 +819,7 @@ CONTAINS
 #endif
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-         IF (patchtype == 0) THEN
+         IF (patch_has_pft(patchtype)) THEN
             DO m = ps, pe
                ivt = pftclass(m)
                IF(ivt .eq.  0)THEN  !no vegetation
@@ -839,7 +839,7 @@ CONTAINS
                      ENDIF
                      leafc_storage_p       (m) = 0.0
                      frootc_storage_p      (m) = 0.0
-                  ELSE IF(ivt >= npcropmin) THEN
+                  ELSE IF(ivt >= npcropmin .and. ivt <= npcropmax) THEN
                      leafc_p               (m) = 0.0
                      leafc_storage_p       (m) = 0.0
                      frootc_p              (m) = 0.0

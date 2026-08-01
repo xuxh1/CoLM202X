@@ -46,6 +46,14 @@ MODULE MOD_Vars_Global
    integer, parameter :: N_CFT     = 64
 #endif
 
+   ! number of wetland functional types, appended after the PFT and CFT
+   ! blocks so a wetland patch (patchtype==2) can own a "landpft" sub-tile.
+#ifndef WETLAND_PFT
+   integer, parameter :: N_WFT     = 0
+#else
+   integer, parameter :: N_WFT     = 1
+#endif
+
    ! urban type number
    integer :: N_URB
 
@@ -70,6 +78,11 @@ MODULE MOD_Vars_Global
    integer, parameter :: ndecomp_pools        = 7
    integer, parameter :: ndecomp_transitions  = 10
    integer, parameter :: npcropmin            = 17
+   ! Last crop index. The WFT sits at N_PFT+N_CFT, i.e. above every crop, so
+   ! an "ivt >= npcropmin" test alone would classify wetland as a crop and run
+   ! the planting/harvest phenology on it. Every such test must be bounded by
+   ! npcropmax. Degenerates harmlessly without CROP (no index ever qualifies).
+   integer, parameter :: npcropmax            = N_PFT + N_CFT - 1
    real(r8),parameter :: zmin_bedrock         = 0.4
    integer, parameter :: nbedrock             = 10
    integer, parameter :: ndecomp_pools_vr     = ndecomp_pools * nl_soil
@@ -102,6 +115,9 @@ MODULE MOD_Vars_Global
    integer, parameter :: nirrig_trp_corn      = 76 ! irrigated tropical corn
    integer, parameter :: ntrp_soybean         = 77 ! tropical soybean
    integer, parameter :: nirrig_trp_soybean   = 78 ! irrigated tropical soybean
+
+   ! wetland functional type index (first entry after the crop block)
+   integer, parameter :: nwetlandpft          = N_PFT + N_CFT
 
    real(r8) :: z_soi (1:nl_soil)                   ! node depth [m]
    real(r8) :: dz_soi(1:nl_soil)                   ! soil node thickness [m]
@@ -163,6 +179,30 @@ CONTAINS
       !ndecomp_pools_vr = ndecomp_pools * nl_soil
 
    END SUBROUTINE Init_GlobalVars
+
+   !-----------------------------------------------------------------------
+   logical FUNCTION patch_has_pft (ptype)
+
+! !DESCRIPTION:
+!  True for patch types that own "landpft" sub-tiles, and therefore run the
+!  PFT-level canopy, radiation, hydrology and CN code.
+!
+!  Stock CoLM attaches PFTs to vegetated soil only. WETLAND_PFT additionally
+!  gives permanent wetland (patchtype 2) a wetland functional type, so every
+!  test that really asks "does this patch have PFT tiles?" must go through
+!  here rather than comparing against 0 directly. Tests that ask something
+!  else (irrigation, flooding, water balance) must keep their own condition.
+
+   IMPLICIT NONE
+   integer, intent(in) :: ptype
+
+#ifdef WETLAND_PFT
+      patch_has_pft = (ptype == 0) .or. (ptype == 2)
+#else
+      patch_has_pft = (ptype == 0)
+#endif
+
+   END FUNCTION patch_has_pft
 
 END MODULE MOD_Vars_Global
 ! ---------- EOP ------------

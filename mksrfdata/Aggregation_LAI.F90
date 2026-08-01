@@ -527,6 +527,12 @@ SUBROUTINE Aggregation_LAI (gridlai, dir_rawdata, dir_model_landdata, lc_year)
                         ip = patch_pft_s(ipatch)
                         LAI_pfts(ip) = LAI_patches(ipatch)
 #endif
+#ifdef WETLAND_PFT
+                     ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
+                        ! single WFT tile: tile LAI is the patch LAI
+                        ip = patch_pft_s(ipatch)
+                        LAI_pfts(ip) = LAI_patches(ipatch)
+#endif
                      ENDIF
                   ENDDO
 
@@ -670,6 +676,12 @@ SUBROUTINE Aggregation_LAI (gridlai, dir_rawdata, dir_model_landdata, lc_year)
                      ENDDO
 #ifdef CROP
                   ELSEIF (landpatch%settyp(ipatch) == CROPLAND) THEN
+                     ip = patch_pft_s(ipatch)
+                     SAI_pfts(ip) = SAI_patches(ipatch)
+#endif
+#ifdef WETLAND_PFT
+                  ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
+                     ! single WFT tile: tile SAI is the patch SAI
                      ip = patch_pft_s(ipatch)
                      SAI_pfts(ip) = SAI_patches(ipatch)
 #endif

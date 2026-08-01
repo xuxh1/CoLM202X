@@ -24,11 +24,11 @@
 #endif
 
 ! 3. If defined, debug information is output.
-#undef CoLMDEBUG
+#define CoLMDEBUG
 ! 3.1 If defined, range of variables is checked.
 #undef RangeCheck
 ! 3.1 If defined, surface data in vector is mapped to gridded data for checking.
-#undef SrfdataDiag
+#define SrfdataDiag
 
 ! 4. If defined, MPI parallelization is enabled.
 #define USEMPI
@@ -81,6 +81,26 @@
 !    Conflicts : only used when BGC is defined
 #ifndef BGC
 #undef CROP
+#endif
+
+! 7.2 If defined, wetland patches (patchtype==2) carry a Wetland Functional
+!     Type sub-tile in "landpft" and run the full CN driver, instead of the
+!     decomposition-only shim plus the hard-coded climate-zone vegetation
+!     proxy. The WFT occupies the index right after the crop block, so
+!     npcropmax must bound every "is this a crop" test (see MOD_Vars_Global).
+!
+!     OFF until the stand-ins it replaces are switched off with it. Turning it
+!     on routes patchtype==2 into bgc_driver, but reactive_bgc_run_wetland_decomp
+!     still runs unguarded straight afterwards and zeroes decomp_cpools_sourcesink,
+!     which would discard the litter bgc_driver has just deposited. Guard that
+!     call, then reconcile DEF_USE_WETLAND_PEAT_C and wetland_fixed_substrate --
+!     both stand in for the carbon supply the WFT now provides -- before defining
+!     this.
+#undef WETLAND_PFT
+!    Conflicts : the WFT rides on the landpft structure, so it needs BGC
+!    (which itself requires LULC_IGBP_PFT or LULC_IGBP_PC).
+#ifndef BGC
+#undef WETLAND_PFT
 #endif
 
 ! 8. If defined, open Land use and land cover change mode.
