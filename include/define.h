@@ -89,13 +89,29 @@
 !     proxy. The WFT occupies the index right after the crop block, so
 !     npcropmax must bound every "is this a crop" test (see MOD_Vars_Global).
 !
-!     OFF until the stand-ins it replaces are switched off with it. Turning it
-!     on routes patchtype==2 into bgc_driver, but reactive_bgc_run_wetland_decomp
-!     still runs unguarded straight afterwards and zeroes decomp_cpools_sourcesink,
-!     which would discard the litter bgc_driver has just deposited. Guard that
-!     call, then reconcile DEF_USE_WETLAND_PEAT_C and wetland_fixed_substrate --
-!     both stand in for the carbon supply the WFT now provides -- before defining
-!     this.
+!     The stand-ins it replaces are handled: the decomposition shim is guarded
+!     to patchtype 2 and returns after setting the anoxia rather than zeroing
+!     the source/sink bgc_driver deposited; wetland_fixed_substrate is read only
+!     in a block this macro compiles out, and is refused by the namelist
+!     validator; DEF_USE_WETLAND_PEAT_C only ever seeded the initial pool.
+!
+!     STILL BLOCKED, measured 2026-08-02 on all 44 FLUXNET-CH4 towers: lai_p is
+!     never assigned for the WFT tile, so LAI comes out denormal (~1e-302) at
+!     every site, GPP is zero at 41 of 44, and vegetation carbon falls to 31% of
+!     its initial stock. With the substrate no longer frozen and no litter to
+!     replace it, HR collapses and CH4 goes with it -- the ensemble median runs
+!     from 2.39x of observed to zero.
+!
+!     Cause: MOD_BGC_Veg_CNVegStructUpdate assigns lai_p only under
+!     DEF_USE_LAIFEEDBACK, which defaults false. MOD_LAIReadin does fill tlai_p
+!     for the WFT, but nothing copies it into lai_p, and patch LAI is now
+!     aggregated over tiles rather than read at patch level. Wetland had no PFT
+!     tile before this macro, so the gap could not show.
+!
+!     Fix one of: enable DEF_USE_LAIFEEDBACK so LAI follows leaf carbon (the
+!     point of a WFT, but it changes every PFT and needs its own verification),
+!     or copy tlai_p into lai_p on the non-feedback path (smaller, but keeps
+!     wetland LAI tied to a prescribed MODIS field).
 #undef WETLAND_PFT
 !    Conflicts : the WFT rides on the landpft structure, so it needs BGC
 !    (which itself requires LULC_IGBP_PFT or LULC_IGBP_PC).
