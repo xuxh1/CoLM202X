@@ -65,6 +65,14 @@ MODULE MOD_Namelist
 
    integer  :: SITE_landtype             = -1
 
+   ! Field-assigned wetland class of a single-point tower, read from the site
+   ! file as "wetland_class". 0 means none was supplied, which sends the patch
+   ! back to the latitude/soil-carbon zone tree in MOD_Tracer_Reactive_Methane_
+   ! BgcLink. That tree cannot separate bog from fen -- both are peat -- and it
+   ! mistakes five sedge fens and four sedge tundra sites for Sphagnum bog,
+   ! which zeroes their aerenchyma. Where a tower states its type, believe it.
+   integer  :: SITE_wetland_class        = 0
+
    logical  :: USE_SITE_landtype         = .false.
    logical  :: USE_SITE_pctpfts          = .true.
    logical  :: USE_SITE_pctcrop          = .true.
@@ -1082,6 +1090,7 @@ CONTAINS
       SITE_lon_location,                      &
       SITE_lat_location,                      &
       SITE_landtype,                          &
+      SITE_wetland_class,                     &
       USE_SITE_landtype,                      &
       USE_SITE_pctpfts,                       &
       USE_SITE_pctcrop,                       &

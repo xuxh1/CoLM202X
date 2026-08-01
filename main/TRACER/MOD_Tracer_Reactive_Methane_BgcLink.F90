@@ -19,6 +19,7 @@ MODULE MOD_Tracer_Reactive_Methane_BgcLink
    USE MOD_Tracer_Reactive_Methane_Const, only: DEF_METHANE, catomw, &
       METHANE_COMP_SOIL, METHANE_COMP_RICE, N_METHANE_COMP
    USE MOD_Tracer_Reactive_Methane_pH, only: get_ph_for_patch
+   USE MOD_Namelist, only: SITE_wetland_class
    USE MOD_LandPFT, only: patch_pft_s, patch_pft_e
    USE MOD_Vars_PFTimeInvariants,  only: pftfrac, pftclass
    USE MOD_Vars_PFTimeVariables,   only: lai_p, irrig_method_p
@@ -90,6 +91,21 @@ MODULE MOD_Tracer_Reactive_Methane_BgcLink
    integer, public, parameter :: BIOME_BOREAL_BOG          = 5
    integer, public, parameter :: BIOME_FLOODPLAIN          = 6  ! routing-flooded patchtype==0
    integer, public, parameter :: BIOME_UPLAND_SOIL         = 7
+
+   ! Field-assigned wetland class, from SITE_wetland_class. A separate axis
+   ! from BIOME_*: those are climate zones inferred from latitude and peat
+   ! carbon, these are the hydro-geomorphic types a site survey records. The
+   ! measured class decides aerenchyma where it exists, because aerenchyma
+   ! follows vascular cover and that is what these names describe.
+   ! Codes must match scripts/add_site_wetland_class.py.
+   integer, public, parameter :: WETCLASS_NONE       = 0  ! none supplied: use BIOME_*
+   integer, public, parameter :: WETCLASS_BOG        = 1
+   integer, public, parameter :: WETCLASS_FEN        = 2
+   integer, public, parameter :: WETCLASS_MARSH      = 3
+   integer, public, parameter :: WETCLASS_SWAMP      = 4  ! tree-mediated: falls back
+   integer, public, parameter :: WETCLASS_TUNDRA     = 5
+   integer, public, parameter :: WETCLASS_SALTMARSH  = 6
+   integer, public, parameter :: WETCLASS_DRAINED    = 7  ! water-managed: falls back
 
 CONTAINS
 
@@ -659,6 +675,7 @@ CONTAINS
 
       real(r8) :: lai_fallback, anpp_tot, bg_ratio
       real(r8) :: aere_poros_z, aere_radius_z, aere_tillerC_z, aere_scale_z
+      logical  :: class_resolved
       real(r8), parameter :: secsperyear = 365._r8 * 86400._r8
       ! Histosol-style peat threshold: cellorg ~ 150 kg OM/m3 corresponds to
       ! ~75 kgC/m3, well above typical mineral soil (< 50 kg OM/m3).
@@ -671,14 +688,92 @@ CONTAINS
       ! spval (~1e36) and pathological aggregation outputs.
       real(r8), parameter :: lai_in_min = 0.1_r8, lai_in_max = 20._r8
 
+      ! ---- Measured wetland class, where the site supplies one -------------
+      ! Aerenchyma transport is set by how much VASCULAR cover a wetland has,
+      ! and that is what bog/fen/marsh/tundra names record. The climate tree
+      ! below infers it from latitude and peat carbon, which cannot separate a
+      ! Sphagnum bog from a Carex fen because both are peat: of the 44 towers,
+      ! five fens and four sedge tundra sites came out as bog and had their
+      ! aerenchyma zeroed. Where a class was assigned in the field, use it.
+      !
+      ! aere_scale_z alone carries "how much vascular cover". The radius, tiller
+      ! carbon and porosity describe the vasculars that ARE present, so they do
+      ! not change with cover -- encoding scarcity in a 1e-6 m stem radius, as
+      ! the bog zone did, is a second switch hiding behind the first.
+      !
+      ! Swamp and drained fall through: those are tree-mediated and
+      ! water-managed respectively, and latitude still carries real information
+      ! about them that the class name does not.
+      class_resolved = .false.
+      IF (SITE_wetland_class > 0) THEN
+         class_resolved = .true.
+         SELECT CASE (SITE_wetland_class)
+         CASE (WETCLASS_FEN)
+            ! Carex/Eriophorum: the most aerenchymatous boreal flora.
+            lai_fallback   = 2.0_r8
+            anpp_tot       = 200._r8
+            bg_ratio       = 0.6_r8
+            aere_poros_z   = 0.30_r8
+            aere_radius_z  = 2.9e-3_r8
+            aere_tillerC_z = 0.3_r8
+            aere_scale_z   = 1.0_r8
+         CASE (WETCLASS_TUNDRA)
+            ! Sedge tundra: same plants as a fen, less productive.
+            lai_fallback   = 1.5_r8
+            anpp_tot       = 150._r8
+            bg_ratio       = 0.6_r8
+            aere_poros_z   = 0.30_r8
+            aere_radius_z  = 2.9e-3_r8
+            aere_tillerC_z = 0.3_r8
+            aere_scale_z   = 1.0_r8
+         CASE (WETCLASS_BOG)
+            ! Sphagnum-dominated, but 5-30% of a bog surface is still vascular
+            ! (Carex, Eriophorum, Rhynchospora growing up through the moss), so
+            ! transport is reduced rather than absent. Sedge traits, low cover.
+            lai_fallback   = 1.0_r8
+            anpp_tot       = 150._r8
+            bg_ratio       = 0.6_r8
+            aere_poros_z   = 0.30_r8
+            aere_radius_z  = 2.9e-3_r8
+            aere_tillerC_z = 0.3_r8
+            aere_scale_z   = 0.15_r8
+         CASE (WETCLASS_MARSH)
+            ! Emergent macrophytes (Typha, Schoenoplectus).
+            lai_fallback   = 2.5_r8
+            anpp_tot       = 300._r8
+            bg_ratio       = 0.5_r8
+            aere_poros_z   = 0.40_r8
+            aere_radius_z  = 5.0e-3_r8
+            aere_tillerC_z = 1.0_r8
+            aere_scale_z   = 1.0_r8
+         CASE (WETCLASS_SALTMARSH)
+            ! Spartina: tall, well-developed aerenchyma. The reason salt marsh
+            ! is overestimated is missing sulfate competition, not transport,
+            ! so nothing here is reduced to compensate for it.
+            lai_fallback   = 2.5_r8
+            anpp_tot       = 300._r8
+            bg_ratio       = 0.5_r8
+            aere_poros_z   = 0.40_r8
+            aere_radius_z  = 5.0e-3_r8
+            aere_tillerC_z = 1.0_r8
+            aere_scale_z   = 1.0_r8
+         CASE DEFAULT
+            class_resolved = .false.
+         END SELECT
+      ENDIF
+
       ! ---- 5-zone climate-based wetland classification --------------------
+      ! Fallback when no class was measured -- every global grid cell, and the
+      ! swamp/drained towers. Kept as the reference classification.
       ! Zone parameter values from:
       !   Brix 2001 Aquat Bot (Phragmites)
       !   Wania 2010 GMD     (Carex sedge defaults)
       !   Saunders 2007      (Papyrus)
       !   Bridgham 2013 GCB  (review of plant-mediated CH4)
       !   Pangala 2017 Nature(tropical swamp forest stem conduits)
-      IF (abs(dlat) <= 23.5_r8 .and. cellorg_top >= tropical_peat_threshold) THEN
+      IF (class_resolved) THEN
+         CONTINUE
+      ELSEIF (abs(dlat) <= 23.5_r8 .and. cellorg_top >= tropical_peat_threshold) THEN
          ! Zone 1: Tropical reed/papyrus (peat-rich, large emergent vascular)
          lai_fallback   = 4.0_r8
          anpp_tot       = 600._r8

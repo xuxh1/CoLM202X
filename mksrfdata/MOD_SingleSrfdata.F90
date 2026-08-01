@@ -308,6 +308,16 @@ CONTAINS
       ENDIF
 #endif
 
+      ! Field-assigned wetland class, if the site file carries one. Optional by
+      ! design: a site file written before this existed simply leaves the class
+      ! at 0, and the methane code falls back to its latitude/soil-carbon zone
+      ! tree exactly as before.
+      IF (SITE_wetland_class == 0) THEN
+         IF (ncio_var_exist(fsrfdata, 'wetland_class')) THEN
+            CALL ncio_read_serial (fsrfdata, 'wetland_class', SITE_wetland_class)
+         ENDIF
+      ENDIF
+
       IF (SITE_landtype < 0) THEN
          write(*,*) 'Error! Please set SITE_landtype in namelist file !'
          CALL CoLM_stop()
@@ -2860,6 +2870,13 @@ ENDIF
       CALL ncio_put_attr     (fsrfdata, 'IGBP_classification', 'source', trim(datasource(u_site_landtype)))
       CALL ncio_put_attr     (fsrfdata, 'IGBP_classification', 'long_name', 'MODIS IGBP Land Use/Land Cover')
 #endif
+
+      ! Carry the field-assigned wetland class through to srfdata: mksrfdata
+      ! reads the site file, but mkinidata and colm read this, so a class left
+      ! here is the only way it survives to the run.
+      CALL ncio_write_serial (fsrfdata, 'wetland_class', SITE_wetland_class)
+      CALL ncio_put_attr     (fsrfdata, 'wetland_class', 'long_name', &
+         'observed wetland class (0 none 1 bog 2 fen 3 marsh 4 swamp 5 wet tundra 6 salt marsh 7 drained)')
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
       IF (numpft > 0) THEN
