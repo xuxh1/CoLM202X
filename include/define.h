@@ -93,10 +93,9 @@
 #ifndef BGC
 #undef LULC_IGBP_WFT
 #endif
-!    Dependency : only the methane provider consumes the WFT
-#ifndef TRACER
-#undef LULC_IGBP_WFT
-#endif
+!    Its TRACER dependency is enforced in 13b, not here: TRACER is not defined
+!    until 13, so a test at this point always sees it absent and would switch
+!    the WFT off no matter how it was set.
 
 ! 8. If defined, open Land use and land cover change mode.
 #undef LULCC
@@ -151,4 +150,10 @@
 #if (!defined LULC_IGBP_PFT && !defined LULC_IGBP_PC)
 #error "Methane (TRACER+BGC) requires LULC_IGBP_PFT or LULC_IGBP_PC for pftfrac access."
 #endif
+#endif
+
+!     Nothing but this provider consumes the WFT (7.2), so it is switched off
+!     without it. Enforced here because TRACER is only defined at 13.
+#ifndef TRACER
+#undef LULC_IGBP_WFT
 #endif
