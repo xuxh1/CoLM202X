@@ -275,7 +275,7 @@ SUBROUTINE Aggregation_ForestHeight ( &
                ip = patch_pft_s(ipatch)
                htop_pfts(ip) = htop_patches(ipatch)
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
             ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
                ! single WFT tile; MOD_HtopReadin overrides this with htop0_p
                ! for non-tree types anyway, so it only has to be well defined

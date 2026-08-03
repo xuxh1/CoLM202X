@@ -146,7 +146,7 @@ MODULE MOD_Const_PFT
         '76  irrigated_tropical_corn            ', '77  tropical_soybean                   ', &
         '78  irrigated_tropical_soybean         '  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
         , '79  wetland functional type            '  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
         /)
@@ -165,7 +165,7 @@ MODULE MOD_Const_PFT
         , 1, 1, 1, 1, 1, 1, 1, 1 &
         , 1, 1, 1, 1, 1, 1, 1    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 1  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -184,7 +184,7 @@ MODULE MOD_Const_PFT
         , 0.5,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5&
         , 0.5,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.5  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -207,7 +207,7 @@ MODULE MOD_Const_PFT
         , 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0&
         , 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.0  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -230,7 +230,7 @@ MODULE MOD_Const_PFT
        , 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2&
        , 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.2  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -258,7 +258,7 @@ MODULE MOD_Const_PFT
          ,-0.300, -0.300, -0.300, -0.300, -0.300, -0.300, -0.300, -0.300&
          ,-0.300, -0.300, -0.300, -0.300, -0.300, -0.300, -0.300    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -0.300  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -284,7 +284,7 @@ MODULE MOD_Const_PFT
         , 0.110,  0.110,  0.110,  0.110,  0.110,  0.110,  0.110,  0.110&
         , 0.110,  0.110,  0.110,  0.110,  0.110,  0.110,  0.110    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.110  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -303,7 +303,7 @@ MODULE MOD_Const_PFT
         , 0.310,  0.310,  0.310,  0.310,  0.310,  0.310,  0.310,  0.310&
         , 0.310,  0.310,  0.310,  0.310,  0.310,  0.310,  0.310    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.310  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -329,7 +329,7 @@ MODULE MOD_Const_PFT
         , 0.350,  0.350,  0.350,  0.350,  0.350,  0.350,  0.350,  0.350&
         , 0.350,  0.350,  0.350,  0.350,  0.350,  0.350,  0.350    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.350  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -348,7 +348,7 @@ MODULE MOD_Const_PFT
         , 0.530,  0.530,  0.530,  0.530,  0.530,  0.530,  0.530,  0.530&
         , 0.530,  0.530,  0.530,  0.530,  0.530,  0.530,  0.530    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.530  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -374,7 +374,7 @@ MODULE MOD_Const_PFT
         , 0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050&
         , 0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.050  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -393,7 +393,7 @@ MODULE MOD_Const_PFT
         , 0.120,  0.120,  0.120,  0.120,  0.120,  0.120,  0.120,  0.120&
         , 0.120,  0.120,  0.120,  0.120,  0.120,  0.120,  0.120    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.120  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -419,7 +419,7 @@ MODULE MOD_Const_PFT
         , 0.340,  0.340,  0.340,  0.340,  0.340,  0.340,  0.340,  0.340&
         , 0.340,  0.340,  0.340,  0.340,  0.340,  0.340,  0.340    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.340  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -438,7 +438,7 @@ MODULE MOD_Const_PFT
         , 0.250,  0.250,  0.250,  0.250,  0.250,  0.250,  0.250,  0.250&
         , 0.250,  0.250,  0.250,  0.250,  0.250,  0.250,  0.250    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.250  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -468,7 +468,7 @@ MODULE MOD_Const_PFT
          , 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0&
          , 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 41.5  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /) * 1.e-6
@@ -488,7 +488,7 @@ MODULE MOD_Const_PFT
          , 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0&
          , 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 52.0  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /) * 1.e-6
@@ -508,7 +508,7 @@ MODULE MOD_Const_PFT
         , 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08&
         , 0.08, 0.08, 0.08, 0.05, 0.05, 0.08, 0.08  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.08  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -527,7 +527,7 @@ MODULE MOD_Const_PFT
         , 1, 1, 1, 1, 1, 1, 1, 1&
         , 1, 1, 1, 0, 0, 1, 1  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 1  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -546,7 +546,7 @@ MODULE MOD_Const_PFT
         , 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0&
         , 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 4.0  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -565,7 +565,7 @@ MODULE MOD_Const_PFT
         , 100, 100, 100, 100, 100, 100, 100, 100&
         , 100, 100, 100, 100, 100, 100, 100  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 100  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -584,7 +584,7 @@ MODULE MOD_Const_PFT
         , 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0&
         , 9.0, 9.0, 9.0, 4.0, 4.0, 9.0, 9.0  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 9.0  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -603,7 +603,7 @@ MODULE MOD_Const_PFT
         , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01&
         , 0.01, 0.01, 0.01, 0.04, 0.04, 0.01, 0.01  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.01  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -622,7 +622,7 @@ MODULE MOD_Const_PFT
         , 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015&
         , 0.015, 0.015, 0.015, 0.025, 0.025, 0.015, 0.015  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.015  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -656,7 +656,7 @@ MODULE MOD_Const_PFT
         ,308.0, 308.0, 308.0, 308.0, 308.0, 308.0, 308.0, 308.0&
         ,308.0, 308.0, 308.0, 308.0, 308.0, 308.0, 308.0  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 308.0  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -675,7 +675,7 @@ MODULE MOD_Const_PFT
         ,281.0, 281.0, 281.0, 281.0, 281.0, 281.0, 281.0, 281.0&
         ,281.0, 281.0, 281.0, 281.0, 281.0, 281.0, 281.0  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 281.0  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -706,7 +706,7 @@ MODULE MOD_Const_PFT
         ,22.0,  22.0,  22.0,  22.0,  22.0,  22.0,  22.0,  22.0&
         ,22.0,  22.0,  22.0,  22.0,  22.0,  22.0,  22.0   &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 7.0  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -725,7 +725,7 @@ MODULE MOD_Const_PFT
        , -1.796, -1.796, -1.796, -1.796, -1.796, -1.796, -1.796, -1.796&
        , -1.796, -1.796, -1.796, -1.796, -1.796, -1.796, -1.796  &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -1.176  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -739,7 +739,7 @@ MODULE MOD_Const_PFT
        , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 &
        , 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -758,7 +758,7 @@ MODULE MOD_Const_PFT
         ,  6.0,   6.0,   6.0,   6.0,   6.0,   6.0,   6.0,   6.0&
         ,  6.0,   6.0,   6.0,   6.0,   6.0,   6.0,   6.0       &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 11.0  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -776,7 +776,7 @@ MODULE MOD_Const_PFT
         ,  3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0&
         ,  3.0,   3.0,   3.0,   3.0,   3.0,   3.0,   3.0       &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 2.0  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -821,7 +821,7 @@ MODULE MOD_Const_PFT
        , .False., .False., .False., .False., .False., .False., .False., .False. &
        , .False., .False., .False., .False., .False., .False., .False.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , .False.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -839,7 +839,7 @@ MODULE MOD_Const_PFT
        , .False., .False., .False., .False., .False., .False., .False., .False. &
        , .False., .False., .False., .False., .False., .False., .False.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , .True.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -858,7 +858,7 @@ MODULE MOD_Const_PFT
        , .False., .False., .False., .False., .False., .False., .False., .False. &
        , .False., .False., .False., .False., .False., .False., .False.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , .False.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -877,7 +877,7 @@ MODULE MOD_Const_PFT
        , .False., .False., .False., .False., .False., .False., .False., .False. &
        , .False., .False., .False., .False., .False., .False., .False.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , .False.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -895,7 +895,7 @@ MODULE MOD_Const_PFT
        , .False., .False., .False., .False., .False., .False., .False., .False. &
        , .False., .False., .False., .False., .False., .False., .False.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , .False.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -914,7 +914,7 @@ MODULE MOD_Const_PFT
        , .False., .False., .False., .False., .False., .False., .False., .False. &
        , .False., .False., .False., .False., .False., .False., .False.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , .False.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -932,7 +932,7 @@ MODULE MOD_Const_PFT
        , .False., .False., .False., .False., .False., .False., .False., .False. &
        , .False., .False., .False., .False., .False., .False., .False.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , .True.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -950,7 +950,7 @@ MODULE MOD_Const_PFT
        , .False., .False., .False., .False., .False., .False., .False., .False. &
        , .False., .False., .False., .False., .False., .False., .False.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , .False.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -968,7 +968,7 @@ MODULE MOD_Const_PFT
        ,  .True.,  .True.,  .True.,  .True.,  .True.,  .True.,  .True.,  .True. &
        ,  .True.,  .True.,  .True.,  .True.,  .True.,  .True.,  .True.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , .False.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -986,7 +986,7 @@ MODULE MOD_Const_PFT
        , .False., .False., .False., .False., .False., .False., .False., .False. &
        , .False., .False., .False., .False., .False., .False., .False.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , .True.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1004,7 +1004,7 @@ MODULE MOD_Const_PFT
        ,  0.33,   0.33,   0.33,   0.33,   0.33,   0.33,   0.33,   0.33 &
        ,  0.33,   0.33,   0.33,   0.33,   0.33,   0.33,   0.33      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.33  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1022,7 +1022,7 @@ MODULE MOD_Const_PFT
        ,    0.,      0.,      0.,      0.,      0.,      0.,      0.,      0. &
        ,    0.,      0.,      0.,      0.,      0.,      0.,      0.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 24.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1050,7 +1050,7 @@ MODULE MOD_Const_PFT
        ,              20.,              20.,              20.,              25. &
        ,              25.,              20.,              20.             &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 28.0269058295964  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1068,7 +1068,7 @@ MODULE MOD_Const_PFT
        ,   42.,     42.,     42.,     42.,     42.,     42.,     42.,     42.&
        ,   42.,     42.,     42.,     42.,     42.,     42.,     42.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 42.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1086,7 +1086,7 @@ MODULE MOD_Const_PFT
        ,   50.,     50.,     50.,     50.,     50.,     50.,     50.,     50.&
        ,   50.,     50.,     50.,     50.,     50.,     50.,     50.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1104,7 +1104,7 @@ MODULE MOD_Const_PFT
        ,  500.,    500.,    500.,    500.,    500.,    500.,    500.,    500.&
        ,  500.,    500.,    500.,    500.,    500.,    500.,    500.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1122,7 +1122,7 @@ MODULE MOD_Const_PFT
        ,   50.,     50.,     50.,     50.,     50.,     50.,     50.,     50.&
        ,   50.,     50.,     50.,     50.,     50.,     50.,     50.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1140,7 +1140,7 @@ MODULE MOD_Const_PFT
        ,   25.,     25.,     25.,     25.,     25.,     25.,     25.,     25.&
        ,   25.,     25.,     25.,     25.,     25.,     25.,     25.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 50.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1168,7 +1168,7 @@ MODULE MOD_Const_PFT
     ,                1.,               1.,               1.,                1.&
     ,                1.,               1.,               1.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.32083333333333  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1186,7 +1186,7 @@ MODULE MOD_Const_PFT
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8&
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.8  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1204,7 +1204,7 @@ MODULE MOD_Const_PFT
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8&
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.8  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1222,7 +1222,7 @@ MODULE MOD_Const_PFT
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8&
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.8  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1240,7 +1240,7 @@ MODULE MOD_Const_PFT
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8&
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.8  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1258,7 +1258,7 @@ MODULE MOD_Const_PFT
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8&
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.8  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1276,7 +1276,7 @@ MODULE MOD_Const_PFT
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8&
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.8  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1294,7 +1294,7 @@ MODULE MOD_Const_PFT
       ,    0.2,     0.2,     0.2,     0.2,     0.2,     0.2,     0.2,     0.2&
       ,    0.2,     0.2,     0.2,     0.2,     0.2,     0.2,     0.2      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.2  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1312,7 +1312,7 @@ MODULE MOD_Const_PFT
       ,    0.2,     0.2,     0.2,     0.2,     0.2,     0.2,     0.2,     0.2&
       ,    0.2,     0.2,     0.2,     0.2,     0.2,     0.2,     0.2      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.2  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1330,7 +1330,7 @@ MODULE MOD_Const_PFT
       ,    0.2,     0.2,     0.2,     0.2,     0.2,     0.2,     0.2,     0.2&
       ,    0.2,     0.2,     0.2,     0.2,     0.2,     0.2,     0.2      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.2  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1348,7 +1348,7 @@ MODULE MOD_Const_PFT
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8&
       ,    0.8,     0.8,     0.8,     0.8,     0.8,     0.8,     0.8      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.8  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1366,7 +1366,7 @@ MODULE MOD_Const_PFT
       ,     2.,      2.,      2.,      2.,      2.,      2.,      2.,      2.&
       ,     2.,      2.,      2.,      2.,      2.,      2.,      2.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 1.5  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1384,7 +1384,7 @@ MODULE MOD_Const_PFT
       ,     0.,      0.,      0.,      0.,      0.,      0.,      0.,      0.&
       ,     0.,      0.,      0.,      0.,      0.,      0.,      0.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1402,7 +1402,7 @@ MODULE MOD_Const_PFT
       ,     0.,      0.,      0.,      0.,      0.,      0.,      0.,      0.&
       ,     0.,      0.,      0.,      0.,      0.,      0.,      0.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1420,7 +1420,7 @@ MODULE MOD_Const_PFT
       ,     1.,      1.,      1.,      1.,      1.,      1.,      1.,      1.&
       ,     1.,      1.,      1.,      1.,      1.,      1.,      1.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1438,7 +1438,7 @@ MODULE MOD_Const_PFT
       ,     1.,      1.,      1.,      1.,      1.,      1.,      1.,      1.&
       ,     1.,      1.,      1.,      1.,      1.,      1.,      1.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1456,7 +1456,7 @@ MODULE MOD_Const_PFT
       ,     0.,      0.,      0.,      0.,      0.,      0.,      0.,      0.&
       ,     0.,      0.,      0.,      0.,      0.,      0.,      0.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1474,7 +1474,7 @@ MODULE MOD_Const_PFT
       ,  0.035,   0.035,   0.035,    0.05,    0.05,   0.035,   0.035,   0.035&
       ,  0.035,   0.035,   0.035,    0.05,    0.05,   0.035,   0.035      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.02663  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1493,7 +1493,7 @@ MODULE MOD_Const_PFT
       ,     0.,     0.,     0., 0.0020, 0.0020,     0.,     0.,     0. &
       ,     0.,     0.,     0., 0.0020, 0.0020, 0.0020, 0.0020      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1511,7 +1511,7 @@ MODULE MOD_Const_PFT
       ,   -999.9, -999.9, -999.9,   0.11,   0.11, -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9,   0.11,   0.11,   0.15,   0.15      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999.9  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1529,7 +1529,7 @@ MODULE MOD_Const_PFT
       ,   -999, -999, -999,  300,  300, -999, -999, -999 &
       ,   -999, -999, -999,  150,  150,  150,  150      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1547,7 +1547,7 @@ MODULE MOD_Const_PFT
       ,   -999.9, -999.9, -999.9,   0.64,   0.64, -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9,   0.64,   0.64,   0.69,   0.69      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999.9  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1566,7 +1566,7 @@ MODULE MOD_Const_PFT
       ,   0.,  0.,  0., 10., 10.,  0.,  0.,  0. &
       ,   0.,  0.,  0.,  8.,  8., 10., 10.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 0.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1584,7 +1584,7 @@ MODULE MOD_Const_PFT
       ,   -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9,    0.0,    0.0,   0.05,   0.05      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999.9  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1602,7 +1602,7 @@ MODULE MOD_Const_PFT
       ,   -999.9, -999.9, -999.9,    0.4,    0.4, -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9,    0.4,    0.4,    0.2,    0.2      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999.9  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1620,7 +1620,7 @@ MODULE MOD_Const_PFT
       ,   -999.9, -999.9, -999.9,   0.05,   0.05, -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9,   0.05,   0.05,    0.1,    0.1      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999.9  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1638,7 +1638,7 @@ MODULE MOD_Const_PFT
       ,   -999.9, -999.9, -999.9,    0.8,    0.8, -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9,    0.8,    0.8,   0.85,   0.85      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999.9  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1656,7 +1656,7 @@ MODULE MOD_Const_PFT
       ,      0.1,    0.1,    0.1,    0.1,    0.1,    0.1,    0.1,    0.1 &
       ,      0.1,    0.1,    0.1,    0.1,    0.1,    0.1,    0.1      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999.9  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1674,7 +1674,7 @@ MODULE MOD_Const_PFT
       ,     1.05,   1.05,   1.05,   1.05,   1.05,   1.05,   1.05,   1.05 &
       ,     1.05,   1.05,   1.05,   1.05,   1.05,   1.05,   1.05      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999.9  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1692,7 +1692,7 @@ MODULE MOD_Const_PFT
       ,   -999.9, -999.9, -999.9,     2.,     2., -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9,     2.,     2.,     5.,     5.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999.9  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1710,7 +1710,7 @@ MODULE MOD_Const_PFT
       ,   -999.9, -999.9, -999.9,     5.,     5., -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9,     5.,     5.,     2.,     2.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999.9  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1729,7 +1729,7 @@ MODULE MOD_Const_PFT
       ,    65.,  65.,  65.,  65.,  65.,  65.,  65.,  65. &
       ,    65.,  65.,  65.,  65.,  65.,  65.,  65.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 999.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1747,7 +1747,7 @@ MODULE MOD_Const_PFT
       ,   999., 999., 999., 120., 120., 999., 999., 999. &
       ,   999., 999., 999., 120., 120., 130., 130.      &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 999.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1765,7 +1765,7 @@ MODULE MOD_Const_PFT
         , 999., 999., 999.,   0.,   0., 999., 999., 999. &
         , 999., 999., 999.,   0.,   0.,   0.,   0.       &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 999.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1783,7 +1783,7 @@ MODULE MOD_Const_PFT
         , -999.9, -999.9, -999.9,     5.,     5., -999.9, -999.9, -999.9 &
         , -999.9, -999.9, -999.9,     5.,     5.,     6.,      6.        &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -999.9  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1794,7 +1794,7 @@ MODULE MOD_Const_PFT
       ,  62, 61, 62, 41, 42, 41, 42, 19, 20, 19, 20, 61, 62, 75, 76, 61, 62, 19, 20 &
       ,  19, 20, 19, 20, 61, 62, 75, 76, 19, 20, 67, 68, 19, 20, 75, 76, 75, 76, 75 &
       ,  76, 77, 78 &
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
       , nwetlandpft  & ! WFT merges to itself, not to a crop
 #endif
       /)
@@ -1815,7 +1815,7 @@ MODULE MOD_Const_PFT
          ,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007&
          ,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007&
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 1.e-007  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1833,7 +1833,7 @@ MODULE MOD_Const_PFT
          ,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007&
          ,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007&
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 1.e-007  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1850,7 +1850,7 @@ MODULE MOD_Const_PFT
          ,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007&
          ,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007&
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 1.e-007  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1868,7 +1868,7 @@ MODULE MOD_Const_PFT
          ,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007&
          ,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007,1.e-007&
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 1.e-007  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1887,7 +1887,7 @@ MODULE MOD_Const_PFT
          ,-340000, -340000, -340000, -340000, -340000, -340000, -340000, -340000&
          ,-340000, -340000, -340000, -340000, -340000, -340000, -340000&
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -340000  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1906,7 +1906,7 @@ MODULE MOD_Const_PFT
          ,-340000, -340000, -340000, -340000, -340000, -340000, -340000, -340000&
          ,-340000, -340000, -340000, -340000, -340000, -340000, -340000&
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -340000  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1925,7 +1925,7 @@ MODULE MOD_Const_PFT
          ,-340000, -340000, -340000, -340000, -340000, -340000, -340000, -340000&
          ,-340000, -340000, -340000, -340000, -340000, -340000, -340000&
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -340000  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1944,7 +1944,7 @@ MODULE MOD_Const_PFT
          ,-340000, -340000, -340000, -340000, -340000, -340000, -340000, -340000&
          ,-340000, -340000, -340000, -340000, -340000, -340000, -340000&
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , -340000  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1963,7 +1963,7 @@ MODULE MOD_Const_PFT
          ,3.95,  3.95, 3.95,  3.95, 3.95,  3.95, 3.95, 3.95&
          ,3.95,  3.95, 3.95,  3.95, 3.95,  3.95, 3.95&
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 3.95  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -1984,7 +1984,7 @@ MODULE MOD_Const_PFT
          ,1000.,  1000., 1000.,  1000., 1000.,  1000., 1000., 1000.&
          ,1000.,  1000., 1000.,  1000., 1000.,  1000., 1000.&
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 480.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -2002,7 +2002,7 @@ MODULE MOD_Const_PFT
          ,1000.,  1000., 1000.,  1000., 1000.,  1000., 1000., 1000.&
          ,1000.,  1000., 1000.,  1000., 1000.,  1000., 1000.&
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          , 1000.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
          /)
@@ -2021,7 +2021,7 @@ MODULE MOD_Const_PFT
             , .True., .False., .True., .False., .True., .False., .True., .False. &
             , .True., .False., .True., .False., .True., .False., .True.          &
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
             , .False.  & ! WFT = copy of PFT 13 (c3 non-arctic grass)
 #endif
             /)

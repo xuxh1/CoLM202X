@@ -424,7 +424,7 @@ CONTAINS
          SITE_pfttyp  = SITE_croptyp + N_PFT - 1
          SITE_pctpfts = 1.
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
       ELSEIF (SITE_landtype == WETLAND) THEN
          ! One wetland functional type covering the whole patch, synthesised
          ! rather than read: the site files carry no pfttyp/pctpfts. Mirrors
@@ -646,7 +646,7 @@ CONTAINS
                   SITE_LAI_pfts_monthly(:,itime,iyear) = sum(pftLAI * pctpfts) / sum(pctpfts)
                   SITE_SAI_pfts_monthly(:,itime,iyear) = sum(pftSAI * pctpfts) / sum(pctpfts)
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
                ELSEIF (SITE_landtype == WETLAND) THEN
                   ! The WFT tile needs a per-PFT LAI like any other tile, and the
                   ! plant_15s product has none for IGBP class 11. Synthesise it the
@@ -1438,7 +1438,7 @@ CONTAINS
 #endif
          ELSE
             ! Non-vegetated single point (water/urban/ice: numpft==0). Wetland
-            ! leaves this branch once WETLAND_PFT gives it a WFT tile.
+            ! leaves this branch once LULC_IGBP_WFT gives it a WFT tile.
             ! Gridded mode (MOD_LandPFT) always allocates patch_pft_s/e over all
             ! patches and marks non-PFT patches with the -1 sentinel; the runtime
             ! and CN-init code read patch_pft_s(ipatch) unconditionally and rely

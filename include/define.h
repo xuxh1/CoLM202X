@@ -89,6 +89,12 @@
 !     proxy. The WFT occupies the index right after the crop block, so
 !     npcropmax must bound every "is this a crop" test (see MOD_Vars_Global).
 !
+!     Named for where it acts rather than for what motivates it: it appends one
+!     more tile class to the LULC_IGBP_PFT sub-grid, exactly as CROP appends the
+!     CFT block -- CROP pairs with N_CFT, this pairs with N_WFT. The methane
+!     dependency below is a policy about when it is worth enabling, not a claim
+!     that the mechanism is methane-specific.
+!
 !     The stand-ins it replaces are handled: the decomposition shim is guarded
 !     to patchtype 2 and returns after setting the anoxia rather than zeroing
 !     the source/sink bgc_driver deposited; wetland_fixed_substrate is read only
@@ -112,11 +118,27 @@
 !     point of a WFT, but it changes every PFT and needs its own verification),
 !     or copy tlai_p into lai_p on the non-feedback path (smaller, but keeps
 !     wetland LAI tied to a prescribed MODIS field).
-#undef WETLAND_PFT
+!
+!     A third route was taken in 2a1d47b1: give the WFT a real per-PFT LAI at
+!     source (synthesised from the MODIS per-PFT field weighted by PCT_PFT, as
+!     cropland does) and read patchtype 2 down the per-PFT path. That is
+!     committed but NOT yet confirmed to clear the blocker -- no run since has
+!     been checked. Treat the paragraphs above as the last measured state.
+#undef LULC_IGBP_WFT
 !    Conflicts : the WFT rides on the landpft structure, so it needs BGC
 !    (which itself requires LULC_IGBP_PFT or LULC_IGBP_PC).
 #ifndef BGC
-#undef WETLAND_PFT
+#undef LULC_IGBP_WFT
+#endif
+!    Dependency : the WFT exists to grow the vegetation a permanent wetland's
+!    methane flux needs -- it is the substrate supply for the CH4 provider, and
+!    nothing else in CoLM consumes it. Without the methane code there is no
+!    reason to pay for an extra tile class, so it follows TRACER too.
+!    This also halves the number of landpft layouts in circulation: a build
+!    either has the methane provider and the WFT or neither, so srfdata and
+!    restart files written by one are never handed to the other.
+#ifndef TRACER
+#undef LULC_IGBP_WFT
 #endif
 
 ! 8. If defined, open Land use and land cover change mode.

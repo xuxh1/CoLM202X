@@ -226,8 +226,8 @@ CONTAINS
       real(r8) :: lai_eff
       real(r8) :: rootfr_eff(1:nl_soil)
       real(r8) :: rootr_eff(1:nl_soil)
-#ifdef WETLAND_PFT
-      ! Discarded outputs of the wetland proxy: under WETLAND_PFT only its
+#ifdef LULC_IGBP_WFT
+      ! Discarded outputs of the wetland proxy: under LULC_IGBP_WFT only its
       ! aerenchyma side effect is wanted, the vegetation comes from BGC.
       real(r8) :: lai_unused, npp_unused, agnpp_unused, bgnpp_unused
       real(r8) :: rootfr_unused(1:nl_soil)
@@ -354,7 +354,7 @@ CONTAINS
             wetland_aere_active(i) = .false.
       ENDIF
       IF (patchtype == 2) THEN
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
          ! The WFT sub-tile gives the wetland real LAI, NPP, root profile and
          ! root respiration through BGC, so the climate-zone vegetation proxy
          ! must not overwrite them -- its constants were an open loop that fed

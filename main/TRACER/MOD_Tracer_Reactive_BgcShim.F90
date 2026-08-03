@@ -97,7 +97,7 @@ CONTAINS
       ! decomposition that the tile is waterlogged.
       CALL reactive_bgc_set_wetland_anoxia (ipatch)
 
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
       ! bgc_driver has decomposed this patch already. Everything below would
       ! zero the source/sink it just deposited and redo the work without the
       ! litter input, which is the whole point of giving wetland a WFT.

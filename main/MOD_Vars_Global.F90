@@ -48,7 +48,7 @@ MODULE MOD_Vars_Global
 
    ! number of wetland functional types, appended after the PFT and CFT
    ! blocks so a wetland patch (patchtype==2) can own a "landpft" sub-tile.
-#ifndef WETLAND_PFT
+#ifndef LULC_IGBP_WFT
    integer, parameter :: N_WFT     = 0
 #else
    integer, parameter :: N_WFT     = 1
@@ -187,7 +187,7 @@ CONTAINS
 !  True for patch types that own "landpft" sub-tiles, and therefore run the
 !  PFT-level canopy, radiation, hydrology and CN code.
 !
-!  Stock CoLM attaches PFTs to vegetated soil only. WETLAND_PFT additionally
+!  Stock CoLM attaches PFTs to vegetated soil only. LULC_IGBP_WFT additionally
 !  gives permanent wetland (patchtype 2) a wetland functional type, so every
 !  test that really asks "does this patch have PFT tiles?" must go through
 !  here rather than comparing against 0 directly. Tests that ask something
@@ -196,7 +196,7 @@ CONTAINS
    IMPLICIT NONE
    integer, intent(in) :: ptype
 
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
       patch_has_pft = (ptype == 0) .or. (ptype == 2)
 #else
       patch_has_pft = (ptype == 0)

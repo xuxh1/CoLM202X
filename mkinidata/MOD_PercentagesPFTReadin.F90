@@ -41,7 +41,7 @@ CONTAINS
       write(cyear,'(i4.4)') lc_year
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
 #ifdef SinglePoint
-      ! Wetland owns a WFT tile under WETLAND_PFT, so it must not bail out
+      ! Wetland owns a WFT tile under LULC_IGBP_WFT, so it must not bail out
       ! here: pftfrac would stay unset and the tile would carry no area.
       IF (.not. patch_has_pft(patchtypes(SITE_landtype))) RETURN
 #endif

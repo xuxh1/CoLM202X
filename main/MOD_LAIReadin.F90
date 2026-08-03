@@ -160,7 +160,7 @@ CONTAINS
 
 #ifndef URBAN_MODEL
       IF (.not. DEF_USE_LAIFEEDBACK)THEN
-#ifndef WETLAND_PFT
+#ifndef LULC_IGBP_WFT
          IF (patchtypes(SITE_landtype) == 0) THEN
 #else
          ! Wetland carries a WFT tile, so it reads the per-PFT LAI like any
@@ -178,7 +178,7 @@ CONTAINS
             tsai(:) = SITE_SAI_monthly(time,iyear)
          ENDIF
       ELSE
-#ifndef WETLAND_PFT
+#ifndef LULC_IGBP_WFT
          IF (patchtypes(SITE_landtype) == 0) THEN
 #else
          ! Wetland carries a WFT tile, so it reads the per-PFT LAI like any

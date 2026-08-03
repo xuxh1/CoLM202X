@@ -159,7 +159,7 @@ CONTAINS
 #ifdef CROP
             numpft = numpft + count(landpatch%settyp == CROPLAND)
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
             ! one wetland functional type tile per permanent-wetland patch
             numpft = numpft + count(landpatch%settyp == WETLAND)
 #endif
@@ -229,7 +229,7 @@ CONTAINS
 
                      pft2patch(npft) = npatch
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
                   ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
                      ! Permanent wetland: one WFT tile covering the whole patch.
                      ! Without it patch_pft_s/e stay at -1, the CN driver never
@@ -334,7 +334,7 @@ CONTAINS
                pft2patch  (ipft  ) = ipatch
                ipft = ipft + 1
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
             ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
                patch_pft_s(ipatch) = ipft
                patch_pft_e(ipatch) = ipft

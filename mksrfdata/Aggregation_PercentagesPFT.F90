@@ -157,7 +157,7 @@ SUBROUTINE Aggregation_PercentagesPFT (gland, dir_rawdata, dir_model_landdata, l
             ELSEIF (landpatch%settyp(ipatch) == CROPLAND) THEN
                pct_pfts(patch_pft_s(ipatch):patch_pft_e(ipatch)) = 1.
 #endif
-#ifdef WETLAND_PFT
+#ifdef LULC_IGBP_WFT
             ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
                ! one WFT tile covering the whole wetland patch
                pct_pfts(patch_pft_s(ipatch):patch_pft_e(ipatch)) = 1.

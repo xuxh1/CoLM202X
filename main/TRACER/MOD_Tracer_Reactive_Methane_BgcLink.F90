@@ -118,9 +118,9 @@ CONTAINS
 
       IF (patchtype /= 0 .and. patchtype /= 2) RETURN
 
-#ifndef WETLAND_PFT
+#ifndef LULC_IGBP_WFT
       ! Wetland has no PFT and never entered bgc_driver, so the decomposition
-      ! state update has to be driven from here. Under WETLAND_PFT bgc_driver
+      ! state update has to be driven from here. Under LULC_IGBP_WFT bgc_driver
       ! runs for patchtype 2 as well and has already done it (CStateUpdate1 /
       ! SoilBiogeochemNStateUpdate1 / CNDriverSummarizeStates); repeating it
       ! would advance the soil pools twice per step.
@@ -151,9 +151,9 @@ CONTAINS
       ! molar correction and must not be added to offline CO2 ER/NEE again.
       ! Total decomposed pool C is f_hr - catomw * f_net_methane.
       decomp_hr(ipatch) = max(co2_hr, 0._r8)
-#ifndef WETLAND_PFT
+#ifndef LULC_IGBP_WFT
       ! No PFT on wetland means no autotrophic respiration to report. Under
-      ! WETLAND_PFT the WFT sub-tile produces a real ar; zeroing it here would
+      ! LULC_IGBP_WFT the WFT sub-tile produces a real ar; zeroing it here would
       ! discard it and break the ER budget.
       IF (patchtype == 2) ar(ipatch) = 0._r8
 #endif
