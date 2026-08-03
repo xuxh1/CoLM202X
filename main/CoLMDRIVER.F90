@@ -234,7 +234,14 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep_in)
 
 #if (defined BGC)
          ! Vegetated soil patches: full CN driver (vegetation + soil decomp).
+#ifndef WETLAND_PFT
          IF(patchtype(i) .eq. 0)THEN
+#else
+         ! Permanent wetland carries a WFT sub-tile, so it runs the same CN
+         ! driver. Without it the wetland soil pools decompose with no litter
+         ! input and drain monotonically.
+         IF(patchtype(i) .eq. 0 .or. patchtype(i) .eq. 2)THEN
+#endif
             !
             !               ***** Call CoLM BGC model *****
             !

@@ -159,6 +159,10 @@ CONTAINS
 #ifdef CROP
             numpft = numpft + count(landpatch%settyp == CROPLAND)
 #endif
+#ifdef WETLAND_PFT
+            ! one wetland functional type tile per permanent-wetland patch
+            numpft = numpft + count(landpatch%settyp == WETLAND)
+#endif
             IF (npatch > 0) THEN
                allocate (patch_pft_s (npatch))
                allocate (patch_pft_e (npatch))
@@ -222,6 +226,25 @@ CONTAINS
                      landpft%settyp(npft) = cropclass(ipatch) + N_PFT - 1
 
                      landpft%pctshared(npft) = landpatch%pctshared(ipatch)
+
+                     pft2patch(npft) = npatch
+#endif
+#ifdef WETLAND_PFT
+                  ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
+                     ! Permanent wetland: one WFT tile covering the whole patch.
+                     ! Without it patch_pft_s/e stay at -1, the CN driver never
+                     ! runs, and the soil carbon pools decay with no litter input.
+                     npft = npft + 1
+                     patch_pft_s(npatch) = npft
+                     patch_pft_e(npatch) = npft
+
+                     landpft%ielm  (npft) = landpatch%ielm  (ipatch)
+                     landpft%eindex(npft) = landpatch%eindex(ipatch)
+                     landpft%ipxstt(npft) = landpatch%ipxstt(ipatch)
+                     landpft%ipxend(npft) = landpatch%ipxend(ipatch)
+                     landpft%settyp(npft) = nwetlandpft
+
+                     landpft%pctshared(npft) = 1.
 
                      pft2patch(npft) = npatch
 #endif
@@ -306,6 +329,13 @@ CONTAINS
                ENDDO
 #ifdef CROP
             ELSEIF (landpatch%settyp(ipatch) == CROPLAND) THEN
+               patch_pft_s(ipatch) = ipft
+               patch_pft_e(ipatch) = ipft
+               pft2patch  (ipft  ) = ipatch
+               ipft = ipft + 1
+#endif
+#ifdef WETLAND_PFT
+            ELSEIF (landpatch%settyp(ipatch) == WETLAND) THEN
                patch_pft_s(ipatch) = ipft
                patch_pft_e(ipatch) = ipft
                pft2patch  (ipft  ) = ipatch

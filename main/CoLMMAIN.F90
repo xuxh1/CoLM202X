@@ -908,7 +908,7 @@ SUBROUTINE CoLMMAIN ( &
          canopy_frzc_mass_th  = 0._r8
 #endif
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-         IF (patchtype == 0) THEN
+         IF (patch_has_pft(patchtype)) THEN
             ps = patch_pft_s(ipatch)
             pe = patch_pft_e(ipatch)
             allocate(canopy_phase_heat_p(ps:pe))
@@ -918,7 +918,7 @@ SUBROUTINE CoLMMAIN ( &
          canopy_phase_heat_p(:) = 0._r8
 #endif
 
-         IF (patchtype == 0) THEN
+         IF (patch_has_pft(patchtype)) THEN
 
 #if (defined LULC_USGS || defined LULC_IGBP)
             CALL LEAF_interception_wrap (deltim,dewmx,forc_us,forc_vs,chil,sigf,lai,sai,forc_t,&
@@ -2098,7 +2098,7 @@ SUBROUTINE CoLMMAIN ( &
 !NOTE: IF account for snow on vegetation:
 !        1) should use snow-free LAI data and 2) update LAI and SAI according to snowdp
 
-         IF (patchtype == 0) THEN
+         IF (patch_has_pft(patchtype)) THEN
 
 #if (defined LULC_USGS || defined LULC_IGBP)
             CALL snowfraction (tlai(ipatch),tsai(ipatch),z0m,zlnd,scv,snowdp,wt,sigf,fsno)

@@ -763,7 +763,7 @@ ENDIF
 
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-IF (patchtype == 0) THEN
+IF (patch_has_pft(patchtype)) THEN
 
       ps = patch_pft_s(ipatch)
       pe = patch_pft_e(ipatch)

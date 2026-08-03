@@ -226,6 +226,12 @@ CONTAINS
       real(r8) :: lai_eff
       real(r8) :: rootfr_eff(1:nl_soil)
       real(r8) :: rootr_eff(1:nl_soil)
+#ifdef WETLAND_PFT
+      ! Discarded outputs of the wetland proxy: under WETLAND_PFT only its
+      ! aerenchyma side effect is wanted, the vegetation comes from BGC.
+      real(r8) :: lai_unused, npp_unused, agnpp_unused, bgnpp_unused
+      real(r8) :: rootfr_unused(1:nl_soil)
+#endif
       real(r8) :: forc_t_eff, forc_pbot_eff, forc_po2m_eff, forc_pco2m_eff
       real(r8) :: forc_us_eff, forc_vs_eff
       real(r8) :: fprev
@@ -348,6 +354,18 @@ CONTAINS
             wetland_aere_active(i) = .false.
       ENDIF
       IF (patchtype == 2) THEN
+#ifdef WETLAND_PFT
+         ! The WFT sub-tile gives the wetland real LAI, NPP, root profile and
+         ! root respiration through BGC, so the climate-zone vegetation proxy
+         ! must not overwrite them -- its constants were an open loop that fed
+         ! aerenchyma transport but never the soil carbon pools.  It is still
+         ! called for its one remaining job: writing the per-patch aerenchyma
+         ! geometry (wetland_aere_*), which has no counterpart in the PFT
+         ! tables.  Same split as the rice branch below.  Its vegetation
+         ! outputs are discarded.
+         CALL get_wetland_veg_proxy (dlat, cellorg(1), lai, i, &
+            lai_unused, npp_unused, agnpp_unused, bgnpp_unused, rootfr_unused)
+#else
          CALL get_wetland_veg_proxy (dlat, cellorg(1), lai, i, &
             lai_eff, annsum_npp_loc, agnpp_loc, bgnpp_loc, rootfr_eff)
          ! BgcLink set crootfr from the original (zero) rootfr; replace it
@@ -360,6 +378,7 @@ CONTAINS
          ! proxy so root O2 demand is not silently zero.
          rootr_eff(1:nl_soil) = rootfr_eff(1:nl_soil)
          rr_loc = max(rr_loc, 0.5_r8 * bgnpp_loc)
+#endif
       ENDIF
       ! R4 rice paddy aerenchyma: rice patches (patchtype==0) get their own
       ! Wania-style override (Zone 6) so methane_aere uses rice tiller

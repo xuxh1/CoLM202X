@@ -1082,6 +1082,23 @@ CONTAINS
          bad = .true.
       ENDIF
 
+#ifdef WETLAND_PFT
+      ! wetland_fixed_substrate is read only where BgcLink drives the wetland
+      ! state update, and that block is compiled out under WETLAND_PFT because
+      ! bgc_driver does the update instead. Setting it here would look like a
+      ! frozen substrate and be silently ignored -- the same shape of defect as
+      ! the redox factor whose branch condition is identically false, and the
+      ! aerenchyma porosity a downstream floor restores. Refuse it rather than
+      ! let a run report a configuration it does not have.
+      IF (DEF_METHANE%wetland_fixed_substrate) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: wetland_fixed_substrate has no effect under WETLAND_PFT. ', &
+            'The WFT sub-tile supplies litter, so the pools are meant to evolve; ', &
+            'bgc_driver owns the state update and never reads this switch.'
+         bad = .true.
+      ENDIF
+#endif
+
       IF (bad) CALL CoLM_Stop (' ***** ERROR: methane namelist validation failed')
    END SUBROUTINE validate_methane_namelist
 

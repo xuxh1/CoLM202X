@@ -5,6 +5,7 @@ MODULE MOD_Irrigation
 !  DESCRIPTION:
 !      This MODULE has all irrigation related subroutines for irrigated crop at either IGBP/USGS or PFT Land type classification and even in the C and N cycle.
    USE MOD_Precision
+   USE MOD_Vars_Global, only: npcropmax
    USE MOD_TimeManager
    USE MOD_Namelist, only: DEF_simulation_time, DEF_IRRIGATION_ALLOCATION, DEF_USE_VariablySaturatedFlow
    USE MOD_Const_Physical, only: tfrz, denice, denh2o
@@ -301,7 +302,7 @@ CONTAINS
 
       DO m = ps, pe
          ivt = pftclass(m)
-         IF ((ivt >= npcropmin) .and. (irrig_crop(ivt)) .and. &
+         IF ((ivt >= npcropmin .and. ivt <= npcropmax) .and. (irrig_crop(ivt)) .and. &
             (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m)<irrig_max_cphase)) THEN
             IF (DEF_simulation_time%greenwich) THEN
                 CALL gmt2local(idate, dlon, ldate)
