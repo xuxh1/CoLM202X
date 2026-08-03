@@ -97,7 +97,8 @@ MODULE MOD_Tracer_Reactive_Methane_BgcLink
    ! carbon, these are the hydro-geomorphic types a site survey records. The
    ! measured class decides aerenchyma where it exists, because aerenchyma
    ! follows vascular cover and that is what these names describe.
-   ! Codes must match scripts/add_site_wetland_class.py.
+   ! Codes must match WETLAND_CLASS_CODE in scripts/make_site_patchtype.py,
+   ! which writes them into the site file this reads.
    integer, public, parameter :: WETCLASS_NONE       = 0  ! none supplied: use BIOME_*
    integer, public, parameter :: WETCLASS_BOG        = 1
    integer, public, parameter :: WETCLASS_FEN        = 2
