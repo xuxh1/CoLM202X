@@ -535,14 +535,47 @@ CONTAINS
 
    END SUBROUTINE read_methane_namelist
 
+   SUBROUTINE force_dynamic_wetland (wanted, modename)
+      ! DEF_USE_Dynamic_Wetland is not an independent choice once an inundation
+      ! mode is named: schemes 1/5/7 read a surface store the dynamic wetland
+      ! hydrology would overwrite, and scheme 6 has no water table without it.
+      ! The pairing used to be enforced by stopping the run, which turned a
+      ! derivable setting into a configuration error the user had to fix by
+      ! hand -- and, because the two are set in different files, one that only
+      ! appeared after a case was built and queued. Derive it instead, and say
+      ! so, following the DEF_TOPMOD_method / DEF_RSS_SCHEME precedent in
+      ! MOD_Namelist.
+      USE MOD_Namelist, only: DEF_USE_Dynamic_Wetland
+      IMPLICIT NONE
+      logical,          intent(in) :: wanted
+      character(len=*), intent(in) :: modename
+
+      IF (DEF_USE_Dynamic_Wetland .eqv. wanted) RETURN
+
+      IF (p_is_master) THEN
+         write(*,*) '                  *****                  '
+         IF (wanted) THEN
+            write(*,*) 'Note: DEF_USE_Dynamic_Wetland is forced to .true. by ', &
+               'DEF_METHANE%inundation_mode = ' // trim(modename) // &
+               ', which takes its water table from the dynamic wetland hydrology.'
+         ELSE
+            write(*,*) 'Note: DEF_USE_Dynamic_Wetland is forced to .false. by ', &
+               'DEF_METHANE%inundation_mode = ' // trim(modename) // &
+               ', which owns the wetland surface store itself.'
+         ENDIF
+      ENDIF
+
+      DEF_USE_Dynamic_Wetland = wanted
+
+   END SUBROUTINE force_dynamic_wetland
+
    SUBROUTINE configure_methane_inundation_mode ()
       ! Resolve the user-facing four-option CH4 inundation mode into the
       ! internal scheme integer plus paired methane switches.  The old
       ! integer scheme remains only as the physics dispatch key; users
       ! should set DEF_METHANE%inundation_mode to one of:
       !   wetwat, satellite/giems, routing, dynamic_wtd, hybrid.
-      USE MOD_Namelist, only: DEF_wetland_finundation_scheme, &
-         DEF_USE_Dynamic_Wetland
+      USE MOD_Namelist, only: DEF_wetland_finundation_scheme
       IMPLICIT NONE
 
       character(len=32) :: mode
@@ -564,46 +597,30 @@ CONTAINS
          ! table" behaviour). Unlike 'wetwat' the wetwat/wetwatmax override is
          ! left off, so a single-point wetland with no lateral inflow (where the
          ! surface store drains under ET) stays inundated instead of collapsing
-         ! to finundated=0. Requires DEF_USE_Dynamic_Wetland=.false. so the soil
+         ! to finundated=0. Forces DEF_USE_Dynamic_Wetland=.false. so the soil
          ! column is held saturated (zwt=0) consistently.
          DEF_wetland_finundation_scheme = 1
          DEF_METHANE%enable_wetwat_finundated_override = .false.
          DEF_METHANE%wetland_dry_unsat_branch = .true.
-         IF (DEF_USE_Dynamic_Wetland) THEN
-            IF (p_is_master) write(6,*) &
-               '***** ERROR: saturated methane inundation mode requires DEF_USE_Dynamic_Wetland = .false.'
-            CALL CoLM_Stop (' ***** ERROR: invalid methane inundation mode / dynamic wetland combination')
-         ENDIF
+         CALL force_dynamic_wetland (.false., 'saturated')
 
        CASE ('wetwat')
          DEF_wetland_finundation_scheme = 1
          DEF_METHANE%enable_wetwat_finundated_override = .true.
          DEF_METHANE%wetland_dry_unsat_branch = .true.
-         IF (DEF_USE_Dynamic_Wetland) THEN
-            IF (p_is_master) write(6,*) &
-               '***** ERROR: wetwat methane inundation mode requires DEF_USE_Dynamic_Wetland = .false.'
-            CALL CoLM_Stop (' ***** ERROR: invalid methane inundation mode / dynamic wetland combination')
-         ENDIF
+         CALL force_dynamic_wetland (.false., 'wetwat')
 
        CASE ('satellite','giems')
          DEF_wetland_finundation_scheme = 5
          DEF_METHANE%enable_wetwat_finundated_override = .false.
          DEF_METHANE%wetland_dry_unsat_branch = .true.
-         IF (DEF_USE_Dynamic_Wetland) THEN
-            IF (p_is_master) write(6,*) &
-               '***** ERROR: satellite methane inundation mode requires DEF_USE_Dynamic_Wetland = .false.'
-            CALL CoLM_Stop (' ***** ERROR: invalid methane inundation mode / dynamic wetland combination')
-         ENDIF
+         CALL force_dynamic_wetland (.false., 'satellite')
 
        CASE ('routing')
          DEF_wetland_finundation_scheme = 7
          DEF_METHANE%enable_wetwat_finundated_override = .false.
          DEF_METHANE%wetland_dry_unsat_branch = .true.
-         IF (DEF_USE_Dynamic_Wetland) THEN
-            IF (p_is_master) write(6,*) &
-               '***** ERROR: routing methane inundation mode requires DEF_USE_Dynamic_Wetland = .false.'
-            CALL CoLM_Stop (' ***** ERROR: invalid methane inundation mode / dynamic wetland combination')
-         ENDIF
+         CALL force_dynamic_wetland (.false., 'routing')
 
        CASE ('dynamic_wtd','dynamic-wtd')
          DEF_wetland_finundation_scheme = 6
@@ -612,11 +629,7 @@ CONTAINS
          ! dry unsaturated branch active for wetland tiles.
          DEF_METHANE%wetland_dry_unsat_branch = .true.
          DEF_METHANE%use_routing_for_soil = .false.
-         IF (.not. DEF_USE_Dynamic_Wetland) THEN
-            IF (p_is_master) write(6,*) &
-               '***** ERROR: dynamic_wtd requires DEF_USE_Dynamic_Wetland = .true.'
-            CALL CoLM_Stop (' ***** ERROR: invalid methane inundation mode / dynamic wetland combination')
-         ENDIF
+         CALL force_dynamic_wetland (.true., 'dynamic_wtd')
 
        CASE ('hybrid','dh_all_thr05','dyn_routing_hybrid')
 		         ! Site-calibrated hybrid mode; not a globally validated default.
@@ -636,11 +649,7 @@ CONTAINS
          DEF_METHANE%enable_wetwat_finundated_override = .false.
          DEF_METHANE%wetland_dry_unsat_branch        = .true.
          DEF_METHANE%use_routing_for_soil            = .true.
-         IF (.not. DEF_USE_Dynamic_Wetland) THEN
-            IF (p_is_master) write(6,*) &
-               '***** ERROR: hybrid mode requires DEF_USE_Dynamic_Wetland = .true.'
-            CALL CoLM_Stop (' ***** ERROR: invalid methane inundation mode / dynamic wetland combination')
-         ENDIF
+         CALL force_dynamic_wetland (.true., 'hybrid')
 
        CASE DEFAULT
          IF (p_is_master) write(6,*) &
