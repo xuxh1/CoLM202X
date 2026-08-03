@@ -160,7 +160,15 @@ CONTAINS
 
 #ifndef URBAN_MODEL
       IF (.not. DEF_USE_LAIFEEDBACK)THEN
+#ifndef WETLAND_PFT
          IF (patchtypes(SITE_landtype) == 0) THEN
+#else
+         ! Wetland carries a WFT tile, so it reads the per-PFT LAI like any
+         ! other vegetated patch. Reading it at patch level instead leaves
+         ! lai_p unassigned -- CNVegStructUpdate zeroes patch LAI and rebuilds
+         ! it from the tiles, and only fills lai_p under DEF_USE_LAIFEEDBACK.
+         IF ((patchtypes(SITE_landtype) == 0) .or. (patchtypes(SITE_landtype) == 2)) THEN
+#endif
             tlai_p(:) = pack(SITE_LAI_pfts_monthly(:,time,iyear), SITE_pctpfts > 0.)
             tsai_p(:) = pack(SITE_SAI_pfts_monthly(:,time,iyear), SITE_pctpfts > 0.)
             tlai(:)   = sum (SITE_LAI_pfts_monthly(:,time,iyear) * SITE_pctpfts)
@@ -168,28 +176,21 @@ CONTAINS
          ELSE
             tlai(:) = SITE_LAI_monthly(time,iyear)
             tsai(:) = SITE_SAI_monthly(time,iyear)
-#ifdef WETLAND_PFT
-            ! The wetland's single WFT tile covers the whole patch, so the tile
-            ! LAI is the patch LAI. There is no per-PFT LAI for IGBP class 11 in
-            ! the plant_15s dataset; the patch value is the aggregated
-            ! Yuan et al. (2011) MODIS LAI, which does carry a seasonal cycle.
-            IF (patchtypes(SITE_landtype) == 2) THEN
-               tlai_p(:) = SITE_LAI_monthly(time,iyear)
-               tsai_p(:) = SITE_SAI_monthly(time,iyear)
-            ENDIF
-#endif
          ENDIF
       ELSE
+#ifndef WETLAND_PFT
          IF (patchtypes(SITE_landtype) == 0) THEN
+#else
+         ! Wetland carries a WFT tile, so it reads the per-PFT LAI like any
+         ! other vegetated patch. Reading it at patch level instead leaves
+         ! lai_p unassigned -- CNVegStructUpdate zeroes patch LAI and rebuilds
+         ! it from the tiles, and only fills lai_p under DEF_USE_LAIFEEDBACK.
+         IF ((patchtypes(SITE_landtype) == 0) .or. (patchtypes(SITE_landtype) == 2)) THEN
+#endif
             tsai_p(:) = pack(SITE_SAI_pfts_monthly(:,time,iyear), SITE_pctpfts > 0.)
             tsai(:)   = sum (SITE_SAI_pfts_monthly(:,time,iyear) * SITE_pctpfts)
          ELSE
             tsai(:) = SITE_SAI_monthly(time,iyear)
-#ifdef WETLAND_PFT
-            IF (patchtypes(SITE_landtype) == 2) THEN
-               tsai_p(:) = SITE_SAI_monthly(time,iyear)
-            ENDIF
-#endif
          ENDIF
       ENDIF
 #endif

@@ -71,7 +71,14 @@ MODULE MOD_Namelist
    ! BgcLink. That tree cannot separate bog from fen -- both are peat -- and it
    ! mistakes five sedge fens and four sedge tundra sites for Sphagnum bog,
    ! which zeroes their aerenchyma. Where a tower states its type, believe it.
+   !
+   ! Only the methane code reads it, so only a methane build carries it. Without
+   ! TRACER+BGC the site file's wetland_class is left unread and this stays 0 --
+   ! a plain CoLM run behaves exactly as it did before the field existed, and
+   ! nothing silently depends on a variable its physics never consults.
+#if (defined TRACER) && (defined BGC)
    integer  :: SITE_wetland_class        = 0
+#endif
 
    logical  :: USE_SITE_landtype         = .false.
    logical  :: USE_SITE_pctpfts          = .true.
@@ -1090,7 +1097,9 @@ CONTAINS
       SITE_lon_location,                      &
       SITE_lat_location,                      &
       SITE_landtype,                          &
+#if (defined TRACER) && (defined BGC)
       SITE_wetland_class,                     &
+#endif
       USE_SITE_landtype,                      &
       USE_SITE_pctpfts,                       &
       USE_SITE_pctcrop,                       &

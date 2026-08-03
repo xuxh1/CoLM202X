@@ -312,11 +312,13 @@ CONTAINS
       ! design: a site file written before this existed simply leaves the class
       ! at 0, and the methane code falls back to its latitude/soil-carbon zone
       ! tree exactly as before.
+#if (defined TRACER) && (defined BGC)
       IF (SITE_wetland_class == 0) THEN
          IF (ncio_var_exist(fsrfdata, 'wetland_class')) THEN
             CALL ncio_read_serial (fsrfdata, 'wetland_class', SITE_wetland_class)
          ENDIF
       ENDIF
+#endif
 
       IF (SITE_landtype < 0) THEN
          write(*,*) 'Error! Please set SITE_landtype in namelist file !'
@@ -639,6 +641,24 @@ CONTAINS
                   SITE_SAI_pfts_monthly(:,itime,iyear) = pack(pftSAI, pctpfts > 0.)
 #ifdef CROP
                ELSEIF (SITE_landtype == CROPLAND) THEN
+                  CALL read_point_5x5_var_3d_real8 (gridlai, dir_5x5, 'MOD'//trim(cyear), 'PCT_PFT', &
+                     SITE_lon_location, SITE_lat_location, N_PFT_modis, pctpfts)
+                  SITE_LAI_pfts_monthly(:,itime,iyear) = sum(pftLAI * pctpfts) / sum(pctpfts)
+                  SITE_SAI_pfts_monthly(:,itime,iyear) = sum(pftSAI * pctpfts) / sum(pctpfts)
+#endif
+#ifdef WETLAND_PFT
+               ELSEIF (SITE_landtype == WETLAND) THEN
+                  ! The WFT tile needs a per-PFT LAI like any other tile, and the
+                  ! plant_15s product has none for IGBP class 11. Synthesise it the
+                  ! way cropland does: weight the MODIS per-PFT LAI by the pixel's
+                  ! PCT_PFT. The wetland's own vegetation is in that mix -- what is
+                  ! missing is a class-11 row, not the underlying data.
+                  !
+                  ! Without this SITE_LAI_pfts_monthly is never filled for wetland,
+                  ! so the tile LAI has nothing behind it, lai_p is never assigned,
+                  ! and LAI reaches the canopy as an uninitialised denormal (~1e-302
+                  ! at all 44 towers on 2026-08-02). GPP is then zero and the
+                  ! vegetation the WFT exists to grow drains away instead.
                   CALL read_point_5x5_var_3d_real8 (gridlai, dir_5x5, 'MOD'//trim(cyear), 'PCT_PFT', &
                      SITE_lon_location, SITE_lat_location, N_PFT_modis, pctpfts)
                   SITE_LAI_pfts_monthly(:,itime,iyear) = sum(pftLAI * pctpfts) / sum(pctpfts)
@@ -2874,9 +2894,11 @@ ENDIF
       ! Carry the field-assigned wetland class through to srfdata: mksrfdata
       ! reads the site file, but mkinidata and colm read this, so a class left
       ! here is the only way it survives to the run.
+#if (defined TRACER) && (defined BGC)
       CALL ncio_write_serial (fsrfdata, 'wetland_class', SITE_wetland_class)
       CALL ncio_put_attr     (fsrfdata, 'wetland_class', 'long_name', &
          'observed wetland class (0 none 1 bog 2 fen 3 marsh 4 swamp 5 wet tundra 6 salt marsh 7 drained)')
+#endif
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
       IF (numpft > 0) THEN
