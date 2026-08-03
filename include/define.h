@@ -88,55 +88,12 @@
 !     decomposition-only shim plus the hard-coded climate-zone vegetation
 !     proxy. The WFT occupies the index right after the crop block, so
 !     npcropmax must bound every "is this a crop" test (see MOD_Vars_Global).
-!
-!     Named for where it acts rather than for what motivates it: it appends one
-!     more tile class to the LULC_IGBP_PFT sub-grid, exactly as CROP appends the
-!     CFT block -- CROP pairs with N_CFT, this pairs with N_WFT. The methane
-!     dependency below is a policy about when it is worth enabling, not a claim
-!     that the mechanism is methane-specific.
-!
-!     The stand-ins it replaces are handled: the decomposition shim is guarded
-!     to patchtype 2 and returns after setting the anoxia rather than zeroing
-!     the source/sink bgc_driver deposited; wetland_fixed_substrate is read only
-!     in a block this macro compiles out, and is refused by the namelist
-!     validator; DEF_USE_WETLAND_PEAT_C only ever seeded the initial pool.
-!
-!     STILL BLOCKED, measured 2026-08-02 on all 44 FLUXNET-CH4 towers: lai_p is
-!     never assigned for the WFT tile, so LAI comes out denormal (~1e-302) at
-!     every site, GPP is zero at 41 of 44, and vegetation carbon falls to 31% of
-!     its initial stock. With the substrate no longer frozen and no litter to
-!     replace it, HR collapses and CH4 goes with it -- the ensemble median runs
-!     from 2.39x of observed to zero.
-!
-!     Cause: MOD_BGC_Veg_CNVegStructUpdate assigns lai_p only under
-!     DEF_USE_LAIFEEDBACK, which defaults false. MOD_LAIReadin does fill tlai_p
-!     for the WFT, but nothing copies it into lai_p, and patch LAI is now
-!     aggregated over tiles rather than read at patch level. Wetland had no PFT
-!     tile before this macro, so the gap could not show.
-!
-!     Fix one of: enable DEF_USE_LAIFEEDBACK so LAI follows leaf carbon (the
-!     point of a WFT, but it changes every PFT and needs its own verification),
-!     or copy tlai_p into lai_p on the non-feedback path (smaller, but keeps
-!     wetland LAI tied to a prescribed MODIS field).
-!
-!     A third route was taken in 2a1d47b1: give the WFT a real per-PFT LAI at
-!     source (synthesised from the MODIS per-PFT field weighted by PCT_PFT, as
-!     cropland does) and read patchtype 2 down the per-PFT path. That is
-!     committed but NOT yet confirmed to clear the blocker -- no run since has
-!     been checked. Treat the paragraphs above as the last measured state.
 #undef LULC_IGBP_WFT
-!    Conflicts : the WFT rides on the landpft structure, so it needs BGC
-!    (which itself requires LULC_IGBP_PFT or LULC_IGBP_PC).
+!    Conflicts : only used when BGC is defined
 #ifndef BGC
 #undef LULC_IGBP_WFT
 #endif
-!    Dependency : the WFT exists to grow the vegetation a permanent wetland's
-!    methane flux needs -- it is the substrate supply for the CH4 provider, and
-!    nothing else in CoLM consumes it. Without the methane code there is no
-!    reason to pay for an extra tile class, so it follows TRACER too.
-!    This also halves the number of landpft layouts in circulation: a build
-!    either has the methane provider and the WFT or neither, so srfdata and
-!    restart files written by one are never handed to the other.
+!    Dependency : only the methane provider consumes the WFT
 #ifndef TRACER
 #undef LULC_IGBP_WFT
 #endif
