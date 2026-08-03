@@ -11,11 +11,14 @@ MODULE MOD_Tracer_Reactive_Methane_GIEMS
 !
 ! INPUT FILE:
 !   `DEF_file_GIEMS` (namelist); required when scheme 5 is selected.
-!   Expected variable: `inund_sat_wetland_frac(time, latitude, longitude)`
+!   Variable `inund_sat_wetland_frac` or `Fw`, dims (time, latitude|lat,
+!   longitude|lon) -- the name pair is probed at open, since the GIEMS-MC
+!   v1.1 file on disk uses the short spellings.
 !   - time: months since 1992-01-01 (monthly)
 !            348 months = 1992-01 to 2020-12
 !   - latitude/longitude: degrees, regular grid (any resolution)
-!   - Sentinel values: -999 ocean, -998 snow, -997 urban; treated as 0.
+!   - Sentinel values: -999 ocean, -998 snow, -997 urban, -9999 generic
+!     non-land (used throughout GIEMS-MC v1.1); all treated as 0.
 !
 ! INIT ALGORITHM (called once during methane init):
 !   1. Master opens file, reads dims + lat/lon coords (small).
@@ -100,9 +103,13 @@ CONTAINS
       real(r8), intent(in) :: patchlatr_in(:), patchlonr_in(:)   ! radians
       integer, intent(in)  :: numpatch
 
-      character(len=*), parameter :: varname = 'inund_sat_wetland_frac'
-      character(len=*), parameter :: latname = 'latitude'
-      character(len=*), parameter :: lonname = 'longitude'
+      ! Probed from the file, not fixed: the GIEMS-MC v1.1 distribution on disk
+      ! ships Fw(time,lat,lon) while the names below describe the layout this
+      ! reader was written against. Both are the same product, so accept either
+      ! rather than make the caller rewrite a 4 GB file to satisfy a string.
+      character(len=32) :: varname
+      character(len=32) :: latname
+      character(len=32) :: lonname
       integer, parameter :: giems_expected_months = 348
       integer, parameter :: giems_chunk_months = 12
       integer, parameter :: giems_max_packed_values = 16 * 1024 * 1024
@@ -158,6 +165,14 @@ CONTAINS
                giems_metadata_error = 1
                ntime = 0; nlat = 0; nlon = 0
             ELSE
+               ! Resolve the naming variant before anything reads by name.
+               varname = 'inund_sat_wetland_frac'
+               IF (nf90_inq_varid(ncid, trim(varname), vid) /= NF90_NOERR) varname = 'Fw'
+               latname = 'latitude'
+               IF (nf90_inq_varid(ncid, trim(latname), vid) /= NF90_NOERR) latname = 'lat'
+               lonname = 'longitude'
+               IF (nf90_inq_varid(ncid, trim(lonname), vid) /= NF90_NOERR) lonname = 'lon'
+
                CALL get_dim(ncid, 'time',  ntime)
                CALL get_dim(ncid, latname, nlat)
                CALL get_dim(ncid, lonname, nlon)
@@ -224,9 +239,9 @@ CONTAINS
                                  dlen = -1
                                  ierr = nf90_inquire_dimension(ncid, vdims(1), name=dname, len=dlen)
                                  IF (ierr /= NF90_NOERR .or. &
-                                     trim(dname) /= 'longitude' .or. dlen /= nlon) THEN
-                                    write(*,'(A,A,A,I0,A,I0)') ' ERROR: GIEMS dimension 1 is "', &
-                                       trim(dname), '" len=', dlen, '; expected longitude len=', nlon
+                                     trim(dname) /= trim(lonname) .or. dlen /= nlon) THEN
+                                    write(*,'(A,A,A,I0,A,A,A,I0)') ' ERROR: GIEMS dimension 1 is "', &
+                                       trim(dname), '" len=', dlen, '; expected ', trim(lonname), ' len=', nlon
                                     giems_metadata_error = 1
                                  ENDIF
 
@@ -234,9 +249,9 @@ CONTAINS
                                  dlen = -1
                                  ierr = nf90_inquire_dimension(ncid, vdims(2), name=dname, len=dlen)
                                  IF (ierr /= NF90_NOERR .or. &
-                                     trim(dname) /= 'latitude' .or. dlen /= nlat) THEN
-                                    write(*,'(A,A,A,I0,A,I0)') ' ERROR: GIEMS dimension 2 is "', &
-                                       trim(dname), '" len=', dlen, '; expected latitude len=', nlat
+                                     trim(dname) /= trim(latname) .or. dlen /= nlat) THEN
+                                    write(*,'(A,A,A,I0,A,A,A,I0)') ' ERROR: GIEMS dimension 2 is "', &
+                                       trim(dname), '" len=', dlen, '; expected ', trim(latname), ' len=', nlat
                                     giems_metadata_error = 1
                                  ENDIF
 
@@ -590,7 +605,7 @@ CONTAINS
                   giems_clim_wetland_frac(mo, ipatch) = &
                      giems_clim_wetland_frac(mo, ipatch) + real(v, r8)
                ELSEIF (.not. ieee_is_nan(v) .and. v /= -999._r4 .and. &
-                       v /= -998._r4 .and. v /= -997._r4) THEN
+                       v /= -998._r4 .and. v /= -997._r4 .and. v /= -9999._r4) THEN
                   giems_value_error = 1
                ENDIF
                ! Valid observations and documented ocean/snow/urban/NaN
