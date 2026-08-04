@@ -610,6 +610,22 @@ CONTAINS
          DEF_METHANE%wetland_dry_unsat_branch = .true.
          CALL force_dynamic_wetland (.false., 'wetwat')
 
+       CASE ('frcsat')
+         ! Wetland saturated, soil follows the host runoff scheme. Scheme 2
+         ! applies frcsat everywhere, but CoLM pins frcsat=1 on patchtype 2
+         ! (MOD_SoilSnowHydrology), so the wetland tile is identical to
+         ! 'saturated' while the soil and rice tiles receive the TOPMODEL/VIC
+         ! saturated-area fraction instead of the hardcoded zero.
+         !
+         ! Measured over the 77-site set on 2026-08-03: frcsat is 1.0000 on all
+         ! 47 wetland towers, 0.150 on upland and 0.168 on rice -- the only
+         ! diagnosed fraction that is neither degenerate nor zero. f_h2osfc,
+         ! which schemes 3 and 4 would use, is ~0 everywhere except lakes.
+         DEF_wetland_finundation_scheme = 2
+         DEF_METHANE%enable_wetwat_finundated_override = .false.
+         DEF_METHANE%wetland_dry_unsat_branch = .true.
+         CALL force_dynamic_wetland (.false., 'frcsat')
+
        CASE ('satellite','giems')
          DEF_wetland_finundation_scheme = 5
          DEF_METHANE%enable_wetwat_finundated_override = .false.
