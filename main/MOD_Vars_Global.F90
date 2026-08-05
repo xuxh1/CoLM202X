@@ -181,7 +181,7 @@ CONTAINS
    END SUBROUTINE Init_GlobalVars
 
    !-----------------------------------------------------------------------
-   logical FUNCTION patch_has_pft (ptype)
+   ELEMENTAL logical FUNCTION patch_has_pft (ptype)
 
 ! !DESCRIPTION:
 !  True for patch types that own "landpft" sub-tiles, and therefore run the
@@ -192,6 +192,10 @@ CONTAINS
 !  test that really asks "does this patch have PFT tiles?" must go through
 !  here rather than comparing against 0 directly. Tests that ask something
 !  else (irrigation, flooding, water balance) must keep their own condition.
+!
+!  ELEMENTAL so a whole-vector test reads the same as the scalar one, e.g.
+!  count(patch_has_pft(patchtypes(landpatch%settyp))). The body touches only
+!  its argument, so the PURE that ELEMENTAL implies costs nothing.
 
    IMPLICIT NONE
    integer, intent(in) :: ptype

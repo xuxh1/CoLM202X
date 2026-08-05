@@ -189,7 +189,7 @@ CONTAINS
    USE MOD_NetCDFPoint
    USE MOD_Namelist
    USE MOD_Utils
-   USE MOD_Vars_Global, only: PI
+   USE MOD_Vars_Global, only: PI, patch_has_pft
    USE MOD_Const_LC
    USE MOD_Const_PFT
    USE MOD_SPMD_Task
@@ -440,7 +440,7 @@ CONTAINS
          numpft = 0
       ENDIF
 
-      IF ((patchtypes(SITE_landtype) == 0) .and. (numpft == 0)) THEN
+      IF (patch_has_pft(patchtypes(SITE_landtype)) .and. (numpft == 0)) THEN
          write(*,*) 'Warning : There is no plant functional type at this site !    '
          CALL CoLM_stop()
       ENDIF
@@ -460,7 +460,7 @@ CONTAINS
       ! (4) forest height
       readflag = (.not. mksrfdata) .or. USE_SITE_htop
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-      IF (patchtypes(SITE_landtype) == 0) THEN
+      IF (patch_has_pft(patchtypes(SITE_landtype))) THEN
          u_site_htop = readflag .and. ncio_var_exist(fsrfdata,'canopy_height_pfts',readflag)
       ELSE
          u_site_htop = readflag .and. ncio_var_exist(fsrfdata,'canopy_height',readflag)
@@ -471,7 +471,7 @@ CONTAINS
 
       IF (u_site_htop) THEN
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-         IF (patchtypes(SITE_landtype) == 0) THEN
+         IF (patch_has_pft(patchtypes(SITE_landtype))) THEN
             CALL ncio_read_serial (fsrfdata, 'canopy_height_pfts', SITE_htop_pfts)
          ELSE
             CALL ncio_read_serial (fsrfdata, 'canopy_height', SITE_htop)
@@ -505,7 +505,7 @@ CONTAINS
 
       IF (mksrfdata) THEN
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-         IF (patchtypes(SITE_landtype) == 0) THEN
+         IF (patch_has_pft(patchtypes(SITE_landtype))) THEN
             arraysize = size(SITE_htop_pfts)
             write(fmt_str, '("(A,", I0, "F8.2,3A)")') arraysize
             write(*,fmt_str) 'Forest height : ', SITE_htop_pfts, ' (from ',trim(datasource(u_site_htop)),')'
@@ -522,7 +522,7 @@ CONTAINS
       readflag = ((.not. mksrfdata) .or. USE_SITE_LAI)
       readflag = readflag .and. ncio_var_exist(fsrfdata,'LAI_year',readflag)
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-      IF (patchtypes(SITE_landtype) == 0) THEN
+      IF (patch_has_pft(patchtypes(SITE_landtype))) THEN
          u_site_lai = readflag .and. ncio_var_exist(fsrfdata,'LAI_pfts_monthly',readflag) &
             .and. ncio_var_exist(fsrfdata,'SAI_pfts_monthly',readflag)
       ELSE
@@ -543,7 +543,7 @@ CONTAINS
          start_year = 1
          end_year   = size(SITE_LAI_year)
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-         IF (patchtypes(SITE_landtype) == 0) THEN
+         IF (patch_has_pft(patchtypes(SITE_landtype))) THEN
             CALL ncio_read_serial (fsrfdata, 'LAI_pfts_monthly', SITE_LAI_pfts_monthly)
             CALL ncio_read_serial (fsrfdata, 'SAI_pfts_monthly', SITE_SAI_pfts_monthly)
             ntime = size(SITE_LAI_pfts_monthly,2)
@@ -698,7 +698,7 @@ CONTAINS
          DO iyear = start_year, end_year
             write(c,'(i2)') ntime
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-            IF (patchtypes(SITE_landtype) == 0) THEN
+            IF (patch_has_pft(patchtypes(SITE_landtype))) THEN
                DO i = 1, numpft
                   write(*,'(A,I4,A,I2,A,'//trim(c)//'F8.2,4A)') 'LAI (year ', SITE_LAI_year(iyear), &
                      ', pft ', SITE_pfttyp(i),') : ', SITE_LAI_pfts_monthly(i,:,iyear), &
