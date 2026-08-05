@@ -116,18 +116,18 @@ CONTAINS
       ! Wetland patches use the soil-decomposition cascade so methane
       ! can read patch-level heterotrophic respiration even without PFTs.
       !
-      ! Under LULC_IGBP_WFT the wetland owns a WFT sub-tile and bgc_driver has
-      ! already run the same cascade (decomp_rate_constants_bgc,
-      ! SoilBiogeochemPotential, SoilBiogeochemCompetition, SoilBiogeochemDecomp)
-      ! for this patch. Running it again would decompose twice in one step.
-#ifdef LULC_IGBP_WFT
-      RETURN
-#else
+      ! Under LULC_IGBP_WFT the wetland owns a WFT sub-tile and bgc_driver runs
+      ! the same cascade (decomp_rate_constants_bgc, SoilBiogeochemPotential,
+      ! SoilBiogeochemCompetition, SoilBiogeochemDecomp) for this patch, so the
+      ! call below must not repeat it. It still has to be made: the anoxia that
+      ! bgc_driver's cascade reads is set inside it, and BGC exempts patchtype 2
+      ! from resetting o_scalar precisely because this caller owns that value.
+      ! Returning here instead left o_scalar at spval. The macro branch lives in
+      ! the shim, after the anoxia is set -- do not reintroduce one here.
       IF (igas_ch4 <= 0) RETURN
       IF (patchtype(ipatch) /= 2) RETURN
 
       CALL reactive_bgc_run_wetland_decomp (ipatch, deltim)
-#endif
 
    END SUBROUTINE ch4_impl_wetland_decomp
 

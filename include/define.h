@@ -93,6 +93,16 @@
 #ifndef BGC
 #undef LULC_IGBP_WFT
 #endif
+!    Requires CROP. The WFT index sits right after the crop block, and without
+!    CROP the PFT tables stop at N_PFT-1: rho_p/tau_p/rootfr_p are declared one
+!    slot short of the rhol_vis_p family they are assigned from, and the WFT's
+!    own ivt indexes rootfr_p past its upper bound. Refuse the combination
+!    rather than silently dropping the WFT the way the BGC test above does --
+!    a config that reports a sub-tile it does not have is the defect this
+!    whole switch exists to avoid.
+#if (defined LULC_IGBP_WFT) && (!defined CROP)
+#error "LULC_IGBP_WFT requires CROP: the PFT constant tables are sized N_PFT+N_CFT+N_WFT only under CROP."
+#endif
 !    Its TRACER dependency is enforced in 13b, not here: TRACER is not defined
 !    until 13, so a test at this point always sees it absent and would switch
 !    the WFT off no matter how it was set.

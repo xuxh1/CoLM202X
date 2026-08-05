@@ -233,6 +233,28 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep_in)
 
 
 #if (defined BGC)
+#ifdef TRACER
+         ! patchtype 2 ONLY. The shim zeroes the whole per-patch BGC flux state
+         ! and forces o_scalar to the anoxic rate, so letting it run on a soil
+         ! patch discards what bgc_driver has just computed and limits an
+         ! aerobic upland to a fifth of its rate. No single-point run can show
+         ! that -- all 44 towers are patchtype 2 -- but a global run decomposes
+         ! its whole land surface through here. Unguarded until 2026-08-02.
+         ! Under LULC_IGBP_WFT the same call sets only the anoxia: bgc_driver
+         ! decomposes the wetland below, and the shim would zero the source/sink
+         ! it deposits. The branch lives inside the shim so this stays one call
+         ! through the tracer facade.
+         !
+         ! Ordered BEFORE bgc_driver because that is where the anoxia is read:
+         ! decomp_rate_constants_bgc folds o_scalar into decomp_k, and BGC skips
+         ! resetting o_scalar for patchtype 2 so this call can own it. Running
+         ! after bgc_driver left the wetland's first step reading spval and every
+         ! later step reading the previous step's value. Non-WFT is unaffected --
+         ! bgc_driver does not run for patchtype 2 there, and the shim sets the
+         ! anoxia and runs its own cascade in one call, in that order.
+         IF (patchtype(i) .eq. 2) CALL tracer_wetland_decomp (i, deltim)
+#endif
+
          ! Vegetated soil patches: full CN driver (vegetation + soil decomp).
 #ifndef LULC_IGBP_WFT
          IF(patchtype(i) .eq. 0)THEN
@@ -247,20 +269,6 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep_in)
             !
             CALL bgc_driver (i,idate(1:3),deltim, patchlatr(i)*180/PI,patchlonr(i)*180/PI)
          ENDIF
-
-#ifdef TRACER
-         ! patchtype 2 ONLY. The shim zeroes the whole per-patch BGC flux state
-         ! and forces o_scalar to the anoxic rate, so letting it run on a soil
-         ! patch discards what bgc_driver has just computed and limits an
-         ! aerobic upland to a fifth of its rate. No single-point run can show
-         ! that -- all 44 towers are patchtype 2 -- but a global run decomposes
-         ! its whole land surface through here. Unguarded until 2026-08-02.
-         ! Under LULC_IGBP_WFT the same call sets only the anoxia: bgc_driver has
-         ! decomposed the wetland already, and the shim would zero the
-         ! source/sink it just deposited. The branch lives inside the shim so
-         ! this stays one call through the tracer facade.
-         IF (patchtype(i) .eq. 2) CALL tracer_wetland_decomp (i, deltim)
-#endif
 
 #ifdef TRACER
          CALL tracer_soil_step (istep_local, i, idate, deltim)

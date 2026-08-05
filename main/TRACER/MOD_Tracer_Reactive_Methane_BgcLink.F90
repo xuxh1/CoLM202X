@@ -796,15 +796,30 @@ CONTAINS
          aere_scale_z   = 0.5_r8        ! half default tiller transport
       ELSEIF (abs(dlat) > 50._r8 .and. cellorg_top > peat_om_threshold) THEN
          ! Zone 5: Boreal/arctic Sphagnum bog (non-vascular moss).
-         ! LAI fallback = 0 disables aerenchyma entirely; override params
-         ! still set to 0 for safety in case lai_in trips the data branch.
          lai_fallback   = 0._r8
          anpp_tot       = 100._r8
          bg_ratio       = 0.2_r8
+#ifdef LULC_IGBP_WFT
+         ! The tile carries a vascular WFT sub-tile with predicted LAI, so
+         ! "no vascular cover" is no longer this routine's call to make -- and
+         ! latitude plus peat carbon cannot tell a Sphagnum bog from a Carex
+         ! fen anyway, which is why the measured-class branch above exists.
+         ! Reduce transport the way WETCLASS_BOG does rather than removing it:
+         ! sedge traits at low cover. The zeros below are not an alternative
+         ! set of geometry -- their radius and tiller carbon are div-by-zero
+         ! sentinels that only mean anything while the scale is 0.
+         aere_poros_z   = 0.30_r8
+         aere_radius_z  = 2.9e-3_r8
+         aere_tillerC_z = 0.3_r8
+         aere_scale_z   = 0.15_r8
+#else
+         ! LAI fallback = 0 disables aerenchyma entirely; override params
+         ! still set to 0 for safety in case lai_in trips the data branch.
          aere_poros_z   = 0._r8
          aere_radius_z  = 1.e-6_r8      ! nonzero to avoid div-by-zero downstream
          aere_tillerC_z = 1._r8         ! nonzero to avoid div-by-zero
          aere_scale_z   = 0._r8
+#endif
       ELSEIF (abs(dlat) > 50._r8) THEN
          ! Zone 4: Boreal/subarctic sedge fen (Carex-dominated, CTSM defaults)
          lai_fallback   = 2.0_r8
