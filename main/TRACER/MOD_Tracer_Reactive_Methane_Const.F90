@@ -264,13 +264,20 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       real(r8) :: vgc_max  =0.15_r8            ! gas-volume fraction scale for ebullition threshold/target (unitless)
 
       ! methane aerenchyma constants
-      real(r8) :: nongrassporosratio = 1._r8/3._r8   ! Ratio of root porosity in non-grass to grass, used for aerenchyma transport (params:0.33)
-      real(r8) :: poros_tiller = 0.3_r8    ! Porosity for grass tiller
-      real(r8) :: unsat_aere_ratio = 0.05_r8/0.3_r8    ! Ratio to multiply upland vegetation aerenchyma porosity by compared to inundated systems (params:0.1666666667 code:0.05_r8 / 0.3_r8)
+      !
+      ! WHERE THESE ACTUALLY APPLY: four of them (poros_tiller, aere_radius,
+      ! tiller_C, scale_factor_aere) are only the fallback. get_wetland_veg_proxy
+      ! writes wetland_aere_* on every patchtype==2 patch and get_rice_veg_proxy
+      ! on every live paddy patch, and the getters in VegOverride.F90 return that
+      ! override whenever it is set, so on a wetland these defaults never reach
+      ! the flux. See the per-class table in BgcLink.F90 for the values that do.
+      real(r8) :: nongrassporosratio = 1._r8/3._r8   ! Ratio of root porosity in non-grass to grass, used for aerenchyma transport (params:0.33). NOTE: dead on wetland patches -- it only enters poros_default, which get_aere_poros discards when the override is active
+      real(r8) :: poros_tiller = 0.3_r8    ! Porosity for grass tiller. NOTE: overridden per patch on wetlands (aere_poros_z); only 4 of the 11 class branches use 0.3. Coupled to unsat_aere_ratio below, whose 0.3 denominator is this value
+      real(r8) :: unsat_aere_ratio = 0.05_r8/0.3_r8    ! Ratio to multiply upland vegetation aerenchyma porosity by compared to inundated systems (params:0.1666666667 code:0.05_r8 / 0.3_r8). The literal is porosmin/poros_tiller -- change either and this must follow
       real(r8) :: porosmin = 0.05_r8            ! minimum aerenchyma porosity (unitless)(params:0.05 code:0.05_r8)
-      real(r8) :: aere_radius = 2.9e-3_r8 ! Aerenchyma radius
+      real(r8) :: aere_radius = 2.9e-3_r8 ! Aerenchyma radius. NOTE: overridden per patch on wetlands (aere_radius_z), spanning 1e-6 to 8.0e-3 across the class branches
       real(r8) :: rob = 3._r8                 ! ratio of root length to vertical depth ("root obliquity") (params:3. code:3._r8)
-      real(r8) :: scale_factor_aere = 1._r8   ! scale factor on the aerenchyma area for sensitivity tests (1 params:1.) (doc:Fa Baseline:1 Range:0.5~1.5)
+      real(r8) :: scale_factor_aere = 1._r8   ! scale factor on the aerenchyma area for sensitivity tests (1 params:1.) (doc:Fa Baseline:1 Range:0.5~1.5). NOTE: overridden per patch on wetlands (aere_scale_z); bog uses 0.15 and the boreal bog zone 0.0, both outside Riley's 0.2-2.0 scan range
 
       ! methane transport constants
       real(r8) :: scale_factor_gasdiff = 1._r8   ! For sensitivity tests; convection would allow this to be > 1(? params:1.) (doc:fD0 Basline:1 Range:1,10 Unit:m2 s-1)
@@ -303,7 +310,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
 
       ! methane aerenchyma constants
       real(r8) :: aereoxid =0._r8            ! fraction of methane flux entering aerenchyma rhizosphere that will be(? params:0.)
-      real(r8) :: tiller_C = 0.22_r8 ! Per tiller 0.22 g C [g C/tiller]
+      real(r8) :: tiller_C = 0.22_r8 ! Per tiller 0.22 g C [g C/tiller]. NOTE: overridden per patch on wetlands (aere_tillerC_z) -- the 11 class branches write 0.3/0.5/1.0/3.0, so 0.22 never reaches a wetland. Inverse: n_tiller = m_tiller/tiller_C. Undefined for Sphagnum and woody cover, which have no tillers
 
       ! methane transport constants
       real(r8) :: satpow  =2._r8             ! exponent on watsat for saturated soil solute diffusion (2? params:2.)
