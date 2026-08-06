@@ -480,8 +480,31 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! finundated is supplied by a seasonal area signal.
       logical :: wetland_dry_unsat_branch = .false.
 
-      ! Rice physiology/aerenchyma can remain active briefly after harvest,
-      ! but inundation and water depth always come from host hydrology/routing.
+      ! Paddy water management, restored 2026-08-06 (removed by 68a507f8).
+      !
+      ! These are methane-only: they set the inundation the CH4 column sees and
+      ! do NOT irrigate the host. That is a known inconsistency -- the water is
+      ! invented here and the host water balance never sees it -- accepted
+      ! deliberately, because without it a paddy is hydrologically a dry field
+      ! and the seven FLUXNET-CH4 rice towers all model exactly 0.0 against
+      ! observed 66.7 mg CH4 m-2 d-1. Record it in the calibration archive: any
+      ! parameter tuned on rice under this scheme carries the inconsistency,
+      ! and a later coupled path through MOD_Irrigation must re-tune.
+      !
+      ! rice_paddy_min_finundated: floor on finundated while CN reports the crop
+      !   alive. Blended with the scheme value by max(), so an already-wet patch
+      !   -- a wetland tile carrying a rice CFT, or scheme 6 with the water table
+      !   at the surface -- is never dried by it.
+      real(r8) :: rice_paddy_min_finundated     = 0.85_r8
+      ! Midseason drying: the standard Asian practice of draining for 7-10 days
+      ! around 30-40 days after planting. Timing and depth are tunable; the
+      ! defaults are the mid-range of that practice, not a fitted value.
+      real(r8) :: rice_midseason_start_days     = 35._r8
+      real(r8) :: rice_midseason_drain_days     = 10._r8
+      real(r8) :: rice_midseason_drained_finundated = 0.30_r8
+
+      ! Rice physiology/aerenchyma can remain active briefly after harvest.
+      ! Also the window over which the paddy drains back to the host value.
       real(r8) :: rice_drain_window_days        = 30._r8
 
       ! R2 short-term SOC fix (methane-only): paddy soils accumulate SOC
@@ -763,6 +786,8 @@ CONTAINS
          DEF_METHANE%wtd_inflection, DEF_METHANE%wtd_steepness, &
          DEF_METHANE%wtd_inflection_soil, DEF_METHANE%wtd_steepness_soil, &
          DEF_METHANE%hybrid_soil_threshold, DEF_METHANE%rice_drain_window_days, &
+         DEF_METHANE%rice_paddy_min_finundated, DEF_METHANE%rice_midseason_start_days, &
+         DEF_METHANE%rice_midseason_drain_days, DEF_METHANE%rice_midseason_drained_finundated, &
          DEF_METHANE%rice_substrate_boost, DEF_METHANE%numerical_correction_fatal_threshold, &
          DEF_METHANE_hydrology%vdcf, &
          DEF_METHANE_hydrology%slopebeta, DEF_METHANE_hydrology%slopemax, &
@@ -1029,6 +1054,29 @@ CONTAINS
       IF (DEF_METHANE%rice_drain_window_days <= 0._r8) THEN
          IF (p_is_master) write(6,*) '***** ERROR: rice_drain_window_days must be > 0: ', &
             DEF_METHANE%rice_drain_window_days
+         bad = .true.
+      ENDIF
+      IF (DEF_METHANE%rice_paddy_min_finundated < 0._r8 .or. &
+          DEF_METHANE%rice_paddy_min_finundated > 1._r8) THEN
+         IF (p_is_master) write(6,*) '***** ERROR: rice_paddy_min_finundated must be in [0,1]: ', &
+            DEF_METHANE%rice_paddy_min_finundated
+         bad = .true.
+      ENDIF
+      IF (DEF_METHANE%rice_midseason_drained_finundated < 0._r8 .or. &
+          DEF_METHANE%rice_midseason_drained_finundated > 1._r8) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: rice_midseason_drained_finundated must be in [0,1]: ', &
+            DEF_METHANE%rice_midseason_drained_finundated
+         bad = .true.
+      ENDIF
+      IF (DEF_METHANE%rice_midseason_start_days < 0._r8) THEN
+         IF (p_is_master) write(6,*) '***** ERROR: rice_midseason_start_days must be >= 0: ', &
+            DEF_METHANE%rice_midseason_start_days
+         bad = .true.
+      ENDIF
+      IF (DEF_METHANE%rice_midseason_drain_days < 0._r8) THEN
+         IF (p_is_master) write(6,*) '***** ERROR: rice_midseason_drain_days must be >= 0: ', &
+            DEF_METHANE%rice_midseason_drain_days
          bad = .true.
       ENDIF
       IF (abs(DEF_METHANE%rice_substrate_boost - 1._r8) > 10._r8 * epsilon(1._r8)) THEN

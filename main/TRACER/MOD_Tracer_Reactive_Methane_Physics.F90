@@ -31,6 +31,8 @@ module MOD_Tracer_Reactive_Methane_Physics
    use MOD_Tracer_Reactive_Methane_Const
    USE MOD_Namelist, only: DEF_wetland_finundation_scheme, DEF_USE_Dynamic_Wetland
    USE MOD_Tracer_Reactive_Methane_GIEMS, only: giems_finundated, giems_active
+   USE MOD_Tracer_Reactive_Methane_BgcLink, only: is_paddy_rice_live, &
+      rice_days_past_planting, rice_days_since_harvest
    USE MOD_Tracer_Reactive_Methane_VegOverride, only: get_aere_poros, get_aere_tillerC, &
       get_aere_radius, get_aere_scale
    USE MOD_Tracer_Reactive_Methane_State, only: f_inund_levee_patch, f_inund_flood_patch, &
@@ -427,6 +429,13 @@ contains
       real(r8) :: finundated              ! fractional inundated area
       logical  :: methane_cold_start      ! true only when no valid previous CH4 inundation state exists
 		real(r8) :: finundated_default      ! host/routing inundation before component diagnostics
+      logical  :: is_rice_paddy           ! this patch carries a flooded paddy tile
+      real(r8) :: rice_pft_frac           ! its area fraction within the patch
+      real(r8) :: finundated_rice         ! inundation the paddy tile alone would see
+      integer  :: idpp_rice               ! days past planting, -1 when unknown
+      integer  :: dsh_rice                ! days since harvest, -1 when unknown
+      real(r8) :: ms_start, ms_end        ! midseason drying window, days past planting
+      real(r8) :: drain_decay, drain_target
 		logical  :: store_patch_diagnostics ! suppress direct patch writes for component solves
 		real(r8) :: grnd_methane_cond_base  ! current aerodynamic tracer conductance [m/s]
       real(r8) :: totcolch4_bef
@@ -894,10 +903,66 @@ contains
          finundated = 1._r8
       endif
 
-		! Rice physiology is supplied by the component driver, but methane must
-		! not invent irrigation water.  Both soil and rice components therefore
-		! use exactly the inundation diagnosed by host hydrology or routing.
+      ! Paddy water management, restored 2026-08-06 (removed by 68a507f8, whose
+      ! comment here read "methane must not invent irrigation water").
+      !
+      ! It does invent it: the floor below raises the inundation the CH4 column
+      ! sees without adding a drop to the host water balance. That is the known
+      ! cost of this rollback and it is deliberate -- see the parameter block in
+      ! MOD_Tracer_Reactive_Methane_Const. Without it a paddy is hydrologically a
+      ! dry field: all seven FLUXNET-CH4 rice towers model exactly 0.0 against an
+      ! observed 66.7 mg CH4 m-2 d-1, and no inundation_mode can repair that
+      ! because rice has no finundated of its own -- it reads the soil one.
+      !
+      ! Blending by area keeps a mixed-CFT patch honest, and max() means an
+      ! already-wet patch is never dried by the paddy floor.
+      IF (present(is_rice_paddy_in)) THEN
+         is_rice_paddy = is_rice_paddy_in
+      ELSE
+         is_rice_paddy = .false.
+      ENDIF
+      IF (present(rice_pft_frac_in)) THEN
+         rice_pft_frac = rice_pft_frac_in
+      ELSE
+         rice_pft_frac = 0._r8
+      ENDIF
+      rice_pft_frac = min(max(rice_pft_frac, 0._r8), 1._r8)
+
       finundated_default = finundated
+      IF (is_rice_paddy .and. rice_pft_frac > 0._r8) THEN
+         IF (is_paddy_rice_live(ipatch)) THEN
+            finundated_rice = max(finundated_default, &
+               DEF_METHANE%rice_paddy_min_finundated)
+
+            ! Midseason drying. croplive_p carries the season across New Year on
+            ! its own, so southern-hemisphere rice needs no special case.
+            idpp_rice = rice_days_past_planting(ipatch, idate(2))
+            ms_start  = DEF_METHANE%rice_midseason_start_days
+            ms_end    = ms_start + DEF_METHANE%rice_midseason_drain_days
+            IF (idpp_rice >= 0 .and. real(idpp_rice, r8) >= ms_start &
+                .and. real(idpp_rice, r8) < ms_end) THEN
+               finundated_rice = min(finundated_rice, &
+                  max(DEF_METHANE%rice_midseason_drained_finundated, &
+                      finundated_default))
+            ENDIF
+            finundated = rice_pft_frac * finundated_rice &
+                       + (1._r8 - rice_pft_frac) * finundated_default
+         ELSE
+            ! Harvested: decay the floor to the host value rather than dropping
+            ! to it, so the post-harvest emission tail is not cut off in a step.
+            dsh_rice = rice_days_since_harvest(ipatch, idate(2))
+            IF (dsh_rice >= 0 .and. &
+                real(dsh_rice, r8) < DEF_METHANE%rice_drain_window_days) THEN
+               drain_decay  = 1._r8 - real(dsh_rice, r8) &
+                            / DEF_METHANE%rice_drain_window_days
+               drain_target = drain_decay * DEF_METHANE%rice_paddy_min_finundated
+               finundated_rice = max(drain_target, finundated_default)
+               finundated = rice_pft_frac * finundated_rice &
+                          + (1._r8 - rice_pft_frac) * finundated_default
+            ENDIF
+         ENDIF
+         finundated = min(max(finundated, 0._r8), 1._r8)
+      ENDIF
 
       dfsat = finundated - fsat_bef
 

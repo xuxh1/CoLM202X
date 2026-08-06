@@ -661,6 +661,19 @@ CONTAINS
                   ! vegetation the WFT exists to grow drains away instead.
                   CALL read_point_5x5_var_3d_real8 (gridlai, dir_5x5, 'MOD'//trim(cyear), 'PCT_PFT', &
                      SITE_lon_location, SITE_lat_location, N_PFT_modis, pctpfts)
+                  ! PROBE 2026-08-06: five of the 77 towers (US-A10, US-Atq,
+                  ! US-A03, US-ORv, US-WPT) leave here with LAI identically 0 in
+                  ! all twelve months, which closes the aerenchyma gate (lai > 0)
+                  ! and forces every mole through ebullition and diffusion. 0/0
+                  ! would give NaN rather than 0, so the weights are probably
+                  ! fine and the source LAI is the zero -- print both before
+                  ! deciding which one to guard. Delete once answered.
+                  write(*,'(A,I5,A,I3,4(A,E12.5))') &
+                     ' WFT-LAI-PROBE year=', iyear, ' month=', itime, &
+                     ' sum_pct=', sum(pctpfts), &
+                     ' sum_lai_pct=', sum(pftLAI * pctpfts), &
+                     ' max_lai=', maxval(pftLAI), &
+                     ' max_pct=', maxval(pctpfts)
                   SITE_LAI_pfts_monthly(:,itime,iyear) = sum(pftLAI * pctpfts) / sum(pctpfts)
                   SITE_SAI_pfts_monthly(:,itime,iyear) = sum(pftSAI * pctpfts) / sum(pctpfts)
 #endif
