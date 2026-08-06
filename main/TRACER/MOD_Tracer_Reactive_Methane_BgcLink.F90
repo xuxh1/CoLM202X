@@ -118,13 +118,13 @@ CONTAINS
 
       IF (patchtype /= 0 .and. patchtype /= 2) RETURN
 
-#ifndef LULC_IGBP_WFT
-      ! Wetland has no PFT and never entered bgc_driver, so the decomposition
-      ! state update has to be driven from here. Under LULC_IGBP_WFT bgc_driver
-      ! runs for patchtype 2 as well and has already done it (CStateUpdate1 /
-      ! SoilBiogeochemNStateUpdate1 / CNDriverSummarizeStates); repeating it
-      ! would advance the soil pools twice per step.
-      IF (patchtype == 2) THEN
+      ! When the wetland's soil column is not handed to bgc_driver, the
+      ! decomposition state update has to be driven from here. With
+      ! wetland_bgc_soil the driver runs for patchtype 2 as well and has
+      ! already done it (CStateUpdate1 / SoilBiogeochemNStateUpdate1 /
+      ! CNDriverSummarizeStates); repeating it would advance the pools twice
+      ! per step.
+      IF (patchtype == 2 .and. .not. DEF_METHANE%wetland_bgc_soil) THEN
          ! apply_direct=.false. runs the decomposition bookkeeping but skips the
          ! pool debit, freezing the substrate at its initial stock.
          CALL CDecompStateUpdate(ipatch, deltim, nl_soil, size(decomp_hr_vr,2), &
@@ -134,7 +134,6 @@ CONTAINS
          CALL CNDriverSummarizeNonvegetatedSoilStates(ipatch, nl_soil, dz_soi, &
             size(decomp_cpools_vr,2))
       ENDIF
-#endif
 
       total_hr = sum(sum(decomp_hr_vr(1:nl_soil,:,ipatch), dim=2) * dz_soi(1:nl_soil))
       IF (.not. ieee_is_finite(total_hr) .or. total_hr < -1.e-12_r8 .or. &
@@ -151,12 +150,14 @@ CONTAINS
       ! molar correction and must not be added to offline CO2 ER/NEE again.
       ! Total decomposed pool C is f_hr - catomw * f_net_methane.
       decomp_hr(ipatch) = max(co2_hr, 0._r8)
-#ifndef LULC_IGBP_WFT
-      ! No PFT on wetland means no autotrophic respiration to report. Under
-      ! LULC_IGBP_WFT the WFT sub-tile produces a real ar; zeroing it here would
-      ! discard it and break the ER budget.
-      IF (patchtype == 2) ar(ipatch) = 0._r8
-#endif
+      ! A wetland outside bgc_driver has no autotrophic respiration to report,
+      ! and ar is only ever written there -- leaving it would publish whatever
+      ! the array was allocated with. Carrying a WFT sub-tile does not change
+      ! that: the tile's canopy is driven by prescribed LAI, and nothing
+      ! computes its ar until the CN driver runs for the patch. With
+      ! wetland_bgc_soil it does, and zeroing here would discard a real ar and
+      ! break the ER budget.
+      IF (patchtype == 2 .and. .not. DEF_METHANE%wetland_bgc_soil) ar(ipatch) = 0._r8
       er(ipatch) = ar(ipatch) + decomp_hr(ipatch)
 
    END SUBROUTINE tracer_ch4_bgc_finalize_step

@@ -393,6 +393,25 @@ MODULE MOD_Tracer_Reactive_Methane_Const
                                     ! replenishlakec it imposes an external carbon source and breaks
                                     ! closure against the BGC pools -- sensitivity tests only.
 
+      logical :: wetland_bgc_soil = .false. ! Hand the patchtype 2 soil column to bgc_driver.
+                                    ! Only meaningful under LULC_IGBP_WFT, which is what gives the
+                                    ! wetland the PFT sub-tile whose litter would feed those pools.
+                                    !
+                                    ! The macro answers a different question from this switch. It
+                                    ! decides whether the wetland OWNS A TILE, which is what lets
+                                    ! LAI/SAI/canopy height be read per PFT -- and with
+                                    ! DEF_USE_LAIFEEDBACK off those come from the surface data, not
+                                    ! from CN, so a real seasonal LAI needs the tile and nothing
+                                    ! else. This switch decides who owns the SOIL CARBON. Keeping
+                                    ! them separate is what allows the tile's vegetation with the
+                                    ! prescribed peat substrate underneath: CoLM's BGC has never
+                                    ! been calibrated for peat, and a closed carbon budget around
+                                    ! the wrong substrate is not an improvement on an open one
+                                    ! around a measured stock.
+                                    !
+                                    ! Default false: the wetland keeps the decomposition shim and
+                                    ! wetland_fixed_substrate, exactly as before the macro existed.
+
       logical :: methane_offline = .true.    ! Only offline land CH4 is implemented in this repository.
                                  ! Setting false is rejected during validation until a host atmosphere
                                  ! flux publisher and NEM-to-NEE coupling are available.
@@ -1114,19 +1133,29 @@ CONTAINS
          bad = .true.
       ENDIF
 
-#ifdef LULC_IGBP_WFT
-      ! wetland_fixed_substrate is read only where BgcLink drives the wetland
-      ! state update, and that block is compiled out under LULC_IGBP_WFT because
-      ! bgc_driver does the update instead. Setting it here would look like a
-      ! frozen substrate and be silently ignored -- the same shape of defect as
-      ! the redox factor whose branch condition is identically false, and the
-      ! aerenchyma porosity a downstream floor restores. Refuse it rather than
-      ! let a run report a configuration it does not have.
-      IF (DEF_METHANE%wetland_fixed_substrate) THEN
+      ! wetland_fixed_substrate is read where BgcLink drives the wetland state
+      ! update, and that is skipped when bgc_driver owns the soil column
+      ! instead. Setting both would look like a frozen substrate and be
+      ! silently ignored -- the same shape of defect as the redox factor whose
+      ! branch condition is identically false, and the aerenchyma porosity a
+      ! downstream floor restores. Refuse it rather than let a run report a
+      ! configuration it does not have.
+      IF (DEF_METHANE%wetland_bgc_soil .and. DEF_METHANE%wetland_fixed_substrate) THEN
          IF (p_is_master) write(6,*) &
-            '***** ERROR: wetland_fixed_substrate has no effect under LULC_IGBP_WFT. ', &
+            '***** ERROR: wetland_fixed_substrate has no effect with wetland_bgc_soil. ', &
             'The WFT sub-tile supplies litter, so the pools are meant to evolve; ', &
             'bgc_driver owns the state update and never reads this switch.'
+         bad = .true.
+      ENDIF
+
+#ifndef LULC_IGBP_WFT
+      ! Without the macro the wetland has no PFT sub-tile, so there is no litter
+      ! for bgc_driver to decompose and ps:pe is not a valid range for it to
+      ! summarize over. Handing it the column would drain the pools to nothing.
+      IF (DEF_METHANE%wetland_bgc_soil) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: wetland_bgc_soil requires LULC_IGBP_WFT. Without the ', &
+            'sub-tile the wetland receives no litter and bgc_driver would only drain it.'
          bad = .true.
       ENDIF
 #endif

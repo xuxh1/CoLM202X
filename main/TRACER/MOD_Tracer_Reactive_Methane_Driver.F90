@@ -355,16 +355,30 @@ CONTAINS
       ENDIF
       IF (patchtype == 2) THEN
 #ifdef LULC_IGBP_WFT
-         ! The WFT sub-tile gives the wetland real LAI, NPP, root profile and
-         ! root respiration through BGC, so the climate-zone vegetation proxy
-         ! must not overwrite them -- its constants were an open loop that fed
-         ! aerenchyma transport but never the soil carbon pools.  It is still
-         ! called for its one remaining job: writing the per-patch aerenchyma
-         ! geometry (wetland_aere_*), which has no counterpart in the PFT
-         ! tables.  Same split as the rice branch below.  Its vegetation
-         ! outputs are discarded.
-         CALL get_wetland_veg_proxy (dlat, cellorg(1), lai, i, &
-            lai_unused, npp_unused, agnpp_unused, bgnpp_unused, rootfr_unused)
+         IF (DEF_METHANE%wetland_bgc_soil) THEN
+            ! BGC drives this patch, so it supplies real LAI, NPP, root profile
+            ! and root respiration and the climate-zone proxy must not overwrite
+            ! them -- its constants were an open loop that fed aerenchyma
+            ! transport but never the soil carbon pools.  The proxy is still
+            ! called for its one remaining job: writing the per-patch aerenchyma
+            ! geometry (wetland_aere_*), which has no counterpart in the PFT
+            ! tables.  Same split as the rice branch below.
+            CALL get_wetland_veg_proxy (dlat, cellorg(1), lai, i, &
+               lai_unused, npp_unused, agnpp_unused, bgnpp_unused, rootfr_unused)
+         ELSE
+            ! Tile without the CN driver.  Its LAI and SAI are read per PFT from
+            ! the surface data, so lai_eff already carries a measured seasonal
+            ! cycle -- keep it, and do not let the proxy's climate-zone constant
+            ! flatten it.  Everything else the proxy returns is still needed:
+            ! NPP, root profile and root respiration are written by bgc_driver
+            ! and nothing else, so for this patch they would otherwise be zero
+            ! and the aerenchyma would close.
+            CALL get_wetland_veg_proxy (dlat, cellorg(1), lai, i, &
+               lai_unused, annsum_npp_loc, agnpp_loc, bgnpp_loc, rootfr_eff)
+            crootfr(1:nl_soil) = rootfr_eff(1:nl_soil)
+            rootr_eff(1:nl_soil) = rootfr_eff(1:nl_soil)
+            rr_loc = max(rr_loc, 0.5_r8 * bgnpp_loc)
+         ENDIF
 #else
          CALL get_wetland_veg_proxy (dlat, cellorg(1), lai, i, &
             lai_eff, annsum_npp_loc, agnpp_loc, bgnpp_loc, rootfr_eff)

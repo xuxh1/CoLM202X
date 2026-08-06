@@ -15,6 +15,7 @@ MODULE MOD_Tracer_LandPhase
    USE MOD_Tracer_SoilInit
    USE MOD_SPMD_Task
    USE MOD_Namelist, only: DEF_USE_IRRIGATION
+   USE MOD_Tracer_Reactive_Methane_Const, only: DEF_METHANE
    USE MOD_Tracer_Lifecycle, only: tracer_lifecycle_init, &
       tracer_lifecycle_land_init, tracer_lifecycle_land_final, &
       tracer_lifecycle_lake_step, &
@@ -48,6 +49,7 @@ MODULE MOD_Tracer_LandPhase
    ! -- Element phase: per-step orchestration, called from CoLMDRIVER;
    !    these delegate to the reactive (methane) family ------------------
    PUBLIC :: tracer_resolve_step, tracer_lake_step, tracer_wetland_decomp
+   PUBLIC :: tracer_wetland_bgc_owns_soil
    PUBLIC :: tracer_soil_step, tracer_report
 
    ! -- Acc-flux: called from MOD_Vars_1DAccFluxes -----------------------
@@ -276,6 +278,20 @@ CONTAINS
       CALL tracer_lifecycle_wetland_decomp (ipatch, deltim)
 
    END SUBROUTINE tracer_wetland_decomp
+
+   logical FUNCTION tracer_wetland_bgc_owns_soil ()
+
+! !DESCRIPTION:
+!  Whether bgc_driver, rather than the methane decomposition shim, owns the
+!  patchtype 2 soil column. Asked by CoLMDRIVER to decide which patches enter
+!  bgc_driver, so it lives on the facade: the driver reaches the tracer layer
+!  through this module and nowhere else.
+
+      IMPLICIT NONE
+
+      tracer_wetland_bgc_owns_soil = DEF_METHANE%wetland_bgc_soil
+
+   END FUNCTION tracer_wetland_bgc_owns_soil
 
    SUBROUTINE tracer_soil_step (istep_local, ipatch, idate, deltim)
 

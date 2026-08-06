@@ -28,7 +28,8 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep_in)
 
 #ifdef TRACER
    USE MOD_Tracer_LandPhase, only: tracer_resolve_step, tracer_lake_step, &
-      tracer_wetland_decomp, tracer_soil_step, tracer_report
+      tracer_wetland_decomp, tracer_soil_step, tracer_report, &
+      tracer_wetland_bgc_owns_soil
    USE MOD_Tracer_Defs, only: ntracers
    USE MOD_SPMD_Task, only: CoLM_stop
 #endif
@@ -58,6 +59,9 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep_in)
    integer  :: i, m, u, k
 #ifdef TRACER
    integer  :: istep_local      ! resolved from optional istep_in
+#if (defined BGC)
+   logical  :: bgc_this_patch   ! does this patch enter the full CN driver
+#endif
 #endif
 
 ! ======================================================================
@@ -256,14 +260,20 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep_in)
 #endif
 
          ! Vegetated soil patches: full CN driver (vegetation + soil decomp).
-#ifndef LULC_IGBP_WFT
-         IF(patchtype(i) .eq. 0)THEN
-#else
-         ! Permanent wetland carries a WFT sub-tile, so it runs the same CN
-         ! driver. Without it the wetland soil pools decompose with no litter
-         ! input and drain monotonically.
-         IF(patchtype(i) .eq. 0 .or. patchtype(i) .eq. 2)THEN
+         bgc_this_patch = (patchtype(i) .eq. 0)
+
+#if (defined LULC_IGBP_WFT) && (defined TRACER)
+         ! The WFT sub-tile makes a wetland eligible for the CN driver, but
+         ! carrying a tile and handing over the soil column are two decisions,
+         ! and only the second one belongs here. With DEF_USE_LAIFEEDBACK off
+         ! the tile's LAI/SAI come from the surface data, so a real seasonal
+         ! canopy needs the macro alone; the soil pools are a separate question
+         ! answered by DEF_METHANE%wetland_bgc_soil, default false.
+         IF (tracer_wetland_bgc_owns_soil()) &
+            bgc_this_patch = bgc_this_patch .or. (patchtype(i) .eq. 2)
 #endif
+
+         IF(bgc_this_patch)THEN
             !
             !               ***** Call CoLM BGC model *****
             !
