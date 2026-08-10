@@ -74,6 +74,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
    PUBLIC :: DEF_METHANE, DEF_METHANE_hydrology
    PUBLIC :: read_methane_namelist, configure_methane_inundation_mode
    PUBLIC :: methane_prescribed_wtd
+   PUBLIC :: methane_wft_from_wetclass
    PUBLIC :: methane_atm_mixing_ratio, methane_history_enabled
 	PUBLIC :: methane_history_accumulation_mode
 
@@ -416,6 +417,25 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! 0 reproduces the old sealed behaviour bit for bit.
       real(r8) :: wtd_unsat_airfrac = 0.3_r8    ! [-] air-filled porosity fraction above the table
 
+      ! ---- Per-WFT parameter sets (calibration frame, empty by default) ----
+      !
+      ! The wetland functional type axis carries one calibrated value per class
+      ! for the transport/production knobs below:
+      !   1 = permafrost peatland   2 = peatland   3 = mineral wetland
+      ! -999 marks "unset": get_wft_param (MOD_Tracer_Reactive_Methane_
+      ! VegOverride) falls through to the global scalar of the same name, so an
+      ! empty table is bit identical to the scalar model.  Values come from the
+      ! FLUXNET-CH4 site calibration; each patch's class sits in
+      ! wetland_wft_class (single point: mapped from SITE_wetland_class via
+      ! methane_wft_from_wetclass; global: a static class map -- permafrost cut
+      ! by MAAT/permafrost map, peat cut by Peat-ML / GLWD peat classes /
+      ! OM_density -- reader pending).
+      real(r8) :: wft_f_methane(3)         = -999._r8  ! [-] anaerobic C fraction to CH4
+      real(r8) :: wft_scale_factor_aere(3) = -999._r8  ! [-] aerenchyma area scale
+      real(r8) :: wft_aereoxid(3)          = -999._r8  ! [-] rhizosphere oxidation fraction (fixed-fraction mode)
+      real(r8) :: wft_vgc_max(3)           = -999._r8  ! [-] ebullition gas-volume threshold
+      real(r8) :: wft_grnd_cond(3)         = -999._r8  ! [m/s] surface conductance base
+
       ! ---- Two-layer peat decomposition (experiment switch, default off) ----
       !
       ! One o_scalar covers the whole column, so the deep carbon decomposes at
@@ -721,6 +741,27 @@ CONTAINS
       ENDIF
 
    END FUNCTION methane_prescribed_wtd
+
+   integer FUNCTION methane_wft_from_wetclass ()
+      ! Map the measured SITE_wetland_class (BAWLD-CH4 tower classes) onto the
+      ! 3-class WFT axis used by the per-class parameter tables.  The grouping
+      ! matches the site-calibration axis, which in turn matches what global
+      ! maps can provide (permafrost cut, peat cut):
+      !   tundra (5)                -> 1 permafrost peatland
+      !   bog (1), fen (2), drained (7) -> 2 peatland
+      !     (drained sites are drained peatland: user decision 2026-08-10;
+      !      they share peat mechanics and differ in the water-table axis)
+      !   marsh (3), swamp (4), salt marsh (6) -> 3 mineral wetland
+      !   none (0)                 -> 0 unset: falls through to global scalars
+      USE MOD_Namelist, only: SITE_wetland_class
+      IMPLICIT NONE
+      SELECT CASE (SITE_wetland_class)
+      CASE (5)       ; methane_wft_from_wetclass = 1
+      CASE (1, 2, 7) ; methane_wft_from_wetclass = 2
+      CASE (3, 4, 6) ; methane_wft_from_wetclass = 3
+      CASE DEFAULT   ; methane_wft_from_wetclass = 0
+      END SELECT
+   END FUNCTION methane_wft_from_wetclass
 
    SUBROUTINE configure_methane_inundation_mode ()
       ! Resolve the user-facing four-option CH4 inundation mode into the
@@ -1207,6 +1248,40 @@ CONTAINS
          IF (p_is_master) write(6,*) &
             '***** ERROR: wtd_unsat_airfrac is the air-filled fraction of porosity ', &
             'above the prescribed table and must be in [0,1]: ', DEF_METHANE%wtd_unsat_airfrac
+         bad = .true.
+      ENDIF
+      ! Per-WFT tables: -999 (or any negative) means "unset, use the global
+      ! scalar".  A set entry must lie in the same range the matching global
+      ! is expected in; zero is legal only where the global may be zero.
+      IF (any(DEF_METHANE%wft_f_methane >= 0._r8 .and. &
+              (DEF_METHANE%wft_f_methane <= 0._r8 .or. DEF_METHANE%wft_f_methane > 1._r8))) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: set wft_f_methane entries must lie in (0,1]: ', DEF_METHANE%wft_f_methane
+         bad = .true.
+      ENDIF
+      IF (any(DEF_METHANE%wft_scale_factor_aere >= 0._r8 .and. &
+              (DEF_METHANE%wft_scale_factor_aere <= 0._r8 .or. &
+               DEF_METHANE%wft_scale_factor_aere > 10._r8))) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: set wft_scale_factor_aere entries must lie in (0,10]: ', &
+            DEF_METHANE%wft_scale_factor_aere
+         bad = .true.
+      ENDIF
+      IF (any(DEF_METHANE%wft_aereoxid > 1._r8)) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: set wft_aereoxid entries must lie in [0,1]: ', DEF_METHANE%wft_aereoxid
+         bad = .true.
+      ENDIF
+      IF (any(DEF_METHANE%wft_vgc_max >= 0._r8 .and. &
+              (DEF_METHANE%wft_vgc_max <= 0._r8 .or. DEF_METHANE%wft_vgc_max > 1._r8))) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: set wft_vgc_max entries must lie in (0,1]: ', DEF_METHANE%wft_vgc_max
+         bad = .true.
+      ENDIF
+      IF (any(DEF_METHANE%wft_grnd_cond >= 0._r8 .and. &
+              (DEF_METHANE%wft_grnd_cond <= 0._r8 .or. DEF_METHANE%wft_grnd_cond > 1._r8))) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: set wft_grnd_cond entries must lie in (0,1] m/s: ', DEF_METHANE%wft_grnd_cond
          bad = .true.
       ENDIF
       IF (DEF_METHANE%catotelm_depth > 0._r8 .and. &
