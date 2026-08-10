@@ -547,6 +547,8 @@ contains
       integer  :: jwt_unsat          ! index of the soil layer right above the water table (-), unsaturated zone
       real(r8) :: zwt_sat, wice_soisno_sat(maxsnl+1:nl_soil), wliq_soisno_sat(maxsnl+1:nl_soil), wdsrf_sat
       real(r8) :: zwt_unsat, wice_soisno_unsat(maxsnl+1:nl_soil), wliq_soisno_unsat(maxsnl+1:nl_soil), wdsrf_unsat
+      real(r8) :: frac_above           ! part of a layer sitting above the prescribed table
+      real(r8) :: vol_ice_unsat, air_target, vol_liq_cap
       real(r8) :: routing_depth_mm
       logical  :: lake_restart_debug_print
       real(r8) :: lake_dbg_totcol_bef, lake_dbg_ch4_l1_bef, lake_dbg_o2_l1_bef
@@ -1192,6 +1194,38 @@ contains
                      exit
                   end if
                end do
+               ! The prescribed table must reach transport, not only the
+               ! production gate.  v260807/sp_wtd measured the sealed variant:
+               ! pores stayed saturated and the wetland standing water stayed on
+               ! top, so O2 never entered (layer-1 5e-4 mol/m3), CH4 piled to
+               ! ~60 mol/m3 under the lid, and unsat oxidation was 0-3% in every
+               ! class.  Drain the pore space above the table to an air-filled
+               ! fraction wtd_unsat_airfrac of porosity and take the standing
+               ! water off; diffusivity and pond resistance downstream are
+               ! functions of these two states and follow without further code.
+               ! Liquid is only ever reduced, ice and layers below the table are
+               ! untouched, and the removed water leaves just the methane
+               ! column's view -- host water balance stays whole, the same
+               ! contract (and documented caveat) as rice paddy water.
+               if (patchtype == 2 .and. wtd_pre >= 0._r8 .and. &
+                   DEF_METHANE%wtd_unsat_airfrac > 0._r8) then
+                  wdsrf_unsat = 0._r8
+                  do j = 1, nl_soil
+                     if (zi_soisno(j) <= zwt_unsat) then
+                        frac_above = 1._r8                  ! layer fully above the table
+                     else if (zi_soisno(j-1) >= zwt_unsat) then
+                        exit                                ! this layer and deeper stay saturated
+                     else
+                        frac_above = (zwt_unsat - zi_soisno(j-1)) / max(dz_soisno(j), 1.e-12_r8)
+                     endif
+                     vol_ice_unsat = min(max(porsl(j), 0._r8), &
+                        max(wice_soisno_unsat(j), 0._r8) / (max(dz_soisno(j), 1.e-12_r8) * denice))
+                     air_target = DEF_METHANE%wtd_unsat_airfrac * max(porsl(j), 0._r8) * frac_above
+                     vol_liq_cap = max(0._r8, max(porsl(j), 0._r8) - vol_ice_unsat - air_target)
+                     wliq_soisno_unsat(j) = min(wliq_soisno_unsat(j), &
+                        vol_liq_cap * max(dz_soisno(j), 1.e-12_r8) * denh2o)
+                  enddo
+               endif
             endif
 
 					if (methane_cold_start) then

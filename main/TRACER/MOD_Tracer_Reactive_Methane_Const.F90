@@ -399,6 +399,22 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! -5 cm -> 0.993, -11 cm -> 0.978, -20 cm -> 0.881.  A correct per-class
       ! water table changes almost nothing until the inflection moves to roughly
       ! 0.10-0.15 m.  Set it in the namelist; it is already user-facing.
+      !
+      ! The prescribed table used to gate only production, while transport kept
+      ! the host state: saturated pores plus the full wetland standing water on
+      ! the unsaturated sub-column.  Measured on v260807/sp_wtd, that sealed the
+      ! surface -- layer-1 O2 sat at 5e-4 mol/m3 (200x below the saturated
+      ! column), CH4 piled to ~60 mol/m3 (~1.5 atm) and unsat oxidation stayed
+      ! at 0-3% in every class, so the whole flux response was production
+      ! suppression.  wtd_unsat_airfrac drains the pore space above the
+      ! prescribed table to this air-filled fraction of porosity and takes the
+      ! standing water off the unsaturated sub-column, so diffusivity and pond
+      ! resistance see the same table that gates production.  Peat acrotelm
+      ! specific yield is 0.2-0.5.  The drained water leaves only the methane
+      ! column's view -- host water balance is untouched, the same contract
+      ! (and the same documented caveat) as the rice paddy water management.
+      ! 0 reproduces the old sealed behaviour bit for bit.
+      real(r8) :: wtd_unsat_airfrac = 0.3_r8    ! [-] air-filled porosity fraction above the table
 
       ! ---- Two-layer peat decomposition (experiment switch, default off) ----
       !
@@ -1184,6 +1200,13 @@ CONTAINS
          IF (p_is_master) write(6,*) &
             '***** ERROR: wtd_by_wetclass needs wetland_wtd_prescribed >= 0 as the ', &
             'fallback for swamp / drained / unclassified sites.'
+         bad = .true.
+      ENDIF
+      IF (DEF_METHANE%wtd_unsat_airfrac < 0._r8 .or. &
+          DEF_METHANE%wtd_unsat_airfrac > 1._r8) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: wtd_unsat_airfrac is the air-filled fraction of porosity ', &
+            'above the prescribed table and must be in [0,1]: ', DEF_METHANE%wtd_unsat_airfrac
          bad = .true.
       ENDIF
       IF (DEF_METHANE%catotelm_depth > 0._r8 .and. &
