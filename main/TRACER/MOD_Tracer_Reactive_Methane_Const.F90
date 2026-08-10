@@ -435,6 +435,15 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       real(r8) :: wft_aereoxid(3)          = -999._r8  ! [-] rhizosphere oxidation fraction (fixed-fraction mode)
       real(r8) :: wft_vgc_max(3)           = -999._r8  ! [-] ebullition gas-volume threshold
       real(r8) :: wft_grnd_cond(3)         = -999._r8  ! [m/s] surface conductance base
+      ! Inundated-area override for wetland patches under scheme 6.  The
+      ! sigmoid answers "how much of the patch is ponded" with a curve of zwt,
+      ! but at a site that split is microtopography (hummock/hollow), and the
+      ! v260807/v260810 factorials show the ponded ("saturated") sub-column
+      ! sets the floor of the flux: at wtd11 the 0.55 sigmoid fraction alone
+      ! contributes 2.4x the observed bog flux.  Scalar first, per-WFT value
+      ! second; both default off (negative), leaving the sigmoid bit identical.
+      real(r8) :: finundated_prescribed = -1._r8       ! [-] wetland ponded-area fraction, <0 = sigmoid
+      real(r8) :: wft_finundated(3)        = -999._r8  ! [-] per-WFT ponded-area fraction
 
       ! ---- Two-layer peat decomposition (experiment switch, default off) ----
       !
@@ -1282,6 +1291,17 @@ CONTAINS
               (DEF_METHANE%wft_grnd_cond <= 0._r8 .or. DEF_METHANE%wft_grnd_cond > 1._r8))) THEN
          IF (p_is_master) write(6,*) &
             '***** ERROR: set wft_grnd_cond entries must lie in (0,1] m/s: ', DEF_METHANE%wft_grnd_cond
+         bad = .true.
+      ENDIF
+      IF (DEF_METHANE%finundated_prescribed > 1._r8) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: finundated_prescribed is an area fraction and must be <= 1: ', &
+            DEF_METHANE%finundated_prescribed
+         bad = .true.
+      ENDIF
+      IF (any(DEF_METHANE%wft_finundated > 1._r8)) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: set wft_finundated entries must lie in [0,1]: ', DEF_METHANE%wft_finundated
          bad = .true.
       ENDIF
       IF (DEF_METHANE%catotelm_depth > 0._r8 .and. &

@@ -34,7 +34,7 @@ module MOD_Tracer_Reactive_Methane_Physics
    USE MOD_Tracer_Reactive_Methane_BgcLink, only: is_paddy_rice_live, &
       rice_days_past_planting, rice_days_since_harvest
    USE MOD_Tracer_Reactive_Methane_VegOverride, only: get_aere_poros, get_aere_tillerC, &
-      get_aere_radius, get_aere_scale
+      get_aere_radius, get_aere_scale, get_wft_param
    USE MOD_Tracer_Reactive_Methane_State, only: f_inund_levee_patch, f_inund_flood_patch, &
       f_inund_flood_depth_patch, wetland_frac_per_patch, &
       biome_f_methane_patch, biome_redoxlag_patch, &
@@ -579,8 +579,10 @@ contains
 		! MOD_LeafTemperature; those terms are not persisted in patch state, so
 		! reconstructing kappa*ustar/fq there would overestimate gas exchange.
 		! Keep the configured conservative fallback until the resolved canopy
-		! resistance is exposed by the host model.
-		grnd_methane_cond_base = DEF_METHANE%grnd_methane_cond_default
+		! resistance is exposed by the host model.  The fallback is per-WFT
+		! when the calibration table sets one.
+		grnd_methane_cond_base = get_wft_param(ipatch, &
+			DEF_METHANE%grnd_methane_cond_default, DEF_METHANE%wft_grnd_cond)
 		if ((patchtype == 4 .or. lai + sai <= 1.e-6_r8) .and. &
 		    present(ustar_in) .and. present(fq_in)) then
 			if (.not. ieee_is_nan(ustar_in) .and. .not. ieee_is_nan(fq_in) .and. &
@@ -588,7 +590,8 @@ contains
 			    ustar_in > 0._r8 .and. fq_in > 1.e-8_r8) then
 				grnd_methane_cond_base = vonkar * ustar_in / fq_in
 				if (grnd_methane_cond_base <= 0._r8 .or. grnd_methane_cond_base > 1._r8) &
-					grnd_methane_cond_base = DEF_METHANE%grnd_methane_cond_default
+					grnd_methane_cond_base = get_wft_param(ipatch, &
+						DEF_METHANE%grnd_methane_cond_default, DEF_METHANE%wft_grnd_cond)
 			endif
 		endif
 
@@ -817,6 +820,18 @@ contains
             endif
             wtd_arg = min(50._r8, max(-50._r8, wtd_arg))
             finundated = 1._r8 / (1._r8 + exp(wtd_arg))
+            ! Prescribed ponded-area override for wetland patches.  The sigmoid
+            ! answers with a curve of zwt what at a site is microtopography
+            ! (hummock/hollow split), and the v260807/v260810 factorials show
+            ! this fraction sets the floor of the flux: at wtd11 the 0.55
+            ! sigmoid fraction alone contributes 2.4x the observed bog flux.
+            ! Scalar first, per-WFT value second; both default off (negative),
+            ! which leaves the sigmoid bit identical.
+            if (patchtype == 2) then
+               if (DEF_METHANE%finundated_prescribed >= 0._r8) &
+                  finundated = min(DEF_METHANE%finundated_prescribed, 1._r8)
+               finundated = get_wft_param(ipatch, finundated, DEF_METHANE%wft_finundated)
+            endif
          endif
       elseif (DEF_wetland_finundation_scheme == 7) then
          ! GridRiverLake fldfrc: per-patch general flood fraction
@@ -1276,7 +1291,7 @@ contains
                methane_oxid_depth_unsat, o2_oxid_depth_unsat )
 
             ! Calculate CH4 ebullition losses in each soil layer
-            call methane_ebul ( idate, patchtype, jwt_unsat, sat, finundated, deltim, &
+            call methane_ebul ( ipatch, idate, patchtype, jwt_unsat, sat, finundated, deltim, &
 					z_soisno, dz_soisno, zi_soisno, forc_pbot, lake_depth_current, lake_icefrac, &
                t_soisno, wdsrf_unsat, conc_methane_unsat, conc_ch4_gas_porsl_unsat, &
                methane_ebul_depth_unsat )
@@ -1291,7 +1306,7 @@ contains
 
             ! Solve CH4 reaction/diffusion equation
             ! Competition for oxygen will occur here.
-            call methane_tran ( idate, patchtype, &
+            call methane_tran ( ipatch, idate, patchtype, &
                lb, snl, jwt_unsat, sat, finundated, &
                dlon, dlat, deltim, z_soisno, dz_soisno, zi_soisno, t_soisno, t_grnd, forc_us, forc_vs, &
 					porsl, wliq_soisno_unsat, wice_soisno_unsat, wdsrf_unsat, lakedepth, dz_lake, t_lake, lake_icefrac, bsw, c_atm, methane_prod_depth_unsat, o2_aere_depth_unsat, &
@@ -1403,7 +1418,7 @@ contains
                methane_oxid_depth_sat, o2_oxid_depth_sat )
 
             ! Calculate CH4 ebullition losses in each soil layer
-            call methane_ebul ( idate, patchtype, jwt_sat, sat, finundated, deltim, &
+            call methane_ebul ( ipatch, idate, patchtype, jwt_sat, sat, finundated, deltim, &
 					z_soisno, dz_soisno, zi_soisno, forc_pbot, lake_depth_current, lake_icefrac, &
                t_soisno, wdsrf_sat, conc_methane_sat, conc_ch4_gas_porsl_sat, &
                methane_ebul_depth_sat )
@@ -1424,7 +1439,7 @@ contains
 
             ! Solve CH4 reaction/diffusion equation
             ! Competition for oxygen will occur here.
-            call methane_tran ( idate, patchtype, &
+            call methane_tran ( ipatch, idate, patchtype, &
                lb, snl, jwt_sat, sat, finundated, &
                dlon, dlat, deltim, z_soisno, dz_soisno, zi_soisno, t_soisno, t_grnd, forc_us, forc_vs, &
 						porsl, wliq_soisno_sat, wice_soisno_sat, wdsrf_sat, lakedepth, dz_lake, t_lake, lake_icefrac, bsw, c_atm, methane_prod_depth_sat, o2_aere_depth_sat, &
@@ -2054,11 +2069,17 @@ contains
          ! Adjust f_methane by the temperature ratio.  When biome lookup
          ! is enabled, use the per-patch value populated by methane_driver
          ! via get_biome_f_methane; otherwise fall back to global scalar.
+         ! A calibrated per-WFT value, when set, supersedes both -- the WFT
+         ! table is fitted at the towers on top of whatever the biome tree
+         ! would have said, so letting the tree override it would undo the
+         ! calibration.
          if (DEF_METHANE%use_biome_f_methane .and. allocated(biome_f_methane_patch) .and. &
             ipatch >= 1 .and. ipatch <= size(biome_f_methane_patch)) then
-            f_methane_adj = biome_f_methane_patch(ipatch) * t_fact_methane
+            f_methane_adj = get_wft_param(ipatch, biome_f_methane_patch(ipatch), &
+               DEF_METHANE%wft_f_methane) * t_fact_methane
          else
-            f_methane_adj = DEF_METHANE%f_methane * t_fact_methane
+            f_methane_adj = get_wft_param(ipatch, DEF_METHANE%f_methane, &
+               DEF_METHANE%wft_f_methane) * t_fact_methane
          endif
 
          ! Do not allow soil methanogenesis in frozen layers.  Lake sediment
@@ -2485,6 +2506,11 @@ contains
       tillerC_eff = get_aere_tillerC(ipatch, DEF_METHANE%tiller_C)
       radius_eff  = get_aere_radius (ipatch, DEF_METHANE%aere_radius)
       scale_eff   = get_aere_scale  (ipatch, DEF_METHANE%scale_factor_aere)
+      ! Calibrated per-WFT scale wins over both the global scalar and the
+      ! climate-zone proxy (wetland_aere_scale): the tower calibration already
+      ! absorbs whatever the proxy encoded, and stacking the two would apply
+      ! the zone factor twice.
+      scale_eff   = get_wft_param(ipatch, scale_eff, DEF_METHANE%wft_scale_factor_aere)
 
       anpp = annsum_npp
       if (ieee_is_nan(anpp) .or. abs(anpp) >= 0.5_r8*abs(spval)) anpp = 0._r8
@@ -2570,7 +2596,7 @@ contains
    end subroutine SiteOxAere
 
    !---------------------------------------------------------------------------
-   subroutine methane_ebul (idate, patchtype, jwt, sat, finundated, deltim, &
+   subroutine methane_ebul (ipatch, idate, patchtype, jwt, sat, finundated, deltim, &
       z_soisno, dz_soisno, zi_soisno, forc_pbot, lakedepth, lake_icefrac, &
       t_soisno, wdsrf, conc_methane, conc_ch4_gas_porsl,&
       methane_ebul_depth)
@@ -2584,6 +2610,7 @@ contains
 
       !-----------------------Argument---------- -----------------------------
       integer , intent(in) :: &
+         ipatch                     , &! patch index, for the per-WFT parameter lookup
          idate(3)         , &! current date (year, days of the year, seconds of the day)
          patchtype                  , &! land patch type; 4 = lake/water body
          jwt                        , &! index of the soil layer right above the water table (-)
@@ -2614,10 +2641,12 @@ contains
       real(r8) :: vgc     ! gas phase volumetric CH4 content (m3 CH4/m3 pore air)
       real(r8) :: pressure! sum atmospheric and hydrostatic pressure
       real(r8) :: ebul_timescale
+      real(r8) :: vgc_max_eff   ! per-WFT ebullition threshold, falling back to the global
       real(r8), parameter :: smallnumber = 1.e-12_r8
       !-----------------------------------------------------------------------
       ! Ebullition follows the CLM5/Riley trigger and post-event target gas fraction.
       ebul_timescale = deltim ! Allow fast bubbling
+      vgc_max_eff = get_wft_param(ipatch, DEF_METHANE%vgc_max, DEF_METHANE%wft_vgc_max)
 
       if (patchtype == 4 .and. DEF_METHANE%allowlakeprod .and. lake_icefrac(1) > 0.1_r8) then
          methane_ebul_depth = 0._r8
@@ -2650,8 +2679,8 @@ contains
             ! lower post-event target vgc_max*bubble_f.  This implements
             ! the intended two-threshold release; the old single threshold
             ! vgc_max*bubble_f fired too early and had no hysteresis window.
-            if (vgc > DEF_METHANE%vgc_max) then
-               methane_ebul_depth(j) = (vgc - DEF_METHANE%vgc_max * DEF_METHANE%bubble_f) / &
+            if (vgc > vgc_max_eff) then
+               methane_ebul_depth(j) = (vgc - vgc_max_eff * DEF_METHANE%bubble_f) / &
                   max(vgc, smallnumber) * conc_methane(j) / ebul_timescale
                ! [mol/m3/s]      = [-]                                       * [mol/m3]    / [s]
             else
@@ -2667,7 +2696,7 @@ contains
 
 
    !---------------------------------------------------------------------------
-   subroutine methane_tran (idate,patchtype, &
+   subroutine methane_tran (ipatch, idate,patchtype, &
       lb, snl, jwt, sat, finundated,&
       dlon, dlat, deltim, z_soisno, dz_soisno, zi_soisno,  t_soisno, t_grnd, forc_us, forc_vs, &
 		porsl, wliq_soisno, wice_soisno, wdsrf, lakedepth, dz_lake, t_lake, lake_icefrac, bsw, c_atm, methane_prod_depth, o2_aere_depth,&
@@ -2701,6 +2730,7 @@ contains
 
 
       integer , intent(in) :: &
+         ipatch            , &! patch index, for the per-WFT parameter lookup
          lb                , &! lower bound of array (snl+1)
          snl				  , &!  number of snow layers     (-5~-1)
          jwt               , &! index of the soil layer right above the water table (-)
@@ -2925,7 +2955,8 @@ contains
       ! competition like any other sink and get scaled by o2stress/methane_stress.
       do j = 1,nl_soil
          if ( .not. DEF_METHANE%use_aereoxid_prog .and. methane_aere_depth(j) > 0._r8 ) then
-            aere_oxid_flux = DEF_METHANE%aereoxid * methane_aere_depth(j)
+            aere_oxid_flux = get_wft_param(ipatch, DEF_METHANE%aereoxid, &
+               DEF_METHANE%wft_aereoxid) * methane_aere_depth(j)
             methane_oxid_depth(j)  = methane_oxid_depth(j)  + aere_oxid_flux
             o2_oxid_depth(j)       = o2_oxid_depth(j)       + 2._r8 * aere_oxid_flux
             methane_aere_depth(j)  = methane_aere_depth(j)  - aere_oxid_flux

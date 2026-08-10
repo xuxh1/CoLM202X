@@ -17,7 +17,8 @@ MODULE MOD_Tracer_Reactive_Methane_BgcLink
    USE, INTRINSIC :: ieee_arithmetic, only: ieee_is_finite, ieee_is_nan
    USE MOD_Vars_Global, only: nl_soil, dz_soi, spval
    USE MOD_Tracer_Reactive_Methane_Const, only: DEF_METHANE, catomw, &
-      METHANE_COMP_SOIL, METHANE_COMP_RICE, N_METHANE_COMP
+      METHANE_COMP_SOIL, METHANE_COMP_RICE, N_METHANE_COMP, &
+      methane_wft_from_wetclass
    USE MOD_Tracer_Reactive_Methane_pH, only: get_ph_for_patch
    USE MOD_Namelist, only: SITE_wetland_class
    USE MOD_LandPFT, only: patch_pft_s, patch_pft_e
@@ -34,7 +35,7 @@ MODULE MOD_Tracer_Reactive_Methane_BgcLink
    USE MOD_BGC_Vars_PFTimeVariables, only: annsum_npp_p, cinput_rootfr_p
    USE MOD_Tracer_Reactive_Methane_VegOverride, only: wetland_aere_poros, wetland_aere_radius, &
       wetland_aere_tillerC, wetland_aere_scale, &
-      wetland_aere_active
+      wetland_aere_active, wetland_wft_class
    USE MOD_BGC_Vars_1DPFTFluxes,    only: froot_mr_p, &
       cpool_to_leafc_p, cpool_to_leafc_storage_p, &
       cpool_to_livestemc_p, cpool_to_livestemc_storage_p, &
@@ -850,6 +851,10 @@ CONTAINS
          wetland_aere_tillerC(ipatch) = aere_tillerC_z
          wetland_aere_scale  (ipatch) = aere_scale_z
          wetland_aere_active (ipatch) = .true.
+         ! WFT class for the per-class parameter tables.  Single point: from
+         ! the measured SITE_wetland_class.  A global class map, when it
+         ! exists, overwrites this after initialization.
+         wetland_wft_class   (ipatch) = methane_wft_from_wetclass()
       ENDIF
 
       ! LAI: trust data when valid, else fall back to climate-zone peak.
