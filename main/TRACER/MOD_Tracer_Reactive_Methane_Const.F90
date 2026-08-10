@@ -73,6 +73,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
    PRIVATE
    PUBLIC :: DEF_METHANE, DEF_METHANE_hydrology
    PUBLIC :: read_methane_namelist, configure_methane_inundation_mode
+   PUBLIC :: methane_prescribed_wtd
    PUBLIC :: methane_atm_mixing_ratio, methane_history_enabled
 	PUBLIC :: methane_history_accumulation_mode
 
@@ -359,6 +360,64 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       real(r8) :: wtd_inflection_soil = 0._r8 ! [m] >0 enables soil-tile dynamic flood extension
       real(r8) :: wtd_steepness_soil  = 0.3_r8
 
+      ! ---- Prescribed wetland water table (experiment switch, default off) ----
+      !
+      ! The saturated mode pins zwt at 0 and finundated at 1, so the whole column
+      ! is water filled.  Three consequences compound, measured on the 77-tower
+      ! batch (cases/v260806/sp_wft2/sites_wftveg):
+      !   * gas transport runs at the aqueous diffusivity, ~1e-4 of air, so O2
+      !     reaches only the top two layers.  US-Los conc_o2 by layer:
+      !     0.094, 0.052, 0.000, 0.000, ... mol/m3, while conc_CH4 peaks at 0.26
+      !     in layer 5 -- production sits exactly where there is no oxidant.
+      !   * every layer lies below the water table, so every layer produces.
+      !   * the only remaining exit is aerenchyma, which lifts CH4 out of the
+      !     root zone past the two oxic layers.  Layer-1 aerenchyma exceeds
+      !     layer-1 diffusion by 1.5e3 at US-Los and 9e5 at CA-SCB.  Bog vents
+      !     89% of production unoxidised and overshoots the towers 4.4x.
+      !
+      ! Setting a water table would relieve all three at once, but the obvious
+      ! route -- DEF_USE_Dynamic_Wetland with VSF -- drains a wetland instead:
+      ! this build has no lateral recharge (CatchLateralFlow is undefined under
+      ! GRIDBASED), so the column loses water it never regains.  These switches
+      ! prescribe the depth instead, and leave VSF off.
+      !
+      ! wetland_wtd_prescribed >= 0 supplies a depth in metres below the surface
+      ! to BOTH the scheme-6 sigmoid and the unsaturated sub-column.  Negative
+      ! disables it; at the default every existing result is bit identical.
+      real(r8) :: wetland_wtd_prescribed = -1._r8  ! [m] >=0 = depth below surface
+      ! Take the depth from the measured SITE_wetland_class instead of the scalar
+      ! above.  Values are BAWLD-CH4 (Kuhn et al. 2021 ESSD 13:5151) Table 3
+      ! class medians of observed water table position.
+      logical  :: wtd_by_wetclass   = .false.
+      real(r8) :: wtd_bog           = 0.11_r8   ! [m] below surface
+      real(r8) :: wtd_fen           = 0.05_r8
+      real(r8) :: wtd_marsh         = 0.00_r8
+      real(r8) :: wtd_tundra        = 0.00_r8
+      real(r8) :: wtd_permafrost_bog= 0.20_r8
+      ! NOTE the sigmoid above must be retuned alongside these.  At the shipped
+      ! wtd_inflection = 0.30 m the whole realistic peatland range collapses:
+      ! -5 cm -> 0.993, -11 cm -> 0.978, -20 cm -> 0.881.  A correct per-class
+      ! water table changes almost nothing until the inflection moves to roughly
+      ! 0.10-0.15 m.  Set it in the namelist; it is already user-facing.
+
+      ! ---- Two-layer peat decomposition (experiment switch, default off) ----
+      !
+      ! One o_scalar covers the whole column, so the deep carbon decomposes at
+      ! nearly the rate of the surface.  Measured bulk turnover on the same
+      ! batch is 48-58 yr for bog and fen against a stock of 63-100 kgC/m2, and
+      ! heterotrophic respiration reaches 1208-2200 gC/m2/yr where peatland NPP
+      ! is 100-400.  At steady state HR ~ NPP, so the column is mined 3-20x too
+      ! fast; only wetland_fixed_substrate hides it, because the pools are never
+      ! debited.  Unfreezing them drains 63 kgC/m2 within ~58 yr, which is the
+      ! mechanism behind the pools going NaN when the WFT path was switched on.
+      !
+      ! A real peat column is layered: an acrotelm that turns over fast and a
+      ! catotelm that barely turns over at all (ORCHIDEE-PEAT 0.067 vs 3.35e-5
+      ! /yr, a factor 2000; LPX-Bern 0.04 vs 0.0004).  catotelm_depth > 0 splits
+      ! o_scalar at that depth and applies o_scalar_catotelm below it.
+      real(r8) :: catotelm_depth    = -1._r8    ! [m] >0 enables the split
+      real(r8) :: o_scalar_catotelm = 0.002_r8  ! [-] anoxia limiter below it
+
       ! Hybrid mode: on soil tiles (patchtype != 2) take finundated from the
       ! routing-published f_inund_flood_patch instead of sigmoid(zwt).  This
       ! captures tropical floodplain overland flooding (Pantanal, Amazon) that
@@ -618,6 +677,35 @@ CONTAINS
 
    END SUBROUTINE force_dynamic_wetland
 
+   real(r8) FUNCTION methane_prescribed_wtd ()
+      ! Effective prescribed wetland water table, metres below the surface.
+      ! Negative means "not prescribed" and every caller must fall back to the
+      ! host zwt, which keeps the default configuration bit identical.
+      !
+      ! wtd_by_wetclass reads the measured SITE_wetland_class -- the same scalar
+      ! that already drives get_wetland_veg_proxy -- so a site run picks its own
+      ! class median without any new input field.  A class the table does not
+      ! cover (swamp, drained, none) falls through to the scalar, exactly as the
+      ! aerenchyma proxy falls back to the climate tree for those two.
+      USE MOD_Namelist, only: SITE_wetland_class
+      IMPLICIT NONE
+
+      methane_prescribed_wtd = DEF_METHANE%wetland_wtd_prescribed
+
+      IF (DEF_METHANE%wtd_by_wetclass) THEN
+         SELECT CASE (SITE_wetland_class)
+         CASE (1)  ; methane_prescribed_wtd = DEF_METHANE%wtd_bog
+         CASE (2)  ; methane_prescribed_wtd = DEF_METHANE%wtd_fen
+         CASE (3)  ; methane_prescribed_wtd = DEF_METHANE%wtd_marsh
+         CASE (5)  ; methane_prescribed_wtd = DEF_METHANE%wtd_tundra
+         CASE (6)  ; methane_prescribed_wtd = DEF_METHANE%wtd_marsh
+         CASE DEFAULT
+            ! swamp (4), drained (7), none (0): no BAWLD-CH4 median to use
+         END SELECT
+      ENDIF
+
+   END FUNCTION methane_prescribed_wtd
+
    SUBROUTINE configure_methane_inundation_mode ()
       ! Resolve the user-facing four-option CH4 inundation mode into the
       ! internal scheme integer plus paired methane switches.  The old
@@ -696,6 +784,25 @@ CONTAINS
          DEF_METHANE%use_routing_for_soil = .false.
          CALL force_dynamic_wetland (.true., 'dynamic_wtd')
 
+       CASE ('prescribed_wtd','prescribed-wtd')
+         ! Same sigmoid as dynamic_wtd, but the water table is prescribed
+         ! (DEF_METHANE%wetland_wtd_prescribed, or per class when
+         ! wtd_by_wetclass) instead of predicted, and VSF stays OFF.  That
+         ! combination is the point: this build has no lateral recharge, so a
+         ! predicted wetland water table only ever drains, which is what drove
+         ! every earlier attempt at dynamic hydrology to collapse the flux.
+         !
+         ! The dry unsaturated branch is released here as well.  It exists to
+         ! stop sat and unsat from being identical when the host pins zwt at 0;
+         ! once a real depth is supplied that degeneracy is gone, and the
+         ! unsaturated sub-column has to carry the prescribed table for the
+         ! oxic layers to appear at all.
+         DEF_wetland_finundation_scheme = 6
+         DEF_METHANE%enable_wetwat_finundated_override = .false.
+         DEF_METHANE%wetland_dry_unsat_branch = .false.
+         DEF_METHANE%use_routing_for_soil = .false.
+         CALL force_dynamic_wetland (.false., 'prescribed_wtd')
+
        CASE ('hybrid','dh_all_thr05','dyn_routing_hybrid')
 		         ! Site-calibrated hybrid mode; not a globally validated default.
 	         ! Combines routing and dynamic-WTD hydrology.  Biome yield,
@@ -719,7 +826,7 @@ CONTAINS
        CASE DEFAULT
          IF (p_is_master) write(6,*) &
             '***** ERROR: unsupported DEF_METHANE%inundation_mode = ', trim(DEF_METHANE%inundation_mode), &
-            '; expected saturated, wetwat, satellite, routing, dynamic_wtd, or hybrid.'
+            '; expected saturated, wetwat, satellite, routing, dynamic_wtd, prescribed_wtd, or hybrid.'
          CALL CoLM_Stop (' ***** ERROR: unsupported methane inundation mode')
       END SELECT
 
@@ -1060,6 +1167,31 @@ CONTAINS
           DEF_METHANE%rice_paddy_min_finundated > 1._r8) THEN
          IF (p_is_master) write(6,*) '***** ERROR: rice_paddy_min_finundated must be in [0,1]: ', &
             DEF_METHANE%rice_paddy_min_finundated
+         bad = .true.
+      ENDIF
+      ! Prescribed water table: a depth deeper than the soil column would put
+      ! every layer above the table and silence production entirely, which is a
+      ! configuration error rather than a result worth reporting.
+      IF (DEF_METHANE%wetland_wtd_prescribed > 50._r8) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: wetland_wtd_prescribed is a depth in metres below the surface; ', &
+            'values above 50 m are past the soil column: ', DEF_METHANE%wetland_wtd_prescribed
+         bad = .true.
+      ENDIF
+      IF (DEF_METHANE%wtd_by_wetclass .and. DEF_METHANE%wetland_wtd_prescribed < 0._r8) THEN
+         ! The per-class table only covers bog/fen/marsh/tundra/salt marsh; swamp,
+         ! drained and unset fall through to the scalar, so it has to be usable.
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: wtd_by_wetclass needs wetland_wtd_prescribed >= 0 as the ', &
+            'fallback for swamp / drained / unclassified sites.'
+         bad = .true.
+      ENDIF
+      IF (DEF_METHANE%catotelm_depth > 0._r8 .and. &
+          (DEF_METHANE%o_scalar_catotelm <= 0._r8 .or. &
+           DEF_METHANE%o_scalar_catotelm > 1._r8)) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: o_scalar_catotelm must be in (0,1] when catotelm_depth > 0: ', &
+            DEF_METHANE%o_scalar_catotelm
          bad = .true.
       ENDIF
       IF (DEF_METHANE%rice_midseason_drained_finundated < 0._r8 .or. &

@@ -75,6 +75,17 @@ CONTAINS
       DO j = 1, nl_soil
          IF (t_soisno(j,ipatch) > tfrz) THEN
             o_scalar(j,ipatch) = max(DEF_METHANE%mino2lim, 1.e-6_r8)
+            ! Two-layer peat: below catotelm_depth the carbon is permanently
+            ! anoxic and effectively out of circulation, so it gets its own,
+            ! far smaller limiter.  One value for the whole column is what
+            ! turns 63-100 kgC/m2 of peat over in 48-58 yr and drives
+            ! heterotrophic respiration to 1208-2200 gC/m2/yr where peatland
+            ! NPP is 100-400.  Disabled (catotelm_depth <= 0) by default, so
+            ! the single-limiter behaviour is preserved bit for bit.
+            IF (DEF_METHANE%catotelm_depth > 0._r8 .and. &
+                z_soi(j) > DEF_METHANE%catotelm_depth) THEN
+               o_scalar(j,ipatch) = max(DEF_METHANE%o_scalar_catotelm, 1.e-9_r8)
+            ENDIF
          ELSE
             o_scalar(j,ipatch) = 1._r8
          ENDIF

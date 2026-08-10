@@ -539,6 +539,8 @@ contains
 		real(r8) :: vliq, vice, vtot, pore_volume, vliq_sat_alloc, vice_sat_alloc
 		real(r8) :: vol_liq_init, vol_ice_init, vol_gas_init
       real(r8) :: wtd_arg
+      real(r8) :: zwt_eff             ! water table entering the sigmoid: host zwt, or prescribed
+      real(r8) :: wtd_pre             ! prescribed wetland water table, <0 when disabled
 
       integer  :: jwt                 ! index of the soil layer right above the water table (-)
       integer  :: jwt_sat            ! index of the soil layer right above the water table (-), saturated zone
@@ -788,8 +790,15 @@ contains
                write(6,*) 'ERROR: DEF_METHANE%wtd_steepness must be positive for methane scheme 6.'
                CALL CoLM_stop ()
             endif
-            if (ieee_is_nan(zwt) .or. abs(zwt) >= 0.5_r8*abs(spval)) then
-               write(6,*) 'ERROR: invalid zwt for methane scheme 6 logistic inundation: ', zwt
+            ! A prescribed wetland table replaces the host zwt here.  It is only
+            ! consulted on wetland tiles: a soil tile still has a meaningful
+            ! predicted water table, and overriding it would silently turn the
+            ! dynamic flood extension below into a constant.
+            zwt_eff = zwt
+            wtd_pre = methane_prescribed_wtd ()
+            if (patchtype == 2 .and. wtd_pre >= 0._r8) zwt_eff = wtd_pre
+            if (ieee_is_nan(zwt_eff) .or. abs(zwt_eff) >= 0.5_r8*abs(spval)) then
+               write(6,*) 'ERROR: invalid zwt for methane scheme 6 logistic inundation: ', zwt_eff
                CALL CoLM_stop ()
             endif
             ! Dynamic flood extension: soil tile (patchtype==0/1) uses
@@ -799,10 +808,10 @@ contains
             ! the steep 0.3 m wetland sigmoid that captures peat-style
             ! peak-to-trough variation.  Disabled when wtd_inflection_soil=0.
             IF (patchtype /= 2 .and. DEF_METHANE%wtd_inflection_soil > 0._r8) then
-               wtd_arg = (zwt - DEF_METHANE%wtd_inflection_soil) / &
+               wtd_arg = (zwt_eff - DEF_METHANE%wtd_inflection_soil) / &
                   max(DEF_METHANE%wtd_steepness_soil, 1.e-3_r8)
             else
-               wtd_arg = (zwt - DEF_METHANE%wtd_inflection) / DEF_METHANE%wtd_steepness
+               wtd_arg = (zwt_eff - DEF_METHANE%wtd_inflection) / DEF_METHANE%wtd_steepness
             endif
             wtd_arg = min(50._r8, max(-50._r8, wtd_arg))
             finundated = 1._r8 / (1._r8 + exp(wtd_arg))
@@ -1166,7 +1175,14 @@ contains
                wdsrf_unsat = 0._r8                            ! no ponding
                jwt_unsat   = nl_soil                          ! no layer is below WT
             else
+               ! A prescribed wetland table also drives the unsaturated column.
+               ! This is the half that matters physically: it is where the oxic
+               ! layers come from, so leaving it on the host zwt (pinned at 0
+               ! under the saturated hydrology) would keep sat and unsat
+               ! identical and change nothing.
                zwt_unsat = zwt
+               wtd_pre = methane_prescribed_wtd ()
+               if (patchtype == 2 .and. wtd_pre >= 0._r8) zwt_unsat = wtd_pre
                wdsrf_unsat = methane_wetland_water_depth(patchtype, wdsrf, wetwat)
                jwt_unsat = nl_soil
                ! allow jwt to equal zero when zwt is in top layer
