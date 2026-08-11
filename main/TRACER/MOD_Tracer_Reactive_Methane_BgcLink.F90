@@ -200,7 +200,7 @@ CONTAINS
       ENDIF
 
       crootfr(:) = 0._r8
-      pH = get_ph_for_patch(ipatch)
+      pH = get_ph_for_patch(ipatch, DEF_METHANE%ph_fallback)
       cellorg(:) = 0._r8
       somhr = 0._r8
       lithr = 0._r8

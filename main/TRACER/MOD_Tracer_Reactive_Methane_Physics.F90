@@ -549,6 +549,7 @@ contains
       real(r8) :: zwt_unsat, wice_soisno_unsat(maxsnl+1:nl_soil), wliq_soisno_unsat(maxsnl+1:nl_soil), wdsrf_unsat
       real(r8) :: frac_above           ! part of a layer sitting above the prescribed table
       real(r8) :: vol_ice_unsat, air_target, vol_liq_cap
+      real(r8) :: fliq_unsat(1:nl_soil), fliq_sat(1:nl_soil)  ! unfrozen water fraction per layer
       real(r8) :: routing_depth_mm
       logical  :: lake_restart_debug_print
       real(r8) :: lake_dbg_totcol_bef, lake_dbg_ch4_l1_bef, lake_dbg_o2_l1_bef
@@ -1276,16 +1277,28 @@ contains
                conc_ch4_gas_unsat, conc_ch4_aqu_unsat, conc_ch4_porsl_unsat, conc_ch4_gas_porsl_unsat, conc_ch4_aqu_porsl_unsat, &
                conc_o2_gas_unsat, conc_o2_aqu_unsat, conc_o2_porsl_unsat, conc_o2_gas_porsl_unsat, conc_o2_aqu_porsl_unsat )
 
+            ! Per-layer unfrozen water fraction for the freeze gates below.
+            ! A layer holding no water at all is not frozen shut, so it maps
+            ! to 1 and the temperature term alone decides.
+            do j = 1, nl_soil
+               if (max(wliq_soisno_unsat(j), 0._r8) + max(wice_soisno_unsat(j), 0._r8) > 1.e-9_r8) then
+                  fliq_unsat(j) = max(wliq_soisno_unsat(j), 0._r8) / &
+                     (max(wliq_soisno_unsat(j), 0._r8) + max(wice_soisno_unsat(j), 0._r8))
+               else
+                  fliq_unsat(j) = 1._r8
+               endif
+            enddo
+
             ! Calculate CH4 production in each soil layer
             call methane_prod ( ipatch, idate, patchtype, sat, jwt_unsat, finundated, finundated_lag, rr, deltim, &
-               z_soisno, dz_soisno, zi_soisno, t_soisno, &
+               z_soisno, dz_soisno, zi_soisno, t_soisno, fliq_unsat, &
                lai, conc_o2_unsat, rootfr, annavg_finrw, &
                crootfr, somhr, lithr, hr_vr, o_scalar, fphr, pot_f_nit_vr, pH, layer_sat_lag, lake_soilc, &
                microbial_prod_potential_patch, &
                methane_prod_depth_unsat, o2_decomp_depth_unsat, co2_decomp_depth_unsat )
 
             ! Calculate CH4 oxidation in each soil layer
-            call methane_oxid ( idate, patchtype, jwt_unsat, sat, t_soisno, dz_soisno, zi_soisno, smp, vol_aqu_unsat, &
+            call methane_oxid ( idate, patchtype, jwt_unsat, sat, t_soisno, fliq_unsat, dz_soisno, zi_soisno, smp, vol_aqu_unsat, &
                conc_o2_aqu_porsl_unsat, conc_ch4_aqu_porsl_unsat, &
                microbial_oxid_potential_patch, &
                methane_oxid_depth_unsat, o2_oxid_depth_unsat )
@@ -1293,7 +1306,7 @@ contains
             ! Calculate CH4 ebullition losses in each soil layer
             call methane_ebul ( ipatch, idate, patchtype, jwt_unsat, sat, finundated, deltim, &
 					z_soisno, dz_soisno, zi_soisno, forc_pbot, lake_depth_current, lake_icefrac, &
-               t_soisno, wdsrf_unsat, conc_methane_unsat, conc_ch4_gas_porsl_unsat, &
+               t_soisno, fliq_unsat, wdsrf_unsat, conc_methane_unsat, conc_ch4_gas_porsl_unsat, &
                methane_ebul_depth_unsat )
 
             ! Calculate CH4 aerenchyma losses in each soil layer
@@ -1403,16 +1416,27 @@ contains
                conc_ch4_gas_sat, conc_ch4_aqu_sat, conc_ch4_porsl_sat, conc_ch4_gas_porsl_sat, conc_ch4_aqu_porsl_sat, &
                conc_o2_gas_sat, conc_o2_aqu_sat, conc_o2_porsl_sat, conc_o2_gas_porsl_sat, conc_o2_aqu_porsl_sat )
 
+            ! Per-layer unfrozen water fraction, saturated column (see the
+            ! unsaturated branch for the convention).
+            do j = 1, nl_soil
+               if (max(wliq_soisno_sat(j), 0._r8) + max(wice_soisno_sat(j), 0._r8) > 1.e-9_r8) then
+                  fliq_sat(j) = max(wliq_soisno_sat(j), 0._r8) / &
+                     (max(wliq_soisno_sat(j), 0._r8) + max(wice_soisno_sat(j), 0._r8))
+               else
+                  fliq_sat(j) = 1._r8
+               endif
+            enddo
+
             ! Calculate CH4 production in each soil layer
             call methane_prod ( ipatch, idate, patchtype, sat, jwt_sat, finundated, finundated_lag, rr, deltim, &
-               z_soisno, dz_soisno, zi_soisno, t_soisno, &
+               z_soisno, dz_soisno, zi_soisno, t_soisno, fliq_sat, &
                lai, conc_o2_sat, rootfr, annavg_finrw, &
                crootfr, somhr, lithr, hr_vr, o_scalar, fphr, pot_f_nit_vr, pH, layer_sat_lag, lake_soilc, &
                microbial_prod_potential_patch, &
                methane_prod_depth_sat, o2_decomp_depth_sat, co2_decomp_depth_sat )
 
             ! Calculate CH4 oxidation in each soil layer
-            call methane_oxid ( idate, patchtype, jwt_sat, sat, t_soisno, dz_soisno, zi_soisno, smp, vol_aqu_sat, &
+            call methane_oxid ( idate, patchtype, jwt_sat, sat, t_soisno, fliq_sat, dz_soisno, zi_soisno, smp, vol_aqu_sat, &
                conc_o2_aqu_porsl_sat, conc_ch4_aqu_porsl_sat, &
                microbial_oxid_potential_patch, &
                methane_oxid_depth_sat, o2_oxid_depth_sat )
@@ -1420,7 +1444,7 @@ contains
             ! Calculate CH4 ebullition losses in each soil layer
             call methane_ebul ( ipatch, idate, patchtype, jwt_sat, sat, finundated, deltim, &
 					z_soisno, dz_soisno, zi_soisno, forc_pbot, lake_depth_current, lake_icefrac, &
-               t_soisno, wdsrf_sat, conc_methane_sat, conc_ch4_gas_porsl_sat, &
+               t_soisno, fliq_sat, wdsrf_sat, conc_methane_sat, conc_ch4_gas_porsl_sat, &
                methane_ebul_depth_sat )
 
             ! Calculate CH4 aerenchyma losses in each soil layer
@@ -1865,7 +1889,7 @@ contains
 
    !-----------------------------------------------------------------------
    subroutine methane_prod (ipatch,idate,patchtype,sat,jwt,finundated,finundated_lag,rr,deltim,& !input
-      z_soisno,dz_soisno,zi_soisno,t_soisno,&
+      z_soisno,dz_soisno,zi_soisno,t_soisno,fliq,&
       lai,conc_o2,rootfr,annavg_finrw,&
       crootfr,somhr,lithr,hr_vr,o_scalar,fphr,pot_f_nit_vr,pH,layer_sat_lag,lake_soilc,&
       microbial_prod_potential_layer, &
@@ -1898,6 +1922,8 @@ contains
          zi_soisno(maxsnl:nl_soil)   , &! interface level below a "z" level (m)
 
          t_soisno (maxsnl+1:nl_soil) , &! soil temperature (K)
+
+         fliq     (1:nl_soil)        , &! unfrozen water fraction wliq/(wliq+wice) (-)
 
          lai                         , &! leaf area index [m2/m2]
          conc_o2  (1:nl_soil)        , &! O2 conc in each soil layer (mol/m3) (nl_soil)
@@ -2086,7 +2112,19 @@ contains
          ! production already has an explicit temperature gate; apply the same
          ! physical cutoff to the soil branch so winter CH4 is not produced
          ! solely from residual BGC HR in ice-filled pores.
-         if (t_soisno(j) <= tfrz) f_methane_adj = 0._r8
+         !
+         ! The binary form also shuts zero-curtain layers, which sit at
+         ! exactly tfrz for months with liquid water still present -- and with
+         ! them every winter flux channel (cold towers carry 12-59% of the
+         ! annual flux in NDJF; the model gave ~0 and no namelist knob could
+         ! reach it).  freeze_gate_liquid scales by the unfrozen water
+         ! fraction instead: metabolism continues in liquid films and stops
+         ! only as the pore water actually freezes.
+         if (DEF_METHANE%freeze_gate_liquid) then
+            f_methane_adj = f_methane_adj * fliq(j)
+         else
+            if (t_soisno(j) <= tfrz) f_methane_adj = 0._r8
+         endif
 
 
          ! Remove CN nitrogen limitation, as methanogenesis is not N limited.
@@ -2209,7 +2247,7 @@ contains
    end subroutine methane_prod
 
    !---------------------------------------------------------------------------
-   subroutine methane_oxid (idate, patchtype, jwt,  sat, t_soisno, dz_soisno, zi_soisno, smp, vol_aqu, &
+   subroutine methane_oxid (idate, patchtype, jwt,  sat, t_soisno, fliq, dz_soisno, zi_soisno, smp, vol_aqu, &
       conc_o2_aqu_porsl, conc_ch4_aqu_porsl, &
       microbial_oxid_potential_layer, &
       methane_oxid_depth, o2_oxid_depth)
@@ -2231,6 +2269,7 @@ contains
 
       real(r8), intent(in) :: &
          t_soisno (maxsnl+1:nl_soil)    , &! soil temperature (Kelvin)
+         fliq     (1:nl_soil)   , &! unfrozen water fraction wliq/(wliq+wice) (-)
          dz_soisno(maxsnl+1:nl_soil)    , &! soil layer thickness (m)
          zi_soisno(maxsnl:nl_soil)      , &! interface level below a "z" level (m)
          smp      (1:nl_soil)   , &! soil matrix potential [mm]
@@ -2311,8 +2350,15 @@ contains
             * DEF_METHANE%q10_methane_oxid ** ((t_soisno(j) - t0) / 10._r8) * smp_fact &
             * lake_oxid_layer_factor
 
-         ! For all landunits / levels, prevent oxidation if at or below freezing
-         if (t_soisno(j) <= tfrz) oxid_a = 0._r8
+         ! For all landunits / levels, prevent oxidation if at or below freezing.
+         ! Under freeze_gate_liquid, scale by the unfrozen water fraction
+         ! instead -- symmetric with the production gate, so opening winter
+         ! production does not artificially inflate the escaping share.
+         if (DEF_METHANE%freeze_gate_liquid) then
+            oxid_a = oxid_a * fliq(j)
+         else
+            if (t_soisno(j) <= tfrz) oxid_a = 0._r8
+         endif
 
          if (use_microbe_override .and. &
             abs(microbial_oxid_potential_layer(j)) < 0.5_r8 * abs(spval)) then
@@ -2598,7 +2644,7 @@ contains
    !---------------------------------------------------------------------------
    subroutine methane_ebul (ipatch, idate, patchtype, jwt, sat, finundated, deltim, &
       z_soisno, dz_soisno, zi_soisno, forc_pbot, lakedepth, lake_icefrac, &
-      t_soisno, wdsrf, conc_methane, conc_ch4_gas_porsl,&
+      t_soisno, fliq, wdsrf, conc_methane, conc_ch4_gas_porsl,&
       methane_ebul_depth)
       !-----------------------------------------------------------------------
       ! DESCRIPTION:
@@ -2627,6 +2673,7 @@ contains
          lakedepth                  , &! lake depth (m), CTSM hydrostatic pressure over sediments
          lake_icefrac(1:nl_lake)    , &! lake frozen mass fraction [-]
          t_soisno (maxsnl+1:nl_soil), &! soil temperature (Kelvin)
+         fliq     (1:nl_soil)       , &! unfrozen water fraction wliq/(wliq+wice) (-)
          wdsrf                      , &! depth of surface water [mm]
          conc_methane       (1:nl_soil) , &! CH4 conc in each soil layer (mol/m3)
 
@@ -2655,7 +2702,13 @@ contains
 
       ! column loop to estimate ebullition CH4 flux from each soil layer
       do j=1,nl_soil
-         if (j  >  jwt .and. t_soisno(j) > tfrz) then ! Ebullition occurs only below the water table
+         ! Ebullition occurs only below the water table.  The strict
+         ! t > tfrz test also excludes zero-curtain layers held at exactly
+         ! tfrz with mostly liquid pores; under freeze_gate_liquid a layer
+         ! that is still mostly unfrozen may keep bubbling -- the only
+         ! winter exit that does not need a diffusive path to the surface.
+         if (j  >  jwt .and. (t_soisno(j) > tfrz .or. &
+             (DEF_METHANE%freeze_gate_liquid .and. fliq(j) > 0.5_r8))) then
             if (patchtype == 4 .and. DEF_METHANE%allowlakeprod) then
                ! CTSM lake path: sediment bubbles must overcome the full
                ! lake water-column head above the sediment surface.

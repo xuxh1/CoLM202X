@@ -445,6 +445,25 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       real(r8) :: finundated_prescribed = -1._r8       ! [-] wetland ponded-area fraction, <0 = sigmoid
       real(r8) :: wft_finundated(3)        = -999._r8  ! [-] per-WFT ponded-area fraction
 
+      ! ---- Winter channels (experiment switch, default off) ----
+      !
+      ! Production, oxidation and layer ebullition all carry a binary
+      ! T<=tfrz shutter.  Zero-curtain layers sit at exactly tfrz for months
+      ! with liquid water still present, so the shutter closes every winter
+      ! flux channel at once: cold FLUXNET-CH4 towers carry 12-59% of their
+      ! annual flux in NDJF while the model gives ~0, and the D1 probes
+      ! confirmed no namelist knob (capthick, gamma_microbial_freeze) can
+      ! reach it.  freeze_gate_liquid replaces the binary shutter with a
+      ! scaling by the layer's unfrozen water fraction -- metabolism
+      ! continues in liquid films and stops only as the pore water actually
+      ! freezes.  Default off is bit identical to the shutter.
+      logical  :: freeze_gate_liquid = .false.
+      ! pH entering the Dunfield production curve when spatial pH is off.
+      ! The old compile-time fallback 6.2 sits at the curve optimum, so the
+      ! factor was constant 1 and acidic bogs (pH ~4) lost an order of
+      ! magnitude of suppression the mechanism was built to provide.
+      real(r8) :: ph_fallback = 6.2_r8
+
       ! ---- Two-layer peat decomposition (experiment switch, default off) ----
       !
       ! One o_scalar covers the whole column, so the deep carbon decomposes at
@@ -1302,6 +1321,12 @@ CONTAINS
       IF (any(DEF_METHANE%wft_finundated > 1._r8)) THEN
          IF (p_is_master) write(6,*) &
             '***** ERROR: set wft_finundated entries must lie in [0,1]: ', DEF_METHANE%wft_finundated
+         bad = .true.
+      ENDIF
+      IF (DEF_METHANE%ph_fallback < 3._r8 .or. DEF_METHANE%ph_fallback > 10._r8) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: ph_fallback outside the plausible soil range [3,10]: ', &
+            DEF_METHANE%ph_fallback
          bad = .true.
       ENDIF
       IF (DEF_METHANE%catotelm_depth > 0._r8 .and. &

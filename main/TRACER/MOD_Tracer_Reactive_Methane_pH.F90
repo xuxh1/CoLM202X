@@ -144,9 +144,15 @@ CONTAINS
       ENDIF
    END SUBROUTINE read_methane_ph_patch
 
-   real(r8) FUNCTION get_ph_for_patch(ipatch)
-      integer, intent(in) :: ipatch
+   real(r8) FUNCTION get_ph_for_patch(ipatch, fallback)
+      ! The optional fallback lets the caller supply a namelist pH
+      ! (DEF_METHANE%ph_fallback) without this module depending on Const;
+      ! spatial pH, when active, still wins.  Absent both, the compiled
+      ! Dunfield-optimum 6.2 keeps the old behaviour bit for bit.
+      integer,  intent(in) :: ipatch
+      real(r8), intent(in), optional :: fallback
       get_ph_for_patch = methane_ph_fallback
+      IF (present(fallback)) get_ph_for_patch = fallback
       IF (.not. ph_active) RETURN
       IF (.not. allocated(methane_ph_patch)) RETURN
       IF (ipatch < 1 .or. ipatch > size(methane_ph_patch)) RETURN
