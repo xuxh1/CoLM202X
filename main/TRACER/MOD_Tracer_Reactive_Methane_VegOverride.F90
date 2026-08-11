@@ -44,6 +44,7 @@ MODULE MOD_Tracer_Reactive_Methane_VegOverride
    PUBLIC :: deallocate_wetland_aere_overrides
    PUBLIC :: get_aere_poros, get_aere_radius, get_aere_tillerC, get_aere_scale
    PUBLIC :: get_wft_param
+   PUBLIC :: load_wft_class_map
 
 CONTAINS
 
@@ -111,6 +112,82 @@ CONTAINS
       IF (ipatch < 1 .or. ipatch > size(wetland_aere_active)) RETURN
       IF (wetland_aere_active(ipatch)) get_aere_scale = wetland_aere_scale(ipatch)
    END FUNCTION get_aere_scale
+
+   SUBROUTINE load_wft_class_map(file_class, patchlatr_in, patchlonr_in, patchtype_in, numpatch)
+      ! Populate wetland_wft_class from the static global class map for grid
+      ! runs.  The map is small (5-arcmin byte grid, ~8 MB) so every rank
+      ! reads its own copy from /share -- no MPI choreography needed.
+      !
+      ! Precedence: a class already set (single-point path writes it from
+      ! SITE_wetland_class before this runs) always wins; the map only fills
+      ! patches still at 0, and only wetland patches (patchtype 2).  A missing
+      ! or unreadable file logs a warning and leaves everything unset, which
+      ! downstream means "fall through to the global scalars" -- the safe
+      ! failure mode.
+      USE netcdf
+      character(len=*), intent(in) :: file_class
+      real(r8), intent(in) :: patchlatr_in(:), patchlonr_in(:)   ! radians
+      integer,  intent(in) :: patchtype_in(:)
+      integer,  intent(in) :: numpatch
+
+      real(r8), parameter :: PI = 3.14159265358979323846_r8
+      integer :: ncid, vid, dimid, nlat, nlon, ierr
+      integer :: ipatch, ilat, ilon, nset
+      real(r8), allocatable :: mlat(:), mlon(:)
+      integer(1), allocatable :: mclass(:,:)
+      real(r8) :: lat_deg, lon_deg
+
+      IF (len_trim(file_class) == 0 .or. trim(file_class) == 'null') RETURN
+      IF (.not. allocated(wetland_wft_class)) RETURN
+      IF (numpatch < 1) RETURN
+
+      ierr = nf90_open(trim(file_class), NF90_NOWRITE, ncid)
+      IF (ierr /= NF90_NOERR) THEN
+         write(6,*) 'WARNING load_wft_class_map: cannot open ', trim(file_class), &
+            '; wetland WFT classes stay unset (global scalars apply).'
+         RETURN
+      ENDIF
+      ierr = nf90_inq_dimid(ncid, 'lat', dimid)
+      IF (ierr == NF90_NOERR) ierr = nf90_inquire_dimension(ncid, dimid, len=nlat)
+      IF (ierr == NF90_NOERR) ierr = nf90_inq_dimid(ncid, 'lon', dimid)
+      IF (ierr == NF90_NOERR) ierr = nf90_inquire_dimension(ncid, dimid, len=nlon)
+      IF (ierr /= NF90_NOERR) THEN
+         write(6,*) 'WARNING load_wft_class_map: bad lat/lon dims in ', trim(file_class)
+         ierr = nf90_close(ncid); RETURN
+      ENDIF
+      allocate(mlat(nlat), mlon(nlon), mclass(nlon, nlat))
+      ierr = nf90_inq_varid(ncid, 'lat', vid)
+      IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, mlat)
+      IF (ierr == NF90_NOERR) ierr = nf90_inq_varid(ncid, 'lon', vid)
+      IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, mlon)
+      IF (ierr == NF90_NOERR) ierr = nf90_inq_varid(ncid, 'wft_class', vid)
+      ! netCDF stores (lat, lon); Fortran reads it transposed as (lon, lat)
+      IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, mclass)
+      IF (ierr /= NF90_NOERR) THEN
+         write(6,*) 'WARNING load_wft_class_map: read failed on ', trim(file_class)
+         deallocate(mlat, mlon, mclass)
+         ierr = nf90_close(ncid); RETURN
+      ENDIF
+      ierr = nf90_close(ncid)
+
+      nset = 0
+      DO ipatch = 1, min(numpatch, size(wetland_wft_class))
+         IF (patchtype_in(ipatch) /= 2) CYCLE
+         IF (wetland_wft_class(ipatch) /= 0) CYCLE   ! site-assigned class wins
+         lat_deg = patchlatr_in(ipatch) * 180._r8 / PI
+         lon_deg = patchlonr_in(ipatch) * 180._r8 / PI
+         IF (lon_deg > 180._r8) lon_deg = lon_deg - 360._r8
+         ilat = minloc(abs(mlat - lat_deg), dim=1)
+         ilon = minloc(abs(mlon - lon_deg), dim=1)
+         IF (mclass(ilon, ilat) >= 1 .and. mclass(ilon, ilat) <= 3) THEN
+            wetland_wft_class(ipatch) = int(mclass(ilon, ilat))
+            nset = nset + 1
+         ENDIF
+      ENDDO
+      write(6,*) 'load_wft_class_map: assigned WFT class to ', nset, ' wetland patches from ', &
+         trim(file_class)
+      deallocate(mlat, mlon, mclass)
+   END SUBROUTINE load_wft_class_map
 
    real(r8) FUNCTION get_wft_param(ipatch, default_val, per_class)
       ! Per-WFT parameter lookup: return per_class(class of ipatch) when that

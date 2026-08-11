@@ -854,7 +854,12 @@ CONTAINS
          ! WFT class for the per-class parameter tables.  Single point: from
          ! the measured SITE_wetland_class.  A global class map, when it
          ! exists, overwrites this after initialization.
-         wetland_wft_class   (ipatch) = methane_wft_from_wetclass()
+         ! Only a real site class may overwrite: on grid runs
+         ! SITE_wetland_class is unset (0) and the map-assigned class from
+         ! load_wft_class_map must survive this per-step proxy write.
+         IF (methane_wft_from_wetclass() > 0) THEN
+            wetland_wft_class(ipatch) = methane_wft_from_wetclass()
+         ENDIF
       ENDIF
 
       ! LAI: trust data when valid, else fall back to climate-zone peak.

@@ -38,7 +38,7 @@ MODULE MOD_Tracer_Reactive_Methane
    USE MOD_Tracer_Reactive_Methane_pH,       only: allocate_methane_ph, &
       deallocate_methane_ph, read_methane_ph_patch
    USE MOD_Tracer_Reactive_Methane_VegOverride, only: allocate_wetland_aere_overrides, &
-      deallocate_wetland_aere_overrides
+      deallocate_wetland_aere_overrides, load_wft_class_map
    USE MOD_Tracer_Reactive_Methane_Impl, only: ch4_impl_lake_step, &
       ch4_impl_wetland_decomp, ch4_impl_soil_step
    USE MOD_Tracer_Reactive_Methane_Hist, only: methane_reactive_history
@@ -183,6 +183,18 @@ CONTAINS
       ENDIF
 
       CALL allocate_wetland_aere_overrides (numpatch)
+
+      ! Static WFT class map for grid runs (single canonical variable:
+      ! wetland_wft_class).  Sequencing: the array is allocated just above;
+      ! the map fills wetland patches now; the per-step veg proxy later
+      ! overwrites only with a real site class (SITE_wetland_class > 0), so
+      ! tower runs and grid runs converge on the same variable with the
+      ! right precedence.
+      IF (p_is_worker .and. numpatch > 0 .and. allocated(patchtype) .and. &
+          trim(DEF_METHANE%wft_class_file) /= 'null') THEN
+         CALL load_wft_class_map (DEF_METHANE%wft_class_file, patchlatr, patchlonr, &
+            patchtype, numpatch)
+      ENDIF
 
    END SUBROUTINE ch4_reactive_init
 

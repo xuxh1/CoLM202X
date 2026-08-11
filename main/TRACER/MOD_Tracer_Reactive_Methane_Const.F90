@@ -430,6 +430,19 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! methane_wft_from_wetclass; global: a static class map -- permafrost cut
       ! by MAAT/permafrost map, peat cut by Peat-ML / GLWD peat classes /
       ! OM_density -- reader pending).
+      ! Static global class map feeding wetland_wft_class on grid runs
+      ! (data/derived/wft_class/global_wft_class_5min.nc: permafrost cut by
+      ! MAAT first, then Peat-ML peat cut).  'null' = off.  Site-assigned
+      ! classes (SITE_wetland_class) always win; the map only fills patches
+      ! still unset, so single-point runs are untouched either way.
+      character(len=256) :: wft_class_file = 'null'
+      ! Per-WFT prescribed water table (m below surface).  Resolved AFTER
+      ! methane_prescribed_wtd() at the two call sites via get_wft_param, so
+      ! it works on both axes: sites keep the BAWLD-class table via
+      ! SITE_wetland_class, grid runs get per-class depths through the class
+      ! map -- the A6 generalisation.  A set entry also turns prescription on
+      ! for that class even when the scalar is off.
+      real(r8) :: wtd_wft(3)               = -999._r8  ! [m] per-WFT water table depth
       real(r8) :: wft_f_methane(3)         = -999._r8  ! [-] anaerobic C fraction to CH4
       real(r8) :: wft_scale_factor_aere(3) = -999._r8  ! [-] aerenchyma area scale
       real(r8) :: wft_aereoxid(3)          = -999._r8  ! [-] rhizosphere oxidation fraction (fixed-fraction mode)
@@ -1321,6 +1334,12 @@ CONTAINS
       IF (any(DEF_METHANE%wft_finundated > 1._r8)) THEN
          IF (p_is_master) write(6,*) &
             '***** ERROR: set wft_finundated entries must lie in [0,1]: ', DEF_METHANE%wft_finundated
+         bad = .true.
+      ENDIF
+      IF (any(DEF_METHANE%wtd_wft >= 0._r8 .and. DEF_METHANE%wtd_wft > 50._r8)) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: set wtd_wft entries are depths in metres and must be <= 50: ', &
+            DEF_METHANE%wtd_wft
          bad = .true.
       ENDIF
       IF (DEF_METHANE%ph_fallback < 3._r8 .or. DEF_METHANE%ph_fallback > 10._r8) THEN
