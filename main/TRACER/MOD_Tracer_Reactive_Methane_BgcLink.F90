@@ -29,6 +29,7 @@ MODULE MOD_Tracer_Reactive_Methane_BgcLink
       donor_pool, is_litter, is_soil, is_cwd
    USE MOD_BGC_Vars_1DFluxes,       only: decomp_hr_vr, decomp_hr, pot_f_nit_vr, ar, er
    USE MOD_BGC_Vars_TimeVariables,  only: decomp_cpools_vr, o_scalar
+   USE MOD_BGC_Soil_BiogeochemDecompCascadeBGC, only: decomp_litter_priming
    USE MOD_BGC_CNCStateUpdate1, only: CDecompStateUpdate
    USE MOD_BGC_Soil_BiogeochemNStateUpdate1, only: SoilBiogeochemNDecompStateUpdate
    USE MOD_BGC_CNSummary, only: CNDriverSummarizeNonvegetatedSoilStates
@@ -109,11 +110,6 @@ MODULE MOD_Tracer_Reactive_Methane_BgcLink
    integer, public, parameter :: WETCLASS_SALTMARSH  = 6
    integer, public, parameter :: WETCLASS_DRAINED    = 7  ! water-managed: falls back
 
-   ! Rice rhizodeposition rate cached between the inputs call (which adds it
-   ! to the methane-visible substrate) and the finalize call (which debits
-   ! the same carbon from the litter pool).  gC/m2/s, per patch.
-   real(r8), allocatable :: rice_rhizodep_rate(:)
-
 CONTAINS
 
    SUBROUTINE tracer_ch4_bgc_finalize_step(ipatch, patchtype, deltim, net_methane)
@@ -121,44 +117,9 @@ CONTAINS
       integer,  intent(in) :: ipatch, patchtype
       real(r8), intent(in) :: deltim, net_methane
       real(r8) :: co2_hr, total_hr
-      integer  :: klit, kk
-      real(r8) :: rhizo_need, rhizo_pool, rhizo_fac, rhizo_take
 
       IF (patchtype /= 0 .and. patchtype /= 2) RETURN
 
-      ! Debit the rhizodeposition carbon from the first litter pool, capped
-      ! at what the pool holds: the exudate stream may only redirect carbon
-      ! that exists, never invent it.  C only -- pool N stays, as it does
-      ! for respiration.
-      IF (allocated(rice_rhizodep_rate)) THEN
-         IF (ipatch >= 1 .and. ipatch <= size(rice_rhizodep_rate)) THEN
-         IF (rice_rhizodep_rate(ipatch) > 0._r8 .and. allocated(is_litter)) THEN
-            klit = 0
-            DO kk = lbound(is_litter,1), ubound(is_litter,1)
-               IF (is_litter(kk)) THEN
-                  klit = kk
-                  EXIT
-               ENDIF
-            ENDDO
-            IF (klit > 0) THEN
-               rhizo_need = rice_rhizodep_rate(ipatch) * deltim
-               rhizo_pool = sum(decomp_cpools_vr(1:nl_soil, klit, ipatch) * dz_soi(1:nl_soil))
-               IF (rhizo_pool > 1.e-12_r8) THEN
-                  rhizo_take = min(rhizo_need, rhizo_pool)
-                  rhizo_fac = max(0._r8, 1._r8 - rhizo_take / rhizo_pool)
-                  decomp_cpools_vr(1:nl_soil, klit, ipatch) = &
-                     decomp_cpools_vr(1:nl_soil, klit, ipatch) * rhizo_fac
-                  ! Ledger registration: the extracted carbon leaves the
-                  ! column as CH4/CO2 through the methane module, so it must
-                  ! appear in decomp_hr -- both for the CN balance audit
-                  ! (store shrank by rhizo_take, outputs must grow by the
-                  ! same) and for the ER budget the towers compare against.
-                  decomp_hr(ipatch) = decomp_hr(ipatch) + rhizo_take / max(deltim, 1.e-6_r8)
-               ENDIF
-            ENDIF
-         ENDIF
-         ENDIF
-      ENDIF
 
       ! When the wetland's soil column is not handed to bgc_driver, the
       ! decomposition state update has to be driven from here. With
@@ -424,27 +385,21 @@ CONTAINS
       ! Source CH4 treats fphr as a per-layer scaling factor. CoLM202X does
       ! not expose an equivalent field, so use full HR contribution while the
       ! rest of BGC coupling remains field-for-field reconstructed above.
-      ! Rice rhizodeposition (default off; activation awaits supervisor
-      ! sign-off).  Root exudates are the substrate input the crop BGC does
-      ! not represent (the old rice_substrate_boost note quantifies the gap
-      ! at -30% to -50%).  Route a fraction of current belowground NPP into
-      ! the methane-visible fresh substrate while the paddy crop is live;
-      ! tracer_ch4_bgc_finalize_step debits the same carbon from the litter
-      ! pool, so no carbon is created -- the audit condition under which the
-      ! multiplier was retired.
-      IF (.not. allocated(rice_rhizodep_rate)) THEN
-         allocate (rice_rhizodep_rate(size(er)))
-         rice_rhizodep_rate(:) = 0._r8
+      ! Rice rhizodeposition as litter priming (default off).  Root exudates
+      ! accelerate litter turnover while the paddy crop is live; the
+      ! multiplier is consumed inside the BGC decomposition cascade, so the
+      ! extra substrate flows through decomp_k and every standard flux,
+      ! state-update and balance path.  Both direct-injection attempts
+      ! tripped CBalanceCheck -- the audit doing its job -- hence this form.
+      IF (.not. allocated(decomp_litter_priming)) THEN
+         allocate (decomp_litter_priming(size(er)))
+         decomp_litter_priming(:) = 1._r8
       ENDIF
-      rice_rhizodep_rate(ipatch) = 0._r8
-      IF (DEF_METHANE%rice_rhizodep_frac > 0._r8 .and. bgnpp > 0._r8) THEN
-         IF (is_paddy_rice_live(ipatch)) THEN
-            rice_rhizodep_rate(ipatch) = DEF_METHANE%rice_rhizodep_frac * bgnpp
-            lithr = lithr + rice_rhizodep_rate(ipatch)
-            DO j = 1, nl_soil
-               hr_vr(j) = hr_vr(j) + rice_rhizodep_rate(ipatch) * rootfr(j) &
-                  / max(dz_soi(j), 1.e-12_r8)
-            ENDDO
+      IF (ipatch >= 1 .and. ipatch <= size(decomp_litter_priming)) THEN
+         decomp_litter_priming(ipatch) = 1._r8
+         IF (DEF_METHANE%rice_rhizodep_frac > 0._r8) THEN
+            IF (is_paddy_rice_live(ipatch)) &
+               decomp_litter_priming(ipatch) = 1._r8 + DEF_METHANE%rice_rhizodep_frac
          ENDIF
       ENDIF
 

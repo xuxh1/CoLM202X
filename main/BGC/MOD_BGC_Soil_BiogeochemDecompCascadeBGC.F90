@@ -32,6 +32,14 @@ MODULE MOD_BGC_Soil_BiogeochemDecompCascadeBGC
 
    IMPLICIT NONE
 
+   ! Litter-pool priming multiplier, set per patch by the methane tracer
+   ! (rice rhizodeposition: root exudates accelerate litter turnover while
+   ! the paddy crop is live).  1 = neutral.  Lives here so the acceleration
+   ! flows through decomp_k and every standard flux/state/balance path --
+   ! the two tracer-side injection attempts both tripped CBalanceCheck,
+   ! which is the audit working as designed.
+   real(r8), allocatable, public :: decomp_litter_priming(:)
+
    PUBLIC decomp_rate_constants_bgc
 
 CONTAINS
@@ -112,6 +120,13 @@ CONTAINS
          decomp_k(j,i_met_lit,i) = k_l1    * t_scalar(j,i) * w_scalar(j,i) * depth_scalar(j,i) * o_scalar(j,i) !&
          decomp_k(j,i_cel_lit,i) = k_l2_l3 * t_scalar(j,i) * w_scalar(j,i) * depth_scalar(j,i) * o_scalar(j,i) !&
          decomp_k(j,i_lig_lit,i) = k_l2_l3 * t_scalar(j,i) * w_scalar(j,i) * depth_scalar(j,i) * o_scalar(j,i) !&
+         IF (allocated(decomp_litter_priming)) THEN
+            IF (i >= 1 .and. i <= size(decomp_litter_priming)) THEN
+               decomp_k(j,i_met_lit,i) = decomp_k(j,i_met_lit,i) * decomp_litter_priming(i)
+               decomp_k(j,i_cel_lit,i) = decomp_k(j,i_cel_lit,i) * decomp_litter_priming(i)
+               decomp_k(j,i_lig_lit,i) = decomp_k(j,i_lig_lit,i) * decomp_litter_priming(i)
+            ENDIF
+         ENDIF
          decomp_k(j,i_soil1  ,i) = k_s1    * t_scalar(j,i) * w_scalar(j,i) * depth_scalar(j,i) * o_scalar(j,i) !&
          decomp_k(j,i_soil2  ,i) = k_s2    * t_scalar(j,i) * w_scalar(j,i) * depth_scalar(j,i) * o_scalar(j,i) !&
          decomp_k(j,i_soil3  ,i) = k_s3    * t_scalar(j,i) * w_scalar(j,i) * depth_scalar(j,i) * o_scalar(j,i) !&

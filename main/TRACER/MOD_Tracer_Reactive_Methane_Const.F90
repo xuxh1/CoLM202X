@@ -497,12 +497,12 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! tidal_salinity_default (psu) unless SITE_salinity overrides.
       real(r8) :: tidal_frac_min         = 0.25_r8
       real(r8) :: tidal_salinity_default = 15._r8
-      ! Fraction of belowground NPP released as root exudates on live paddy
-      ! rice, entering the methane-visible fresh substrate with an equal
-      ! carbon debit from the litter pool (see tracer_ch4_bgc_patch_inputs /
-      ! finalize).  Replaces the retired rice_substrate_boost multiplier in
-      ! the carbon-conservative form its audit note required.  Default 0 is
-      ! bit identical; activation awaits supervisor sign-off.
+      ! Rice rhizodeposition expressed as litter priming: the litter-pool
+      ! decomposition rate on a live paddy is multiplied by (1 + this value),
+      ! consumed inside the BGC cascade so all flux/state/balance paths stay
+      ! consistent (direct substrate injection trips CBalanceCheck).
+      ! Replaces the retired rice_substrate_boost in the carbon-conservative
+      ! form its audit note required.  0 = off, bit identical.
       real(r8) :: rice_rhizodep_frac = 0._r8
       ! Multiplier on the aerenchyma area of woody (swamp) wetlands: forested
       ! wetlands move CH4 without herbaceous aerenchyma, the one measured
@@ -1385,9 +1385,9 @@ CONTAINS
             '***** ERROR: swamp_aere_scale must lie in (0,10]: ', DEF_METHANE%swamp_aere_scale
          bad = .true.
       ENDIF
-      IF (DEF_METHANE%rice_rhizodep_frac < 0._r8 .or. DEF_METHANE%rice_rhizodep_frac > 0.5_r8) THEN
+      IF (DEF_METHANE%rice_rhizodep_frac < 0._r8 .or. DEF_METHANE%rice_rhizodep_frac > 3._r8) THEN
          IF (p_is_master) write(6,*) &
-            '***** ERROR: rice_rhizodep_frac is a fraction of belowground NPP and must be in [0,0.5]: ', &
+            '***** ERROR: rice_rhizodep_frac is a litter-priming increment and must be in [0,3]: ', &
             DEF_METHANE%rice_rhizodep_frac
          bad = .true.
       ENDIF
