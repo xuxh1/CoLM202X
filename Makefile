@@ -183,7 +183,7 @@ TRACER_ISOTOPE_MAIN_OBJS = \
 
 ifeq (${METHANE_ENABLED},YES)
 TRACER_REACTIVE_METHANE_OBJ_SUFFIXES = \
-				 GIEMS pH VegOverride State Microbes \
+				 GIEMS pH ObsWTD VegOverride State Microbes \
 				 BgcLink AccFlux Physics Driver Hist Impl
 
 TRACER_REACTIVE_METHANE_OBJS = \
@@ -838,13 +838,14 @@ MOD_Tracer_Reactive_Methane_State.o: MOD_Tracer_Reactive_Methane_Const.o
 MOD_Tracer_Reactive_Methane_Microbes.o: MOD_Tracer_Reactive_Methane_Const.o \
 	MOD_Tracer_Reactive_Methane_State.o
 MOD_Tracer_Reactive_Methane_BgcLink.o: MOD_Tracer_Reactive_Methane_Const.o \
-	MOD_Tracer_Reactive_Methane_VegOverride.o MOD_Tracer_Reactive_Methane_pH.o \
+	MOD_Tracer_Reactive_Methane_VegOverride.o MOD_Tracer_Reactive_Methane_ObsWTD.o MOD_Tracer_Reactive_Methane_pH.o \
 	MOD_Vars_TimeVariables.o MOD_Vars_TimeInvariants.o \
 	MOD_BGC_CNCStateUpdate1.o MOD_BGC_Soil_BiogeochemNStateUpdate1.o MOD_BGC_CNSummary.o
 MOD_Tracer_Reactive_Methane_AccFlux.o: MOD_Tracer_Reactive_Methane_BgcLink.o \
 	MOD_Tracer_Reactive_Methane_Const.o MOD_Tracer_Reactive_Methane_Microbes.o \
 	MOD_Tracer_Reactive_Methane_State.o
-MOD_Tracer_Reactive_Methane_Physics.o: MOD_Tracer_Reactive_Methane_BgcLink.o \
+MOD_Tracer_Reactive_Methane_ObsWTD.o:
+MOD_Tracer_Reactive_Methane_Physics.o: MOD_Tracer_Reactive_Methane_BgcLink.o MOD_Tracer_Reactive_Methane_ObsWTD.o \
 	MOD_Tracer_Reactive_Methane_Const.o MOD_Tracer_Reactive_Methane_GIEMS.o \
 	MOD_Tracer_Reactive_Methane_State.o MOD_Tracer_Reactive_Methane_VegOverride.o
 MOD_Tracer_Reactive_Methane_Driver.o: MOD_Tracer_Reactive_Methane_Microbes.o \
@@ -855,7 +856,7 @@ MOD_Tracer_Reactive_Methane_Hist.o: MOD_Tracer_Hist.o MOD_Tracer_Reactive_Methan
 MOD_Tracer_Reactive_Methane_Impl.o: MOD_Tracer_Reactive_BgcShim.o MOD_Tracer_Reactive_Methane_Driver.o \
 	MOD_Tracer_Reactive_Methane_BgcLink.o MOD_Tracer_Reactive_Methane_Const.o \
 	MOD_Tracer_Reactive_Methane_Registry.o MOD_Tracer_Reactive_Methane_State.o MOD_Tracer_Conservation.o
-MOD_Tracer_Reactive_Methane.o: MOD_Tracer_Reactive_Methane_AccFlux.o \
+MOD_Tracer_Reactive_Methane.o: MOD_Tracer_Reactive_Methane_ObsWTD.o MOD_Tracer_Reactive_Methane_AccFlux.o \
 	MOD_Tracer_Reactive_Methane_GIEMS.o MOD_Tracer_Reactive_Methane_Hist.o \
 	MOD_Tracer_Reactive_Methane_Impl.o MOD_Tracer_Reactive_Methane_Microbes.o \
 	MOD_Tracer_Reactive_Methane_pH.o MOD_Tracer_Reactive_Methane_State.o \

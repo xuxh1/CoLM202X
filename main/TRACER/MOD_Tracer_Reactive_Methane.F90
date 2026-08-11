@@ -39,6 +39,7 @@ MODULE MOD_Tracer_Reactive_Methane
       deallocate_methane_ph, read_methane_ph_patch
    USE MOD_Tracer_Reactive_Methane_VegOverride, only: allocate_wetland_aere_overrides, &
       deallocate_wetland_aere_overrides, load_wft_class_map
+   USE MOD_Tracer_Reactive_Methane_ObsWTD, only: read_obs_wtd, free_obs_wtd
    USE MOD_Tracer_Reactive_Methane_Impl, only: ch4_impl_lake_step, &
       ch4_impl_wetland_decomp, ch4_impl_soil_step
    USE MOD_Tracer_Reactive_Methane_Hist, only: methane_reactive_history
@@ -194,6 +195,11 @@ CONTAINS
           trim(DEF_METHANE%wft_class_file) /= 'null') THEN
          CALL load_wft_class_map (DEF_METHANE%wft_class_file, patchlatr, patchlonr, &
             patchtype, numpatch, DEF_METHANE%tidal_frac_min, DEF_METHANE%tidal_salinity_default)
+      ENDIF
+
+      ! Tower-observed water table series (single point: casename = site id).
+      IF (trim(DEF_METHANE%wtd_obs_dir) /= 'null') THEN
+         CALL read_obs_wtd (trim(DEF_METHANE%wtd_obs_dir)//'/'//trim(casename)//'_WTD.txt')
       ENDIF
 
    END SUBROUTINE ch4_reactive_init

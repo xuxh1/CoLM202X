@@ -34,6 +34,7 @@ module MOD_Tracer_Reactive_Methane_Physics
    USE MOD_Tracer_Reactive_Methane_GIEMS, only: giems_finundated, giems_active
    USE MOD_Tracer_Reactive_Methane_BgcLink, only: is_paddy_rice_live, &
       rice_days_past_planting, rice_days_since_harvest
+   USE MOD_Tracer_Reactive_Methane_ObsWTD, only: get_obs_wtd, obs_wtd_loaded
    USE MOD_Tracer_Reactive_Methane_VegOverride, only: wetland_salinity_map, get_aere_poros, get_aere_tillerC, &
       get_aere_radius, get_aere_scale, get_wft_param
    USE MOD_Tracer_Reactive_Methane_State, only: f_inund_levee_patch, f_inund_flood_patch, &
@@ -542,6 +543,8 @@ contains
       real(r8) :: wtd_arg
       real(r8) :: zwt_eff             ! water table entering the sigmoid: host zwt, or prescribed
       real(r8) :: wtd_pre             ! prescribed wetland water table, <0 when disabled
+      real(r8) :: wtd_obs_step        ! observed water table for the current day
+      logical  :: wtd_obs_ok          ! observed record covers the current day
 
       integer  :: jwt                 ! index of the soil layer right above the water table (-)
       integer  :: jwt_sat            ! index of the soil layer right above the water table (-), saturated zone
@@ -807,6 +810,12 @@ contains
             ! set -- this is what carries the per-class water table to grid
             ! runs, where SITE_wetland_class does not exist.
             wtd_pre = get_wft_param (ipatch, wtd_pre, DEF_METHANE%wtd_wft)
+            ! Observed series outranks every table: it is the site's own
+            ! water world, magnitude and season both (PLUMBER-style driver).
+            IF (obs_wtd_loaded) THEN
+               CALL get_obs_wtd (idate(1), idate(2), wtd_obs_step, wtd_obs_ok)
+               IF (wtd_obs_ok) wtd_pre = wtd_obs_step
+            ENDIF
             if (patchtype == 2 .and. wtd_pre >= 0._r8) zwt_eff = wtd_pre
             if (ieee_is_nan(zwt_eff) .or. abs(zwt_eff) >= 0.5_r8*abs(spval)) then
                write(6,*) 'ERROR: invalid zwt for methane scheme 6 logistic inundation: ', zwt_eff
@@ -1208,6 +1217,10 @@ contains
                ! Same per-WFT resolution as the sigmoid site above; the two
                ! must see the same table or production and area split diverge.
                wtd_pre = get_wft_param (ipatch, wtd_pre, DEF_METHANE%wtd_wft)
+               IF (obs_wtd_loaded) THEN
+                  CALL get_obs_wtd (idate(1), idate(2), wtd_obs_step, wtd_obs_ok)
+                  IF (wtd_obs_ok) wtd_pre = wtd_obs_step
+               ENDIF
                if (patchtype == 2 .and. wtd_pre >= 0._r8) zwt_unsat = wtd_pre
                wdsrf_unsat = methane_wetland_water_depth(patchtype, wdsrf, wetwat)
                jwt_unsat = nl_soil

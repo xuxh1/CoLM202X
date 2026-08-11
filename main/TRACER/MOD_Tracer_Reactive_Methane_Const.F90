@@ -442,6 +442,10 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! classes (SITE_wetland_class) always win; the map only fills patches
       ! still unset, so single-point runs are untouched either way.
       character(len=256) :: wft_class_file = 'null'
+      ! Directory of tower-observed daily water-table series
+      ! (<dir>/<casename>_WTD.txt); 'null' = off.  Observed-driver mode for
+      ! site evaluation: the series outranks every prescribed table.
+      character(len=256) :: wtd_obs_dir = 'null'
       ! Per-WFT prescribed water table (m below surface).  Resolved AFTER
       ! methane_prescribed_wtd() at the two call sites via get_wft_param, so
       ! it works on both axes: sites keep the BAWLD-class table via
