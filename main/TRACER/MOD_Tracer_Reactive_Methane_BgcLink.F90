@@ -35,7 +35,7 @@ MODULE MOD_Tracer_Reactive_Methane_BgcLink
    USE MOD_BGC_Vars_PFTimeVariables, only: annsum_npp_p, cinput_rootfr_p
    USE MOD_Tracer_Reactive_Methane_VegOverride, only: wetland_aere_poros, wetland_aere_radius, &
       wetland_aere_tillerC, wetland_aere_scale, &
-      wetland_aere_active, wetland_wft_class
+      wetland_aere_active, wetland_wft_class, wetland_ph_map
    USE MOD_BGC_Vars_1DPFTFluxes,    only: froot_mr_p, &
       cpool_to_leafc_p, cpool_to_leafc_storage_p, &
       cpool_to_livestemc_p, cpool_to_livestemc_storage_p, &
@@ -204,6 +204,7 @@ CONTAINS
       real(r8), intent(in)  :: rootfr(1:nl_soil)
       real(r8), intent(out) :: crootfr(1:nl_soil)
       real(r8), intent(out) :: pH
+      real(r8) :: ph_fallback_eff
       real(r8), intent(out) :: cellorg(1:nl_soil)
       real(r8), intent(out) :: somhr
       real(r8), intent(out) :: lithr
@@ -234,9 +235,17 @@ CONTAINS
       ENDIF
 
       crootfr(:) = 0._r8
-      pH = get_ph_for_patch(ipatch, DEF_METHANE%ph_fallback)
-      ! Tower-measured pH outranks both the namelist fallback and the
-      ! spatial map at a site: it is the direct observation of the axis.
+      ! pH priority: tower measurement > spatial pH vector > environment-map
+      ! sample > namelist fallback.  The map value rides in as the effective
+      ! fallback so the spatial vector, when active, still wins inside
+      ! get_ph_for_patch.
+      ph_fallback_eff = DEF_METHANE%ph_fallback
+      IF (allocated(wetland_ph_map)) THEN
+         IF (ipatch >= 1 .and. ipatch <= size(wetland_ph_map)) THEN
+            IF (wetland_ph_map(ipatch) > 0._r8) ph_fallback_eff = wetland_ph_map(ipatch)
+         ENDIF
+      ENDIF
+      pH = get_ph_for_patch(ipatch, ph_fallback_eff)
       IF (SITE_ph > 0._r8) pH = SITE_ph
       cellorg(:) = 0._r8
       somhr = 0._r8

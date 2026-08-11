@@ -3277,8 +3277,21 @@ contains
                      ! [m] = [mm]  /  [mm/m]
                      pond_resis = pond_resis + pondz / ponddiff
                   else if (wdsrf/max(finundated, 0.01_r8) > DEF_METHANE%capthick) then
-                     ! assume surface ice is impermeable
-                     pond_resis = pond_resis + 1._r8/smallnumber
+                     if (DEF_METHANE%freeze_gate_liquid .and. &
+                         DEF_METHANE%ice_gas_diffusivity > 0._r8) then
+                        ! Ice is slow, not impermeable: brine channels and
+                        ! cracks pass gas all winter, and the infinite seal
+                        ! left the high-Arctic towers (US-Atq, RU-Che...) at
+                        ! NDJF ~0 against observed 9-23% even after the
+                        ! liquid production gate opened.  Charge the ice
+                        ! column as a finite diffusive resistance instead.
+                        pond_resis = pond_resis + &
+                           (wdsrf / 1000._r8 / max(finundated, 0.01_r8)) / &
+                           DEF_METHANE%ice_gas_diffusivity
+                     else
+                        ! assume surface ice is impermeable
+                        pond_resis = pond_resis + 1._r8/smallnumber
+                     end if
                   end if
                end if
 

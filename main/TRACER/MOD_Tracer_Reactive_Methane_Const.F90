@@ -477,6 +477,12 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! continues in liquid films and stops only as the pore water actually
       ! freezes.  Default off is bit identical to the shutter.
       logical  :: freeze_gate_liquid = .false.
+      ! Effective gas diffusivity through the surface ice cap (m2/s), used
+      ! only under freeze_gate_liquid: ice passes gas through brine channels
+      ! and cracks all winter, and the old infinite seal left high-Arctic
+      ! towers at NDJF ~0 against observed 9-23% even with winter production
+      ! open.  Aqueous order of magnitude by default; <=0 restores the seal.
+      real(r8) :: ice_gas_diffusivity = 1.e-9_r8
       ! pH entering the Dunfield production curve when spatial pH is off.
       ! The old compile-time fallback 6.2 sits at the curve optimum, so the
       ! factor was constant 1 and acidic bogs (pH ~4) lost an order of
@@ -493,6 +499,12 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! the carbon-conservative form its audit note required.  Default 0 is
       ! bit identical; activation awaits supervisor sign-off.
       real(r8) :: rice_rhizodep_frac = 0._r8
+      ! Multiplier on the aerenchyma area of woody (swamp) wetlands: forested
+      ! wetlands move CH4 without herbaceous aerenchyma, the one measured
+      ! per-type transport contrast (DLEM-style on/off).  Applied where the
+      ! wetland is known to be swamp (sites: SITE_wetland_class 4; global:
+      ! tree-cover criterion to follow).  1 = off, bit identical.
+      real(r8) :: swamp_aere_scale = 1._r8
 
       ! ---- Two-layer peat decomposition (experiment switch, default off) ----
       !
@@ -1361,6 +1373,11 @@ CONTAINS
          IF (p_is_master) write(6,*) &
             '***** ERROR: set wtd_wft entries are depths in metres and must be <= 50: ', &
             DEF_METHANE%wtd_wft
+         bad = .true.
+      ENDIF
+      IF (DEF_METHANE%swamp_aere_scale <= 0._r8 .or. DEF_METHANE%swamp_aere_scale > 10._r8) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: swamp_aere_scale must lie in (0,10]: ', DEF_METHANE%swamp_aere_scale
          bad = .true.
       ENDIF
       IF (DEF_METHANE%rice_rhizodep_frac < 0._r8 .or. DEF_METHANE%rice_rhizodep_frac > 0.5_r8) THEN
