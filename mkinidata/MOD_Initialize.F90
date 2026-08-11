@@ -1120,7 +1120,35 @@ ENDIF
                      ! that never thaw.  Only the magnitude is wrong for a wetland
                      ! patch -- the CN steady state is spun up with PFT litterfall
                      ! this tile never receives -- so only the magnitude is fixed.
-                     IF (DEF_USE_WETLAND_PEAT_C) THEN
+                     IF (DEF_USE_WETLAND_PEAT_C .and. DEF_USE_WETLAND_PEAT_C_LAYERED) THEN
+                        ! B4: scale each layer to its own measured OM_density
+                        ! so the vertical carbon profile follows the
+                        ! observation, not the CN product's shape.  Pool
+                        ! splits within a layer are preserved; N follows C as
+                        ! in the column rescale below.  Layers where the CN
+                        ! base is empty stay empty -- inventing pool splits
+                        ! from nothing is a separate decision, and those
+                        ! layers sit below the production zone anyway.
+                        DO nsl = 1, nl_soil
+                           IF (.not. (OM_density(nsl, i) > 0._r8 .and. &
+                               OM_density(nsl, i) < 1.e30_r8)) CYCLE
+                           wetland_target_c = OM_density(nsl, i) * carbon_per_kg_om
+                           wetland_base_c = 0._r8
+                           DO wetland_ipool = 1, size(decomp_cpools_vr, 2)
+                              IF (decomp_cpools_vr(nsl, wetland_ipool, i) > 0._r8 .and. &
+                                  decomp_cpools_vr(nsl, wetland_ipool, i) < 1.e30_r8) &
+                                 wetland_base_c = wetland_base_c &
+                                    + decomp_cpools_vr(nsl, wetland_ipool, i)
+                           ENDDO
+                           IF (wetland_base_c > 1.e-12_r8) THEN
+                              wetland_scale = wetland_target_c / wetland_base_c
+                              decomp_cpools_vr(nsl, :, i) = &
+                                 decomp_cpools_vr(nsl, :, i) * wetland_scale
+                              decomp_npools_vr(nsl, :, i) = &
+                                 decomp_npools_vr(nsl, :, i) * wetland_scale
+                           ENDIF
+                        ENDDO
+                     ELSEIF (DEF_USE_WETLAND_PEAT_C) THEN
                         wetland_target_c = 0._r8
                         wetland_base_c   = 0._r8
                         DO nsl = 1, nl_soil
