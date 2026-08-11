@@ -122,7 +122,7 @@ CONTAINS
       real(r8), intent(in) :: deltim, net_methane
       real(r8) :: co2_hr, total_hr
       integer  :: klit, kk
-      real(r8) :: rhizo_need, rhizo_pool, rhizo_fac
+      real(r8) :: rhizo_need, rhizo_pool, rhizo_fac, rhizo_take
 
       IF (patchtype /= 0 .and. patchtype /= 2) RETURN
 
@@ -144,9 +144,16 @@ CONTAINS
                rhizo_need = rice_rhizodep_rate(ipatch) * deltim
                rhizo_pool = sum(decomp_cpools_vr(1:nl_soil, klit, ipatch) * dz_soi(1:nl_soil))
                IF (rhizo_pool > 1.e-12_r8) THEN
-                  rhizo_fac = max(0._r8, 1._r8 - rhizo_need / rhizo_pool)
+                  rhizo_take = min(rhizo_need, rhizo_pool)
+                  rhizo_fac = max(0._r8, 1._r8 - rhizo_take / rhizo_pool)
                   decomp_cpools_vr(1:nl_soil, klit, ipatch) = &
                      decomp_cpools_vr(1:nl_soil, klit, ipatch) * rhizo_fac
+                  ! Ledger registration: the extracted carbon leaves the
+                  ! column as CH4/CO2 through the methane module, so it must
+                  ! appear in decomp_hr -- both for the CN balance audit
+                  ! (store shrank by rhizo_take, outputs must grow by the
+                  ! same) and for the ER budget the towers compare against.
+                  decomp_hr(ipatch) = decomp_hr(ipatch) + rhizo_take / max(deltim, 1.e-6_r8)
                ENDIF
             ENDIF
          ENDIF
