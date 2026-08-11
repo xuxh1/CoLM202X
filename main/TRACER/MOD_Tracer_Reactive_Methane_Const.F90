@@ -492,6 +492,11 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! exp(-SITE_salinity/salinity_efold); ~8 psu reproduces the
       ! Poffenbarger et al. 2011 tidal-marsh decline.  <=0 disables.
       real(r8) :: salinity_efold = 8._r8
+      ! Environment-map tidal layer: a wetland patch in a cell whose tidal
+      ! marsh coverage exceeds tidal_frac_min is assigned
+      ! tidal_salinity_default (psu) unless SITE_salinity overrides.
+      real(r8) :: tidal_frac_min         = 0.25_r8
+      real(r8) :: tidal_salinity_default = 15._r8
       ! Fraction of belowground NPP released as root exudates on live paddy
       ! rice, entering the methane-visible fresh substrate with an equal
       ! carbon debit from the litter pool (see tracer_ch4_bgc_patch_inputs /

@@ -193,7 +193,7 @@ CONTAINS
       IF (p_is_worker .and. numpatch > 0 .and. allocated(patchtype) .and. &
           trim(DEF_METHANE%wft_class_file) /= 'null') THEN
          CALL load_wft_class_map (DEF_METHANE%wft_class_file, patchlatr, patchlonr, &
-            patchtype, numpatch)
+            patchtype, numpatch, DEF_METHANE%tidal_frac_min, DEF_METHANE%tidal_salinity_default)
       ENDIF
 
    END SUBROUTINE ch4_reactive_init

@@ -43,6 +43,9 @@ MODULE MOD_Tracer_Reactive_Methane_VegOverride
    ! (SoilGrids layer in the wft class file); <=0 = unset.  Priority at the
    ! consumer: SITE_ph > spatial pH vector > this map > ph_fallback.
    real(r8), allocatable, public :: wetland_ph_map      (:)
+   ! Salinity assigned from the environment map's tidal-marsh fraction
+   ! (Worthington layer); <0 = unset.  Priority: SITE_salinity > this map.
+   real(r8), allocatable, public :: wetland_salinity_map(:)
 
    PUBLIC :: allocate_wetland_aere_overrides
    PUBLIC :: deallocate_wetland_aere_overrides
@@ -65,6 +68,7 @@ CONTAINS
       allocate(wetland_aere_active (numpatch))
       allocate(wetland_wft_class   (numpatch))
       allocate(wetland_ph_map      (numpatch))
+      allocate(wetland_salinity_map(numpatch))
       wetland_aere_poros  (:) = 0._r8
       wetland_aere_radius (:) = 0._r8
       wetland_aere_tillerC(:) = 0._r8
@@ -72,6 +76,7 @@ CONTAINS
       wetland_aere_active (:) = .false.
       wetland_wft_class   (:) = 0
       wetland_ph_map      (:) = -1._r8
+      wetland_salinity_map(:) = -1._r8
    END SUBROUTINE allocate_wetland_aere_overrides
 
    SUBROUTINE deallocate_wetland_aere_overrides()
@@ -82,6 +87,7 @@ CONTAINS
       IF (allocated(wetland_aere_active))  deallocate(wetland_aere_active)
       IF (allocated(wetland_wft_class))    deallocate(wetland_wft_class)
       IF (allocated(wetland_ph_map))       deallocate(wetland_ph_map)
+      IF (allocated(wetland_salinity_map)) deallocate(wetland_salinity_map)
    END SUBROUTINE deallocate_wetland_aere_overrides
 
    real(r8) FUNCTION get_aere_poros(ipatch, default_val)
@@ -120,7 +126,8 @@ CONTAINS
       IF (wetland_aere_active(ipatch)) get_aere_scale = wetland_aere_scale(ipatch)
    END FUNCTION get_aere_scale
 
-   SUBROUTINE load_wft_class_map(file_class, patchlatr_in, patchlonr_in, patchtype_in, numpatch)
+   SUBROUTINE load_wft_class_map(file_class, patchlatr_in, patchlonr_in, patchtype_in, numpatch, &
+         tidal_frac_min, tidal_salinity_psu)
       ! Populate wetland_wft_class from the static global class map for grid
       ! runs.  The map is small (5-arcmin byte grid, ~8 MB) so every rank
       ! reads its own copy from /share -- no MPI choreography needed.
@@ -136,14 +143,16 @@ CONTAINS
       real(r8), intent(in) :: patchlatr_in(:), patchlonr_in(:)   ! radians
       integer,  intent(in) :: patchtype_in(:)
       integer,  intent(in) :: numpatch
+      real(r8), intent(in) :: tidal_frac_min      ! tidal fraction above which the cell counts as tidal
+      real(r8), intent(in) :: tidal_salinity_psu  ! salinity assigned to tidal wetland patches
 
       real(r8), parameter :: PI = 3.14159265358979323846_r8
       integer :: ncid, vid, dimid, nlat, nlon, ierr
       integer :: ipatch, ilat, ilon, nset
       real(r8), allocatable :: mlat(:), mlon(:)
       integer(1), allocatable :: mclass(:,:)
-      real(r8), allocatable :: mph(:,:)
-      logical :: has_ph
+      real(r8), allocatable :: mph(:,:), mtd(:,:)
+      logical :: has_ph, has_td
       real(r8) :: lat_deg, lon_deg
 
       IF (len_trim(file_class) == 0 .or. trim(file_class) == 'null') RETURN
@@ -179,6 +188,13 @@ CONTAINS
             IF (nf90_get_var(ncid, vid, mph) == NF90_NOERR) has_ph = .true.
          ENDIF
       ENDIF
+      has_td = .false.
+      IF (ierr == NF90_NOERR) THEN
+         IF (nf90_inq_varid(ncid, 'tidal_frac', vid) == NF90_NOERR) THEN
+            allocate(mtd(nlon, nlat))
+            IF (nf90_get_var(ncid, vid, mtd) == NF90_NOERR) has_td = .true.
+         ENDIF
+      ENDIF
       IF (ierr /= NF90_NOERR) THEN
          write(6,*) 'WARNING load_wft_class_map: read failed on ', trim(file_class)
          deallocate(mlat, mlon, mclass)
@@ -203,11 +219,16 @@ CONTAINS
             IF (mph(ilon, ilat) > 0._r8 .and. mph(ilon, ilat) < 14._r8) &
                wetland_ph_map(ipatch) = mph(ilon, ilat)
          ENDIF
+         IF (has_td .and. allocated(wetland_salinity_map)) THEN
+            IF (mtd(ilon, ilat) >= tidal_frac_min) &
+               wetland_salinity_map(ipatch) = tidal_salinity_psu
+         ENDIF
       ENDDO
       write(6,*) 'load_wft_class_map: assigned WFT class to ', nset, ' wetland patches from ', &
          trim(file_class)
       deallocate(mlat, mlon, mclass)
       IF (allocated(mph)) deallocate(mph)
+      IF (allocated(mtd)) deallocate(mtd)
    END SUBROUTINE load_wft_class_map
 
    real(r8) FUNCTION get_wft_param(ipatch, default_val, per_class)

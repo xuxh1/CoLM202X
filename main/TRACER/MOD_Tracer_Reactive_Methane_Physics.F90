@@ -34,7 +34,7 @@ module MOD_Tracer_Reactive_Methane_Physics
    USE MOD_Tracer_Reactive_Methane_GIEMS, only: giems_finundated, giems_active
    USE MOD_Tracer_Reactive_Methane_BgcLink, only: is_paddy_rice_live, &
       rice_days_past_planting, rice_days_since_harvest
-   USE MOD_Tracer_Reactive_Methane_VegOverride, only: get_aere_poros, get_aere_tillerC, &
+   USE MOD_Tracer_Reactive_Methane_VegOverride, only: wetland_salinity_map, get_aere_poros, get_aere_tillerC, &
       get_aere_radius, get_aere_scale, get_wft_param
    USE MOD_Tracer_Reactive_Methane_State, only: f_inund_levee_patch, f_inund_flood_patch, &
       f_inund_flood_depth_patch, wetland_frac_per_patch, &
@@ -1969,6 +1969,7 @@ contains
 
       ! Factors for methanogen temperature dependence being greater than soil aerobes
       real(r8) :: f_methane_adj        ! Adjusted DEF_METHANE%f_methane
+      real(r8) :: sal_eff              ! effective salinity: SITE_salinity, else map
       real(r8) :: t_fact_methane       ! Temperature factor calculated using additional Q10
 
       ! O2 limitation on decomposition and methanogenesis
@@ -2167,9 +2168,16 @@ contains
          ! being smuggled into f_methane as a per-class discount: f_methane
          ! keeps its molecular meaning and salinity carries its own axis.
          ! SITE_salinity < 0 (default) disables the factor bit for bit.
-         if (patchtype /= 4 .and. SITE_salinity >= 0._r8 .and. &
+         sal_eff = SITE_salinity
+         if (sal_eff < 0._r8) then
+            if (allocated(wetland_salinity_map)) then
+               if (ipatch >= 1 .and. ipatch <= size(wetland_salinity_map)) &
+                  sal_eff = wetland_salinity_map(ipatch)
+            end if
+         end if
+         if (patchtype /= 4 .and. sal_eff >= 0._r8 .and. &
              DEF_METHANE%salinity_efold > 0._r8) then
-            f_methane_adj = f_methane_adj * exp(-SITE_salinity / DEF_METHANE%salinity_efold)
+            f_methane_adj = f_methane_adj * exp(-sal_eff / DEF_METHANE%salinity_efold)
          end if
 
          ! Redox factor
