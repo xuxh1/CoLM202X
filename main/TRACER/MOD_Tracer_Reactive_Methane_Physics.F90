@@ -29,7 +29,8 @@ module MOD_Tracer_Reactive_Methane_Physics
    use MOD_Vars_Global, only : maxsnl,nl_soil,nl_lake,spval,PI,deg2rad
 	use MOD_Const_Physical, only: denh2o, denice, tfrz, grav, vonkar
    use MOD_Tracer_Reactive_Methane_Const
-   USE MOD_Namelist, only: DEF_wetland_finundation_scheme, DEF_USE_Dynamic_Wetland
+   USE MOD_Namelist, only: DEF_wetland_finundation_scheme, DEF_USE_Dynamic_Wetland, &
+      SITE_salinity
    USE MOD_Tracer_Reactive_Methane_GIEMS, only: giems_finundated, giems_active
    USE MOD_Tracer_Reactive_Methane_BgcLink, only: is_paddy_rice_live, &
       rice_days_past_planting, rice_days_since_harvest
@@ -802,6 +803,10 @@ contains
             ! dynamic flood extension below into a constant.
             zwt_eff = zwt
             wtd_pre = methane_prescribed_wtd ()
+            ! Per-WFT depth wins over the site/scalar table where its class is
+            ! set -- this is what carries the per-class water table to grid
+            ! runs, where SITE_wetland_class does not exist.
+            wtd_pre = get_wft_param (ipatch, wtd_pre, DEF_METHANE%wtd_wft)
             if (patchtype == 2 .and. wtd_pre >= 0._r8) zwt_eff = wtd_pre
             if (ieee_is_nan(zwt_eff) .or. abs(zwt_eff) >= 0.5_r8*abs(spval)) then
                write(6,*) 'ERROR: invalid zwt for methane scheme 6 logistic inundation: ', zwt_eff
@@ -1200,6 +1205,9 @@ contains
                ! identical and change nothing.
                zwt_unsat = zwt
                wtd_pre = methane_prescribed_wtd ()
+               ! Same per-WFT resolution as the sigmoid site above; the two
+               ! must see the same table or production and area split diverge.
+               wtd_pre = get_wft_param (ipatch, wtd_pre, DEF_METHANE%wtd_wft)
                if (patchtype == 2 .and. wtd_pre >= 0._r8) zwt_unsat = wtd_pre
                wdsrf_unsat = methane_wetland_water_depth(patchtype, wdsrf, wetwat)
                jwt_unsat = nl_soil
@@ -2151,8 +2159,17 @@ contains
                ! From Lei Meng
                f_methane_adj = f_methane_adj * pH_fact_methane
             end if
-         else
-            ! if no data, then no pH effects
+         end if
+
+         ! Sulfate competition, expressed through salinity (Poffenbarger et
+         ! al. 2011: tidal-marsh CH4 declines roughly e-fold per ~8 psu).
+         ! This factor exists so the electron-acceptor competition stops
+         ! being smuggled into f_methane as a per-class discount: f_methane
+         ! keeps its molecular meaning and salinity carries its own axis.
+         ! SITE_salinity < 0 (default) disables the factor bit for bit.
+         if (patchtype /= 4 .and. SITE_salinity >= 0._r8 .and. &
+             DEF_METHANE%salinity_efold > 0._r8) then
+            f_methane_adj = f_methane_adj * exp(-SITE_salinity / DEF_METHANE%salinity_efold)
          end if
 
          ! Redox factor

@@ -78,6 +78,13 @@ MODULE MOD_Namelist
    ! nothing silently depends on a variable its physics never consults.
 #if (defined TRACER) && (defined BGC)
    integer  :: SITE_wetland_class        = 0
+   ! Tower-measured environment axes for the methane production factors.
+   ! Both default to "unset" sentinels so a site file that does not carry
+   ! them changes nothing: pH falls back to DEF_METHANE%ph_fallback, and a
+   ! negative salinity disables the sulfate-competition factor entirely
+   ! (salinity 0 is a legitimate freshwater value, hence -1 as sentinel).
+   real(r8) :: SITE_ph                   = -1._r8
+   real(r8) :: SITE_salinity             = -1._r8
 #endif
 
    logical  :: USE_SITE_landtype         = .false.
@@ -225,6 +232,12 @@ MODULE MOD_Namelist
    ! dataset is spun up for vegetated land and leaves peatlands about an order
    ! of magnitude short of observed stocks.  Sensitivity control, default off.
    logical :: DEF_USE_WETLAND_PEAT_C = .false.
+   ! B4: rescale wetland peat carbon per layer against the measured
+   ! OM_density profile instead of one whole-column factor.  The column
+   ! rescale fixes the magnitude but keeps the CN product's vertical shape,
+   ! and at the towers the flux then orders itself by that map's noise
+   ! (site autopsy 2026-08-11: 17 of 38 poor sites).  Off = bit identical.
+   logical :: DEF_USE_WETLAND_PEAT_C_LAYERED = .false.
 
    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
@@ -1099,6 +1112,8 @@ CONTAINS
       SITE_landtype,                          &
 #if (defined TRACER) && (defined BGC)
       SITE_wetland_class,                     &
+      SITE_ph,                                &
+      SITE_salinity,                          &
 #endif
       USE_SITE_landtype,                      &
       USE_SITE_pctpfts,                       &
@@ -1264,6 +1279,7 @@ CONTAINS
       DEF_USE_CN_INIT,                        &
       DEF_file_cn_init,                       &
       DEF_USE_WETLAND_PEAT_C,                 &
+      DEF_USE_WETLAND_PEAT_C_LAYERED,         &
       DEF_BGC_DEBUG_SCALARS,                  &
 
       DEF_USE_WaterTableInit,                 &
@@ -1879,6 +1895,7 @@ CONTAINS
       CALL mpi_bcast (DEF_USE_CN_INIT                        ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_file_cn_init                       ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_USE_WETLAND_PEAT_C                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+      CALL mpi_bcast (DEF_USE_WETLAND_PEAT_C_LAYERED         ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
 
       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)

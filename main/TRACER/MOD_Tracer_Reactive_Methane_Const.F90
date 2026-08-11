@@ -395,6 +395,12 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       real(r8) :: wtd_marsh         = 0.00_r8
       real(r8) :: wtd_tundra        = 0.00_r8
       real(r8) :: wtd_permafrost_bog= 0.20_r8
+      ! Drained sites are drained peatland (user decision 2026-08-10): peat
+      ! mechanics, deep water table.  BAWLD has no median for them, and the
+      ! v1 site autopsy showed the fallthrough-to-scalar left several drained
+      ! towers with almost no production (NL-Hor 0.3 vs obs 24) or none at
+      ! all (US-Snd).  Negative keeps the old fallthrough bit for bit.
+      real(r8) :: wtd_drained       = -1._r8    ! [m] below surface, <0 = scalar fallthrough
       ! NOTE the sigmoid above must be retuned alongside these.  At the shipped
       ! wtd_inflection = 0.30 m the whole realistic peatland range collapses:
       ! -5 cm -> 0.993, -11 cm -> 0.978, -20 cm -> 0.881.  A correct per-class
@@ -476,6 +482,17 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! factor was constant 1 and acidic bogs (pH ~4) lost an order of
       ! magnitude of suppression the mechanism was built to provide.
       real(r8) :: ph_fallback = 6.2_r8
+      ! e-folding salinity (psu) of the sulfate-competition factor
+      ! exp(-SITE_salinity/salinity_efold); ~8 psu reproduces the
+      ! Poffenbarger et al. 2011 tidal-marsh decline.  <=0 disables.
+      real(r8) :: salinity_efold = 8._r8
+      ! Fraction of belowground NPP released as root exudates on live paddy
+      ! rice, entering the methane-visible fresh substrate with an equal
+      ! carbon debit from the litter pool (see tracer_ch4_bgc_patch_inputs /
+      ! finalize).  Replaces the retired rice_substrate_boost multiplier in
+      ! the carbon-conservative form its audit note required.  Default 0 is
+      ! bit identical; activation awaits supervisor sign-off.
+      real(r8) :: rice_rhizodep_frac = 0._r8
 
       ! ---- Two-layer peat decomposition (experiment switch, default off) ----
       !
@@ -776,8 +793,12 @@ CONTAINS
          CASE (3)  ; methane_prescribed_wtd = DEF_METHANE%wtd_marsh
          CASE (5)  ; methane_prescribed_wtd = DEF_METHANE%wtd_tundra
          CASE (6)  ; methane_prescribed_wtd = DEF_METHANE%wtd_marsh
+         CASE (7)
+            ! drained peatland: own axis when set, scalar fallthrough when not
+            IF (DEF_METHANE%wtd_drained >= 0._r8) &
+               methane_prescribed_wtd = DEF_METHANE%wtd_drained
          CASE DEFAULT
-            ! swamp (4), drained (7), none (0): no BAWLD-CH4 median to use
+            ! swamp (4), none (0): no BAWLD-CH4 median to use
          END SELECT
       ENDIF
 
@@ -1340,6 +1361,12 @@ CONTAINS
          IF (p_is_master) write(6,*) &
             '***** ERROR: set wtd_wft entries are depths in metres and must be <= 50: ', &
             DEF_METHANE%wtd_wft
+         bad = .true.
+      ENDIF
+      IF (DEF_METHANE%rice_rhizodep_frac < 0._r8 .or. DEF_METHANE%rice_rhizodep_frac > 0.5_r8) THEN
+         IF (p_is_master) write(6,*) &
+            '***** ERROR: rice_rhizodep_frac is a fraction of belowground NPP and must be in [0,0.5]: ', &
+            DEF_METHANE%rice_rhizodep_frac
          bad = .true.
       ENDIF
       IF (DEF_METHANE%ph_fallback < 3._r8 .or. DEF_METHANE%ph_fallback > 10._r8) THEN
