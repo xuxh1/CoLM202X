@@ -19,7 +19,7 @@ MODULE MOD_Tracer_Reactive_Methane_Impl
       zwt, snowdp, wat, t_lake, lake_icefrac, wdsrf, wetwat, smp, lai, sai, rootr, ustar, fq
    USE MOD_Vars_1DForcing, only: forc_t, forc_pbot, forc_po2m, forc_pco2m, &
       forc_us, forc_vs
-   USE MOD_Vars_1DFluxes, only: rsur, etr, frcsat
+   USE MOD_Vars_1DFluxes, only: rsur, etr, frcsat, raw_grnd
    USE MOD_Tracer_Reactive_Methane_Driver,   only: methane_driver
    USE MOD_Tracer_Reactive_Methane_State,    only: f_h2osfc, compute_f_h2osfc, &
       handle_methane_dry_lake_substep, reset_methane_inactive_lake_diagnostics, &
@@ -93,7 +93,7 @@ CONTAINS
          t_grnd(ipatch), wliq_soisno(maxsnl+1:nl_soil,ipatch), &
          wice_soisno(maxsnl+1:nl_soil,ipatch), forc_t(ipatch), forc_pbot(ipatch), &
          forc_po2m(ipatch), forc_pco2m(ipatch), forc_us(ipatch), forc_vs(ipatch), &
-         ustar(ipatch), fq(ipatch), &
+         ustar(ipatch), fq(ipatch), raw_grnd(ipatch), &
          zwt(ipatch), rootfr_lc(1:nl_soil,patchclass(ipatch)), snowdp(ipatch), wat(ipatch), &
          rsur(ipatch), etr(ipatch), lakedepth(ipatch), dz_lake(1:nl_lake,ipatch), &
          t_lake(1:nl_lake,ipatch), lake_icefrac(1:nl_lake,ipatch), &
@@ -133,6 +133,7 @@ CONTAINS
       logical  :: run_methane
       logical  :: is_rice_paddy
       real(r8) :: rice_pft_frac
+      real(r8) :: rootfr_m(1:nl_soil)   ! root profile handed to methane (I-27)
       integer  :: lb, snl_loc
       real(r8) :: z_soisno_m(maxsnl+1:nl_soil)
       real(r8) :: dz_soisno_m(maxsnl+1:nl_soil)
@@ -169,6 +170,9 @@ CONTAINS
       CALL compute_f_h2osfc (ipatch, slpratio(ipatch), wdsrf(ipatch))
       CALL methane_soisno_geometry (ipatch, lb, snl_loc, z_soisno_m, dz_soisno_m, zi_soisno_m)
 
+      rootfr_m(:) = rootfr_lc(1:nl_soil,patchclass(ipatch))
+      IF (DEF_METHANE%pft_root_profile) CALL methane_pft_root_profile (ipatch, rootfr_m)
+
       CALL methane_driver(istep_local, ipatch, idate(1:3), patchclass(ipatch), patchtype(ipatch), &
          deltim, lb, snl_loc, &
          patchlonr(ipatch)*180._r8/PI, patchlatr(ipatch)*180._r8/PI, &
@@ -177,8 +181,8 @@ CONTAINS
          t_grnd(ipatch), wliq_soisno(maxsnl+1:nl_soil,ipatch), &
          wice_soisno(maxsnl+1:nl_soil,ipatch), forc_t(ipatch), forc_pbot(ipatch), &
          forc_po2m(ipatch), forc_pco2m(ipatch), forc_us(ipatch), forc_vs(ipatch), &
-         ustar(ipatch), fq(ipatch), &
-         zwt(ipatch), rootfr_lc(1:nl_soil,patchclass(ipatch)), snowdp(ipatch), wat(ipatch), &
+         ustar(ipatch), fq(ipatch), raw_grnd(ipatch), &
+         zwt(ipatch), rootfr_m(1:nl_soil), snowdp(ipatch), wat(ipatch), &
          rsur(ipatch), etr(ipatch), lakedepth(ipatch), dz_lake(1:nl_lake,ipatch), &
          t_lake(1:nl_lake,ipatch), lake_icefrac(1:nl_lake,ipatch), &
          wdsrf(ipatch), wetwat(ipatch), bsw(1:nl_soil,ipatch), smp(1:nl_soil,ipatch), &
@@ -187,6 +191,47 @@ CONTAINS
          is_rice_paddy_in=is_rice_paddy, rice_pft_frac_in=rice_pft_frac)
 
    END SUBROUTINE ch4_impl_soil_step
+
+   SUBROUTINE methane_pft_root_profile (ipatch, prof)
+      ! pft_root_profile (I-27): replace the land-class root profile of a
+      ! patch that carries PFTs by the pftfrac-weighted mean, over its
+      ! vegetated PFTs, of the host's PFT root profiles (rootfr_p, those of
+      ! the host's root water uptake). In a gridded PFT or PC build every
+      ! natural soil patch has patchclass 1, whose class profile is that of
+      ! evergreen needleleaf forest. prof is left as it is in single-point
+      ! builds (patchclass is the tower's IGBP class there), for patches
+      ! without PFTs (wetland, lake, urban, ice) and for bare patches.
+      USE MOD_LandPFT,               only: patch_pft_s, patch_pft_e
+      USE MOD_Vars_PFTimeInvariants, only: pftclass, pftfrac
+      USE MOD_Const_PFT,             only: rootfr_p
+
+      IMPLICIT NONE
+      integer,  intent(in)    :: ipatch
+      real(r8), intent(inout) :: prof(1:nl_soil)
+
+      real(r8) :: acc(1:nl_soil), frac, f_veg
+      integer  :: m, ps, pe, ipft
+
+#ifndef SinglePoint
+      IF (.not. allocated(patch_pft_s) .or. .not. allocated(patch_pft_e)) RETURN
+      IF (.not. allocated(pftclass) .or. .not. allocated(pftfrac)) RETURN
+      IF (ipatch < 1 .or. ipatch > size(patch_pft_s) .or. ipatch > size(patch_pft_e)) RETURN
+      ps = patch_pft_s(ipatch)
+      pe = patch_pft_e(ipatch)
+      IF (ps < 1 .or. pe < ps .or. pe > size(pftclass) .or. pe > size(pftfrac)) RETURN
+
+      acc(:) = 0._r8
+      f_veg  = 0._r8
+      DO m = ps, pe
+         ipft = pftclass(m)
+         IF (ipft < 1 .or. ipft > ubound(rootfr_p,2)) CYCLE
+         frac = max(pftfrac(m), 0._r8)
+         acc(:) = acc(:) + frac * rootfr_p(1:nl_soil,ipft)
+         f_veg  = f_veg + frac
+      ENDDO
+      IF (f_veg > 0._r8) prof(:) = acc(:) / f_veg
+#endif
+   END SUBROUTINE methane_pft_root_profile
 
    SUBROUTINE methane_soisno_geometry (ipatch, lb, snl_loc, z_soisno_m, dz_soisno_m, zi_soisno_m)
 

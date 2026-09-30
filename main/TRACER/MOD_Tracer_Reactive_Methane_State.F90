@@ -30,6 +30,10 @@ MODULE MOD_Tracer_Reactive_Methane_State
    PUBLIC :: annavg_finrw
    PUBLIC :: annavg_somhr
    PUBLIC :: annsum_counter
+   PUBLIC :: annavg_tsoi, tempavg_tsoi_int, tempavg_tsoi_cnt
+   PUBLIC :: methanogen_act_unsat, methanogen_act_sat
+   PUBLIC :: acceptor_unsat, acceptor_sat
+   PUBLIC :: root_exudate_vr
    PUBLIC :: biome_f_methane_patch
    PUBLIC :: biome_redoxlag_patch
    PUBLIC :: c_atm
@@ -81,6 +85,7 @@ MODULE MOD_Tracer_Reactive_Methane_State
    PUBLIC :: handle_methane_dry_lake_substep
    PUBLIC :: reset_methane_inactive_lake_diagnostics
    PUBLIC :: init_methane_wetland_fraction_cache
+   PUBLIC :: read_methane_floodplain_cap
    PUBLIC :: initialize_methane_lake_soilc_from_surface
    PUBLIC :: lake_air_o2_flux
    PUBLIC :: lake_sed_ch4_flux
@@ -91,6 +96,8 @@ MODULE MOD_Tracer_Reactive_Methane_State
    PUBLIC :: lake_water_o2_stock
    PUBLIC :: lake_frozen_ch4_stock
    PUBLIC :: lake_frozen_o2_stock
+   PUBLIC :: lake_icebubble_ch4_stock
+   PUBLIC :: lake_cact
    PUBLIC :: lake_liquid_fraction_prev
    PUBLIC :: layer_sat_lag
    PUBLIC :: methane_aere_depth
@@ -191,6 +198,7 @@ MODULE MOD_Tracer_Reactive_Methane_State
    PUBLIC :: remap_methane_lulcc_state
    PUBLIC :: publish_methane_levee_flood_patch
    PUBLIC :: publish_methane_flood_patch
+   PUBLIC :: set_methane_site_flood
    PUBLIC :: save_methane_lulcc_state
    PUBLIC :: tempavg_agnpp
    PUBLIC :: tempavg_bgnpp
@@ -215,6 +223,11 @@ MODULE MOD_Tracer_Reactive_Methane_State
    ! but all writes stay inside this module through its APIs.
    PROTECTED :: f_inund_levee_patch, f_inund_flood_patch, f_inund_flood_depth_patch, &
       wetland_frac_per_patch, f_h2osfc
+
+   ! I-28: GLWD riverine and lacustrine floodplain area (classes 8-15, 30) per
+   ! cell of DEF_METHANE%floodplain_glwd_cap_file [km2]; kept across the
+   ! LULCC re-initialisation, which rebuilds the patch bound from it
+   real(r8), allocatable :: fpcap_lat(:), fpcap_lon(:), fpcap_area(:,:)
 
    ! -------------------- field declarations --------------------
    !!!! --------------------------------------------------------------------------------------------------------
@@ -374,6 +387,8 @@ MODULE MOD_Tracer_Reactive_Methane_State
 	   real(r8), allocatable :: lake_water_o2_stock           (:)    ! well-mixed lake-water O2 inventory (mol/m2)
 	   real(r8), allocatable :: lake_frozen_ch4_stock         (:)    ! immobile CH4 retained during lake freeze (mol/m2)
 	   real(r8), allocatable :: lake_frozen_o2_stock          (:)    ! immobile O2 retained during lake freeze (mol/m2)
+	   real(r8), allocatable :: lake_icebubble_ch4_stock      (:)    ! K-5: CH4 of bubbles held under lake ice (mol/m2)
+	   real(r8), allocatable :: lake_cact                     (:)    ! candidate 22: active lake sediment carbon pool (gC/m2)
 	   real(r8), allocatable :: lake_liquid_fraction_prev     (:)    ! previous liquid fraction for conservative phase transfer
 	   real(r8), allocatable :: lake_water_ch4_oxid           (:)    ! water-column CH4 oxidation (mol/m2/s)
 	   real(r8), allocatable :: lake_sed_ch4_flux             (:)    ! sediment-to-water CH4 flux (mol/m2/s)
@@ -394,6 +409,17 @@ MODULE MOD_Tracer_Reactive_Methane_State
 	real(r8), allocatable :: tempavg_bgnpp         (:) ! temporary average below-ground NPP (gC/m2/s)
 	real(r8), allocatable :: annsum_counter        (:) ! seconds since last annual accumulator turnover
 	real(r8), allocatable :: tempavg_somhr         (:) ! temporary average SOM heterotrophic resp. (gC/m2/s)
+   real(r8), allocatable :: annavg_tsoi           (:) ! C-27: last full 365-day mean soil temperature, top metre (K)
+   real(r8), allocatable :: tempavg_tsoi_int      (:) ! C-27: time integral of that temperature since the last turnover (K s)
+   real(r8), allocatable :: tempavg_tsoi_cnt      (:) ! C-27: seconds since the last turnover (s)
+   real(r8), allocatable :: methanogen_act_unsat (:,:) ! candidate 30: methanogen activity per layer, unsaturated subcolumn (-)
+   real(r8), allocatable :: methanogen_act_sat   (:,:) ! candidate 30: methanogen activity per layer, saturated subcolumn (-)
+   real(r8), allocatable :: acceptor_unsat       (:,:) ! candidate 16: oxidised share of the electron acceptor capacity per layer, unsaturated subcolumn (-)
+   real(r8), allocatable :: acceptor_sat         (:,:) ! candidate 16: oxidised share of the electron acceptor capacity per layer, saturated subcolumn (-)
+   ! candidate 6: root exudates respired this step [gC m-3 s-1]; set before the
+   ! CH4 step reads them, booked on decomp_hr_vr after the pool update. Not
+   ! restart state.
+   real(r8), allocatable :: root_exudate_vr      (:,:)
 	real(r8), allocatable :: tempavg_finrw         (:) ! respiration-weighted annual average of finundated
 	real(r8), allocatable :: annavg_agnpp_component   (:,:)
 	real(r8), allocatable :: annavg_bgnpp_component   (:,:)
@@ -731,6 +757,9 @@ CONTAINS
 	      allocate (lake_water_o2_stock             (numpatch)); lake_water_o2_stock          (:)   = 0._r8
 	      allocate (lake_frozen_ch4_stock           (numpatch)); lake_frozen_ch4_stock        (:)   = 0._r8
 	      allocate (lake_frozen_o2_stock            (numpatch)); lake_frozen_o2_stock         (:)   = 0._r8
+	      allocate (lake_icebubble_ch4_stock        (numpatch)); lake_icebubble_ch4_stock     (:)   = 0._r8
+	      ! candidate 22: the active pool starts empty
+	      allocate (lake_cact                       (numpatch)); lake_cact                    (:)   = 0._r8
 	      allocate (lake_liquid_fraction_prev       (numpatch)); lake_liquid_fraction_prev    (:)   = spval
 	      allocate (lake_water_ch4_oxid             (numpatch)); lake_water_ch4_oxid          (:)   = 0._r8
 	      allocate (lake_sed_ch4_flux                (numpatch)); lake_sed_ch4_flux             (:)   = 0._r8
@@ -755,6 +784,16 @@ CONTAINS
       allocate (tempavg_bgnpp               (numpatch)); tempavg_bgnpp          (:) = 0._r8
       allocate (annsum_counter              (numpatch)); annsum_counter         (:) = 0._r8
       allocate (tempavg_somhr               (numpatch)); tempavg_somhr          (:) = 0._r8
+      allocate (annavg_tsoi                 (numpatch)); annavg_tsoi            (:) = spval
+      allocate (tempavg_tsoi_int            (numpatch)); tempavg_tsoi_int       (:) = 0._r8
+      allocate (tempavg_tsoi_cnt            (numpatch)); tempavg_tsoi_cnt       (:) = 0._r8
+      ! candidate 30: full activity reproduces the production without it
+      allocate (methanogen_act_unsat (nl_soil,numpatch)); methanogen_act_unsat (:,:) = 1._r8
+      allocate (methanogen_act_sat   (nl_soil,numpatch)); methanogen_act_sat   (:,:) = 1._r8
+      ! candidate 16: acceptor pools start full (fully oxidised)
+      allocate (acceptor_unsat       (nl_soil,numpatch)); acceptor_unsat       (:,:) = 1._r8
+      allocate (acceptor_sat         (nl_soil,numpatch)); acceptor_sat         (:,:) = 1._r8
+      allocate (root_exudate_vr      (nl_soil,numpatch)); root_exudate_vr      (:,:) = 0._r8
 	      allocate (tempavg_finrw               (numpatch)); tempavg_finrw          (:) = 0._r8
 	      allocate (annavg_agnpp_component  (N_METHANE_COMP,numpatch)); annavg_agnpp_component   = 0._r8
 	      allocate (annavg_bgnpp_component  (N_METHANE_COMP,numpatch)); annavg_bgnpp_component   = 0._r8
@@ -820,14 +859,16 @@ CONTAINS
 	      USE MOD_Mesh,                only: numelm, mesh
 	      USE MOD_Pixel,               only: pixel
 	      USE MOD_Utils,               only: areaquad
-	      USE MOD_SPMD_Task,           only: p_is_worker
-	      USE MOD_Vars_TimeInvariants, only: patchtype
+      USE MOD_SPMD_Task,           only: p_is_worker, CoLM_stop
+      USE MOD_Vars_TimeInvariants, only: patchtype, patchlatr, patchlonr
+      USE MOD_Vars_Global,         only: PI
+      USE MOD_FloodInfiltration,   only: fld_cap_p
 	      IMPLICIT NONE
 
 	      integer, intent(in) :: numpatch
-	      real(r8), allocatable :: elm_wet_area(:), elm_act_area(:)
-	      integer :: ipatch, ie
-	      real(r8) :: area
+      real(r8), allocatable :: elm_wet_area(:), elm_act_area(:), elm_soil_area(:)
+      integer :: ipatch, ie, k, ilat, ilon
+      real(r8) :: area, lat_deg, lon_deg, d, dlat_min, dlon_min
 
 	      IF (.not. allocated(wetland_frac_per_patch)) THEN
 	         allocate(wetland_frac_per_patch(numpatch))
@@ -836,15 +877,18 @@ CONTAINS
 	         allocate(wetland_frac_per_patch(numpatch))
 	      ENDIF
 	      wetland_frac_per_patch(:) = 1._r8
+      ! I-28: the flood bound belongs to this patch layout; rebuilt below
+      IF (allocated(fld_cap_p)) deallocate(fld_cap_p)
 
 	      IF (.not. p_is_worker) RETURN
 	      IF (numpatch <= 0 .or. numelm <= 0) RETURN
 	      IF (.not. allocated(patchtype)) RETURN
 	      IF (.not. allocated(landpatch%ielm)) RETURN
 
-	      allocate(elm_wet_area(numelm), elm_act_area(numelm))
+      allocate(elm_wet_area(numelm), elm_act_area(numelm), elm_soil_area(numelm))
 	      elm_wet_area(:) = 0._r8
 	      elm_act_area(:) = 0._r8
+      elm_soil_area(:) = 0._r8
 
 	      DO ipatch = 1, min(numpatch, size(patchtype))
 	         IF (ipatch > size(landpatch%ielm)) CYCLE
@@ -858,6 +902,9 @@ CONTAINS
 	         IF (patchtype(ipatch) == 2) THEN
 	            elm_wet_area(ie) = elm_wet_area(ie) + area
 	         ENDIF
+         IF (patchtype(ipatch) == 0) THEN
+            elm_soil_area(ie) = elm_soil_area(ie) + area
+         ENDIF
 	      ENDDO
 
 	      DO ipatch = 1, min(numpatch, size(patchtype))
@@ -872,7 +919,41 @@ CONTAINS
 	         ENDIF
 	      ENDDO
 
-	      deallocate(elm_wet_area, elm_act_area)
+      ! I-28: flooded fraction of a soil patch at most the GLWD floodplain
+      ! area of its cell over the soil area (patchtype 0) of its element, so
+      ! the flooded soil area of the element stays within the floodplain.
+      ! Other patches, and patches outside the file's rows, are not bounded.
+      IF (allocated(fpcap_area)) THEN
+         allocate(fld_cap_p(numpatch))
+         fld_cap_p(:) = 1._r8
+         IF (.not. allocated(patchlatr) .or. .not. allocated(patchlonr)) &
+            CALL CoLM_stop (' ***** ERROR: floodplain_glwd_cap_file needs the patch coordinates.')
+         DO ipatch = 1, min(numpatch, size(patchtype), size(patchlatr), size(patchlonr))
+            IF (patchtype(ipatch) /= 0) CYCLE
+            IF (ipatch > size(landpatch%ielm)) CYCLE
+            ie = landpatch%ielm(ipatch)
+            IF (ie < 1 .or. ie > numelm) CYCLE
+            IF (elm_soil_area(ie) <= 0._r8) CYCLE
+            lat_deg = patchlatr(ipatch) * 180._r8 / PI
+            lon_deg = patchlonr(ipatch) * 180._r8 / PI
+            dlat_min = huge(1._r8); ilat = 1
+            DO k = 1, size(fpcap_lat)
+               d = abs(fpcap_lat(k) - lat_deg)
+               IF (d < dlat_min) THEN; dlat_min = d; ilat = k; ENDIF
+            ENDDO
+            dlon_min = huge(1._r8); ilon = 1
+            DO k = 1, size(fpcap_lon)
+               d = abs(modulo(fpcap_lon(k) - lon_deg + 180._r8, 360._r8) - 180._r8)
+               IF (d < dlon_min) THEN; dlon_min = d; ilon = k; ENDIF
+            ENDDO
+            IF (size(fpcap_lat) > 1) THEN
+               IF (dlat_min > 0.5_r8 * abs(fpcap_lat(2) - fpcap_lat(1)) + 1.e-6_r8) CYCLE
+            ENDIF
+            fld_cap_p(ipatch) = min(1._r8, fpcap_area(ilat,ilon) / elm_soil_area(ie))
+         ENDDO
+      ENDIF
+
+      deallocate(elm_wet_area, elm_act_area, elm_soil_area)
 
 	   CONTAINS
 
@@ -913,6 +994,98 @@ CONTAINS
 	      END FUNCTION methane_patch_area
 
 	   END SUBROUTINE init_methane_wetland_fraction_cache
+
+   SUBROUTINE read_methane_floodplain_cap ()
+      ! I-28 (paper V2): GLWD riverine and lacustrine floodplain area (classes
+      ! 8-15, and the large river deltas, 30, which replace them inside the
+      ! delta outlines) per cell of DEF_METHANE%floodplain_glwd_cap_file, read
+      ! on the master and broadcast, so every rank calls this; call it before
+      ! init_methane_wetland_fraction_cache, which turns it into the patch
+      ! bound. Nothing is read with the key at 'null'.
+      USE netcdf
+#ifdef USEMPI
+      USE MOD_SPMD_Task, only: p_is_master, p_address_master, p_comm_glb, p_err, CoLM_stop, &
+         MPI_INTEGER, MPI_REAL8
+#else
+      USE MOD_SPMD_Task, only: p_is_master, CoLM_stop
+#endif
+      USE MOD_Namelist, only: DEF_wetland_finundation_scheme
+      IMPLICIT NONE
+
+      integer, parameter :: ncls = 9
+      integer, parameter :: cap_classes(ncls) = (/8, 9, 10, 11, 12, 13, 14, 15, 30/)
+      integer :: ncid, vid, ierr, bad, k, dims(2)
+      real(r8), allocatable :: a(:,:)
+      character(len=16) :: vname
+
+      IF (allocated(fpcap_lat))  deallocate(fpcap_lat)
+      IF (allocated(fpcap_lon))  deallocate(fpcap_lon)
+      IF (allocated(fpcap_area)) deallocate(fpcap_area)
+      IF (trim(DEF_METHANE%floodplain_glwd_cap_file) == 'null') RETURN
+      ! the bound acts on the colm-mode soil flood only (Physics, scheme 8)
+      IF (DEF_wetland_finundation_scheme /= 8) CALL CoLM_stop ( &
+         ' ***** ERROR: DEF_METHANE%floodplain_glwd_cap_file needs DEF_METHANE%inundation_mode = colm.')
+
+      bad = 0
+      dims = 0
+      IF (p_is_master) THEN
+         ierr = nf90_open(trim(DEF_METHANE%floodplain_glwd_cap_file), NF90_NOWRITE, ncid)
+         IF (ierr == NF90_NOERR) ierr = nf90_inq_dimid(ncid, 'lat', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_inquire_dimension(ncid, vid, len = dims(1))
+         IF (ierr == NF90_NOERR) ierr = nf90_inq_dimid(ncid, 'lon', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_inquire_dimension(ncid, vid, len = dims(2))
+         IF (ierr /= NF90_NOERR .or. dims(1) <= 0 .or. dims(2) <= 0) THEN
+            write(*,'(A,A,A,A)') ' ERROR: floodplain cap file ', &
+               trim(DEF_METHANE%floodplain_glwd_cap_file), ': ', trim(nf90_strerror(ierr))
+            bad = 1
+         ENDIF
+      ENDIF
+#ifdef USEMPI
+      CALL mpi_bcast (bad,  1, MPI_INTEGER, p_address_master, p_comm_glb, p_err)
+      CALL mpi_bcast (dims, 2, MPI_INTEGER, p_address_master, p_comm_glb, p_err)
+#endif
+      IF (bad /= 0) CALL CoLM_stop (' ***** ERROR: cannot read DEF_METHANE%floodplain_glwd_cap_file.')
+
+      allocate (fpcap_lat(dims(1)), fpcap_lon(dims(2)), fpcap_area(dims(1),dims(2)))
+      fpcap_lat = 0._r8
+      fpcap_lon = 0._r8
+      fpcap_area = 0._r8
+      IF (p_is_master) THEN
+         allocate (a(dims(2),dims(1)))
+         ierr = nf90_inq_varid(ncid, 'lat', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, fpcap_lat)
+         IF (ierr == NF90_NOERR) ierr = nf90_inq_varid(ncid, 'lon', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, fpcap_lon)
+         DO k = 1, ncls
+            IF (ierr /= NF90_NOERR) EXIT
+            write(vname,'(A,I2.2)') 'area_class_', cap_classes(k)
+            ierr = nf90_inq_varid(ncid, trim(vname), vid)
+            IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, a)
+            IF (ierr == NF90_NOERR) THEN
+               ! cells without data count as no floodplain
+               WHERE (.not. ieee_is_finite(a) .or. a < 0._r8 .or. a > 1.e30_r8) a = 0._r8
+               fpcap_area = fpcap_area + transpose(a)
+            ENDIF
+         ENDDO
+         IF (ierr /= NF90_NOERR) THEN
+            write(*,'(A,A)') ' ERROR: floodplain cap file needs lat, lon, area_class_08 to 15 and 30: ', &
+               trim(nf90_strerror(ierr))
+            bad = 1
+         ENDIF
+         ierr = nf90_close(ncid)
+         deallocate (a)
+      ENDIF
+#ifdef USEMPI
+      CALL mpi_bcast (bad,        1,               MPI_INTEGER, p_address_master, p_comm_glb, p_err)
+      CALL mpi_bcast (fpcap_lat,  dims(1),         MPI_REAL8,   p_address_master, p_comm_glb, p_err)
+      CALL mpi_bcast (fpcap_lon,  dims(2),         MPI_REAL8,   p_address_master, p_comm_glb, p_err)
+      CALL mpi_bcast (fpcap_area, dims(1)*dims(2), MPI_REAL8,   p_address_master, p_comm_glb, p_err)
+#endif
+      IF (bad /= 0) CALL CoLM_stop (' ***** ERROR: cannot read DEF_METHANE%floodplain_glwd_cap_file.')
+      IF (p_is_master) write(*,'(A,A,A,F8.3,A)') ' I-28 soil flood bounded by the GLWD 8-15 and 30 area of ', &
+         trim(DEF_METHANE%floodplain_glwd_cap_file), ' (', sum(fpcap_area) * 1.e-6_r8, ' Mkm2)'
+
+   END SUBROUTINE read_methane_floodplain_cap
 
 
 	   SUBROUTINE deallocate_methane_state ()
@@ -1022,6 +1195,8 @@ CONTAINS
 	      IF (allocated(lake_water_o2_stock)) deallocate (lake_water_o2_stock)
 	      IF (allocated(lake_frozen_ch4_stock)) deallocate (lake_frozen_ch4_stock)
 	      IF (allocated(lake_frozen_o2_stock)) deallocate (lake_frozen_o2_stock)
+	      IF (allocated(lake_icebubble_ch4_stock)) deallocate (lake_icebubble_ch4_stock)
+	      IF (allocated(lake_cact)) deallocate (lake_cact)
 	      IF (allocated(lake_liquid_fraction_prev)) deallocate (lake_liquid_fraction_prev)
 	      IF (allocated(lake_water_ch4_oxid)) deallocate (lake_water_ch4_oxid)
 	      IF (allocated(lake_sed_ch4_flux)) deallocate (lake_sed_ch4_flux)
@@ -1042,6 +1217,14 @@ CONTAINS
       IF (allocated(tempavg_bgnpp)) deallocate (tempavg_bgnpp)
       IF (allocated(annsum_counter)) deallocate (annsum_counter)
       IF (allocated(tempavg_somhr)) deallocate (tempavg_somhr)
+      IF (allocated(annavg_tsoi)) deallocate (annavg_tsoi)
+      IF (allocated(tempavg_tsoi_int)) deallocate (tempavg_tsoi_int)
+      IF (allocated(tempavg_tsoi_cnt)) deallocate (tempavg_tsoi_cnt)
+      IF (allocated(methanogen_act_unsat)) deallocate (methanogen_act_unsat)
+      IF (allocated(methanogen_act_sat)) deallocate (methanogen_act_sat)
+      IF (allocated(acceptor_unsat)) deallocate (acceptor_unsat)
+      IF (allocated(acceptor_sat)) deallocate (acceptor_sat)
+      IF (allocated(root_exudate_vr)) deallocate (root_exudate_vr)
       IF (allocated(tempavg_finrw)) deallocate (tempavg_finrw)
 	  IF (allocated(annavg_agnpp_component)) deallocate (annavg_agnpp_component)
 	  IF (allocated(annavg_bgnpp_component)) deallocate (annavg_bgnpp_component)
@@ -1150,6 +1333,12 @@ CONTAINS
 	         max(lake_frozen_ch4_stock(ipatch), 0._r8)
 	      drydown_o2_stock = max(lake_water_o2_stock(ipatch), 0._r8) + &
 	         max(lake_frozen_o2_stock(ipatch), 0._r8)
+
+	      ! K-5: CH4 held in bubbles under the ice leaves with the water
+	      IF (allocated(lake_icebubble_ch4_stock)) THEN
+	         drydown_ch4_stock = drydown_ch4_stock + max(lake_icebubble_ch4_stock(ipatch), 0._r8)
+	         lake_icebubble_ch4_stock(ipatch) = 0._r8
+	      ENDIF
 
 	      lake_water_ch4_stock(ipatch)  = 0._r8
 	      lake_frozen_ch4_stock(ipatch) = 0._r8
@@ -1758,6 +1947,9 @@ CONTAINS
 	      CALL ncio_write_vector (file_restart, 'ch4_lake_water_o2_stock', 'patch', landpatch, lake_water_o2_stock,  compress)
 	      CALL ncio_write_vector (file_restart, 'ch4_lake_frozen_ch4_stock','patch', landpatch, lake_frozen_ch4_stock, compress)
 	      CALL ncio_write_vector (file_restart, 'ch4_lake_frozen_o2_stock', 'patch', landpatch, lake_frozen_o2_stock,  compress)
+	      CALL ncio_write_vector (file_restart, 'ch4_lake_icebubble_ch4_stock', 'patch', landpatch, &
+	         lake_icebubble_ch4_stock, compress)
+	      CALL ncio_write_vector (file_restart, 'ch4_lake_cact', 'patch', landpatch, lake_cact, compress)
 	      CALL ncio_write_vector (file_restart, 'ch4_lake_liquid_fraction_prev', 'patch', landpatch, &
 	         lake_liquid_fraction_prev, compress)
 	      CALL ncio_write_vector (file_restart, 'ch4_layer_sat_lag',    'soil', nl_soil, 'patch', landpatch, layer_sat_lag,    compress)
@@ -1775,6 +1967,17 @@ CONTAINS
       CALL ncio_write_vector (file_restart, 'ch4_annsum_counter',   'patch', landpatch, annsum_counter,   compress)
       CALL ncio_write_vector (file_restart, 'ch4_tempavg_somhr',    'patch', landpatch, tempavg_somhr,    compress)
       CALL ncio_write_vector (file_restart, 'ch4_tempavg_finrw',    'patch', landpatch, tempavg_finrw,    compress)
+      CALL ncio_write_vector (file_restart, 'ch4_annavg_tsoi',      'patch', landpatch, annavg_tsoi,      compress)
+      CALL ncio_write_vector (file_restart, 'ch4_tempavg_tsoi_int', 'patch', landpatch, tempavg_tsoi_int, compress)
+      CALL ncio_write_vector (file_restart, 'ch4_tempavg_tsoi_cnt', 'patch', landpatch, tempavg_tsoi_cnt, compress)
+      CALL ncio_write_vector (file_restart, 'ch4_methanogen_act_unsat', 'soil', nl_soil, &
+         'patch', landpatch, methanogen_act_unsat, compress)
+      CALL ncio_write_vector (file_restart, 'ch4_methanogen_act_sat',   'soil', nl_soil, &
+         'patch', landpatch, methanogen_act_sat,   compress)
+      CALL ncio_write_vector (file_restart, 'ch4_acceptor_unsat', 'soil', nl_soil, &
+         'patch', landpatch, acceptor_unsat, compress)
+      CALL ncio_write_vector (file_restart, 'ch4_acceptor_sat',   'soil', nl_soil, &
+         'patch', landpatch, acceptor_sat,   compress)
 	  CALL ncio_write_vector (file_restart, 'ch4_annavg_agnpp_soil', 'patch', landpatch, &
 	     annavg_agnpp_component(METHANE_COMP_SOIL,:), compress)
 	  CALL ncio_write_vector (file_restart, 'ch4_annavg_agnpp_rice', 'patch', landpatch, &
@@ -2002,6 +2205,34 @@ CONTAINS
       CALL ncio_read_vector (file_restart, 'ch4_annavg_finrw',     landpatch, annavg_finrw,     defval = spval)
       CALL ncio_read_vector (file_restart, 'ch4_tempavg_agnpp',    landpatch, tempavg_agnpp,    defval = 0._r8)
       CALL ncio_read_vector (file_restart, 'ch4_tempavg_bgnpp',    landpatch, tempavg_bgnpp,    defval = 0._r8)
+      ! C-27 soil-temperature mean; a restart written before it takes the
+      ! defaults (no mean yet, a new year starts). A presence check reduces
+      ! over the global communicator, which not every rank reaches here (a
+      ! 480-rank run hung), so the strict completeness rule is lifted instead.
+      CALL ncio_set_complete_require_present (.false.)
+      CALL ncio_read_vector (file_restart, 'ch4_annavg_tsoi',      landpatch, annavg_tsoi,      defval = spval)
+      CALL ncio_read_vector (file_restart, 'ch4_tempavg_tsoi_int', landpatch, tempavg_tsoi_int, defval = 0._r8)
+      CALL ncio_read_vector (file_restart, 'ch4_tempavg_tsoi_cnt', landpatch, tempavg_tsoi_cnt, defval = 0._r8)
+      ! K-5 under-ice bubble store; a restart written before it starts the
+      ! store empty, under the same lifted completeness rule
+      CALL ncio_read_vector (file_restart, 'ch4_lake_icebubble_ch4_stock', landpatch, &
+         lake_icebubble_ch4_stock, defval = 0._r8)
+      ! candidate 30 methanogen activity, read the same way; a restart written
+      ! before it starts from full activity (the production without it)
+      CALL ncio_read_vector (file_restart, 'ch4_methanogen_act_unsat', nl_soil, landpatch, &
+         methanogen_act_unsat, defval = 1._r8)
+      CALL ncio_read_vector (file_restart, 'ch4_methanogen_act_sat',   nl_soil, landpatch, &
+         methanogen_act_sat,   defval = 1._r8)
+      ! candidate 16 acceptor pools, read the same way; a restart written
+      ! before them starts from full pools, as a cold start does
+      CALL ncio_read_vector (file_restart, 'ch4_acceptor_unsat', nl_soil, landpatch, &
+         acceptor_unsat, defval = 1._r8)
+      CALL ncio_read_vector (file_restart, 'ch4_acceptor_sat',   nl_soil, landpatch, &
+         acceptor_sat,   defval = 1._r8)
+      ! candidate 22 active lake carbon pool, read the same way; a restart
+      ! written before it starts the pool empty
+      CALL ncio_read_vector (file_restart, 'ch4_lake_cact', landpatch, lake_cact, defval = 0._r8)
+      CALL ncio_set_complete_require_present (strict_restart_active)
       CALL ncio_read_vector (file_restart, 'ch4_annsum_counter',   landpatch, annsum_counter,   defval = 0._r8)
       CALL ncio_read_vector (file_restart, 'ch4_tempavg_somhr',    landpatch, tempavg_somhr,    defval = 0._r8)
       CALL ncio_read_vector (file_restart, 'ch4_tempavg_finrw',    landpatch, tempavg_finrw,    defval = 0._r8)
@@ -2137,6 +2368,13 @@ CONTAINS
 	               count(invalid_restart_value(lake_frozen_o2_stock) .or. lake_frozen_o2_stock < -restart_neg_floor) + &
 	               count(invalid_restart_fraction_or_sentinel(lake_liquid_fraction_prev))
 	         ENDIF
+	         ! K-5: a missing field reads as 0, a valid empty store
+	         corrupt_prognostic_values = corrupt_prognostic_values + &
+	            count(invalid_restart_value(lake_icebubble_ch4_stock) .or. &
+	                  lake_icebubble_ch4_stock < -restart_neg_floor)
+	         ! candidate 22: a missing field reads as 0, a valid empty pool
+	         corrupt_prognostic_values = corrupt_prognostic_values + &
+	            count(invalid_restart_value(lake_cact) .or. lake_cact < 0._r8)
 	         IF (component_state_present) THEN
 	            corrupt_prognostic_values = corrupt_prognostic_values + &
 	               count(invalid_restart_value(conc_o2_unsat_component) .or. conc_o2_unsat_component < 0._r8) + &
@@ -2315,6 +2553,16 @@ CONTAINS
 	      WHERE (invalid_restart_fraction_or_sentinel(fsat_bef)) fsat_bef = spval
 	      WHERE (invalid_restart_fraction_or_sentinel(finundated_lag)) finundated_lag = spval
 	      WHERE (invalid_restart_fraction_or_sentinel(layer_sat_lag)) layer_sat_lag = spval
+	      ! candidate 30: an activity outside (0,1] restarts at full activity
+	      WHERE (invalid_restart_value(methanogen_act_unsat) .or. methanogen_act_unsat <= 0._r8 .or. &
+	             methanogen_act_unsat > 1._r8) methanogen_act_unsat = 1._r8
+	      WHERE (invalid_restart_value(methanogen_act_sat) .or. methanogen_act_sat <= 0._r8 .or. &
+	             methanogen_act_sat > 1._r8) methanogen_act_sat = 1._r8
+	      ! candidate 16: an oxidised share outside [0,1] restarts full
+	      WHERE (invalid_restart_value(acceptor_unsat) .or. acceptor_unsat < 0._r8 .or. &
+	             acceptor_unsat > 1._r8) acceptor_unsat = 1._r8
+	      WHERE (invalid_restart_value(acceptor_sat) .or. acceptor_sat < 0._r8 .or. &
+	             acceptor_sat > 1._r8) acceptor_sat = 1._r8
 
 	      ! invalid_restart_value catches NaN/spval but not negatives.  A stale
       ! restart with sub-zero CH4 or O2 would feed phase-partition and
@@ -2378,6 +2626,9 @@ CONTAINS
 	         lake_frozen_ch4_stock = 0._r8
 	      WHERE (invalid_restart_value(lake_frozen_o2_stock) .or. lake_frozen_o2_stock < 0._r8) &
 	         lake_frozen_o2_stock = 0._r8
+	      WHERE (invalid_restart_value(lake_icebubble_ch4_stock) .or. lake_icebubble_ch4_stock < 0._r8) &
+	         lake_icebubble_ch4_stock = 0._r8
+	      WHERE (invalid_restart_value(lake_cact) .or. lake_cact < 0._r8) lake_cact = 0._r8
 	      WHERE (invalid_restart_value(lake_liquid_fraction_prev) .or. &
 	             lake_liquid_fraction_prev < 0._r8 .or. lake_liquid_fraction_prev > 1._r8) &
 	         lake_liquid_fraction_prev = spval
@@ -2396,15 +2647,19 @@ CONTAINS
 	                (size(patchtype) /= size(totcol_methane) .or. &
 	                 size(patchtype) /= size(totcol_methane_lake) .or. &
 	                 size(patchtype) /= size(lake_water_ch4_stock) .or. &
-	                 size(patchtype) /= size(lake_frozen_ch4_stock))) &
+	                 size(patchtype) /= size(lake_frozen_ch4_stock) .or. &
+	                 size(patchtype) /= size(lake_icebubble_ch4_stock))) &
 	               invalid_lake_inventory = 1
 	            npatch = min(size(patchtype), size(totcol_methane), &
 	               size(totcol_methane_lake), size(lake_water_ch4_stock), &
-	               size(lake_frozen_ch4_stock))
+	               size(lake_frozen_ch4_stock), size(lake_icebubble_ch4_stock))
 	            DO ipatch = 1, npatch
 	               IF (patchtype(ipatch) /= PATCHTYPE_LAKE) CYCLE
 	               lake_component_total = totcol_methane_lake(ipatch) + &
 	                  lake_water_ch4_stock(ipatch) + lake_frozen_ch4_stock(ipatch)
+	               ! K-5: the under-ice bubble store is part of the lake inventory
+	               IF (lake_icebubble_ch4_stock(ipatch) > 0._r8) &
+	                  lake_component_total = lake_component_total + lake_icebubble_ch4_stock(ipatch)
 	               lake_inventory_tolerance = 1.e-12_r8 + 1.e-10_r8 * &
 	                  max(abs(totcol_methane(ipatch)), abs(lake_component_total))
 	               IF (abs(totcol_methane(ipatch) - lake_component_total) > lake_inventory_tolerance) THEN
@@ -2620,6 +2875,135 @@ CONTAINS
       IF (size(f_inund_levee_patch) > ncopy) f_inund_levee_patch(ncopy+1:) = 0._r8
 
    END SUBROUTINE publish_methane_levee_flood_patch
+
+   SUBROUTINE set_methane_site_flood (ipatch, idate)
+      ! C-48 (paper V2): flood fraction and depth of a single-point soil patch
+      ! from DEF_METHANE%site_flood_file (see MOD_Tracer_Reactive_Methane_Const),
+      ! standing in for the routing floodplain a single point cannot simulate.
+      USE netcdf
+      USE MOD_Tracer_Reactive_Methane_Const, only: DEF_METHANE
+      USE MOD_Vars_TimeInvariants, only: patchlatr, patchlonr
+      USE MOD_TimeManager, only: julian2monthday
+      USE MOD_Namelist, only: DEF_FLOODPLAIN_INFILTRATION
+      USE MOD_FloodInfiltration, only: flood_infil_alloc, fld_frc_p, fld_dph_p, fld_cap_p
+      USE MOD_SPMD_Task, only: CoLM_stop
+      IMPLICIT NONE
+      integer, intent(in) :: ipatch
+      integer, intent(in) :: idate(3)
+
+      logical,  save :: loaded = .false.
+      integer,  save :: nsite = 0, ntime = 0, isite = 0
+      integer,  save :: yr0 = 0
+      real(r8), allocatable, save :: frac(:,:), dep(:,:), clim_f(:), clim_d(:)
+      real(r8), allocatable :: slat(:), slon(:)
+      integer,  allocatable :: yr(:), mo(:)
+      integer  :: ncid, vid, did, ierr, k, month, mday, n
+      real(r8) :: pos, w, f, d, plat, plon, dist, dmin
+
+      IF (.not. allocated(f_inund_flood_patch)) RETURN
+      IF (ipatch < 1 .or. ipatch > size(f_inund_flood_patch)) RETURN
+
+      IF (.not. loaded) THEN
+         loaded = .true.
+         ! Every call is checked: a missing or unreadable series stops the run
+         ! instead of leaving the tower without its flood.
+         ierr = nf90_open(trim(DEF_METHANE%site_flood_file), NF90_NOWRITE, ncid)
+         IF (ierr /= NF90_NOERR) CALL site_flood_fail ('open')
+         ierr = nf90_inq_dimid(ncid, 'site', did)
+         IF (ierr == NF90_NOERR) ierr = nf90_inquire_dimension(ncid, did, len=nsite)
+         IF (ierr /= NF90_NOERR) CALL site_flood_fail ('site')
+         ierr = nf90_inq_dimid(ncid, 'time', did)
+         IF (ierr == NF90_NOERR) ierr = nf90_inquire_dimension(ncid, did, len=ntime)
+         IF (ierr /= NF90_NOERR) CALL site_flood_fail ('time')
+         allocate (slat(nsite), slon(nsite), yr(ntime), mo(ntime), frac(ntime,nsite), dep(ntime,nsite))
+         ierr = nf90_inq_varid(ncid, 'lat', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, slat)
+         IF (ierr /= NF90_NOERR) CALL site_flood_fail ('lat')
+         ierr = nf90_inq_varid(ncid, 'lon', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, slon)
+         IF (ierr /= NF90_NOERR) CALL site_flood_fail ('lon')
+         ierr = nf90_inq_varid(ncid, 'year', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, yr)
+         IF (ierr /= NF90_NOERR) CALL site_flood_fail ('year')
+         ierr = nf90_inq_varid(ncid, 'month', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, mo)
+         IF (ierr /= NF90_NOERR) CALL site_flood_fail ('month')
+         ierr = nf90_inq_varid(ncid, 'flood_frac', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, frac)
+         IF (ierr /= NF90_NOERR) CALL site_flood_fail ('flood_frac')
+         ierr = nf90_inq_varid(ncid, 'flood_depth', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, dep)
+         IF (ierr /= NF90_NOERR) CALL site_flood_fail ('flood_depth')
+         ierr = nf90_close(ncid)
+         plat = patchlatr(ipatch) * 180._r8 / acos(-1._r8)
+         plon = patchlonr(ipatch) * 180._r8 / acos(-1._r8)
+         dmin = 1.e30_r8
+         DO k = 1, nsite
+            dist = max(abs(slat(k) - plat), abs(modulo(slon(k) - plon + 540._r8, 360._r8) - 180._r8))
+            IF (dist < dmin) THEN
+               dmin = dist; isite = k
+            ENDIF
+         ENDDO
+         IF (dmin > 0.05_r8) isite = 0
+         yr0 = yr(1)                       ! the series starts in January, monthly and contiguous
+         allocate (clim_f(12), clim_d(12))
+         DO month = 1, 12
+            n = count(mo == month)
+            clim_f(month) = 0._r8; clim_d(month) = 0._r8
+            IF (isite > 0 .and. n > 0) THEN
+               clim_f(month) = sum(frac(:,isite), mask = mo == month) / n
+               clim_d(month) = sum(dep (:,isite), mask = mo == month) / n
+            ENDIF
+         ENDDO
+         write(6,'(A,I0,A,F7.3)') ' C-48 site flood series: site ', isite, ', distance (deg) ', dmin
+         deallocate (slat, slon, yr, mo)
+      ENDIF
+      IF (isite <= 0) RETURN
+
+      ! months since January of the first year, at mid-month = k + 0.5
+      CALL julian2monthday (idate(1), idate(2), month, mday)
+      pos = real((idate(1) - yr0) * 12 + month - 1, r8) + (real(mday, r8) - 0.5_r8) / 30.44_r8 - 0.5_r8
+      k = floor(pos); w = pos - real(k, r8)
+      IF (k >= 0 .and. k + 1 <= ntime - 1) THEN
+         f = (1._r8 - w) * frac(k+1, isite) + w * frac(k+2, isite)
+         d = (1._r8 - w) * dep (k+1, isite) + w * dep (k+2, isite)
+      ELSE
+         ! outside the record (spin-up replays, edges): monthly climatology
+         f = clim_f(month); d = clim_d(month)
+      ENDIF
+      f_inund_flood_patch(ipatch) = max(0._r8, min(1._r8, f))
+      ! a single point has no grid of patches: the static-wetland share that
+      ! grid floods go to first stays at its default 1 and would take all of
+      ! it, so the site soil patch declares none
+      IF (allocated(wetland_frac_per_patch)) THEN
+         IF (ipatch <= size(wetland_frac_per_patch)) wetland_frac_per_patch(ipatch) = 0._r8
+      ENDIF
+      IF (allocated(f_inund_flood_depth_patch)) THEN
+         IF (ipatch <= size(f_inund_flood_depth_patch)) f_inund_flood_depth_patch(ipatch) = max(0._r8, d)
+      ENDIF
+      ! Q-43: the same flood re-infiltrates into the host soil of the patch
+      ! (a single point has no routing; the river supplies the water)
+      IF (DEF_FLOODPLAIN_INFILTRATION) THEN
+         CALL flood_infil_alloc (size(f_inund_flood_patch))
+         fld_frc_p(ipatch) = max(0._r8, min(1._r8, f))
+         fld_dph_p(ipatch) = max(0._r8, d) * 1.e3_r8
+         ! I-28: the soil re-infiltrates under the same bounded flood the
+         ! methane physics sees
+         IF (allocated(fld_cap_p)) THEN
+            IF (ipatch <= size(fld_cap_p)) fld_frc_p(ipatch) = min(fld_frc_p(ipatch), fld_cap_p(ipatch))
+         ENDIF
+      ENDIF
+
+   CONTAINS
+
+      SUBROUTINE site_flood_fail (what)
+         character(len=*), intent(in) :: what
+         write(6,*) ' ERROR: C-48 site_flood_file ', trim(DEF_METHANE%site_flood_file), &
+            ', ', trim(what), ': ', trim(nf90_strerror(ierr))
+         CALL CoLM_stop (' ***** ERROR: cannot read DEF_METHANE%site_flood_file.')
+      END SUBROUTINE site_flood_fail
+
+   END SUBROUTINE set_methane_site_flood
 
    SUBROUTINE publish_methane_flood_patch (fldfrc_patch, flddph_patch)
 
@@ -3348,6 +3732,9 @@ CONTAINS
 	                  ! The generic column is the canonical total inventory;
 	                  ! keep the independent water stock once and assign only
 	                  ! the remainder to the lake sediment representation.
+	                  ! The K-5 under-ice bubble store is not remapped (it is
+	                  ! reallocated empty); its CH4 is in the total and so
+	                  ! goes to the sediment here.
 	                  lake_water_ch4_stock(np) = max(lake_water_ch4_stock(np), 0._r8)
 	                  lake_frozen_ch4_stock(np) = max(lake_frozen_ch4_stock(np), 0._r8)
 	                  water_total = lake_water_ch4_stock(np) + lake_frozen_ch4_stock(np)

@@ -15,7 +15,8 @@ MODULE MOD_Tracer_Reactive_Methane_BgcLink
    USE MOD_SPMD_Task, only: CoLM_stop
    USE MOD_TimeManager, only: isleapyear
    USE, INTRINSIC :: ieee_arithmetic, only: ieee_is_finite, ieee_is_nan
-   USE MOD_Vars_Global, only: nl_soil, dz_soi, spval
+   USE MOD_Vars_Global, only: nl_soil, dz_soi, spval, nl_soil_full, z_soi, zi_soi, nbedrock
+   USE MOD_Namelist, only: DEF_USE_NITRIF
    USE MOD_Tracer_Reactive_Methane_Const, only: DEF_METHANE, catomw, gc_per_kg_om, &
       METHANE_COMP_SOIL, METHANE_COMP_RICE, N_METHANE_COMP
    USE MOD_Tracer_Reactive_Methane_pH, only: get_ph_for_patch
@@ -25,10 +26,13 @@ MODULE MOD_Tracer_Reactive_Methane_BgcLink
    USE MOD_BGC_Vars_TimeInvariants, only: organic_max, &
       i_met_lit, i_cel_lit, i_lig_lit, i_cwd, i_soil1, i_soil2, i_soil3, &
       donor_pool, is_litter, is_soil, is_cwd
-   USE MOD_BGC_Vars_1DFluxes,       only: decomp_hr_vr, decomp_hr, pot_f_nit_vr, ar, er
-   USE MOD_BGC_Vars_TimeVariables,  only: decomp_cpools_vr, o_scalar
+   USE MOD_BGC_Vars_1DFluxes,       only: decomp_hr_vr, decomp_hr, pot_f_nit_vr, ar, er, &
+      supplement_to_sminn_vr, sminn_to_plant_vr, smin_nh4_to_plant_vr, smin_no3_to_plant_vr
+   USE MOD_BGC_Vars_TimeVariables,  only: decomp_cpools_vr, o_scalar, &
+      sminn_vr, smin_nh4_vr, smin_no3_vr
    USE MOD_BGC_CNCStateUpdate1, only: CDecompStateUpdate
    USE MOD_BGC_Soil_BiogeochemNStateUpdate1, only: SoilBiogeochemNDecompStateUpdate
+   USE MOD_BGC_Soil_BiogeochemLittVertTransp, only: SoilBiogeochemLittVertTransp
    USE MOD_BGC_CNSummary, only: CNDriverSummarizeNonvegetatedSoilStates
    USE MOD_BGC_Vars_PFTimeVariables, only: annsum_npp_p, cinput_rootfr_p
    USE MOD_Tracer_Reactive_Methane_VegOverride, only: wetland_aere_poros, wetland_aere_radius, &
@@ -51,6 +55,7 @@ MODULE MOD_Tracer_Reactive_Methane_BgcLink
    PUBLIC :: tracer_ch4_bgc_patch_inputs
    PUBLIC :: tracer_ch4_bgc_component_veg_inputs
    PUBLIC :: tracer_ch4_bgc_finalize_step
+   PUBLIC :: tracer_ch4_root_exudate
    PUBLIC :: get_wetland_veg_proxy
    PUBLIC :: get_rice_veg_proxy
    PUBLIC :: paddy_rice_fraction
@@ -95,18 +100,50 @@ CONTAINS
 
    SUBROUTINE tracer_ch4_bgc_finalize_step(ipatch, patchtype, deltim, net_methane)
 
+      USE MOD_Tracer_Reactive_Methane_State, only: root_exudate_vr
       integer,  intent(in) :: ipatch, patchtype
       real(r8), intent(in) :: deltim, net_methane
       real(r8) :: co2_hr, total_hr
+      integer  :: k
 
       IF (patchtype /= 0 .and. patchtype /= 2) RETURN
 
       IF (patchtype == 2) THEN
-         CALL CDecompStateUpdate(ipatch, deltim, nl_soil, size(decomp_hr_vr,2), .true.)
+         IF (DEF_METHANE%wetland_vert_transp) THEN
+            ! Track B: as in bgc_driver, the source/sink is left for the
+            ! vertical transport below to apply together with the mixing.
+            CALL CDecompStateUpdate(ipatch, deltim, nl_soil, size(decomp_hr_vr,2), .false.)
          CALL SoilBiogeochemNDecompStateUpdate(ipatch, deltim, nl_soil, &
-            size(decomp_hr_vr,2), .true.)
+               size(decomp_hr_vr,2), .false.)
+         ELSE
+            ! apply_direct=.false. runs the decomposition bookkeeping but skips the
+            ! pool debit, freezing the substrate at its initial stock.
+            CALL CDecompStateUpdate(ipatch, deltim, nl_soil, size(decomp_hr_vr,2), &
+               .not. DEF_METHANE%wetland_fixed_substrate)
+            CALL SoilBiogeochemNDecompStateUpdate(ipatch, deltim, nl_soil, &
+               size(decomp_hr_vr,2), .not. DEF_METHANE%wetland_fixed_substrate)
+         ENDIF
+         IF (DEF_METHANE%wetland_n_unlimited .or. DEF_METHANE%wetland_n_uptake) &
+            CALL wetland_mineral_n_update(ipatch, deltim)
+         IF (DEF_METHANE%wetland_vert_transp) CALL wetland_vert_transp(ipatch, deltim)
          CALL CNDriverSummarizeNonvegetatedSoilStates(ipatch, nl_soil, dz_soi, &
             size(decomp_cpools_vr,2))
+      ENDIF
+
+      ! candidate 6: this step's root exudates join the respiration only now
+      ! that the pools are updated -- the soil tile's were taken from its
+      ! litter when set, the wetland tile's never entered it -- booked on the
+      ! metabolic-litter transition as C-23 books its own.
+      IF (DEF_METHANE%root_exudate_frac > 0._r8 .and. allocated(root_exudate_vr)) THEN
+         IF (ipatch <= size(root_exudate_vr,2)) THEN
+            DO k = 1, size(decomp_hr_vr,2)
+               IF (donor_pool(k) == i_met_lit) THEN
+                  decomp_hr_vr(1:nl_soil,k,ipatch) = decomp_hr_vr(1:nl_soil,k,ipatch) &
+                     + root_exudate_vr(1:nl_soil,ipatch)
+                  EXIT
+               ENDIF
+            ENDDO
+         ENDIF
       ENDIF
 
       total_hr = sum(sum(decomp_hr_vr(1:nl_soil,:,ipatch), dim=2) * dz_soi(1:nl_soil))
@@ -128,6 +165,171 @@ CONTAINS
       er(ipatch) = ar(ipatch) + decomp_hr(ipatch)
 
    END SUBROUTINE tracer_ch4_bgc_finalize_step
+
+   SUBROUTINE tracer_ch4_root_exudate(ipatch, patchtype, deltim, crootfr, exu_vr)
+
+      ! candidate 6: this step's root exudates for the CH4 side, respired
+      ! within the step as litter heterotrophic respiration. The wetland
+      ! tile's were set by its plant input in the BGC shim. The soil tile
+      ! has been through bgc_driver, whose litterfall is already in the
+      ! pools, so its exudate is taken here from that litter: fexu of the
+      ! running mean NPP, along the carbon-input root profile, split over
+      ! metabolic, cellulose and lignin litter as fine-root litter is, and at
+      ! most half a pool per step. The column litter and total carbon drop
+      ! by the same amount, so the host C balance of the next step starts
+      ! from the debited pools. Rice PFTs keep their own exudate where C-37
+      ! is on.
+      USE MOD_Tracer_Reactive_Methane_State, only: root_exudate_vr
+      USE MOD_BGC_Vars_TimeVariables, only: lag_npp, decomp_cpools, totlitc, totcolc
+      USE MOD_Const_PFT, only: fr_flab, fr_fcel, fr_flig
+#ifdef CROP
+      USE MOD_Namelist, only: DEF_RICE_ROOT_EXUDATE
+      USE MOD_Vars_Global, only: nrice, nirrig_rice
+#endif
+      integer,  intent(in)  :: ipatch, patchtype
+      real(r8), intent(in)  :: deltim
+      real(r8), intent(in)  :: crootfr(1:nl_soil)   ! carbon-input root profile, layer shares [-]
+      real(r8), intent(out) :: exu_vr(1:nl_soil)    ! exudates respired this step [gC m-3 s-1]
+
+      ! a litter pool below this is left alone [gC m-3]
+      real(r8), parameter :: EXU_POOL_MIN = 1.e-6_r8
+      integer  :: ps, pe, m, j, l, k
+      integer  :: pool(3)
+      real(r8) :: npp, frac, fsum, frice, share(3), want, paid, col
+
+      exu_vr(:) = 0._r8
+      IF (.not. allocated(root_exudate_vr)) RETURN
+      IF (ipatch < 1 .or. ipatch > size(root_exudate_vr,2)) RETURN
+
+      IF (patchtype == 0) THEN
+         root_exudate_vr(:,ipatch) = 0._r8
+         CALL soil_exudate()
+      ENDIF
+      exu_vr(:) = root_exudate_vr(1:nl_soil,ipatch)
+
+   CONTAINS
+
+      SUBROUTINE soil_exudate()
+
+         IF (.not. allocated(lag_npp) .or. .not. allocated(decomp_cpools_vr)) RETURN
+         IF (ipatch > size(lag_npp)) RETURN
+         npp = lag_npp(ipatch)                         ! [gC m-2 s-1]
+         IF (.not. valid_bgc_value(npp) .or. npp <= 0._r8) RETURN
+
+         IF (.not. allocated(patch_pft_s) .or. .not. allocated(patch_pft_e)) RETURN
+         IF (.not. allocated(pftfrac) .or. .not. allocated(pftclass)) RETURN
+         ps = patch_pft_s(ipatch)
+         pe = patch_pft_e(ipatch)
+         IF (ps <= 0 .or. pe < ps .or. pe > size(pftfrac) .or. pe > size(pftclass)) RETURN
+
+         share(:) = 0._r8
+         fsum  = 0._r8
+         frice = 0._r8
+         DO m = ps, pe
+            frac = safe_nonnegative(pftfrac(m))
+            fsum = fsum + frac
+            share(1) = share(1) + frac * fr_flab(pftclass(m))
+            share(2) = share(2) + frac * fr_fcel(pftclass(m))
+            share(3) = share(3) + frac * fr_flig(pftclass(m))
+#ifdef CROP
+            IF (DEF_RICE_ROOT_EXUDATE > 0._r8 .and. &
+                (pftclass(m) == nrice .or. pftclass(m) == nirrig_rice)) frice = frice + frac
+#endif
+         ENDDO
+         IF (fsum <= 0._r8 .or. sum(share) <= 0._r8) RETURN
+         share(:) = share(:) / sum(share)
+         frice = min(frice / fsum, 1._r8)
+         npp = npp * (1._r8 - frice) * DEF_METHANE%root_exudate_frac
+
+         pool = (/ i_met_lit, i_cel_lit, i_lig_lit /)
+         col = 0._r8
+         DO j = 1, nl_soil
+            IF (.not. (crootfr(j) > 0._r8)) CYCLE
+            DO l = 1, 3
+               k = pool(l)
+               IF (.not. valid_bgc_value(decomp_cpools_vr(j,k,ipatch))) CYCLE
+               IF (decomp_cpools_vr(j,k,ipatch) < EXU_POOL_MIN) CYCLE
+               want = npp * crootfr(j) * share(l) / dz_soi(j) * deltim   ! [gC m-3]
+               paid = min(want, 0.5_r8 * decomp_cpools_vr(j,k,ipatch))
+               decomp_cpools_vr(j,k,ipatch) = decomp_cpools_vr(j,k,ipatch) - paid
+               root_exudate_vr(j,ipatch) = root_exudate_vr(j,ipatch) + paid / deltim
+               IF (allocated(decomp_cpools)) decomp_cpools(k,ipatch) = decomp_cpools(k,ipatch) - paid * dz_soi(j)
+               col = col + paid * dz_soi(j)
+            ENDDO
+         ENDDO
+         IF (allocated(totlitc)) totlitc(ipatch) = totlitc(ipatch) - col
+         IF (allocated(totcolc)) totcolc(ipatch) = totcolc(ipatch) - col
+
+      END SUBROUTINE soil_exudate
+
+   END SUBROUTINE tracer_ch4_root_exudate
+
+   SUBROUTINE wetland_mineral_n_update(ipatch, deltim)
+
+      ! Mineral N side of the wetland N closure (track B), with the fluxes
+      ! SoilBiogeochemCompetitionNoPlant set this step: the supplemental N
+      ! that lets immobilization run at its potential rate, and the uptake
+      ! that returns the litter N from the soil. These are the updates
+      ! SoilBiogeochemNStateUpdate1 applies to a vegetated soil; the wetland
+      ! tile gets only the decomposition part of it.
+      integer,  intent(in) :: ipatch
+      real(r8), intent(in) :: deltim
+      integer :: j
+      real(r8) :: sup, up_nh4, up_no3, up_n
+
+      ! Each flux is used only under its own switch: the wetland path clears
+      ! them in SoilBiogeochemCompetitionNoPlant only when that switch is on.
+      DO j = 1, nl_soil
+         sup = 0._r8; up_nh4 = 0._r8; up_no3 = 0._r8; up_n = 0._r8
+         IF (DEF_METHANE%wetland_n_unlimited) sup = supplement_to_sminn_vr(j,ipatch)
+         IF (DEF_METHANE%wetland_n_uptake) THEN
+            up_nh4 = smin_nh4_to_plant_vr(j,ipatch)
+            up_no3 = smin_no3_to_plant_vr(j,ipatch)
+            up_n   = sminn_to_plant_vr(j,ipatch)
+         ENDIF
+         IF (DEF_USE_NITRIF) THEN
+            smin_nh4_vr(j,ipatch) = smin_nh4_vr(j,ipatch) + (sup - up_nh4) * deltim
+            smin_no3_vr(j,ipatch) = smin_no3_vr(j,ipatch) - up_no3 * deltim
+            sminn_vr(j,ipatch) = smin_nh4_vr(j,ipatch) + smin_no3_vr(j,ipatch)
+         ELSE
+            sminn_vr(j,ipatch) = sminn_vr(j,ipatch) + (sup - up_n) * deltim
+         ENDIF
+      ENDDO
+
+   END SUBROUTINE wetland_mineral_n_update
+
+   SUBROUTINE wetland_vert_transp(ipatch, deltim)
+
+      ! SOM vertical movement on the wetland tile (track B). CLM applies
+      ! SoilBiogeochemLittVertTransp to every BGC soil column; bgc_driver does
+      ! so for CoLM's vegetated soil, never for the wetland tile. Mixing is
+      ! CLM's bioturbation (som_diffus, 1 cm2 yr-1); the advection is
+      ! wetland_burial_velocity, peat accretion burying the acrotelm into the
+      ! catotelm, and what crosses the bottom interface leaves the column as
+      ! buried peat. The routine also applies this step's source/sink. Its
+      ! depth arguments run to nl_soil_full with zi from 0: the model levels
+      ! are passed as they are and the levels below take CoLM's node formula,
+      ! so the ghost node under the bottom layer is defined.
+      integer,  intent(in) :: ipatch
+      real(r8), intent(in) :: deltim
+      integer  :: j
+      real(r8) :: zf(1:nl_soil_full), dzf(1:nl_soil_full), zif(0:nl_soil_full)
+
+      zf (1:nl_soil) = z_soi (1:nl_soil)
+      dzf(1:nl_soil) = dz_soi(1:nl_soil)
+      zif(0) = 0._r8
+      zif(1:nl_soil) = zi_soi(1:nl_soil)
+      DO j = nl_soil+1, nl_soil_full
+         zf (j) = 0.025_r8 * (exp(0.5_r8 * (j - 0.5_r8)) - 1._r8)
+         dzf(j) = zf(j) - zf(j-1)
+         zif(j) = zif(j-1) + dzf(j)
+      ENDDO
+
+      CALL SoilBiogeochemLittVertTransp(ipatch, deltim, nl_soil, nl_soil_full, &
+         size(decomp_cpools_vr,2), nbedrock, zf, zif, dzf, &
+         adv_flux_in = DEF_METHANE%wetland_burial_velocity / 31536000._r8)
+
+   END SUBROUTINE wetland_vert_transp
 
    SUBROUTINE tracer_ch4_bgc_patch_inputs (ipatch, rootfr, crootfr, pH, cellorg, &
       somhr, lithr, hr_vr, rr, agnpp, bgnpp, annsum_npp, fphr, &
@@ -1248,6 +1450,9 @@ CONTAINS
       nonrice_redoxlag = DEF_METHANE%redoxlag_tropical_floodplain
    ELSE IF (patchtype /= 2) THEN
       nonrice_redoxlag = DEF_METHANE%redoxlag_upland_soil
+      ELSE IF (DEF_METHANE%wetland_dim_class) THEN
+         ! C-89: one lag for every wetland tile, not by latitude and carbon
+         nonrice_redoxlag = DEF_METHANE%redoxlag_wetland_dim
    ELSE IF (abs(dlat) <= 23.5_r8 .and. cellorg_top >= tropical_peat_threshold) THEN
       nonrice_redoxlag = DEF_METHANE%redoxlag_tropical_peat
    ELSE IF (abs(dlat) <= 23.5_r8) THEN

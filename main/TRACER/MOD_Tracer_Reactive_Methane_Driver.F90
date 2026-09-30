@@ -45,191 +45,198 @@ MODULE MOD_Tracer_Reactive_Methane_Driver
 		real(r8) :: conc_o2(nl_soil), conc_ch4(nl_soil)
 		real(r8) :: conc_o2_unsat(nl_soil), conc_o2_sat(nl_soil)
 		real(r8) :: conc_ch4_unsat(nl_soil), conc_ch4_sat(nl_soil)
+		real(r8) :: acc_unsat(nl_soil), acc_sat(nl_soil)   ! candidate 16: oxidised acceptor shares
 	END TYPE methane_column_result_type
 
 CONTAINS
 
-	SUBROUTINE methane_driver (istep,i,idate,patchclass,patchtype,deltim,lb,snl,dlon,dlat,&!input
-		z_soisno,dz_soisno,zi_soisno,t_soisno,t_grnd,wliq_soisno,wice_soisno,&
-			forc_t,forc_pbot,forc_po2m,forc_pco2m,forc_us,forc_vs,ustar,fq,&
+   SUBROUTINE methane_driver (istep,i,idate,patchclass,patchtype,deltim,lb,snl,dlon,dlat,&!input
+      z_soisno,dz_soisno,zi_soisno,t_soisno,t_grnd,wliq_soisno,wice_soisno,&
+			forc_t,forc_pbot,forc_po2m,forc_pco2m,forc_us,forc_vs,ustar,fq,raw_grnd,&
 		zwt,rootfr,snowdp,wat,rsur,etr,lakedepth,dz_lake,t_lake,lake_icefrac,wdsrf,wetwat,bsw,&
 		smp,porsl,lai,sai,rootr,fsatmax,fsatdcf,frcsat,f_h2osfc, &
-		is_rice_paddy_in, rice_pft_frac_in)
+      is_rice_paddy_in, rice_pft_frac_in)
 
-		use MOD_Precision
-		use, intrinsic :: ieee_arithmetic, only: ieee_is_nan
-		use MOD_Const_Physical, only: rgas, denh2o, denice, tfrz, grav
-		use MOD_Tracer_Reactive_Methane_Const
-		use MOD_Namelist, only : DEF_USE_VariablySaturatedFlow
-		use MOD_Vars_Global, only : maxsnl,nl_soil,nl_lake,spval,PI,deg2rad,z_soi,zi_soi,dz_soi
-		use MOD_Tracer_Reactive_Methane_Physics
-		use MOD_SPMD_Task
-			USE MOD_Tracer_Reactive_Methane_BgcLink, only: tracer_ch4_bgc_patch_inputs, &
-			     tracer_ch4_bgc_component_veg_inputs, &
-			     get_wetland_veg_proxy, get_rice_veg_proxy, is_paddy_rice_live, &
-			     rice_days_since_harvest, organic_max, get_biome_f_methane, &
-		get_biome_redoxlag, BIOME_NONE, tracer_ch4_bgc_finalize_step
-			USE MOD_Tracer_Reactive_Methane_VegOverride, only: wetland_aere_active
+      use MOD_Precision
+      use, intrinsic :: ieee_arithmetic, only: ieee_is_nan
+      use MOD_Const_Physical, only: rgas, denh2o, denice, tfrz, grav
+      use MOD_Tracer_Reactive_Methane_Const
+      use MOD_Namelist, only : DEF_USE_VariablySaturatedFlow, DEF_wetland_finundation_scheme
+      use MOD_Vars_Global, only : maxsnl,nl_soil,nl_lake,spval,PI,deg2rad,z_soi,zi_soi,dz_soi
+      use MOD_Tracer_Reactive_Methane_Physics
+      use MOD_SPMD_Task
+      USE MOD_Tracer_Reactive_Methane_BgcLink, only: tracer_ch4_bgc_patch_inputs, &
+		tracer_ch4_bgc_component_veg_inputs, &
+         get_wetland_veg_proxy, get_rice_veg_proxy, is_paddy_rice_live, &
+         rice_days_since_harvest, organic_max, get_biome_f_methane, &
+		get_biome_redoxlag, BIOME_NONE, tracer_ch4_bgc_finalize_step, tracer_ch4_root_exudate
+      USE MOD_Tracer_Reactive_Methane_VegOverride, only: wetland_aere_active
       USE MOD_Tracer_Reactive_Methane_WetlandVeg, only: set_wetland_veg_glwd, wetveg_active
-		USE MOD_Tracer_Reactive_Methane_Microbes, only: methane_microbes_step, &
+      USE MOD_Tracer_Reactive_Methane_Microbes, only: methane_microbes_step, &
 		     aggregate_methane_microbes, repartition_methane_microbes, &
 		     reset_methane_inactive_lake_microbe_diagnostics, &
 		     microbial_prod_potential, microbial_oxid_potential, &
 		     microbial_prod_potential_comp, microbial_oxid_potential_comp
-		! ----- Methane tracer state (module-level allocatables) -----
-		USE MOD_Tracer_Reactive_Methane_State, only: net_methane, methane_prod_depth, o2_decomp_depth, &
-		     co2_decomp_depth, methane_oxid_depth, o2_oxid_depth, co2_oxid_depth, &
-		     methane_aere_depth, methane_tran_depth, o2_aere_depth, co2_aere_depth, methane_ebul_depth, &
-		     o2stress, methane_stress, &
-		     methane_surf_flux_tot, methane_surf_flux_tot_phys, methane_surf_aere, methane_surf_ebul, methane_surf_diff, &
-		     methane_surf_diff_phys, &
-		     methane_balance_residual, methane_ch4_clip_credit, o2_cap_loss, o2_cap_gain, &
-		     methane_ebul_tot, methane_prod_tot, methane_oxid_tot, &
-		     co2_decomp_tot, co2_oxid_tot, co2_aere_tot, co2_net_tot, &
-		     totcol_methane, grnd_methane_cond, conc_o2, conc_methane, &
-		     net_methane_unsat, net_methane_sat, &
-		     methane_prod_depth_unsat, methane_prod_depth_sat, &
-		     o2_decomp_depth_unsat, o2_decomp_depth_sat, &
-		     co2_decomp_depth_unsat, co2_decomp_depth_sat, &
-		     methane_oxid_depth_unsat, methane_oxid_depth_sat, &
-		     o2_oxid_depth_unsat, o2_oxid_depth_sat, &
-		     co2_oxid_depth_unsat, co2_oxid_depth_sat, &
-		     methane_aere_depth_unsat, methane_aere_depth_sat, &
-		     methane_tran_depth_unsat, methane_tran_depth_sat, &
-		     o2_aere_depth_unsat, o2_aere_depth_sat, &
-		     co2_aere_depth_unsat, co2_aere_depth_sat, &
-		     methane_ebul_depth_unsat, methane_ebul_depth_sat, &
-		     o2stress_unsat, o2stress_sat, methane_stress_unsat, methane_stress_sat, &
-		     methane_surf_flux_tot_unsat, methane_surf_flux_tot_sat, &
-		     methane_surf_aere_unsat, methane_surf_aere_sat, &
-		     methane_surf_ebul_unsat, methane_surf_ebul_sat, &
-		     methane_surf_diff_unsat, methane_surf_diff_sat, &
-		     methane_surf_diff_phys_unsat, methane_surf_diff_phys_sat, &
-		     methane_ebul_tot_unsat, methane_ebul_tot_sat, &
-		     methane_prod_tot_unsat, methane_prod_tot_sat, &
-		     methane_oxid_tot_unsat, methane_oxid_tot_sat, &
-		     co2_decomp_tot_unsat, co2_decomp_tot_sat, &
-		     co2_oxid_tot_unsat, co2_oxid_tot_sat, &
-		     co2_net_tot_unsat, co2_net_tot_sat, &
-		     totcol_methane_unsat, totcol_methane_sat, &
-		     grnd_methane_cond_unsat, grnd_methane_cond_sat, &
-		     conc_o2_unsat, conc_o2_sat, conc_methane_unsat, conc_methane_sat, &
-		     methane_prod_depth_lake, methane_oxid_depth_lake, methane_ebul_depth_lake, &
-		     co2_decomp_depth_lake, co2_oxid_depth_lake, &
-		     methane_surf_ebul_lake, methane_surf_diff_lake, methane_surf_flux_tot_lake, &
-		     methane_prod_tot_lake, methane_oxid_tot_lake, methane_ebul_tot_lake, &
-		     co2_decomp_tot_lake, co2_oxid_tot_lake, co2_net_tot_lake, &
-		     totcol_methane_lake, grnd_methane_cond_lake, conc_o2_lake, conc_methane_lake, &
+      ! ----- Methane tracer state (module-level allocatables) -----
+      USE MOD_Tracer_Reactive_Methane_State, only: set_methane_site_flood
+      USE MOD_FloodInfiltration, only: fld_cap_p
+      USE MOD_Tracer_Reactive_Methane_State, only: acceptor_unsat, acceptor_sat
+      USE MOD_TimeManager, only: isendofyear
+      USE MOD_Tracer_Reactive_Methane_State, only: net_methane, methane_prod_depth, o2_decomp_depth, &
+         co2_decomp_depth, methane_oxid_depth, o2_oxid_depth, co2_oxid_depth, &
+         methane_aere_depth, methane_tran_depth, o2_aere_depth, co2_aere_depth, methane_ebul_depth, &
+         o2stress, methane_stress, &
+         methane_surf_flux_tot, methane_surf_flux_tot_phys, methane_surf_aere, methane_surf_ebul, methane_surf_diff, &
+         methane_surf_diff_phys, &
+         methane_balance_residual, methane_ch4_clip_credit, o2_cap_loss, o2_cap_gain, &
+         methane_ebul_tot, methane_prod_tot, methane_oxid_tot, &
+         co2_decomp_tot, co2_oxid_tot, co2_aere_tot, co2_net_tot, &
+         totcol_methane, grnd_methane_cond, conc_o2, conc_methane, &
+         net_methane_unsat, net_methane_sat, &
+         methane_prod_depth_unsat, methane_prod_depth_sat, &
+         o2_decomp_depth_unsat, o2_decomp_depth_sat, &
+         co2_decomp_depth_unsat, co2_decomp_depth_sat, &
+         methane_oxid_depth_unsat, methane_oxid_depth_sat, &
+         o2_oxid_depth_unsat, o2_oxid_depth_sat, &
+         co2_oxid_depth_unsat, co2_oxid_depth_sat, &
+         methane_aere_depth_unsat, methane_aere_depth_sat, &
+         methane_tran_depth_unsat, methane_tran_depth_sat, &
+         o2_aere_depth_unsat, o2_aere_depth_sat, &
+         co2_aere_depth_unsat, co2_aere_depth_sat, &
+         methane_ebul_depth_unsat, methane_ebul_depth_sat, &
+         o2stress_unsat, o2stress_sat, methane_stress_unsat, methane_stress_sat, &
+         methane_surf_flux_tot_unsat, methane_surf_flux_tot_sat, &
+         methane_surf_aere_unsat, methane_surf_aere_sat, &
+         methane_surf_ebul_unsat, methane_surf_ebul_sat, &
+         methane_surf_diff_unsat, methane_surf_diff_sat, &
+         methane_surf_diff_phys_unsat, methane_surf_diff_phys_sat, &
+         methane_ebul_tot_unsat, methane_ebul_tot_sat, &
+         methane_prod_tot_unsat, methane_prod_tot_sat, &
+         methane_oxid_tot_unsat, methane_oxid_tot_sat, &
+         co2_decomp_tot_unsat, co2_decomp_tot_sat, &
+         co2_oxid_tot_unsat, co2_oxid_tot_sat, &
+         co2_net_tot_unsat, co2_net_tot_sat, &
+         totcol_methane_unsat, totcol_methane_sat, &
+         grnd_methane_cond_unsat, grnd_methane_cond_sat, &
+         conc_o2_unsat, conc_o2_sat, conc_methane_unsat, conc_methane_sat, &
+         methane_prod_depth_lake, methane_oxid_depth_lake, methane_ebul_depth_lake, &
+         co2_decomp_depth_lake, co2_oxid_depth_lake, &
+         methane_surf_ebul_lake, methane_surf_diff_lake, methane_surf_flux_tot_lake, &
+         methane_prod_tot_lake, methane_oxid_tot_lake, methane_ebul_tot_lake, &
+         co2_decomp_tot_lake, co2_oxid_tot_lake, co2_net_tot_lake, &
+         totcol_methane_lake, grnd_methane_cond_lake, conc_o2_lake, conc_methane_lake, &
 		     lake_water_ch4_stock, lake_water_o2_stock, lake_frozen_ch4_stock, lake_frozen_o2_stock, &
 		     lake_liquid_fraction_prev, lake_water_ch4_oxid, &
 		     lake_sed_ch4_flux, lake_sed_o2_flux, lake_air_o2_flux, &
-		     c_atm, forc_pmethanem, layer_sat_lag, lake_soilc, &
-		     annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
-		     tempavg_agnpp, tempavg_bgnpp, annsum_counter, &
-		     tempavg_somhr, tempavg_finrw, &
-		     fsat_bef, finundated_lag, methane_dfsat_tot, &
+         c_atm, forc_pmethanem, layer_sat_lag, lake_soilc, &
+         annavg_agnpp, annavg_bgnpp, annavg_somhr, annavg_finrw, &
+         tempavg_agnpp, tempavg_bgnpp, annsum_counter, &
+         tempavg_somhr, tempavg_finrw, &
+         fsat_bef, finundated_lag, methane_dfsat_tot, &
          biome_f_methane_patch, biome_redoxlag_patch, methane_wetland_type, &
          methane_area_floodplain, methane_area_soil, methane_area_rice, &
-		     f_inund_flood_patch, wetland_frac_per_patch, &
-		     conc_o2_unsat_component, conc_o2_sat_component, &
-		     conc_methane_unsat_component, conc_methane_sat_component, &
-		     layer_sat_lag_component, annavg_agnpp_component, annavg_bgnpp_component, &
-		     annavg_somhr_component, annavg_finrw_component, tempavg_agnpp_component, &
-		     tempavg_bgnpp_component, annsum_counter_component, tempavg_somhr_component, &
-		     tempavg_finrw_component, fsat_bef_component, finundated_lag_component, &
-		     rice_fraction_prev, methane_finundated, methane_soil_finundated, methane_soil_zwt, &
-		     methane_surf_flux_wetland, methane_surf_flux_soil, methane_surf_flux_lake, &
-		     methane_surf_flux_rice, methane_surf_aere_soil, methane_surf_aere_rice, &
-		     methane_surf_ebul_soil, methane_surf_ebul_rice, methane_surf_diff_soil, &
-		     methane_surf_diff_rice, methane_prod_tot_soil, methane_prod_tot_rice, &
-		     methane_oxid_tot_soil, methane_oxid_tot_rice
+         f_inund_flood_patch, wetland_frac_per_patch, &
+         conc_o2_unsat_component, conc_o2_sat_component, &
+         conc_methane_unsat_component, conc_methane_sat_component, &
+         layer_sat_lag_component, annavg_agnpp_component, annavg_bgnpp_component, &
+         annavg_somhr_component, annavg_finrw_component, tempavg_agnpp_component, &
+         tempavg_bgnpp_component, annsum_counter_component, tempavg_somhr_component, &
+         tempavg_finrw_component, fsat_bef_component, finundated_lag_component, &
+         rice_fraction_prev, methane_finundated, methane_soil_finundated, methane_soil_zwt, &
+         methane_surf_flux_wetland, methane_surf_flux_soil, methane_surf_flux_lake, &
+         methane_surf_flux_rice, methane_surf_aere_soil, methane_surf_aere_rice, &
+         methane_surf_ebul_soil, methane_surf_ebul_rice, methane_surf_diff_soil, &
+         methane_surf_diff_rice, methane_prod_tot_soil, methane_prod_tot_rice, &
+         methane_oxid_tot_soil, methane_oxid_tot_rice
 
-		IMPLICIT NONE
-		integer ,intent(in) :: istep
+      IMPLICIT NONE
+      integer ,intent(in) :: istep
 
-		integer ,intent(in) :: i         ! patch index
-		integer ,intent(in) :: idate(1:3)  ! current date (year, day of the year, seconds of the day)
-		integer, intent(in) :: &
-							patchclass  ,&! land patch class of USGS classification or others
-							patchtype     ! land patch type (0=soil, 1=urban and built-up,
-								          ! 2=wetland, 3=land ice, 4=land water bodies, 99 = ocean)
-		real(r8),intent(in) :: deltim    ! time step in seconds
-		integer ,intent(in) :: &
-				lb,&
-				snl
-		real(r8),intent(in) :: dlon     ! longitude (degrees)
-		real(r8),intent(in) :: dlat     ! latitude (degrees)
+      integer ,intent(in) :: i         ! patch index
+      integer ,intent(in) :: idate(1:3)  ! current date (year, day of the year, seconds of the day)
+      integer, intent(in) :: &
+         patchclass  ,&! land patch class of USGS classification or others
+         patchtype     ! land patch type (0=soil, 1=urban and built-up,
+      ! 2=wetland, 3=land ice, 4=land water bodies, 99 = ocean)
+      real(r8),intent(in) :: deltim    ! time step in seconds
+      integer ,intent(in) :: &
+         lb,&
+         snl
+      real(r8),intent(in) :: dlon     ! longitude (degrees)
+      real(r8),intent(in) :: dlat     ! latitude (degrees)
 
-		real(r8),intent(in) :: &
-				z_soisno   (maxsnl+1:nl_soil) , &! layer depth (m)
-				dz_soisno  (maxsnl+1:nl_soil) , &! layer thickness (m)
-				zi_soisno  (maxsnl:nl_soil)   , &! interface level below a "z" level (m)
-				t_soisno   (maxsnl+1:nl_soil) , &! soil + snow layer temperature [K]
-				t_grnd                 		  , &! ground surface temperature [k]
-				wliq_soisno(maxsnl+1:nl_soil) , &! liquid water (kg/m2)
-				wice_soisno(maxsnl+1:nl_soil) , &! ice lens (kg/m2)
-				forc_t                        , &! temperature at agcm reference height [kelvin]
-					forc_pbot                     , &! atmosphere pressure at the bottom of the atmos. model level [pa]
-					forc_po2m                     , &! partial pressure of O2 at observational height [pa]
-					forc_pco2m                    , &! partial pressure of CO2 at observational height [Pa]
-					forc_us                       , &! eastward wind speed [m/s], used as U10 proxy for lake gas exchange
-					forc_vs                       , &! northward wind speed [m/s], used as U10 proxy for lake gas exchange
+      real(r8),intent(in) :: &
+         z_soisno   (maxsnl+1:nl_soil) , &! layer depth (m)
+         dz_soisno  (maxsnl+1:nl_soil) , &! layer thickness (m)
+         zi_soisno  (maxsnl:nl_soil)   , &! interface level below a "z" level (m)
+         t_soisno   (maxsnl+1:nl_soil) , &! soil + snow layer temperature [K]
+         t_grnd                 		  , &! ground surface temperature [k]
+         wliq_soisno(maxsnl+1:nl_soil) , &! liquid water (kg/m2)
+         wice_soisno(maxsnl+1:nl_soil) , &! ice lens (kg/m2)
+         forc_t                        , &! temperature at agcm reference height [kelvin]
+         forc_pbot                     , &! atmosphere pressure at the bottom of the atmos. model level [pa]
+         forc_po2m                     , &! partial pressure of O2 at observational height [pa]
+         forc_pco2m                    , &! partial pressure of CO2 at observational height [Pa]
+         forc_us                       , &! eastward wind speed [m/s], used as U10 proxy for lake gas exchange
+         forc_vs                       , &! northward wind speed [m/s], used as U10 proxy for lake gas exchange
 					ustar                         , &! current friction velocity [m/s]
 					fq                            , &! Monin-Obukhov moisture profile integral [-]
-					zwt                           , &! the depth to water table [m]
-				rootfr     (1:nl_soil)        , &! fraction of roots in each soil layer
-				snowdp                        , &! snow depth (m)
-				wat                           , &! total water storage [mm] (reserved interface)
-				rsur                          , &! surface runoff [mm H2O/s] (reserved interface)
-				etr                           , &! transpiration rate [mm/s]
+					raw_grnd                      , &! host water vapour resistance, ground to reference height [s/m]
+         zwt                           , &! the depth to water table [m]
+         rootfr     (1:nl_soil)        , &! fraction of roots in each soil layer
+         snowdp                        , &! snow depth (m)
+         wat                           , &! total water storage [mm] (reserved interface)
+         rsur                          , &! surface runoff [mm H2O/s] (reserved interface)
+         etr                           , &! transpiration rate [mm/s]
 				lakedepth                     , &! static/capacity lake depth [m]
 				dz_lake     (1:nl_lake)       , &! current lake layer thickness [m]
 				t_lake      (1:nl_lake)       , &! current lake layer temperature [K]
 				lake_icefrac(1:nl_lake)       , &! lake frozen mass fraction for lake CH4 exchange
-				wdsrf                         , &! depth of surface water [mm]
-		wetwat                        , &! water storage in wetland [mm]
-				bsw         (1:nl_soil)       , &! clapp and hornbereger "b" parameter [-]
-				smp         (1:nl_soil)       , &! soil matrix potential [mm]
-				porsl       (1:nl_soil)       , &! fraction of soil that is voids [-]
-				lai                           , &! leaf area index
+         wdsrf                         , &! depth of surface water [mm]
+         wetwat                        , &! water storage in wetland [mm]
+         bsw         (1:nl_soil)       , &! clapp and hornbereger "b" parameter [-]
+         smp         (1:nl_soil)       , &! soil matrix potential [mm]
+         porsl       (1:nl_soil)       , &! fraction of soil that is voids [-]
+         lai                           , &! leaf area index
 				sai                           , &! stem area index
-				rootr       (1:nl_soil)       , &! water exchange between soil and root. Positive: soil->root [?]
+         rootr       (1:nl_soil)       , &! water exchange between soil and root. Positive: soil->root [?]
 
-				fsatmax                       , &! maximum saturated area fraction [-]
-				fsatdcf                       , &! decay factor in calculation of saturated area fraction [1/m]
-		frcsat                        , &! fraction of saturation area
-				f_h2osfc                        ! fraction of surface water [-], maintained by WATER_2014 / WATER_VSF
+         fsatmax                       , &! maximum saturated area fraction [-]
+         fsatdcf                       , &! decay factor in calculation of saturated area fraction [1/m]
+         frcsat                        , &! fraction of saturation area
+         f_h2osfc                        ! fraction of surface water [-], maintained by WATER_2014 / WATER_VSF
 
-		! Optional R1 rice paddy inputs from CoLMDRIVER.  When absent the
-		! routine behaves exactly as before (default-off).
-		logical, intent(in), optional :: is_rice_paddy_in
-		real(r8), intent(in), optional :: rice_pft_frac_in
+      ! Optional R1 rice paddy inputs from CoLMDRIVER.  When absent the
+      ! routine behaves exactly as before (default-off).
+      logical, intent(in), optional :: is_rice_paddy_in
+      real(r8), intent(in), optional :: rice_pft_frac_in
 
-		logical  :: is_rice_paddy
-		logical  :: rice_parameter_active
-		logical  :: is_floodplain_active
-		real(r8) :: rice_pft_frac
-		integer  :: rice_dsh
+      logical  :: is_rice_paddy
+      logical  :: rice_parameter_active
+      logical  :: is_floodplain_active
+      real(r8) :: rice_pft_frac
+      integer  :: rice_dsh
       integer  :: biome_class_id
 
-		real(r8):: &
-				crootfr  (1:nl_soil)     , &! fraction of roots for carbon in each soil layer
-				pH                       , &! soil water pH
-				cellorg  (1:nl_soil)     , &! column 3D org (kg/m3 organic matter)
-				t_h2osfc             	    ! surface water temperature
+      real(r8):: &
+         crootfr  (1:nl_soil)     , &! fraction of roots for carbon in each soil layer
+         pH                       , &! soil water pH
+         cellorg  (1:nl_soil)     , &! column 3D org (kg/m3 organic matter)
+         t_h2osfc             	    ! surface water temperature
 
-			real(r8) :: somhr_loc, lithr_loc, rr_loc, agnpp_loc, bgnpp_loc, annsum_npp_loc
-			real(r8) :: hr_vr_loc(1:nl_soil), fphr_loc(1:nl_soil)
-			real(r8) :: o_scalar_loc(1:nl_soil), pot_f_nit_vr_loc(1:nl_soil)
-				real(r8) :: microbe_conc_o2(1:nl_soil), microbe_conc_ch4(1:nl_soil)
-				real(r8) :: microbial_prod_potential_eff(1:nl_soil)
-				real(r8) :: microbial_oxid_potential_eff(1:nl_soil)
-			real(r8) :: lai_eff
-			real(r8) :: rootfr_eff(1:nl_soil)
-			real(r8) :: rootr_eff(1:nl_soil)
-				real(r8) :: forc_t_eff, forc_pbot_eff, forc_po2m_eff, forc_pco2m_eff
-				real(r8) :: forc_us_eff, forc_vs_eff
-			real(r8) :: fprev
+      real(r8) :: somhr_loc, lithr_loc, rr_loc, agnpp_loc, bgnpp_loc, annsum_npp_loc
+      real(r8) :: hr_vr_loc(1:nl_soil), fphr_loc(1:nl_soil)
+      real(r8) :: exu_vr_loc(1:nl_soil)   ! candidate 6: root exudates respired this step [gC m-3 s-1]
+      real(r8) :: o_scalar_loc(1:nl_soil), pot_f_nit_vr_loc(1:nl_soil)
+      real(r8) :: microbe_conc_o2(1:nl_soil), microbe_conc_ch4(1:nl_soil)
+      real(r8) :: microbial_prod_potential_eff(1:nl_soil)
+      real(r8) :: microbial_oxid_potential_eff(1:nl_soil)
+      real(r8) :: lai_eff
+      real(r8) :: rootfr_eff(1:nl_soil)
+      real(r8) :: rootr_eff(1:nl_soil)
+      real(r8) :: forc_t_eff, forc_pbot_eff, forc_po2m_eff, forc_pco2m_eff
+      real(r8) :: forc_us_eff, forc_vs_eff
+      real(r8) :: fprev
 			real(r8) :: rice_weight
 			real(r8) :: component_fraction(N_METHANE_COMP)
 			real(r8) :: component_lai(N_METHANE_COMP)
@@ -239,66 +246,77 @@ CONTAINS
 			real(r8) :: component_bgnpp(N_METHANE_COMP)
 			real(r8) :: component_annsum_npp(N_METHANE_COMP)
 			logical :: component_veg_ready(N_METHANE_COMP)
-			logical  :: bgc_inputs_ready
+      logical  :: bgc_inputs_ready
 			TYPE(methane_column_result_type) :: soil_column, rice_column
-			logical, save :: warned_missing_bgc_inputs = .false.
+			! candidate 16: the patch's acceptor pools at the start of the step,
+			! from which each methane column of a soil patch starts
+			real(r8) :: acc_unsat_prev(1:nl_soil), acc_sat_prev(1:nl_soil)
+			logical  :: use_acceptor
+      logical, save :: warned_missing_bgc_inputs = .false.
 
-		! Use raw t_grnd as proxy for surface-water temperature.
-		! Do NOT clamp to tfrz: the ponddiff formula handles sub-freezing
-		! T (parabolic in t_c) without issue, and the downstream ice-block
-		! path (Physics.F90 line ~2274) needs t_h2osfc < tfrz to fire.
-		! Clamping was the cause of the dead ice-block branch.
-		t_h2osfc = t_grnd
+      ! Use raw t_grnd as proxy for surface-water temperature.
+      ! Do NOT clamp to tfrz: the ponddiff formula handles sub-freezing
+      ! T (parabolic in t_c) without issue, and the downstream ice-block
+      ! path (Physics.F90 line ~2274) needs t_h2osfc < tfrz to fire.
+      ! Clamping was the cause of the dead ice-block branch.
+      t_h2osfc = t_grnd
 
-		! Sanitize atmospheric forcing used by methane gas exchange.  The
-		! subroutine arguments are intent(in), so keep local copies rather
-		! than mutating caller state.  This prevents coast/domain-edge spval
-		! or NaN forcing from poisoning c_atm and lake ebullition pressure.
+      ! Sanitize atmospheric forcing used by methane gas exchange.  The
+      ! subroutine arguments are intent(in), so keep local copies rather
+      ! than mutating caller state.  This prevents coast/domain-edge spval
+      ! or NaN forcing from poisoning c_atm and lake ebullition pressure.
 
-		! R1 rice paddy: unpack optional inputs, default off.
-		IF (present(is_rice_paddy_in)) THEN
-		   is_rice_paddy = is_rice_paddy_in
-		ELSE
-		   is_rice_paddy = .false.
-		ENDIF
-		IF (present(rice_pft_frac_in)) THEN
-		   rice_pft_frac = rice_pft_frac_in
-		ELSE
-		   rice_pft_frac = 0._r8
-		ENDIF
-		rice_pft_frac = min(max(rice_pft_frac, 0._r8), 1._r8)
-		rice_parameter_active = is_rice_paddy .and. rice_pft_frac > 0._r8
-		IF (rice_parameter_active .and. .not. is_paddy_rice_live(i)) THEN
+      ! R1 rice paddy: unpack optional inputs, default off.
+      IF (present(is_rice_paddy_in)) THEN
+         is_rice_paddy = is_rice_paddy_in
+      ELSE
+         is_rice_paddy = .false.
+      ENDIF
+      IF (present(rice_pft_frac_in)) THEN
+         rice_pft_frac = rice_pft_frac_in
+      ELSE
+         rice_pft_frac = 0._r8
+      ENDIF
+      rice_pft_frac = min(max(rice_pft_frac, 0._r8), 1._r8)
+      rice_parameter_active = is_rice_paddy .and. rice_pft_frac > 0._r8
+      IF (rice_parameter_active .and. .not. is_paddy_rice_live(i)) THEN
 			   rice_dsh = rice_days_since_harvest(i, idate(2), idate(1))
-		   rice_parameter_active = rice_dsh >= 0 .and. &
-		      real(rice_dsh, r8) < DEF_METHANE%rice_drain_window_days
-		ENDIF
+         rice_parameter_active = rice_dsh >= 0 .and. &
+            real(rice_dsh, r8) < DEF_METHANE%rice_drain_window_days
+      ENDIF
 
-		forc_t_eff = forc_t
-		if (ieee_is_nan(forc_t_eff) .or. abs(forc_t_eff) >= 0.5_r8*abs(spval) .or. &
-		    forc_t_eff < 150._r8 .or. forc_t_eff > 350._r8) forc_t_eff = 288.15_r8
+      forc_t_eff = forc_t
+      if (ieee_is_nan(forc_t_eff) .or. abs(forc_t_eff) >= 0.5_r8*abs(spval) .or. &
+         forc_t_eff < 150._r8 .or. forc_t_eff > 350._r8) forc_t_eff = 288.15_r8
 
-		forc_pbot_eff = forc_pbot
-		if (ieee_is_nan(forc_pbot_eff) .or. abs(forc_pbot_eff) >= 0.5_r8*abs(spval) .or. &
-		    forc_pbot_eff <= 0._r8) forc_pbot_eff = 101325._r8
+      forc_pbot_eff = forc_pbot
+      if (ieee_is_nan(forc_pbot_eff) .or. abs(forc_pbot_eff) >= 0.5_r8*abs(spval) .or. &
+         forc_pbot_eff <= 0._r8) forc_pbot_eff = 101325._r8
 
-		forc_po2m_eff = forc_po2m
-		if (ieee_is_nan(forc_po2m_eff) .or. abs(forc_po2m_eff) >= 0.5_r8*abs(spval) .or. &
-		    forc_po2m_eff <= 0._r8) forc_po2m_eff = 0.2095_r8 * forc_pbot_eff
+      forc_po2m_eff = forc_po2m
+      if (ieee_is_nan(forc_po2m_eff) .or. abs(forc_po2m_eff) >= 0.5_r8*abs(spval) .or. &
+         forc_po2m_eff <= 0._r8) forc_po2m_eff = 0.2095_r8 * forc_pbot_eff
 
-			forc_pco2m_eff = forc_pco2m
-			if (ieee_is_nan(forc_pco2m_eff) .or. abs(forc_pco2m_eff) >= 0.5_r8*abs(spval) .or. &
-			    forc_pco2m_eff < 0._r8) forc_pco2m_eff = 415.e-6_r8 * forc_pbot_eff
+      forc_pco2m_eff = forc_pco2m
+      if (ieee_is_nan(forc_pco2m_eff) .or. abs(forc_pco2m_eff) >= 0.5_r8*abs(spval) .or. &
+         forc_pco2m_eff < 0._r8) forc_pco2m_eff = 415.e-6_r8 * forc_pbot_eff
 
-			forc_us_eff = forc_us
-			if (ieee_is_nan(forc_us_eff) .or. abs(forc_us_eff) >= 0.5_r8*abs(spval)) forc_us_eff = 0._r8
+      forc_us_eff = forc_us
+      if (ieee_is_nan(forc_us_eff) .or. abs(forc_us_eff) >= 0.5_r8*abs(spval)) forc_us_eff = 0._r8
 
-			forc_vs_eff = forc_vs
-			if (ieee_is_nan(forc_vs_eff) .or. abs(forc_vs_eff) >= 0.5_r8*abs(spval)) forc_vs_eff = 0._r8
+      forc_vs_eff = forc_vs
+      if (ieee_is_nan(forc_vs_eff) .or. abs(forc_vs_eff) >= 0.5_r8*abs(spval)) forc_vs_eff = 0._r8
 
-			CALL tracer_ch4_bgc_patch_inputs (i, rootfr, crootfr, pH, cellorg, &
-			     somhr_loc, lithr_loc, hr_vr_loc, rr_loc, agnpp_loc, bgnpp_loc, &
-			     annsum_npp_loc, fphr_loc, o_scalar_loc, pot_f_nit_vr_loc, bgc_inputs_ready)
+      CALL tracer_ch4_bgc_patch_inputs (i, rootfr, crootfr, pH, cellorg, &
+         somhr_loc, lithr_loc, hr_vr_loc, rr_loc, agnpp_loc, bgnpp_loc, &
+         annsum_npp_loc, fphr_loc, o_scalar_loc, pot_f_nit_vr_loc, bgc_inputs_ready)
+      ! candidate 6: this step's root exudates, respired where the roots
+      ! release them, join the litter respiration that CH4 is made from
+      IF (DEF_METHANE%root_exudate_frac > 0._r8 .and. (patchtype == 0 .or. patchtype == 2)) THEN
+         CALL tracer_ch4_root_exudate (i, patchtype, deltim, crootfr, exu_vr_loc)
+         hr_vr_loc(:) = hr_vr_loc(:) + exu_vr_loc(:)
+         lithr_loc = lithr_loc + sum(exu_vr_loc(:) * dz_soi(1:nl_soil))
+      ENDIF
 			component_fraction = 0._r8
 			component_fraction(METHANE_COMP_SOIL) = 1._r8
 			component_lai = 0._r8
@@ -313,83 +331,89 @@ CONTAINS
 				   component_lai, component_crootfr, component_rr, component_agnpp, &
 				   component_bgnpp, component_annsum_npp, component_veg_ready)
 			ENDIF
-			IF (patchtype == 0 .and. .not. bgc_inputs_ready) THEN
+      IF (patchtype == 0 .and. .not. bgc_inputs_ready) THEN
 				IF (p_iam_worker == 0 .and. .not. warned_missing_bgc_inputs) THEN
-					write(6,*) 'WARNING: Soil methane running with sanitized BGC defaults before BGC/PFT inputs are initialized.'
-					warned_missing_bgc_inputs = .true.
-				ENDIF
-			ENDIF
+            write(6,*) 'WARNING: Soil methane running with sanitized BGC defaults before BGC/PFT inputs are initialized.'
+            warned_missing_bgc_inputs = .true.
+         ENDIF
+      ENDIF
 
-			! ---- Wetland vegetation proxy (patchtype==2 only) -------------------
-			! IGBP class 11 wetland patches carry no PFT, so NPP / rootfr arrive
-			! as 0 and methane_aere (Wania 2010) cannot fire fully, dropping
+      ! ---- Wetland vegetation proxy (patchtype==2 only) -------------------
+      ! IGBP class 11 wetland patches carry no PFT, so NPP / rootfr arrive
+      ! as 0 and methane_aere (Wania 2010) cannot fire fully, dropping
       ! the plant-mediated CH4 pathway.  Bridgham et al. (2013, GCB 19:1325,
       ! p.1330) put its contribution at "ca. 30-100% of total CH4 flux" and
       ! stress that it "varies dramatically between systems"; an earlier
       ! revision of this comment narrowed that to 50-90%, which the source
       ! does not say.
-			!
-			! LAI handling: CoLM mksrfdata aggregates Yuan+2011 LAI onto
-			! patchtype==2 patches (fveg0_igbp(11)=1), so `lai` has real
-			! data + DEF_LAI_MONTHLY seasonality.  get_wetland_veg_proxy
-			! trusts it when valid (0.1 < lai < 20) and only falls back to
-			! a climate-zone peak when missing.
-			!
-			! For patchtype /= 2: use the inputs as-is (vegetated patches
-			! already have their own PFT-driven LAI/NPP/roots, which
-			! correctly drives the aerenchyma path even under seasonal
-			! inundation, e.g. floodplain pasture or seasonally flooded forest).
-			lai_eff       = lai
-			rootfr_eff(:) = rootfr(:)
-			rootr_eff(:)  = rootr(:)
-			! Clear any prior aerenchyma override (so non-wetland patches use
-			! the DEF_METHANE%* defaults via the getter fallback path).
-			IF (allocated(wetland_aere_active)) THEN
-				IF (i >= 1 .and. i <= size(wetland_aere_active)) &
-					wetland_aere_active(i) = .false.
-			ENDIF
-			IF (patchtype == 2) THEN
+      !
+      ! LAI handling: CoLM mksrfdata aggregates Yuan+2011 LAI onto
+      ! patchtype==2 patches (fveg0_igbp(11)=1), so `lai` has real
+      ! data + DEF_LAI_MONTHLY seasonality.  get_wetland_veg_proxy
+      ! trusts it when valid (0.1 < lai < 20) and only falls back to
+      ! a climate-zone peak when missing.
+      !
+      ! For patchtype /= 2: use the inputs as-is (vegetated patches
+      ! already have their own PFT-driven LAI/NPP/roots, which
+      ! correctly drives the aerenchyma path even under seasonal
+      ! inundation, e.g. floodplain pasture or seasonally flooded forest).
+      lai_eff       = lai
+      rootfr_eff(:) = rootfr(:)
+      rootr_eff(:)  = rootr(:)
+      ! Clear any prior aerenchyma override (so non-wetland patches use
+      ! the DEF_METHANE%* defaults via the getter fallback path).
+      IF (allocated(wetland_aere_active)) THEN
+         IF (i >= 1 .and. i <= size(wetland_aere_active)) &
+            wetland_aere_active(i) = .false.
+      ENDIF
+      IF (patchtype == 2) THEN
          IF (DEF_METHANE%wetland_veg_glwd .and. wetveg_active) THEN
             ! C-13: vegetation from the tile's GLWD make-up and own NPP
             CALL set_wetland_veg_glwd (i, lai, lai_eff, annsum_npp_loc, agnpp_loc, bgnpp_loc, rootfr_eff)
          ELSE
-				CALL get_wetland_veg_proxy (dlat, cellorg(1), lai, i, &
-				     lai_eff, annsum_npp_loc, agnpp_loc, bgnpp_loc, rootfr_eff)
+            CALL get_wetland_veg_proxy (dlat, cellorg(1), lai, i, &
+               lai_eff, annsum_npp_loc, agnpp_loc, bgnpp_loc, rootfr_eff)
          ENDIF
-				! BgcLink set crootfr from the original (zero) rootfr; replace it
-				! with the proxy profile so methane_prod distributes root
-				! respiration into the right layers.
-				crootfr(1:nl_soil) = rootfr_eff(1:nl_soil)
-				! Wetland patches have no PFT-level root water uptake or root
-				! respiration diagnostics.  Use the same shallow proxy profile
-				! for transpiration loss and a conservative belowground-respiration
-				! proxy so root O2 demand is not silently zero.
-				rootr_eff(1:nl_soil) = rootfr_eff(1:nl_soil)
-				rr_loc = max(rr_loc, 0.5_r8 * bgnpp_loc)
-			ENDIF
-			! R4 rice paddy aerenchyma: rice patches (patchtype==0) get their own
-			! Wania-style override (Zone 6) so methane_aere uses rice tiller
-			! geometry instead of the natural-wetland default.  NPP / rootfr stay
-			! whatever CN provides for the actual rice CFT — only the aerenchyma
-			! geometry channel is overridden.
-			!
-			! Gate on croplive_p so winter stubble/fallow on rice patches drops
-			! back to the wetland default (otherwise the LAI-scaled aere keeps
-			! a residual 50% transport even after harvest).  rice_paddy_alive
-			! flag is set by the same any_paddy_rice_live() helper used in
-			! methane() for finundated override, keeping the two physics
-			! decisions consistent.
-			! All BGC state access goes through MOD_Tracer_Reactive_Methane_BgcLink.
+         ! BgcLink set crootfr from the original (zero) rootfr; replace it
+         ! with the proxy profile so methane_prod distributes root
+         ! respiration into the right layers.
+         crootfr(1:nl_soil) = rootfr_eff(1:nl_soil)
+         ! Wetland patches have no PFT-level root water uptake or root
+         ! respiration diagnostics.  Use the same shallow proxy profile
+         ! for transpiration loss and a conservative belowground-respiration
+         ! proxy so root O2 demand is not silently zero.
+         rootr_eff(1:nl_soil) = rootfr_eff(1:nl_soil)
+         rr_loc = max(rr_loc, 0.5_r8 * bgnpp_loc)
+      ENDIF
+      ! R4 rice paddy aerenchyma: rice patches (patchtype==0) get their own
+      ! Wania-style override (Zone 6) so methane_aere uses rice tiller
+      ! geometry instead of the natural-wetland default.  NPP / rootfr stay
+      ! whatever CN provides for the actual rice CFT — only the aerenchyma
+      ! geometry channel is overridden.
+      !
+      ! Gate on croplive_p so winter stubble/fallow on rice patches drops
+      ! back to the wetland default (otherwise the LAI-scaled aere keeps
+      ! a residual 50% transport even after harvest).  rice_paddy_alive
+      ! flag is set by the same any_paddy_rice_live() helper used in
+      ! methane() for finundated override, keeping the two physics
+      ! decisions consistent.
+      ! All BGC state access goes through MOD_Tracer_Reactive_Methane_BgcLink.
 			! Rice aerenchyma is configured inside the pure-rice component call
 			! with an intensive fraction of one.  The patch rice fraction is used
 			! only once, when the two completed columns are aggregated.
 
-			! Biome-specific f_methane lookup (Bridgham 2013 GCB).  Sets
-			! biome_f_methane_patch(i) which methane_prod consumes when
-			! DEF_METHANE%use_biome_f_methane is true; otherwise returns
-			! the legacy DEF_METHANE%f_methane scalar (backwards compatible).
+      ! Biome-specific f_methane lookup (Bridgham 2013 GCB).  Sets
+      ! biome_f_methane_patch(i) which methane_prod consumes when
+      ! DEF_METHANE%use_biome_f_methane is true; otherwise returns
+      ! the legacy DEF_METHANE%f_methane scalar (backwards compatible).
+			! C-48: a single-point soil patch takes its flood from the site series
+			IF (patchtype == 0 .and. trim(DEF_METHANE%site_flood_file) /= 'null') &
+				CALL set_methane_site_flood (i, idate)
 			is_floodplain_active = .false.
-			IF (patchtype == 0 .and. DEF_METHANE%use_routing_for_soil .and. &
+			! candidate 27: in the colm mode (scheme 8) every soil tile takes the
+			! routing flood fraction too, so it is a floodplain when flooded
+			IF (patchtype == 0 .and. (DEF_METHANE%use_routing_for_soil .or. &
+			    (DEF_wetland_finundation_scheme == 8 .and. DEF_METHANE%colm_floodplain_class)) .and. &
 			    allocated(f_inund_flood_patch) .and. allocated(wetland_frac_per_patch)) THEN
 				IF (i >= 1 .and. i <= size(f_inund_flood_patch) .and. &
 				    i <= size(wetland_frac_per_patch)) &
@@ -400,11 +424,15 @@ CONTAINS
 						f_inund_flood_patch(i) > DEF_METHANE%hybrid_soil_threshold .and. &
 						f_inund_flood_patch(i) > wetland_frac_per_patch(i)
 			ENDIF
-			IF (allocated(biome_f_methane_patch) .and. &
-			    i >= 1 .and. i <= size(biome_f_methane_patch)) THEN
+			! I-28: a soil patch the GLWD floodplain bound keeps dry is no floodplain
+			IF (is_floodplain_active .and. allocated(fld_cap_p)) THEN
+				IF (i <= size(fld_cap_p)) is_floodplain_active = fld_cap_p(i) > 0._r8
+			ENDIF
+      IF (allocated(biome_f_methane_patch) .and. &
+         i >= 1 .and. i <= size(biome_f_methane_patch)) THEN
          biome_class_id = BIOME_NONE
-				biome_f_methane_patch(i) = get_biome_f_methane (patchtype, dlat, cellorg(1), &
-				                                                is_rice_paddy, rice_pft_frac, &
+         biome_f_methane_patch(i) = get_biome_f_methane (patchtype, dlat, cellorg(1), &
+            is_rice_paddy, rice_pft_frac, &
             rice_parameter_active, is_floodplain_active, &
             class_id = biome_class_id)
 
@@ -443,16 +471,16 @@ CONTAINS
                methane_area_floodplain(i) = 0._r8
             ENDIF
          ENDIF
-			ENDIF
+      ENDIF
 
-			! Biome-specific redoxlag lookup (Pangala 2017, Whalen 1990).
-			! Tropical warm wetlands respond faster (~5-15d); cold boreal
-			! peat slower (~30-60d).  Consumed by methane when
-			! DEF_METHANE%use_biome_redoxlag is true.
+      ! Biome-specific redoxlag lookup (Pangala 2017, Whalen 1990).
+      ! Tropical warm wetlands respond faster (~5-15d); cold boreal
+      ! peat slower (~30-60d).  Consumed by methane when
+      ! DEF_METHANE%use_biome_redoxlag is true.
 			IF (patchtype /= 0 .and. allocated(biome_redoxlag_patch) .and. &
-			    i >= 1 .and. i <= size(biome_redoxlag_patch)) THEN
-				biome_redoxlag_patch(i) = get_biome_redoxlag (patchtype, dlat, cellorg(1), &
-				                                              is_rice_paddy, rice_pft_frac, &
+         i >= 1 .and. i <= size(biome_redoxlag_patch)) THEN
+         biome_redoxlag_patch(i) = get_biome_redoxlag (patchtype, dlat, cellorg(1), &
+            is_rice_paddy, rice_pft_frac, &
 				                                              rice_parameter_active, is_floodplain_active)
 			ENDIF
 
@@ -470,6 +498,15 @@ CONTAINS
 				ENDIF
 				CALL repartition_methane_column_state(i, rice_fraction_prev(i), rice_weight)
 				CALL repartition_methane_microbes(i, rice_fraction_prev(i), rice_weight)
+				! candidate 16: the acceptor pools are kept per patch; both columns
+				! start from them and their area mean is kept (aggregate below)
+				use_acceptor = DEF_METHANE%acceptor_pool .and. &
+				   allocated(acceptor_unsat) .and. allocated(acceptor_sat)
+				IF (use_acceptor) use_acceptor = i >= 1 .and. i <= size(acceptor_sat, 2)
+				IF (use_acceptor) THEN
+					acc_unsat_prev(:) = acceptor_unsat(1:nl_soil,i)
+					acc_sat_prev(:)   = acceptor_sat(1:nl_soil,i)
+				ENDIF
 				IF (rice_weight <= 1.e-14_r8) THEN
 					CALL run_methane_component(METHANE_COMP_SOIL, .false., soil_column)
 					rice_column = soil_column
@@ -485,122 +522,129 @@ CONTAINS
 				CALL tracer_ch4_bgc_finalize_step(i, patchtype, deltim, net_methane(i))
 				rice_fraction_prev(i) = rice_weight
 				RETURN
-			ENDIF
-					! f_h2osfc is maintained by the water module before methane_driver.
-					! Lake CH4 uses the CTSM-style sediment-carbon pathway, not the optional
-					! soil microbial-pool override; keep lake microbial pools from evolving as
-					! diagnostics-only state.
-					IF (patchtype /= 4) THEN
-						IF (abs(fsat_bef(i)) < 1.e30_r8 .and. fsat_bef(i) >= 0._r8 .and. &
-						    fsat_bef(i) <= 1._r8) THEN
-							fprev = fsat_bef(i)
-							microbe_conc_o2(:) = conc_o2_sat(1:nl_soil,i) * fprev + &
-								conc_o2_unsat(1:nl_soil,i) * (1._r8 - fprev)
-							microbe_conc_ch4(:) = conc_methane_sat(1:nl_soil,i) * fprev + &
-								conc_methane_unsat(1:nl_soil,i) * (1._r8 - fprev)
-						ELSE
-							microbe_conc_o2(:) = conc_o2(1:nl_soil,i)
-							microbe_conc_ch4(:) = conc_methane(1:nl_soil,i)
-						ENDIF
+      ENDIF
+      ! C-27: annual mean soil temperature of a wetland tile, the reference of
+      ! its CH4 production temperature factor; candidate 30: the temperature
+      ! its methanogens acclimate to
+      IF (patchtype == 2 .and. (DEF_METHANE%q10methane_local_base .or. &
+          (DEF_METHANE%methanogen_activity .and. DEF_METHANE%methanogen_qev_ratio > 0._r8))) &
+         CALL methane_tsoi_annual (i, deltim, z_soisno(1:nl_soil), dz_soisno(1:nl_soil), t_soisno(1:nl_soil), &
+            isendofyear(idate, deltim))
+      ! f_h2osfc is maintained by the water module before methane_driver.
+      ! Lake CH4 uses the CTSM-style sediment-carbon pathway, not the optional
+      ! soil microbial-pool override; keep lake microbial pools from evolving as
+      ! diagnostics-only state.
+      IF (patchtype /= 4) THEN
+         IF (abs(fsat_bef(i)) < 1.e30_r8 .and. fsat_bef(i) >= 0._r8 .and. &
+            fsat_bef(i) <= 1._r8) THEN
+            fprev = fsat_bef(i)
+            microbe_conc_o2(:) = conc_o2_sat(1:nl_soil,i) * fprev + &
+               conc_o2_unsat(1:nl_soil,i) * (1._r8 - fprev)
+            microbe_conc_ch4(:) = conc_methane_sat(1:nl_soil,i) * fprev + &
+               conc_methane_unsat(1:nl_soil,i) * (1._r8 - fprev)
+         ELSE
+            microbe_conc_o2(:) = conc_o2(1:nl_soil,i)
+            microbe_conc_ch4(:) = conc_methane(1:nl_soil,i)
+         ENDIF
 							CALL methane_microbes_step (i, METHANE_COMP_SOIL, deltim, t_soisno(1:nl_soil), &
-							     microbe_conc_o2, microbe_conc_ch4, hr_vr_loc, cellorg)
+            microbe_conc_o2, microbe_conc_ch4, hr_vr_loc, cellorg)
 							CALL aggregate_methane_microbes(i, 0._r8)
-						ELSE
-							! Lake CH4 bypasses the optional soil microbial-pool override.
+      ELSE
+         ! Lake CH4 bypasses the optional soil microbial-pool override.
 							! Reset every inactive per-step diagnostic through its owner;
 							! prognostic biomass remains carried by the lake sediment.
 							CALL reset_methane_inactive_lake_microbe_diagnostics(i)
-						ENDIF
+      ENDIF
 
-						microbial_prod_potential_eff(:) = 0._r8
-						microbial_oxid_potential_eff(:) = 0._r8
-						IF (allocated(microbial_prod_potential) .and. allocated(microbial_oxid_potential)) THEN
-							IF (i >= lbound(microbial_prod_potential,2) .and. i <= ubound(microbial_prod_potential,2) .and. &
-							    i >= lbound(microbial_oxid_potential,2) .and. i <= ubound(microbial_oxid_potential,2)) THEN
-								microbial_prod_potential_eff(:) = microbial_prod_potential(1:nl_soil,i)
-								microbial_oxid_potential_eff(:) = microbial_oxid_potential(1:nl_soil,i)
-							ENDIF
-						ENDIF
+      microbial_prod_potential_eff(:) = 0._r8
+      microbial_oxid_potential_eff(:) = 0._r8
+      IF (allocated(microbial_prod_potential) .and. allocated(microbial_oxid_potential)) THEN
+         IF (i >= lbound(microbial_prod_potential,2) .and. i <= ubound(microbial_prod_potential,2) .and. &
+            i >= lbound(microbial_oxid_potential,2) .and. i <= ubound(microbial_oxid_potential,2)) THEN
+            microbial_prod_potential_eff(:) = microbial_prod_potential(1:nl_soil,i)
+            microbial_oxid_potential_eff(:) = microbial_oxid_potential(1:nl_soil,i)
+         ENDIF
+      ENDIF
 
-			CALL methane (istep,i,idate(1:3),patchclass,patchtype,lb,snl,dlon,dlat,deltim,&
-		z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:),&
-		t_grnd,wliq_soisno(maxsnl+1:),wice_soisno(maxsnl+1:),&
-			forc_t_eff,forc_pbot_eff,forc_po2m_eff,forc_pco2m_eff,forc_us_eff,forc_vs_eff,&
+      CALL methane (istep,i,idate(1:3),patchclass,patchtype,lb,snl,dlon,dlat,deltim,&
+         z_soisno(maxsnl+1:),dz_soisno(maxsnl+1:),zi_soisno(maxsnl:),t_soisno(maxsnl+1:),&
+         t_grnd,wliq_soisno(maxsnl+1:),wice_soisno(maxsnl+1:),&
+         forc_t_eff,forc_pbot_eff,forc_po2m_eff,forc_pco2m_eff,forc_us_eff,forc_vs_eff,&
 		zwt,rootfr_eff,snowdp,wat,rsur,etr,lakedepth,dz_lake,t_lake,lake_icefrac,wdsrf,wetwat,bsw,&
 		smp,porsl,lai_eff,sai,rootr_eff,&
-		annsum_npp_loc, rr_loc,&
-		fsatmax,fsatdcf,frcsat,&
-		agnpp_loc, bgnpp_loc, somhr_loc,&
-		crootfr(1:nl_soil), lithr_loc, hr_vr_loc(1:nl_soil), o_scalar_loc(1:nl_soil), &
-		fphr_loc(1:nl_soil), pot_f_nit_vr_loc(1:nl_soil), pH,&
-			cellorg(1:nl_soil),t_h2osfc,organic_max,&
-				microbial_prod_potential_eff, microbial_oxid_potential_eff, &
-		!!!! --------------------------------------------------------------------------------------------------------
-		!!!!                                         sum data
-		!!!! --------------------------------------------------------------------------------------------------------
-		net_methane(i), &
-		methane_prod_depth(1:nl_soil,i), o2_decomp_depth(1:nl_soil,i), co2_decomp_depth(1:nl_soil,i), &
-		methane_oxid_depth(1:nl_soil,i), o2_oxid_depth(1:nl_soil,i), co2_oxid_depth(1:nl_soil,i), &
-		methane_aere_depth(1:nl_soil,i), methane_tran_depth(1:nl_soil,i), &
-		o2_aere_depth(1:nl_soil,i), co2_aere_depth(1:nl_soil,i), &
-		methane_ebul_depth(1:nl_soil,i), &
-		o2stress(1:nl_soil,i), methane_stress(1:nl_soil,i), &
-		methane_surf_flux_tot(i), methane_surf_flux_tot_phys(i), methane_surf_aere(i), methane_surf_ebul(i), methane_surf_diff(i), &
-		methane_surf_diff_phys(i), &
-		methane_balance_residual(i), methane_ch4_clip_credit(i), o2_cap_loss(i), o2_cap_gain(i), &
-		methane_ebul_tot(i), methane_prod_tot(i), methane_oxid_tot(i), &
-		co2_decomp_tot(i), co2_oxid_tot(i), co2_aere_tot(i), co2_net_tot(i), &
-		totcol_methane(i), grnd_methane_cond(i), conc_o2(1:nl_soil,i), conc_methane(1:nl_soil,i), &
-		!!!! --------------------------------------------------------------------------------------------------------
-		!!!! --------------------------------------------------------------------------------------------------------
-		!!!!                                         sum data (unsaturated / saturated)
-		!!!! --------------------------------------------------------------------------------------------------------
-		net_methane_unsat(i), net_methane_sat(i), &
-		methane_prod_depth_unsat(1:nl_soil,i), methane_prod_depth_sat(1:nl_soil,i), &
-		o2_decomp_depth_unsat(1:nl_soil,i), o2_decomp_depth_sat(1:nl_soil,i), &
-		co2_decomp_depth_unsat(1:nl_soil,i), co2_decomp_depth_sat(1:nl_soil,i), &
-		methane_oxid_depth_unsat(1:nl_soil,i), methane_oxid_depth_sat(1:nl_soil,i), &
-		o2_oxid_depth_unsat(1:nl_soil,i), o2_oxid_depth_sat(1:nl_soil,i), &
-		co2_oxid_depth_unsat(1:nl_soil,i), co2_oxid_depth_sat(1:nl_soil,i), &
-		methane_aere_depth_unsat(1:nl_soil,i), methane_aere_depth_sat(1:nl_soil,i), &
-		methane_tran_depth_unsat(1:nl_soil,i), methane_tran_depth_sat(1:nl_soil,i), &
-		o2_aere_depth_unsat(1:nl_soil,i), o2_aere_depth_sat(1:nl_soil,i), &
-		co2_aere_depth_unsat(1:nl_soil,i), co2_aere_depth_sat(1:nl_soil,i), &
-		methane_ebul_depth_unsat(1:nl_soil,i), methane_ebul_depth_sat(1:nl_soil,i), &
-		o2stress_unsat(1:nl_soil,i), o2stress_sat(1:nl_soil,i), &
-		methane_stress_unsat(1:nl_soil,i), methane_stress_sat(1:nl_soil,i), &
-		methane_surf_flux_tot_unsat(i), methane_surf_flux_tot_sat(i), &
-		methane_surf_aere_unsat(i), methane_surf_aere_sat(i), &
-		methane_surf_ebul_unsat(i), methane_surf_ebul_sat(i), &
-		methane_surf_diff_unsat(i), methane_surf_diff_sat(i), &
-		methane_surf_diff_phys_unsat(i), methane_surf_diff_phys_sat(i), &
-		methane_ebul_tot_unsat(i), methane_ebul_tot_sat(i), &
-		methane_prod_tot_unsat(i), methane_prod_tot_sat(i), &
-		methane_oxid_tot_unsat(i), methane_oxid_tot_sat(i), &
-		co2_decomp_tot_unsat(i), co2_decomp_tot_sat(i), &
-		co2_oxid_tot_unsat(i), co2_oxid_tot_sat(i), &
-		co2_net_tot_unsat(i), co2_net_tot_sat(i), &
-		totcol_methane_unsat(i), totcol_methane_sat(i), &
-		grnd_methane_cond_unsat(i), grnd_methane_cond_sat(i), &
-		conc_o2_unsat(1:nl_soil,i), conc_o2_sat(1:nl_soil,i), &
-		conc_methane_unsat(1:nl_soil,i), conc_methane_sat(1:nl_soil,i), &
-		methane_prod_depth_lake(1:nl_soil,i), methane_oxid_depth_lake(1:nl_soil,i), &
-		methane_ebul_depth_lake(1:nl_soil,i), &
-		co2_decomp_depth_lake(1:nl_soil,i), co2_oxid_depth_lake(1:nl_soil,i), &
-		methane_surf_ebul_lake(i), methane_surf_diff_lake(i), methane_surf_flux_tot_lake(i), &
-		methane_prod_tot_lake(i), methane_oxid_tot_lake(i), methane_ebul_tot_lake(i), &
-		co2_decomp_tot_lake(i), co2_oxid_tot_lake(i), co2_net_tot_lake(i), &
-		totcol_methane_lake(i), grnd_methane_cond_lake(i), conc_o2_lake(1:nl_soil,i), conc_methane_lake(1:nl_soil,i), &
+         annsum_npp_loc, rr_loc,&
+         fsatmax,fsatdcf,frcsat,&
+         agnpp_loc, bgnpp_loc, somhr_loc,&
+         crootfr(1:nl_soil), lithr_loc, hr_vr_loc(1:nl_soil), o_scalar_loc(1:nl_soil), &
+         fphr_loc(1:nl_soil), pot_f_nit_vr_loc(1:nl_soil), pH,&
+         cellorg(1:nl_soil),t_h2osfc,organic_max,&
+         microbial_prod_potential_eff, microbial_oxid_potential_eff, &
+      !!!! --------------------------------------------------------------------------------------------------------
+      !!!!                                         sum data
+      !!!! --------------------------------------------------------------------------------------------------------
+         net_methane(i), &
+         methane_prod_depth(1:nl_soil,i), o2_decomp_depth(1:nl_soil,i), co2_decomp_depth(1:nl_soil,i), &
+         methane_oxid_depth(1:nl_soil,i), o2_oxid_depth(1:nl_soil,i), co2_oxid_depth(1:nl_soil,i), &
+         methane_aere_depth(1:nl_soil,i), methane_tran_depth(1:nl_soil,i), &
+         o2_aere_depth(1:nl_soil,i), co2_aere_depth(1:nl_soil,i), &
+         methane_ebul_depth(1:nl_soil,i), &
+         o2stress(1:nl_soil,i), methane_stress(1:nl_soil,i), &
+         methane_surf_flux_tot(i), methane_surf_flux_tot_phys(i), methane_surf_aere(i), methane_surf_ebul(i), methane_surf_diff(i), &
+         methane_surf_diff_phys(i), &
+         methane_balance_residual(i), methane_ch4_clip_credit(i), o2_cap_loss(i), o2_cap_gain(i), &
+         methane_ebul_tot(i), methane_prod_tot(i), methane_oxid_tot(i), &
+         co2_decomp_tot(i), co2_oxid_tot(i), co2_aere_tot(i), co2_net_tot(i), &
+         totcol_methane(i), grnd_methane_cond(i), conc_o2(1:nl_soil,i), conc_methane(1:nl_soil,i), &
+      !!!! --------------------------------------------------------------------------------------------------------
+      !!!! --------------------------------------------------------------------------------------------------------
+      !!!!                                         sum data (unsaturated / saturated)
+      !!!! --------------------------------------------------------------------------------------------------------
+         net_methane_unsat(i), net_methane_sat(i), &
+         methane_prod_depth_unsat(1:nl_soil,i), methane_prod_depth_sat(1:nl_soil,i), &
+         o2_decomp_depth_unsat(1:nl_soil,i), o2_decomp_depth_sat(1:nl_soil,i), &
+         co2_decomp_depth_unsat(1:nl_soil,i), co2_decomp_depth_sat(1:nl_soil,i), &
+         methane_oxid_depth_unsat(1:nl_soil,i), methane_oxid_depth_sat(1:nl_soil,i), &
+         o2_oxid_depth_unsat(1:nl_soil,i), o2_oxid_depth_sat(1:nl_soil,i), &
+         co2_oxid_depth_unsat(1:nl_soil,i), co2_oxid_depth_sat(1:nl_soil,i), &
+         methane_aere_depth_unsat(1:nl_soil,i), methane_aere_depth_sat(1:nl_soil,i), &
+         methane_tran_depth_unsat(1:nl_soil,i), methane_tran_depth_sat(1:nl_soil,i), &
+         o2_aere_depth_unsat(1:nl_soil,i), o2_aere_depth_sat(1:nl_soil,i), &
+         co2_aere_depth_unsat(1:nl_soil,i), co2_aere_depth_sat(1:nl_soil,i), &
+         methane_ebul_depth_unsat(1:nl_soil,i), methane_ebul_depth_sat(1:nl_soil,i), &
+         o2stress_unsat(1:nl_soil,i), o2stress_sat(1:nl_soil,i), &
+         methane_stress_unsat(1:nl_soil,i), methane_stress_sat(1:nl_soil,i), &
+         methane_surf_flux_tot_unsat(i), methane_surf_flux_tot_sat(i), &
+         methane_surf_aere_unsat(i), methane_surf_aere_sat(i), &
+         methane_surf_ebul_unsat(i), methane_surf_ebul_sat(i), &
+         methane_surf_diff_unsat(i), methane_surf_diff_sat(i), &
+         methane_surf_diff_phys_unsat(i), methane_surf_diff_phys_sat(i), &
+         methane_ebul_tot_unsat(i), methane_ebul_tot_sat(i), &
+         methane_prod_tot_unsat(i), methane_prod_tot_sat(i), &
+         methane_oxid_tot_unsat(i), methane_oxid_tot_sat(i), &
+         co2_decomp_tot_unsat(i), co2_decomp_tot_sat(i), &
+         co2_oxid_tot_unsat(i), co2_oxid_tot_sat(i), &
+         co2_net_tot_unsat(i), co2_net_tot_sat(i), &
+         totcol_methane_unsat(i), totcol_methane_sat(i), &
+         grnd_methane_cond_unsat(i), grnd_methane_cond_sat(i), &
+         conc_o2_unsat(1:nl_soil,i), conc_o2_sat(1:nl_soil,i), &
+         conc_methane_unsat(1:nl_soil,i), conc_methane_sat(1:nl_soil,i), &
+         methane_prod_depth_lake(1:nl_soil,i), methane_oxid_depth_lake(1:nl_soil,i), &
+         methane_ebul_depth_lake(1:nl_soil,i), &
+         co2_decomp_depth_lake(1:nl_soil,i), co2_oxid_depth_lake(1:nl_soil,i), &
+         methane_surf_ebul_lake(i), methane_surf_diff_lake(i), methane_surf_flux_tot_lake(i), &
+         methane_prod_tot_lake(i), methane_oxid_tot_lake(i), methane_ebul_tot_lake(i), &
+         co2_decomp_tot_lake(i), co2_oxid_tot_lake(i), co2_net_tot_lake(i), &
+         totcol_methane_lake(i), grnd_methane_cond_lake(i), conc_o2_lake(1:nl_soil,i), conc_methane_lake(1:nl_soil,i), &
 		lake_water_ch4_stock(i), lake_water_o2_stock(i), lake_frozen_ch4_stock(i), lake_frozen_o2_stock(i), &
 		lake_liquid_fraction_prev(i), lake_water_ch4_oxid(i), &
 		lake_sed_ch4_flux(i), lake_sed_o2_flux(i), lake_air_o2_flux(i), &
-		!!!! --------------------------------------------------------------------------------------------------------
-		c_atm(1:3,i), forc_pmethanem(i), layer_sat_lag(1:nl_soil,i), lake_soilc(1:nl_soil,i), &
-		annavg_agnpp(i), annavg_bgnpp(i), annavg_somhr(i), annavg_finrw(i), &
-		tempavg_agnpp(i), tempavg_bgnpp(i), annsum_counter(i), tempavg_somhr(i), &
-		tempavg_finrw(i), fsat_bef(i), finundated_lag(i), methane_dfsat_tot(i), f_h2osfc, &
+      !!!! --------------------------------------------------------------------------------------------------------
+         c_atm(1:3,i), forc_pmethanem(i), layer_sat_lag(1:nl_soil,i), lake_soilc(1:nl_soil,i), &
+         annavg_agnpp(i), annavg_bgnpp(i), annavg_somhr(i), annavg_finrw(i), &
+         tempavg_agnpp(i), tempavg_bgnpp(i), annsum_counter(i), tempavg_somhr(i), &
+         tempavg_finrw(i), fsat_bef(i), finundated_lag(i), methane_dfsat_tot(i), f_h2osfc, &
 			is_rice_paddy_in=is_rice_paddy, rice_pft_frac_in=rice_pft_frac, &
-			ustar_in=ustar, fq_in=fq)
+			ustar_in=ustar, fq_in=fq, raw_grnd_in=raw_grnd)
 			CALL tracer_ch4_bgc_finalize_step(i, patchtype, deltim, net_methane(i))
 
 	CONTAINS
@@ -619,6 +663,10 @@ CONTAINS
 			real(r8) :: column_rr, column_agnpp, column_bgnpp, column_annsum_npp
 
 			column_fraction = merge(1._r8, 0._r8, rice_column_active)
+			IF (use_acceptor) THEN
+				acceptor_unsat(1:nl_soil,i) = acc_unsat_prev(:)
+				acceptor_sat(1:nl_soil,i)   = acc_sat_prev(:)
+			ENDIF
 			column_lai = lai_eff
 			column_crootfr = crootfr
 			column_rr = rr_loc
@@ -640,12 +688,17 @@ CONTAINS
 
 			is_floodplain_active = .false.
 			IF (.not. rice_column_active) THEN
-				is_floodplain_active = DEF_METHANE%use_routing_for_soil .and. &
+				is_floodplain_active = (DEF_METHANE%use_routing_for_soil .or. &
+				   (DEF_wetland_finundation_scheme == 8 .and. DEF_METHANE%colm_floodplain_class)) .and. &
 				   allocated(f_inund_flood_patch) .and. allocated(wetland_frac_per_patch) .and. &
 				   i >= 1 .and. i <= size(f_inund_flood_patch) .and. &
 				   i <= size(wetland_frac_per_patch) .and. &
 				   f_inund_flood_patch(i) > DEF_METHANE%hybrid_soil_threshold .and. &
 				   f_inund_flood_patch(i) > wetland_frac_per_patch(i)
+				! I-28: as above, no floodplain where the bound keeps the soil dry
+				IF (is_floodplain_active .and. allocated(fld_cap_p)) THEN
+					IF (i <= size(fld_cap_p)) is_floodplain_active = fld_cap_p(i) > 0._r8
+				ENDIF
 			ENDIF
 			IF (allocated(biome_f_methane_patch)) THEN
 				biome_f_methane_patch(i) = get_biome_f_methane(patchtype, dlat, cellorg(1), &
@@ -758,7 +811,7 @@ CONTAINS
 			tempavg_finrw_component(component,i),fsat_bef_component(component,i),&
 			finundated_lag_component(component,i),column_dfsat_tot,f_h2osfc,&
 			is_rice_paddy_in=rice_column_active,rice_pft_frac_in=column_fraction,&
-			ustar_in=ustar,fq_in=fq,&
+			ustar_in=ustar,fq_in=fq,raw_grnd_in=raw_grnd,&
 			store_patch_diagnostics_in=.false.,finundated_used_out=finundated_used,&
 			finundated_default_out=finundated_default_used)
 
@@ -877,6 +930,12 @@ CONTAINS
 			result%conc_o2_sat = conc_o2_sat_component(:,component,i)
 			result%conc_ch4_unsat = conc_methane_unsat_component(:,component,i)
 			result%conc_ch4_sat = conc_methane_sat_component(:,component,i)
+			result%acc_unsat = 1._r8
+			result%acc_sat = 1._r8
+			IF (use_acceptor) THEN
+				result%acc_unsat = acceptor_unsat(1:nl_soil,i)
+				result%acc_sat = acceptor_sat(1:nl_soil,i)
+			ENDIF
 		END SUBROUTINE capture_methane_column
 
 		SUBROUTINE aggregate_methane_columns(soil, rice, rice_fraction)
@@ -1015,6 +1074,11 @@ CONTAINS
 			tempavg_finrw(i) = ws*tempavg_finrw_component(METHANE_COMP_SOIL,i) + wr*tempavg_finrw_component(METHANE_COMP_RICE,i)
 			fsat_bef(i) = ws*fsat_bef_component(METHANE_COMP_SOIL,i) + wr*fsat_bef_component(METHANE_COMP_RICE,i)
 			finundated_lag(i) = ws*finundated_lag_component(METHANE_COMP_SOIL,i) + wr*finundated_lag_component(METHANE_COMP_RICE,i)
+			! candidate 16: each subcolumn pool is the area mean over the columns
+			IF (use_acceptor) THEN
+				acceptor_unsat(1:nl_soil,i) = wus*soil%acc_unsat + wur*rice%acc_unsat
+				acceptor_sat(1:nl_soil,i)   = wss*soil%acc_sat   + wsr*rice%acc_sat
+			ENDIF
 
 			methane_finundated(i) = ws*soil%finundated + wr*rice%finundated
 			methane_soil_finundated(i) = soil%finundated_default
@@ -1152,7 +1216,7 @@ CONTAINS
 			ENDIF
 		END SUBROUTINE repartition_scalar
 
-	END SUBROUTINE methane_driver
+   END SUBROUTINE methane_driver
 
 END MODULE MOD_Tracer_Reactive_Methane_Driver
 #endif

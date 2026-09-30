@@ -17,13 +17,14 @@ MODULE MOD_Tracer_Reactive_Methane
       ntracers, tracers, tracer_uses_land_water_transport
    USE MOD_Tracer_Lifecycle, only: tracer_lifecycle_hooks_type, register_tracer_provider
    USE MOD_Namelist, only: DEF_file_GIEMS, DEF_wetland_finundation_scheme, &
-      DEF_USE_Dynamic_Wetland
+      DEF_USE_Dynamic_Wetland, DEF_WETLAND_LATERAL_INFLOW, DEF_WETLAND_POND_TARGET_SITE, &
+      DEF_FLOODPLAIN_INFILTRATION
    USE MOD_Vars_TimeInvariants, only: patchtype, lake_soilc_srf, patchlatr, patchlonr
    USE MOD_Tracer_Reactive_Methane_Registry, only: igas_ch4
    USE MOD_Tracer_Reactive_Methane_Physics,  only: methane_host_water_reset, &
       methane_host_water_report
    USE MOD_Tracer_Reactive_Methane_State,    only: allocate_methane_state, &
-      init_methane_wetland_fraction_cache, deallocate_methane_state, &
+      init_methane_wetland_fraction_cache, read_methane_floodplain_cap, deallocate_methane_state, &
       read_methane_restart, write_methane_restart, initialize_methane_lake_soilc_from_surface, &
       save_methane_lulcc_state, remap_methane_lulcc_state, &
       publish_methane_levee_flood_patch, publish_methane_flood_patch
@@ -134,22 +135,25 @@ CONTAINS
       END IF
       CALL configure_methane_inundation_mode ()
 
-      ! The dynamic-wetland water-table floor feeds the aquifer as negative
-      ! subsurface runoff, water that carries no tracer composition, so the
-      ! land-water tracers would lose their balance there.
-      IF (DEF_USE_Dynamic_Wetland .and. (DEF_METHANE%wetland_max_wtd >= 0._r8 .or. &
+      ! The dynamic-wetland water-table floor, its lateral inflow and ponding
+      ! target, and the re-infiltration of a site flood series add water that
+      ! carries no tracer composition, so the land-water tracers would lose
+      ! their balance there.
+      IF ((DEF_USE_Dynamic_Wetland .and. (DEF_METHANE%wetland_max_wtd >= 0._r8 .or. &
           (DEF_METHANE%use_biome_wetland_max_wtd .and. max( &
              DEF_METHANE%wetland_max_wtd_tropical_peat, &
              DEF_METHANE%wetland_max_wtd_tropical_floodplain, &
              DEF_METHANE%wetland_max_wtd_temperate_marsh, &
              DEF_METHANE%wetland_max_wtd_boreal_fen, &
-             DEF_METHANE%wetland_max_wtd_boreal_bog) >= 0._r8))) THEN
+             DEF_METHANE%wetland_max_wtd_boreal_bog) >= 0._r8) .or. &
+          DEF_WETLAND_LATERAL_INFLOW .or. DEF_WETLAND_POND_TARGET_SITE >= 0._r8)) .or. &
+          DEF_FLOODPLAIN_INFILTRATION) THEN
          DO itrc = 1, ntracers
             IF (tracer_uses_land_water_transport(itrc)) THEN
-               IF (p_is_master) write(6,*) '***** ERROR: the dynamic-wetland water-table floor ', &
-                  '(wetland_max_wtd) adds water without tracer composition; it cannot run ', &
-                  'with the land-water tracer ', trim(tracers(itrc)%name)
-               CALL CoLM_stop (' ***** ERROR: wetland water-table floor with land-water tracers')
+               IF (p_is_master) write(6,*) '***** ERROR: the wetland water-table floor, lateral ', &
+                  'inflow, ponding target and site flood re-infiltration add water without ', &
+                  'tracer composition; they cannot run with the land-water tracer ', trim(tracers(itrc)%name)
+               CALL CoLM_stop (' ***** ERROR: wetland water inputs with land-water tracers')
             ENDIF
          ENDDO
       ENDIF
@@ -177,6 +181,8 @@ CONTAINS
       ! the same process, or the second run inherits the first's worst case
       ! and its already-warned flag.
       CALL methane_host_water_reset ()
+      ! I-28: GLWD floodplain area for the soil flood bound (collective)
+      CALL read_methane_floodplain_cap ()
       CALL init_methane_wetland_fraction_cache (numpatch)
       IF (DEF_METHANE%use_microbial_pools) THEN
          CALL allocate_methane_microbes_state (numpatch)
