@@ -22,6 +22,8 @@
     !   DEF_WETLAND_PEAT_C_PROFILE           = .true.
     !   DEF_USE_NITRIF                       = .true.
     !   DEF_USE_FROZEN_SOIL_PSI              = .true.
+    !   DEF_USE_OZONESTRESS                  = .true.
+    !   DEF_USE_OZONEDATA                    = .true.
     !   DEF_USE_LAKE_SOILC_OM_FALLBACK       = .true.
     !   DEF_GridRiverLake_FloodFeedback      = .true.
     !   DEF_GridRiverLake_FloodplainStorageFix = .true.
@@ -387,6 +389,9 @@
     ! switches (on in every development-line run)
     DEF_METHANE%liquid_fraction_scaling   = .true.
     DEF_METHANE%wetland_oxic_cap_kinetics = .true.
+    ! the host water check of master stops beyond 0.05 of the pore volume;
+    ! the development line had no such stop
+    DEF_METHANE%host_water_tolerance      = 0.99
     DEF_METHANE%floodplain_glwd_cap_file = '/share/home/dq076/mode/Methane/CoLM202X-v2/v2/data/glwd33_2deg.nc'
 /
 
@@ -403,12 +408,5 @@
     ! so this block is inert for isotope runs.
     ! Replace fprefix/vname with the real GIEMS / atmospheric-CH4 datasets.
     ! ------------------------------------------------------------------
-    forcing_num        = 2
-    forcing_role       = 'inundation', 'atm'
-    forcing_fprefix    = 'GIEMS_MC_v1.1', 'atm_ch4_global'
-    forcing_vname      = 'wetland_frac', 'ch4_molmol'
-    forcing_tintalgo   = 'nearest', 'linear'
-    forcing_dtime      = 2592000, 2592000
-    forcing_offset     = 0, 0
-    forcing_input_mode = 'direct', 'direct'
+    forcing_num        = 0
 /

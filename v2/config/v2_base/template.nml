@@ -104,6 +104,9 @@
    ! frozen-layer water potential of the paper version, behind a key in the
    ! teacher's code
    DEF_USE_FROZEN_SOIL_PSI = .true.
+   ! ozone stress, a code default of the development line (off on master)
+   DEF_USE_OZONESTRESS = .true.
+   DEF_USE_OZONEDATA   = .true.
    DEF_UnitCatchment_file = '/share/home/dq013/zhwei/colm/data/CoLMruntime/unitcatchment/grid_routing_data_15min.nc'
    DEF_Runoff_SCHEME = 0
    DEF_USE_BIFURCATION = .false.
@@ -148,7 +151,7 @@
    DEF_USE_IRRIGATION = .true.
    ! C-32: rainfed rice bunded too; bunds hold water from planting to harvest
    DEF_PADDY_RICE_BUND = .true.
-   DEF_RICE_DOUBLE_SEASON_FILE = '/share/home/dq076/mode/Methane/CoLM202X-paper-v2/v2/data/rice_double_2deg.nc'
+   DEF_RICE_DOUBLE_SEASON_FILE = '/share/home/dq076/mode/Methane/CoLM202X-v2/v2/data/rice_double_2deg.nc'
    DEF_CROP_FALLOW_NO_LAI = .true.
    DEF_RICE_ROOT_EXUDATE = 0.15
    DEF_RICE_GRNFILL = 0.40

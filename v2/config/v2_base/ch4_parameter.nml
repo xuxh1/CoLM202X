@@ -265,7 +265,7 @@
     ! C-13 (paper V2): wetland-tile vegetation from its GLWD make-up (gridded file;
     ! sites override with SITE_wetland_forest_share / SITE_wetland_lai_cap).
     DEF_METHANE%wetland_veg_glwd        = .true.
-    DEF_METHANE%wetland_veg_file        = '/share/home/dq076/mode/Methane/CoLM202X-paper-v2/v2/data/glwd_class_2deg.nc'
+    DEF_METHANE%wetland_veg_file        = '/share/home/dq076/mode/Methane/CoLM202X-v2/v2/data/glwd_class_2deg.nc'
     ! C-16 (paper V2): frozen wetland layers keep the anoxic limit mino2lim on
     ! decomposition (CLM applies o_scalar whatever the temperature).
     DEF_METHANE%frozen_anoxic_decomp    = .true.
@@ -367,7 +367,7 @@
     DEF_METHANE%rice_host_water = .true.
     ! C-33: lake sediment respiration uses the O2 that reaches it
     DEF_METHANE%lake_sed_o2_demand = .true.
-    DEF_METHANE%site_flood_file = '/share/home/dq076/mode/Methane/CoLM202X-paper-v2/v2/data/site_flood_giems.nc'
+    DEF_METHANE%site_flood_file = '/share/home/dq076/mode/Methane/CoLM202X-v2/v2/data/site_flood_giems.nc'
     ! ! C-69/C-70: root exudates booked after the pool update, all non-lake tiles (Wania et al. 2010 fexu 0.15); replaces C-23
     DEF_METHANE%root_exudate_frac = 0.25
     ! ! D-59: one rhizosphere scheme for every plant, fixed share of the plant-pathway CH4, no plant O2 into the soil
@@ -393,6 +393,11 @@
     ! switches (on in every development-line run)
     DEF_METHANE%liquid_fraction_scaling   = .true.
     DEF_METHANE%wetland_oxic_cap_kinetics = .true.
+    ! code default of the development line, 0 on master
+    DEF_METHANE%rice_paddy_min_finundated = 0.85
+    ! the host water check of master stops beyond 0.05 of the pore volume;
+    ! the development line had no such stop
+    DEF_METHANE%host_water_tolerance      = 0.99
     ! C-105 C-14 anoxic factor on the flooded subcolumn only (Q-81)
     DEF_METHANE%anoxic_decomp_flooded_only = .true.
     ! C-97 as in the global runs (V-177)
@@ -414,12 +419,5 @@
     ! so this block is inert for isotope runs.
     ! Replace fprefix/vname with the real GIEMS / atmospheric-CH4 datasets.
     ! ------------------------------------------------------------------
-    forcing_num        = 2
-    forcing_role       = 'inundation', 'atm'
-    forcing_fprefix    = 'GIEMS_MC_v1.1', 'atm_ch4_global'
-    forcing_vname      = 'wetland_frac', 'ch4_molmol'
-    forcing_tintalgo   = 'nearest', 'linear'
-    forcing_dtime      = 2592000, 2592000
-    forcing_offset     = 0, 0
-    forcing_input_mode = 'direct', 'direct'
+    forcing_num        = 0
 /
