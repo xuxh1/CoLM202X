@@ -1,0 +1,35 @@
+# =======================================================
+# Intel ifx / oneAPI 2024.2 build stack (dq076) -- PRODUCTION flags.
+#
+# Pairs with /share/home/dq076/software/intel-env-ifx:
+#   mpich-4.2.3-ifx2024.2 + hdf5-1.14.6-ifx2024.2 + netcdf-c-4.9.2-ifx2024.2
+#   + netcdf-fortran-4.6.1-ifx2024.2 + MKL 2024.2 (LAPACK/BLAS)
+# The compiler is pinned by absolute path, as in Makeoptions.dq089-gnu.
+#
+# Flags translate Makeoptions.dq089-gnu one for one:
+#   -fdefault-real-8 -> -r8       -ffree-form -> -free       -cpp -> -fpp
+#   -g -fbacktrace   -> -g -traceback         -O2 and -mcmodel=medium kept
+#   -ffree-line-length-none: no ifx equivalent needed for free form
+#   -fopenmp: dropped, the source carries no OpenMP directives
+# Added for ifx only:
+#   -fp-model precise  ifx defaults to fast, which reorders floating-point
+#                      arithmetic; gfortran -O2 does not
+#   -heap-arrays       ifx puts automatic arrays on the stack, gfortran on the heap
+# LAPACK/BLAS come from MKL (-qmkl=sequential), so the link no longer needs the
+# mgt01-only /usr/local/lib/liblapack.a and the build can run on compute nodes.
+# =======================================================
+
+FF = /share/home/dq076/software/installed/mpich-4.2.3-ifx2024.2/bin/mpif90
+
+NETCDF_LIB = /share/home/dq076/software/installed/netcdf-fortran-4.6.1-ifx2024.2/lib
+NETCDF_INC = /share/home/dq076/software/installed/netcdf-fortran-4.6.1-ifx2024.2/include
+NETCDF_C_LIB = /share/home/dq076/software/installed/netcdf-c-4.9.2-ifx2024.2/lib
+
+MOD_CMD = -module
+
+FOPTS = -r8 -free -O2 -fp-model precise -g -traceback -mcmodel=medium -heap-arrays -fpp
+
+INCLUDE_DIR = -I../include -I../share -I../mksrfdata -I../mkinidata -I../main -I$(NETCDF_INC)
+LDFLAGS = -L${NETCDF_LIB} -lnetcdff -L${NETCDF_C_LIB} -lnetcdf -qmkl=sequential
+
+# CaMa-Flood is not built with this stack (CaMa_Flood is #undef in define.h).
