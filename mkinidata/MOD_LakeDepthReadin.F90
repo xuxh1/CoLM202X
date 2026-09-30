@@ -28,6 +28,7 @@ CONTAINS
    USE MOD_LandPatch
    USE MOD_NetCDFVector
    USE MOD_Vars_TimeInvariants, only: lakedepth, dz_lake
+   USE MOD_Namelist, only: DEF_LAKEDEPTH_VALID_PIXELS
 #ifdef SinglePoint
    USE MOD_SingleSrfdata
 #endif
@@ -84,6 +85,10 @@ CONTAINS
       IF (p_is_worker) THEN
 
          DO ipatch = 1, numpatch
+
+            ! Q-39: a missing depth takes the default of the lake-depth data
+            ! (Kourzeneva et al. 2012), 10 m, instead of the 0.1 m floor below
+            IF (DEF_LAKEDEPTH_VALID_PIXELS .and. lakedepth(ipatch) <= 0.) lakedepth(ipatch) = 10.
 
             ! testing 14/05/2021, Zhang
             IF(lakedepth(ipatch) < 0.1) lakedepth(ipatch) = 0.1

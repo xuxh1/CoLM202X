@@ -27,7 +27,7 @@ CONTAINS
 
    USE MOD_Precision
    USE MOD_Vars_Global, only: nl_soil
-   USE MOD_Namelist, only: DEF_SOIL_REFL_SCHEME
+   USE MOD_Namelist, only: DEF_SOIL_REFL_SCHEME, DEF_VG_ALPHA_MM
    USE MOD_SPMD_Task
    USE MOD_NetCDFVector
    USE MOD_LandPatch
@@ -355,11 +355,19 @@ CONTAINS
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
                   psi0       (nsl,ipatch) = -10.      ! mm
                   theta_r    (nsl,ipatch) = soil_theta_r_l  (ipatch)
-                  alpha_vgm  (nsl,ipatch) = soil_alpha_vgm_l(ipatch)
                   L_vgm      (nsl,ipatch) = soil_L_vgm_l    (ipatch)
                   n_vgm      (nsl,ipatch) = soil_n_vgm_l    (ipatch)
-                  wfc        (nsl,ipatch) = soil_theta_r_l  (ipatch)+(soil_theta_s_l(ipatch)-soil_theta_r_l(ipatch))*&
-                             (1+(soil_alpha_vgm_l(ipatch)*339.9)**soil_n_vgm_l(ipatch))**(1.0/soil_n_vgm_l(ipatch)-1)
+                  IF (DEF_VG_ALPHA_MM) THEN
+                     ! C-94 (paper V2): alpha of the soil data is in 1/cm,
+                     ! the soil water functions take suction in mm
+                     alpha_vgm  (nsl,ipatch) = soil_alpha_vgm_l(ipatch) / 10.  ! 1/cm -> 1/mm
+                     wfc        (nsl,ipatch) = soil_theta_r_l  (ipatch)+(soil_theta_s_l(ipatch)-soil_theta_r_l(ipatch))*&
+                                (1+(alpha_vgm(nsl,ipatch)*3399.)**soil_n_vgm_l(ipatch))**(1.0/soil_n_vgm_l(ipatch)-1)
+                  ELSE
+                     alpha_vgm  (nsl,ipatch) = soil_alpha_vgm_l(ipatch)
+                     wfc        (nsl,ipatch) = soil_theta_r_l  (ipatch)+(soil_theta_s_l(ipatch)-soil_theta_r_l(ipatch))*&
+                                (1+(soil_alpha_vgm_l(ipatch)*339.9)**soil_n_vgm_l(ipatch))**(1.0/soil_n_vgm_l(ipatch)-1)
+                  ENDIF
 #else
                   theta_r    (nsl,ipatch) = 0.
 #endif

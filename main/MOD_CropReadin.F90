@@ -62,6 +62,10 @@ CONTAINS
    type(spatial_mapping_type) :: mg2pft_fert
 
    real(r8),allocatable :: pdrice2_tmp      (:)
+   type(grid_type)    :: grid_dbl
+   type(block_data_real8_2d)  :: f_xy_dbl
+   type(spatial_mapping_type) :: mg2pft_dbl
+   real(r8),allocatable :: rice_double_tmp  (:)
    real(r8),allocatable :: plantdate_tmp    (:)
    real(r8),allocatable :: fertnitro_tmp    (:)
    integer ,allocatable :: irrig_method_tmp (:)
@@ -169,6 +173,29 @@ CONTAINS
 #ifdef RangeCheck
       CALL check_vector_data ('plantdate_pfts value ', plantdate_p)
 #endif
+
+      ! (2b) C-45 (paper V2): share of double-cropped irrigated rice, areal
+      ! weighted onto each pft (the file is made on the model grid)
+      IF (trim(DEF_RICE_DOUBLE_SEASON_FILE) /= 'null') THEN
+         CALL ncio_read_bcast_serial (DEF_RICE_DOUBLE_SEASON_FILE, 'lat', lat)
+         CALL ncio_read_bcast_serial (DEF_RICE_DOUBLE_SEASON_FILE, 'lon', lon)
+         CALL grid_dbl%define_by_center (lat, lon)
+         IF (p_is_io) CALL allocate_block_data (grid_dbl, f_xy_dbl)
+         CALL mg2pft_dbl%build_arealweighted (grid_dbl, landpft)
+         IF (allocated(lon)) deallocate(lon)
+         IF (allocated(lat)) deallocate(lat)
+         IF (p_is_io) CALL ncio_read_block (DEF_RICE_DOUBLE_SEASON_FILE, 'rice_double', grid_dbl, f_xy_dbl)
+         IF (p_is_worker) allocate (rice_double_tmp (max(numpft,0)))
+         CALL mg2pft_dbl%grid2pset (f_xy_dbl, rice_double_tmp)
+         IF (p_is_worker) THEN
+            DO ipft = 1, numpft
+               rice_double_p(ipft) = 0._r8
+               IF (landpft%settyp(ipft) == 62 .and. rice_double_tmp(ipft) /= spval) &
+                  rice_double_p(ipft) = max(0._r8, min(1._r8, rice_double_tmp(ipft)))
+            ENDDO
+            deallocate (rice_double_tmp)
+         ENDIF
+      ENDIF
 
       ! (3) Read in fertlization
       IF (DEF_FERT_SOURCE == 1) THEN

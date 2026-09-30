@@ -232,18 +232,22 @@ CoLMMAIN.o: MOD_Tracer_SpecialPatches.o
 ifeq (${METHANE_ENABLED},YES)
 MOD_Tracer_Reactive_BgcShim.o: MOD_BGC_Soil_BiogeochemCompetition.o MOD_BGC_Soil_BiogeochemDecomp.o \
 				MOD_BGC_Soil_BiogeochemPotential.o MOD_BGC_Soil_BiogeochemNStateUpdate1.o MOD_BGC_CNCStateUpdate1.o \
-				MOD_Tracer_Reactive_Methane_WetlandVeg.o
+				MOD_BGC_Soil_BiogeochemDecompCascadeBGC.o \
+				MOD_Tracer_Reactive_Methane_WetlandVeg.o MOD_Tracer_Reactive_Methane_State.o
 MOD_Tracer_Reactive_Methane_WetlandVeg.o: MOD_Tracer_Reactive_Methane_Const.o \
 				MOD_Tracer_Reactive_Methane_VegOverride.o MOD_Vars_TimeVariables.o MOD_Vars_TimeInvariants.o
-MOD_SoilSnowHydrology.o: MOD_Tracer_Reactive_Methane_Physics.o
+MOD_SoilSnowHydrology.o MOD_Thermal.o: MOD_Tracer_Reactive_Methane_Physics.o
 CoLM.o: MOD_Tracer_Reactive_Methane_WetlandVeg.o
 MOD_Tracer_Reactive_Methane_State.o: MOD_Tracer_Reactive_Methane_Const.o
 MOD_Tracer_Reactive_Methane_Microbes.o: MOD_Tracer_Reactive_Methane_State.o
 MOD_Tracer_Reactive_Methane_BgcLink.o: MOD_Tracer_Reactive_Methane_VegOverride.o MOD_Tracer_Reactive_Methane_pH.o \
-				MOD_Tracer_Reactive_Methane_State.o
+				MOD_Tracer_Reactive_Methane_State.o MOD_BGC_CNCStateUpdate1.o MOD_BGC_Soil_BiogeochemNStateUpdate1.o \
+				MOD_BGC_CNSummary.o MOD_BGC_Soil_BiogeochemLittVertTransp.o
 MOD_Tracer_Reactive_Methane_AccFlux.o: MOD_Tracer_Reactive_Methane_BgcLink.o MOD_Tracer_Reactive_Methane_Microbes.o
-MOD_Tracer_Reactive_Methane_Physics.o: MOD_Tracer_Reactive_Methane_BgcLink.o MOD_Tracer_Reactive_Methane_GIEMS.o
-MOD_Tracer_Reactive_Methane_Driver.o: MOD_Tracer_Reactive_Methane_Microbes.o MOD_Tracer_Reactive_Methane_Physics.o
+MOD_Tracer_Reactive_Methane_Physics.o: MOD_Tracer_Reactive_Methane_BgcLink.o MOD_Tracer_Reactive_Methane_GIEMS.o \
+				MOD_Tracer_Reactive_Methane_WetlandVeg.o
+MOD_Tracer_Reactive_Methane_Driver.o: MOD_Tracer_Reactive_Methane_Microbes.o MOD_Tracer_Reactive_Methane_Physics.o \
+				MOD_Tracer_Reactive_Methane_WetlandVeg.o
 MOD_Tracer_Reactive_Methane_Hist.o: MOD_Tracer_Hist.o MOD_Tracer_Reactive_Methane_AccFlux.o
 MOD_Tracer_Reactive_Methane_Impl.o: MOD_Tracer_Reactive_BgcShim.o MOD_Tracer_Reactive_Methane_Driver.o \
 				MOD_Tracer_Conservation.o
@@ -252,6 +256,7 @@ endif
 endif
 
 OBJS_BASIC =    \
+				 MOD_FloodInfiltration.o        \
 				 MOD_Vector_ReadWrite.o         \
 				 MOD_dataSpec_PDB.o             \
 				 MOD_tav_abs.o                  \

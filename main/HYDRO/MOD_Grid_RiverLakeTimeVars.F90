@@ -38,6 +38,12 @@ MODULE MOD_Grid_RiverLakeTimeVars
 
    real(r8), save       :: acctime_rnof = 0._r8
    real(r8), allocatable :: acc_rnof_uc (:)
+   ! DEF_LAKE_EVAP_ROUTING: the lake patch evaporation beyond
+   ! precipitation (lake_deficit) gathered per unit catchment the way runoff
+   ! is, and still owed by its storage [m3]; taken out at the next routing
+   ! step as far as the storage allows, the rest stays here and goes into the
+   ! restart.
+   real(r8), allocatable :: acc_ldef_uc (:)
 
    ! -- restart file path (saved for deferred sediment restart read) --
    character(len=512) :: gridriver_restart_file = ''
@@ -407,6 +413,8 @@ CONTAINS
       allocate (volresv (nresv_state))
       allocate (acc_rnof_uc (ncell_state))
       acc_rnof_uc = 0._r8
+      allocate (acc_ldef_uc (ncell_state))
+      acc_ldef_uc = 0._r8
       wdsrf_ucat_prev = 0._r8
 
       allocate (volwater_ucat(ncell_state))
@@ -428,7 +436,7 @@ CONTAINS
    SUBROUTINE READ_GridRiverLakeTimeVars (file_restart)
 
    USE MOD_SPMD_Task
-   USE MOD_Namelist,              only: DEF_Reservoir_Method
+   USE MOD_Namelist,              only: DEF_Reservoir_Method, DEF_LAKE_EVAP_ROUTING
    USE MOD_Vector_ReadWrite
    USE MOD_NetCDFSerial,          only: ncio_var_exist, ncio_read_bcast_serial
    USE MOD_Grid_RiverLakeNetwork, only: numucat, totalnumucat, ucat_data_address, &
@@ -449,6 +457,7 @@ CONTAINS
 
       acctime_rnof = 0._r8
       IF (allocated(acc_rnof_uc)) acc_rnof_uc = 0._r8
+      IF (allocated(acc_ldef_uc)) acc_ldef_uc = 0._r8
       IF (allocated(wdsrf_ucat_prev)) wdsrf_ucat_prev = 0._r8
       wdsrf_ucat_prev_valid = .false.
       wdsrf_ucat_prev_restart_found = .false.
@@ -596,13 +605,36 @@ CONTAINS
       ENDIF
       IF (base_var_flags(5) == 1) volwater_ucat_valid = .true.
 
+      ! Lake evaporation the storage still owes; a restart written
+      ! without DEF_LAKE_EVAP_ROUTING owes none
+      IF (DEF_LAKE_EVAP_ROUTING .and. totalnumucat > 0) THEN
+         has_var = .false.
+         IF (p_is_master) has_var = ncio_var_exist(file_restart, 'acc_ldef_uc', readflag = .false.)
+#ifdef USEMPI
+         CALL mpi_bcast (has_var, 1, MPI_LOGICAL, p_address_master, p_comm_glb, p_err)
+#endif
+         IF (has_var) THEN
+            CALL vector_read_and_scatter (file_restart, acc_ldef_uc, numucat, 'acc_ldef_uc', ucat_data_address)
+            invalid_base_count = 0
+            DO i = 1, size(acc_ldef_uc)
+               IF (.not. ieee_is_finite(acc_ldef_uc(i))) invalid_base_count = invalid_base_count + 1
+            ENDDO
+#ifdef USEMPI
+            CALL mpi_allreduce (MPI_IN_PLACE, invalid_base_count, 1, MPI_INTEGER, &
+               MPI_SUM, p_comm_glb, p_err)
+#endif
+            IF (invalid_base_count > 0) CALL CoLM_stop ('invalid acc_ldef_uc in GridRiverLake restart')
+         ENDIF
+      ENDIF
+
    END SUBROUTINE READ_GridRiverLakeTimeVars
 
 
    SUBROUTINE WRITE_GridRiverLakeTimeVars (file_restart)
 
    USE MOD_SPMD_Task
-   USE MOD_Namelist,              only: DEF_Reservoir_Method, DEF_USE_LEVEE, DEF_USE_BIFURCATION
+   USE MOD_Namelist,              only: DEF_Reservoir_Method, DEF_USE_LEVEE, DEF_USE_BIFURCATION, &
+      DEF_LAKE_EVAP_ROUTING
    USE MOD_NetCDFSerial
    USE MOD_Vector_ReadWrite
    USE MOD_Grid_RiverLakeNetwork, only: numucat, totalnumucat, ucat_data_address, &
@@ -661,6 +693,12 @@ CONTAINS
       CALL vector_gather_and_write (&
          volwater_ucat, numucat, totalnumucat, ucat_data_address, file_restart, 'volwater_ucat', 'ucatch')
 
+      ! Lake evaporation the storage still owes
+      IF (DEF_LAKE_EVAP_ROUTING) THEN
+         CALL vector_gather_and_write (&
+            acc_ldef_uc, numucat, totalnumucat, ucat_data_address, file_restart, 'acc_ldef_uc', 'ucatch')
+      ENDIF
+
       IF (DEF_USE_LEVEE) THEN
          CALL vector_gather_and_write (&
             levsto, numucat, totalnumucat, ucat_data_address, file_restart, 'levsto', 'ucatch')
@@ -687,6 +725,7 @@ CONTAINS
       IF (allocated (volresv    )) deallocate (volresv    )
       IF (allocated (volwater_ucat)) deallocate (volwater_ucat)
       IF (allocated (acc_rnof_uc)) deallocate (acc_rnof_uc)
+      IF (allocated (acc_ldef_uc)) deallocate (acc_ldef_uc)
       acctime_rnof = 0._r8
       wdsrf_ucat_prev_valid = .false.
       wdsrf_ucat_prev_restart_found = .false.

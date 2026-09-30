@@ -48,6 +48,13 @@ MODULE MOD_SingleSrfdata
 
    integer,  allocatable :: SITE_LAI_year (:)
    real(r8), allocatable :: SITE_LAI_8day (:,:)
+   ! Observed daily water table depth [m below surface, negative = ponded];
+   ! -9999. marks no record.  Read under USE_SITE_WTD and kept in srfdata.nc
+   ! the way LAI is, so the run reads it back without touching the site file.
+   integer,  allocatable :: SITE_WTD_year  (:)
+   real(r8), allocatable :: SITE_WTD_daily (:,:)   ! (366, year)
+   real(r8) :: SITE_WTD_now   = -9999._r8
+   logical  :: SITE_WTD_valid = .false.
 
    real(r8) :: SITE_lakedepth = 1.
 
@@ -318,6 +325,14 @@ CONTAINS
             SITE_lon_location, SITE_lat_location, SITE_landtype)
       ENDIF
 #endif
+
+      ! Observed daily water table (B-3).  mksrfdata copies it from the site
+      ! file when USE_SITE_WTD is on; the run always reads it back if present.
+      readflag = ((.not. mksrfdata) .or. USE_SITE_WTD)
+      IF (readflag .and. ncio_var_exist(fsrfdata, 'WTD_year')) THEN
+         CALL ncio_read_serial (fsrfdata, 'WTD_year',  SITE_WTD_year )
+         CALL ncio_read_serial (fsrfdata, 'WTD_daily', SITE_WTD_daily)
+      ENDIF
 
       IF (SITE_landtype < 0) THEN
          write(*,*) 'Error! Please set SITE_landtype in namelist file !'
@@ -3017,6 +3032,15 @@ ENDIF
       ENDIF
 #endif
 
+      IF (allocated(SITE_WTD_daily)) THEN
+         CALL ncio_define_dimension (fsrfdata, 'WTD_year', size(SITE_WTD_year))
+         CALL ncio_define_dimension (fsrfdata, 'doy', 366)
+         CALL ncio_write_serial (fsrfdata, 'WTD_year',  SITE_WTD_year,  'WTD_year')
+         CALL ncio_write_serial (fsrfdata, 'WTD_daily', SITE_WTD_daily, 'doy', 'WTD_year')
+         CALL ncio_put_attr (fsrfdata, 'WTD_daily', 'long_name', 'observed daily water table depth, gap-filled')
+         CALL ncio_put_attr (fsrfdata, 'WTD_daily', 'units', 'm below surface, negative when ponded')
+      ENDIF
+
       source = trim(datasource(u_site_lai))
       CALL ncio_write_serial (fsrfdata, 'LAI_year', SITE_LAI_year, 'LAI_year')
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
@@ -3561,6 +3585,25 @@ ENDIF
 
 
 !-----------------------------------------------------------------------
+   SUBROUTINE site_wtd_update (idate)
+   ! Pick today's observed water table; nearest year, as USE_SITE_LAI does.
+   IMPLICIT NONE
+   integer, intent(in) :: idate(3)
+   integer :: iyear, iday
+
+      SITE_WTD_valid = .false.
+      SITE_WTD_now   = -9999._r8
+      IF (.not. allocated(SITE_WTD_daily)) RETURN
+      iyear = minloc(abs(SITE_WTD_year - idate(1)), dim=1)
+      iday  = min(max(idate(2), 1), 366)
+      IF (SITE_WTD_daily(iday, iyear) > -9000._r8) THEN
+         SITE_WTD_now   = SITE_WTD_daily(iday, iyear)
+         SITE_WTD_valid = .true.
+      ENDIF
+
+   END SUBROUTINE site_wtd_update
+
+!-----------------------------------------------------------------------
    SUBROUTINE single_srfdata_final ()
 
    IMPLICIT NONE
@@ -3591,6 +3634,8 @@ ENDIF
 
       IF (allocated(SITE_LAI_year)) deallocate(SITE_LAI_year)
       IF (allocated(SITE_LAI_8day)) deallocate(SITE_LAI_8day)
+      IF (allocated(SITE_WTD_year))  deallocate(SITE_WTD_year)
+      IF (allocated(SITE_WTD_daily)) deallocate(SITE_WTD_daily)
 
       IF (allocated(SITE_soil_vf_quartz_mineral)) deallocate(SITE_soil_vf_quartz_mineral)
       IF (allocated(SITE_soil_vf_gravels       )) deallocate(SITE_soil_vf_gravels       )

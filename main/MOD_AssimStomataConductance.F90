@@ -238,8 +238,17 @@ CONTAINS
          omc = vm   * ( pco2i_c-gammas ) / ( pco2i_c + rrkk ) * c3 + vm * c4
          ome = epar * ( pco2i_e-gammas ) / ( pco2i_e+2.*gammas ) * c3 + epar * c4
          !IF(.not. DEF_USE_WUEST .or. epar .lt. 1.e-12)THEN
-         IF(.not. DEF_USE_WUEST .or. abs(c4 - 1) .lt. 0.001)THEN
-            oms = omss * c3 + omss*pco2i * c4
+         ! DEF_WUE_COLIMIT: C3 under the WUE model keeps the optimal ci of each
+         ! limitation (omc at pco2i_c, ome at pco2i_e) but combines omc, ome
+         ! and the sink rate oms with the two quadratics below instead of a
+         ! hard minimum. pco2i is not set on the WUE path; the C3 sink rate
+         ! has no ci term.
+         IF(.not. DEF_USE_WUEST .or. abs(c4 - 1) .lt. 0.001 .or. DEF_WUE_COLIMIT)THEN
+            IF (DEF_USE_WUEST .and. abs(c4 - 1) .ge. 0.001) THEN
+               oms = omss * c3
+            ELSE
+               oms = omss * c3 + omss*pco2i * c4
+            ENDIF
 
             sqrtin= max( 0., ( (ome+omc)**2 - 4.*atheta*ome*omc ) )
             omp   = ( ( ome+omc ) - sqrt( sqrtin ) ) / ( 2.*atheta )
@@ -711,7 +720,9 @@ CONTAINS
 
          omc = vm   * ( pco2i-gammas ) / ( pco2i + rrkk ) * c3 + vm * c4
          ome = epar * ( pco2i-gammas ) / ( pco2i+2.*gammas ) * c3 + epar * c4
-         IF(.not. DEF_USE_WUEST .or. abs(c4 - 1) .lt. 0.001)THEN
+         ! DEF_WUE_COLIMIT: C3 under the WUE model takes the same co-limitation
+         ! of omc, ome and oms as the Ball-Berry branch (as in stomata)
+         IF(.not. DEF_USE_WUEST .or. abs(c4 - 1) .lt. 0.001 .or. DEF_WUE_COLIMIT)THEN
             oms = omss * c3 + omss*pco2i * c4
 
             sqrtin= max( 0., ( (ome+omc)**2 - 4.*atheta*ome*omc ) )

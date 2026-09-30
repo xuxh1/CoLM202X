@@ -56,7 +56,12 @@ MODULE MOD_BGC_Veg_NutrientCompetition
        npool_to_deadcrootn_p, npool_to_deadcrootn_storage_p, npool_to_grainn_p, npool_to_grainn_storage_p, &
        leafn_to_retransn_p, livestemn_to_retransn_p, frootn_to_retransn_p, &
        plant_calloc_p, plant_nalloc_p, leaf_curmr_p, froot_curmr_p, livestem_curmr_p, livecroot_curmr_p, grain_curmr_p, &
-       psn_to_cpool_p, gpp_p, availc_p, avail_retransn_p, xsmrpool_recover_p, sminn_to_npool_p, excess_cflux_p
+       psn_to_cpool_p, gpp_p, availc_p, avail_retransn_p, xsmrpool_recover_p, sminn_to_npool_p, excess_cflux_p, &
+       rice_exudc_p
+   USE MOD_BGC_Vars_1DFluxes, only: phenology_to_met_c
+   USE MOD_BGC_Vars_PFTimeVariables, only: froot_prof_p
+   USE MOD_Namelist, only: DEF_RICE_ROOT_EXUDATE, DEF_RICE_GRNFILL
+   USE MOD_Vars_Global, only: nl_soil, nrice, nirrig_rice
 
    IMPLICIT NONE
 
@@ -278,6 +283,7 @@ CONTAINS
    real(r8):: f1,f2,f3,f4,g1,g2  ! allocation parameters
    real(r8):: cnl,cnfr,cnlw,cndw ! C:N ratios for leaf, fine root, and wood
    real(r8):: curmr, curmr_ratio ! xsmrpool temporary variables
+   real(r8):: gf                 ! grain-fill threshold of this crop (Q-33)
    real(r8):: f5                 ! grain allocation parameter
    real(r8):: cng                ! C:N ratio for grain (= cnlw for now; slevis)
    real(r8):: fleaf              ! fraction allocated to leaf
@@ -288,6 +294,9 @@ CONTAINS
 
       DO m = ps, pe
          ivt = pftclass(m)
+         ! Q-33: rice may take its grain-fill threshold from DEF_RICE_GRNFILL
+         gf = grnfill(ivt)
+         IF (DEF_RICE_GRNFILL >= 0._r8 .and. (ivt == nrice .or. ivt == nirrig_rice)) gf = DEF_RICE_GRNFILL
          psn_to_cpool_p(m) = assim_p(m) * 12.011_r8
 
          gpp_p(m) = psn_to_cpool_p(m)
@@ -348,6 +357,26 @@ CONTAINS
             cpool_to_xsmrpool_p(m) = xsmrpool_recover_p(m)
          ENDIF
 
+      ! C-37: live rice exudes a share of its net assimilate (available C less
+      ! the growth respiration its allocation would cost) from the roots; it
+      ! leaves cpool (CNCStateUpdate1) and joins the metabolic litter along the
+      ! fine-root profile, the labile C that feeds paddy CH4 mid-season
+      ! (Watanabe et al. 1999; Minoda and Kimura 1994; Wania et al. 2010 for
+      ! the wetland counterpart C-23)
+         rice_exudc_p(m) = 0._r8
+#ifdef CROP
+         IF (DEF_RICE_ROOT_EXUDATE > 0._r8 .and. (ivt == nrice .or. ivt == nirrig_rice)) THEN
+            IF (croplive_p(m) .and. availc_p(m) > 0._r8) THEN
+               rice_exudc_p(m) = DEF_RICE_ROOT_EXUDATE * availc_p(m) / (1._r8 + grperc(ivt))
+               availc_p(m) = availc_p(m) - rice_exudc_p(m)
+               DO j = 1, nl_soil
+                  phenology_to_met_c(j,i) = phenology_to_met_c(j,i) &
+                     + rice_exudc_p(m) * froot_prof_p(j,m) * pftfrac(m)
+               ENDDO
+            ENDIF
+         ENDIF
+#endif
+
          f1 = froot_leaf(ivt)
          f2 = croot_stem(ivt)
 
@@ -384,7 +413,7 @@ CONTAINS
              ! ==================
              ! Next phase: leaf emergence to start of leaf decline
 
-               IF (hui_p(m) >= lfemerg(ivt) .and. hui_p(m) < grnfill(ivt)) THEN
+               IF (hui_p(m) >= lfemerg(ivt) .and. hui_p(m) < gf) THEN
                ! allocation rules for crops based on maturity and linear decrease
                ! of amount allocated to roots over course of the growing season
 
@@ -397,7 +426,7 @@ CONTAINS
                      arepr_p(m) = 0._r8
                      aroot_p(m) = arooti(ivt) - (arooti(ivt) - arootf(ivt)) * hui_p(m)
                      fleaf = fleafi(ivt) * (exp(-bfact(ivt)) -         &
-                          exp(-bfact(ivt)*hui_p(m)/grnfill(ivt))) / &
+                          exp(-bfact(ivt)*hui_p(m)/gf)) / &
                           (exp(-bfact(ivt))-1) ! fraction alloc to leaf (from J Norman alloc curve)
                      aleaf_p(m) = max(1.e-5_r8, (1._r8 - aroot_p(m)) * fleaf)
                      astem_p(m) = 1._r8 - arepr_p(m) - aleaf_p(m) - aroot_p(m)
@@ -415,11 +444,11 @@ CONTAINS
                ! shift allocation either when enough hui are accumulated or maximum number
                ! of days has elapsed since planting
 
-               ELSE IF (hui_p(m) >= grnfill(ivt)) THEN
+               ELSE IF (hui_p(m) >= gf) THEN
 
                   aroot_p(m) = arooti(ivt) - (arooti(ivt) - arootf(ivt)) * min(1._r8, hui_p(m))
                   astem_p(m) = max(astemf(ivt), astem_p(m) * max(0._r8, (1._r8-hui_p(m))/  &
-                             (1._r8-grnfill(ivt)))**allconss(ivt))
+                             (1._r8-gf))**allconss(ivt))
                   aleaf_p(m) = 1.e-5_r8
 
                !Beth's retranslocation of leafn, stemn, rootn to organ

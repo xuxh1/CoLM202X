@@ -11,7 +11,12 @@ MODULE MOD_SoilSnowHydrology
                            DEF_URBAN_RUN,           DEF_USE_IRRIGATION,    &
                            DEF_SPLIT_SOILSNOW,      DEF_Runoff_SCHEME,     &
                            DEF_DA_TWS_GRACE,        DEF_Optimize_Baseflow, &
-                           DEF_USE_Dynamic_Wetland
+                           DEF_USE_Dynamic_Wetland, USE_SITE_WTD,          &
+                           DEF_PADDY_RICE_BUND,     DEF_FLOODPLAIN_INFILTRATION, &
+                           DEF_FLOODPLAIN_INFILT_FIX, &
+                           DEF_WETLAND_POND_OUTFLOW, DEF_WETLAND_INFLOW_AREA_SPLIT, &
+                           DEF_WETLAND_LATERAL_INFLOW, DEF_WETLAND_POND_TARGET_SITE, &
+                           DEF_WETLAND_POND_MAX_SITE, DEF_WETLAND_PERCHED_DRAINAGE
 #if (defined CaMa_Flood) || (defined GridRiverLakeFlow)
 #ifdef CaMa_Flood
    USE YOS_CMF_INPUT,      only: LWINFILT, CSETFILE
@@ -19,6 +24,7 @@ MODULE MOD_SoilSnowHydrology
    USE MOD_Namelist,       only: LWINFILT => DEF_GridRiverLake_FloodFeedback, DEF_GridRiverLake_FloodInfiltMax
 #endif
 #endif
+   USE MOD_FloodInfiltration, only: fld_frc_p, fld_dph_p, fld_qinfl_p
    USE MOD_LandPatch, only: landpatch
    USE MOD_Runoff
    USE MOD_Hydro_VIC
@@ -384,7 +390,7 @@ IF(patchtype<=1)THEN   ! soil ground only
             ps = patch_pft_s(ipatch)
             pe = patch_pft_e(ipatch)
             DO m = ps, pe
-               IF(irrig_method_p(m) == irrig_method_paddy)THEN
+               IF(paddy_bunded(m))THEN
                   wdsrf = rsur*deltim
                   rsur = 0.
                   IF(wdsrf.gt.pondmxc)THEN
@@ -676,10 +682,19 @@ ENDIF
    USE MOD_Const_Physical,      only: denice, denh2o, tfrz
    USE MOD_Vars_TimeInvariants, only: vic_b_infilt, vic_Dsmax, vic_Ds, vic_Ws, vic_c
    USE MOD_Vars_1DFluxes,       only: fevpg
+   USE MOD_SPMD_Task,           only: CoLM_stop
+#ifdef SinglePoint
+   USE MOD_SingleSrfdata,       only: SITE_WTD_now, SITE_WTD_valid
+#endif
    USE MOD_Opt_Baseflow,        only: scale_baseflow
+   USE MOD_Vars_TimeVariables,  only: fld_inf_left, fld_frc_evt
 #if (defined TRACER) && (defined BGC)
-   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_max_wtd_of, wetland_peat_outflow
+   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_max_wtd_of, wetland_peat_outflow, wetland_inflow_share, &
+      wetland_bog_share
+   USE MOD_Tracer_Reactive_Methane_Const,   only: DEF_METHANE
    USE MOD_Vars_TimeInvariants, only: OM_density
+   USE MOD_Vars_TimeVariables,  only: wetdef_noinfl, wetlatin
+   USE MOD_Vars_1DFluxes,       only: wetinflow
 #endif
 #ifdef DataAssimilation
    USE MOD_DA_TWS, only: fslp_k
@@ -850,6 +865,13 @@ ENDIF
 
    real(r8) :: zwtmm
    real(r8) :: zwt_floor, wsupply, ztop, zbot   ! wetland water-table floor (mm)
+   real(r8) :: finfl, wrefill                   ! share taking lateral inflow (-), its refill (mm)
+   real(r8) :: fbog                             ! open-bog share of a wetland tile (-)
+   real(r8) :: pond_target                      ! managed ponding depth of a tower's wetland (mm), < 0 off
+   real(r8) :: pond_max                         ! ponding cap of a dynamic wetland tile (mm)
+   real(r8) :: qpond                            ! overland outflow of wetland ponding (mm s-1)
+   logical  :: perched                          ! I-25: water table perched above ice on a wetland tile
+   real(r8) :: zi_drain(0:nl_soil)              ! interfaces [m] the peat outflow integrates over
    real(r8) :: sp_zc(1:nl_soil), sp_zi(0:nl_soil), sp_dz(1:nl_soil) ! in mm
    logical  :: is_permeable(1:nl_soil)
    real(r8) :: dzsum, dz
@@ -872,6 +894,8 @@ ENDIF
 #endif
    logical :: new_cama_flood
 #endif
+   real(r8) :: gfld_q43, rsur_q43, qinfsub_q43, rsubst_q43  ! Q-43 flood re-infiltration [mm/s]
+   real(r8) :: fld_def                                      ! Q-47 pore deficit above the water table [mm]
 
    type(soil_con_struct ) :: soil_con
    type(cell_data_struct) :: cell
@@ -883,6 +907,15 @@ ENDIF
    real(r8), parameter :: e_ice=6.0      !soil ice impedance factor
 
    integer :: ps, pe, m
+
+   ! C-32c: saturated conductivity the vertical solver sees; the plow pan of a
+   ! bunded paddy caps it at paddy_plowpan_k in the layer centred 0.15-0.35 m.
+   ! Puddled fields lose 1-5 mm/d to percolation on heavy soils, more on light
+   ! ones, through the compacted plow sole (Tuong et al. 1994,
+   ! doi:10.2136/sssaj1994.03615995005800060031x; Bouman and Tuong 2001,
+   ! doi:10.1016/S0378-3774(00)00128-1).
+   real(r8) :: hks_vert(1:nl_soil)
+   real(r8), parameter :: paddy_plowpan_k = 3._r8 / 86400._r8   ! [mm/s]
 
 
 #ifdef Campbell_SOIL_MODEL
@@ -1005,8 +1038,49 @@ ENDIF
 ! [2] surface runoff and infiltration
 !=======================================================================
 
+#ifdef SinglePoint
+IF (USE_SITE_WTD .and. SITE_WTD_valid) THEN
+      ! Observed water table (site file, B-3): the column is diagnosed from
+      ! the observed depth instead of being solved.  Layers below the table
+      ! are saturated, layers above sit on the retention curve at hydrostatic
+      ! equilibrium (the cold-start assumption), ponding is the depth above
+      ! the surface and the wetland bucket stays idle.  Water is not
+      ! conserved on this branch: the observation is a forcing.
+      zwt = SITE_WTD_now
+      DO j = 1, nl_soil
+         vol_ice(j) = min(porsl(j), wice_soisno(j)/(dz_soisno(j)*denice))
+         IF (porsl(j) < 1.e-6) THEN
+            icefrac(j) = 0.
+         ELSE
+            icefrac(j) = min(1., vol_ice(j)/porsl(j))
+         ENDIF
+         eff_porosity(j) = max(wimp, porsl(j)-vol_ice(j))
+      ENDDO
+      IF (DEF_Runoff_SCHEME /= 0) THEN
+         CALL CoLM_stop ('USE_SITE_WTD supports DEF_Runoff_SCHEME = 0 only')
+      ENDIF
+      CALL SurfaceRunoff_TOPMOD (nl_soil,wimp,porsl,psi0,hksati,fsatmax,fsatdcf,&
+         z_soisno(1:),dz_soisno(1:),zi_soisno(0:),&
+         eff_porosity,icefrac,max(zwt,0._r8),gwat,rsur,rsur_se,rsur_ie,topoweti,alp_twi,chi_twi,mu_twi,frcsat,eta)
+      qinfl  = gwat - rsur
+      rsubst = 0.
+      rnof   = rsur
+      zwtmm  = max(zwt, 0._r8) * 1000.
+      sp_zc(1:nl_soil) = z_soisno (1:nl_soil) * 1000.
+      sp_zi(0:nl_soil) = zi_soisno(0:nl_soil) * 1000.
+      CALL get_water_equilibrium_state (zwtmm, nl_soil, wliq_soisno(1:nl_soil), smp, hk, wa, &
+         sp_zc, sp_zi, porsl, theta_r, psi0, hksati, nprms, prms)
+      DO j = 1, nl_soil
+         wliq_soisno(j) = min(wliq_soisno(j), eff_porosity(j)*dz_soisno(j)*denh2o)
+      ENDDO
+      wdsrf  = max(-zwt, 0._r8) * 1000.
+      wetwat = 0.
+ELSEIF((patchtype<=1) .or. is_dry_lake &
+   .or. (DEF_USE_Dynamic_Wetland .and. (patchtype==2)))THEN   ! soil ground only
+#else
 IF((patchtype<=1) .or. is_dry_lake &
    .or. (DEF_USE_Dynamic_Wetland .and. (patchtype==2)))THEN   ! soil ground only
+#endif
 
       ! For water balance check, the sum of water in soil column before the calculation
       w_sum = sum(wliq_soisno(1:nl_soil)) + sum(wice_soisno(1:nl_soil)) + wa + wdsrf
@@ -1114,7 +1188,7 @@ IF((patchtype<=1) .or. is_dry_lake &
             ps = patch_pft_s(ipatch)
             pe = patch_pft_e(ipatch)
             DO m = ps, pe
-               IF(irrig_method_p(m).eq.irrig_method_paddy)THEN
+               IF(paddy_bunded(m))THEN
                   rsur = 0
                ENDIF
             ENDDO
@@ -1142,6 +1216,72 @@ IF((patchtype<=1) .or. is_dry_lake &
               qgtop > 0._r8 .AND. qgtop*deltim < richards_water_tolerance .AND. wdsrf > 0._r8) THEN
          wdsrf = wdsrf + qgtop*deltim
          qgtop = 0._r8
+      ENDIF
+#endif
+
+#ifdef SinglePoint
+      ! Q-43 (paper V2): flood water of a site flood series offered to the
+      ! flooded part of a soil patch (gridded runs take the flood feedback of
+      ! the grid routing, DEF_GridRiverLake_FloodFeedback, instead), as the CaMa-Flood block
+      ! below: the runoff scheme sets how much enters the soil, the rest stays
+      ! in the flood (it is not added to the surface runoff); the flood depth
+      ! falls by what infiltrates until the next routing step resets it
+      IF (DEF_FLOODPLAIN_INFILTRATION .and. allocated(fld_frc_p)) THEN
+         IF (ipatch >= 1 .and. ipatch <= size(fld_frc_p)) THEN
+            fld_qinfl_p(ipatch) = 0._r8
+            ! Q-47 (DEF_FLOODPLAIN_INFILT_FIX): a flood starts when the flooded
+            ! fraction rises above the re-infiltration threshold and ends when
+            ! it falls back to it. Each part of the patch the flood covers may
+            ! take at most the pore deficit above the water table the flood
+            ! found there (with the aquifer deficit below the column, as the
+            ! wetland floor refill counts it): the flooded fraction times the
+            ! deficit when the flood starts, and the added fraction times the
+            ! deficit then whenever the flood spreads beyond its largest extent.
+            ! A flood thus fills the column once; the baseflow then drains it
+            ! without the same flood refilling it.
+            IF (DEF_FLOODPLAIN_INFILT_FIX .and. patchtype == 0) THEN
+               IF (fld_frc_p(ipatch) <= 0.05_r8) THEN
+                  fld_inf_left(ipatch) = 0._r8
+                  fld_frc_evt (ipatch) = 0._r8
+               ELSEIF (fld_frc_p(ipatch) > fld_frc_evt(ipatch)) THEN
+                  fld_def = max(-wa, 0._r8)
+                  DO j = 1, nl_soil
+                     IF (is_permeable(j) .and. (zi_soisno(j-1) < zwt)) THEN
+                        fld_def = fld_def + max(eff_porosity(j) - vol_liq(j), 0._r8) * dz_soisno(j) * 1000._r8
+                     ENDIF
+                  ENDDO
+                  fld_inf_left(ipatch) = fld_inf_left(ipatch) &
+                     + (fld_frc_p(ipatch) - fld_frc_evt(ipatch)) * fld_def
+                  fld_frc_evt (ipatch) = fld_frc_p(ipatch)
+               ENDIF
+            ENDIF
+            IF (fld_dph_p(ipatch) > 1.e-6_r8 .and. fld_frc_p(ipatch) > 0.05_r8 .and. patchtype == 0) THEN
+               gfld_q43 = fld_dph_p(ipatch) / deltim
+               rsur_q43 = gfld_q43
+               IF (DEF_Runoff_SCHEME == 0) THEN
+                  CALL SurfaceRunoff_TOPMOD (nl_soil,wimp,porsl,psi0,hksati,1.0,fsatdcf, &
+                           z_soisno(1:),dz_soisno(1:),zi_soisno(0:), &
+                           eff_porosity,icefrac,zwt,gfld_q43,rsur_q43)
+               ELSEIF (DEF_Runoff_SCHEME == 2) THEN
+                  CALL Runoff_XinAnJiang ( &
+                     nl_soil, dz_soisno(1:nl_soil), eff_porosity(1:nl_soil), vol_liq(1:nl_soil), &
+                     elvstd, gfld_q43, deltim, rsur_q43, rsubst_q43)
+               ELSEIF (DEF_Runoff_SCHEME == 3) THEN
+                  CALL Runoff_SimpleVIC ( &
+                     nl_soil, dz_soisno(1:nl_soil), eff_porosity(1:nl_soil), vol_liq(1:nl_soil), &
+                     BVIC, gfld_q43, deltim, rsur_q43, rsubst_q43)
+               ENDIF
+               qinfsub_q43 = max(gfld_q43 - rsur_q43, 0._r8)
+               IF (DEF_FLOODPLAIN_INFILT_FIX) THEN
+                  ! Q-47: no more than the current flood may still give
+                  qinfsub_q43 = min(qinfsub_q43, fld_inf_left(ipatch) / (deltim * fld_frc_p(ipatch)))
+                  fld_inf_left(ipatch) = max(fld_inf_left(ipatch) - deltim * qinfsub_q43 * fld_frc_p(ipatch), 0._r8)
+               ENDIF
+               fld_qinfl_p(ipatch) = qinfsub_q43 * fld_frc_p(ipatch)
+               qgtop = qgtop + fld_qinfl_p(ipatch)
+               fld_dph_p(ipatch) = max(fld_dph_p(ipatch) - deltim * qinfsub_q43, 0._r8)
+            ENDIF
+         ENDIF
       ENDIF
 #endif
 
@@ -1215,6 +1355,27 @@ IF((patchtype<=1) .or. is_dry_lake &
       sp_zc(1:nl_soil) = z_soisno (1:nl_soil) * 1000.0   ! from meter to mm
       sp_zi(0:nl_soil) = zi_soisno(0:nl_soil) * 1000.0   ! from meter to mm
 
+      ! I-25 (paper V2): perched water table of a dynamic wetland tile. The
+      ! consistency check below takes the water table under every layer beneath
+      ! it that is not liquid-saturated, and an ice-filled (impermeable) layer
+      ! never is. Over permafrost it thus drops the table the solver returned at
+      ! the last step (the top of the saturated zone perched on the ice; the
+      ! solver counts impermeable layers as saturated) to the column bottom:
+      ! the tile is always below its floor, the peat outflow above the floor
+      ! never runs, and the saturated zone above the ice loses water only to
+      ! evapotranspiration. With DEF_WETLAND_PERCHED_DRAINAGE the check passes
+      ! over impermeable layers, as the solver's own water-table search does,
+      ! so the table stays on the perched saturated zone as long as every
+      ! permeable layer beneath it is saturated; the floor refill, the peat
+      ! outflow and the lateral inflow then act on that table, and the
+      ! aquifer exchange of the solver adds or removes their water there. A
+      ! permeable layer below that is not saturated still takes the table
+      ! below it, as before.
+      perched = .false.
+#if defined(TRACER) && !defined(CatchLateralFlow)
+      perched = DEF_WETLAND_PERCHED_DRAINAGE .and. DEF_USE_Dynamic_Wetland .and. (patchtype == 2)
+#endif
+
       ! check consistency between water table location and liquid water content
       IF (wa < 0.) THEN
          IF (zwtmm <= sp_zi(nl_soil)) THEN
@@ -1224,6 +1385,7 @@ IF((patchtype<=1) .or. is_dry_lake &
          ENDIF
       ELSE
          DO j = 1, nl_soil
+            IF (perched .and. (.not. is_permeable(j))) CYCLE
             IF ((vol_liq(j) < eff_porosity(j)-1.e-8) .and. (zwtmm <= sp_zi(j-1))) THEN
                zwtmm = sp_zi(j)
             ENDIF
@@ -1304,6 +1466,13 @@ IF((patchtype<=1) .or. is_dry_lake &
 #ifdef TRACER
       qgtop_out = qgtop
 #endif
+      ! Ponding cap of a dynamic wetland tile: the wetland bucket wetwatmax,
+      ! or at a tower the standing water a managed marsh holds (paper V2)
+      pond_max = wetwatmax
+#ifdef SinglePoint
+      IF (DEF_WETLAND_POND_MAX_SITE >= 0._r8) pond_max = DEF_WETLAND_POND_MAX_SITE * 1000._r8
+#endif
+
 #if defined(TRACER) && defined(BGC) && !defined(CatchLateralFlow)
       ! Water-table floor of a dynamic wetland: when the table sits deeper
       ! than the class depth, feed the aquifer from the side with the water
@@ -1312,7 +1481,92 @@ IF((patchtype<=1) .or. is_dry_lake &
       ! takes in from below and rnof books. Layers the solver treats as
       ! impermeable (ice-filled) take none; it passes over them as the
       ! exchange does, so the water perches above frozen ground.
-      IF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2)) THEN
+      ! I-25: the peat outflow of a perched table runs through the thawed
+      ! saturated zone above the ice only, a saturated layer over an
+      ! impermeable base (Swenson et al. 2012, eq. 6; CLM5 drains the perched
+      ! zone between the perched water table and the frost table, technical
+      ! note eqs. 7.166-7.167). Its transmissivity is integrated from the
+      ! table down to the frost table, the top of the first frozen or
+      ! impermeable layer below the table, instead of the column bottom.
+      zi_drain(0:nl_soil) = zi_soisno(0:nl_soil)
+      IF (perched) THEN
+         DO j = 1, nl_soil
+            IF ((sp_zi(j) > zwtmm) .and. ((t_soisno(j) <= tfrz) .or. (.not. is_permeable(j)))) THEN
+               zi_drain(j-1:nl_soil) = zi_soisno(j-1)
+               EXIT
+            ENDIF
+         ENDDO
+      ENDIF
+      pond_target = -1._r8
+#ifdef SinglePoint
+      IF (DEF_WETLAND_POND_TARGET_SITE >= 0._r8) &
+         pond_target = min(DEF_WETLAND_POND_TARGET_SITE * 1000._r8, pond_max)
+#endif
+      IF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2) .and. (pond_target >= 0._r8)) THEN
+         ! Managed wetland at a tower (paper V2, marsh towers): pumps,
+         ! siphons and weirs hold standing water on the tile year-round,
+         ! which neither the rain nor the class floor gives. In place of the
+         ! floor, and of the lateral inflow of candidate 17, the tile is
+         ! refilled from the side up to the ponding depth pond_target: the
+         ! aquifer deficit, the pore space from the water table up to the
+         ! surface and the ponding short of the target. It enters as the
+         ! floor refill does, as negative subsurface runoff through the
+         ! aquifer exchange of the solver, which fills the pores from the
+         ! water table up and passes the rest to the ponding store. At or
+         ! above the target the tile drains as above the floor; ponding
+         ! above the cap pond_max spills as surface runoff further down.
+         wsupply = max(-wa, 0.)
+         DO j = 1, nl_soil
+            ztop = sp_zi(j-1)
+            zbot = min(sp_zi(j), zwtmm)
+            IF ((zbot > ztop) .and. is_permeable(j)) THEN
+               wsupply = wsupply + max(eff_porosity(j) - vol_liq(j), 0.) * (zbot - ztop)
+            ENDIF
+         ENDDO
+         wsupply = wsupply + max(pond_target - wdsrf, 0.)
+         IF (wsupply > 0.) THEN
+            rsubst = - wsupply / deltim
+         ELSE
+            rsubst = wetland_peat_outflow(nl_soil, zi_drain(0:nl_soil), hksati(1:nl_soil), &
+               OM_density(1:nl_soil,ipatch), zwtmm / 1000.)
+         ENDIF
+         ! The whole tile is fed; the refill is the tile's lateral inflow.
+         IF (DEF_WETLAND_LATERAL_INFLOW) wetinflow(ipatch) = wsupply / deltim
+         IF (DEF_WETLAND_INFLOW_AREA_SPLIT) wetdef_noinfl(ipatch) = 0._r8
+      ELSEIF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2) .and. DEF_WETLAND_LATERAL_INFLOW) THEN
+         ! Candidate 17: in place of the floor, the tile takes the lateral
+         ! inflow wetlatin offered this step, r R_up (the upland runoff of
+         ! its element at the previous step times the upland-to-wetland area
+         ! ratio, or the tower's values), on the share that takes lateral
+         ! inflow, at any water-table depth. It enters through the same
+         ! aquifer exchange as the floor refill, net of the peat outflow,
+         ! which now runs at any depth (PEAT-CLSM Q = c T(zwt), Bechtold et
+         ! al. 2019, eq. 9). The exchange fills the pore space from the
+         ! water table up and passes what is left to the ponding store;
+         ! ponding above the cap pond_max spills as surface runoff further
+         ! down in the same step, so the column is never oversaturated.
+         ! Candidate 32: the open-bog share fbog of the tile (0 unless
+         ! DEF_METHANE%wetland_max_wtd_bog_share is set) is rain-fed as well
+         ! and takes none of r R_up; below its own floor, the base of the
+         ! acrotelm, it is refilled as the floor branch below refills, scaled
+         ! by its share. The refill is booked in wetinflow with r R_up.
+         fbog = wetland_bog_share(ipatch)
+         wetinflow(ipatch) = (wetland_inflow_share(ipatch) - fbog) * max(wetlatin(ipatch), 0._r8)
+         zwt_floor = DEF_METHANE%wetland_max_wtd_bog_share * 1000.
+         IF ((fbog > 0._r8) .and. (zwtmm > zwt_floor)) THEN
+            wsupply = max(-wa, 0.)
+            DO j = 1, nl_soil
+               ztop = max(sp_zi(j-1), zwt_floor)
+               zbot = min(sp_zi(j), zwtmm)
+               IF ((zbot > ztop) .and. is_permeable(j)) THEN
+                  wsupply = wsupply + max(eff_porosity(j) - vol_liq(j), 0.) * (zbot - ztop)
+               ENDIF
+            ENDDO
+            wetinflow(ipatch) = wetinflow(ipatch) + fbog * wsupply / deltim
+         ENDIF
+         rsubst = wetland_peat_outflow(nl_soil, zi_drain(0:nl_soil), hksati(1:nl_soil), &
+            OM_density(1:nl_soil,ipatch), zwtmm / 1000.) - wetinflow(ipatch)
+      ELSEIF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2)) THEN
          zwt_floor = wetland_max_wtd_of(ipatch) * 1000.
          IF ((zwt_floor >= 0.) .and. (zwtmm > zwt_floor)) THEN
             wsupply = max(-wa, 0.)
@@ -1323,20 +1577,62 @@ IF((patchtype<=1) .or. is_dry_lake &
                   wsupply = wsupply + max(eff_porosity(j) - vol_liq(j), 0.) * (zbot - ztop)
                ENDIF
             ENDDO
-            rsubst = - wsupply / deltim
+            ! finfl, the share taking lateral inflow, is 1 minus the rainfed_share
+            ! of DEF_METHANE%wetland_veg_file, which v2/scripts/mk_rainfed_share.py
+            ! fills with the BAWLD permafrost-bog (PEB) share of the wetland
+            ! classes (D-40: open bogs keep the floor), or 1 minus
+            ! DEF_METHANE%wetland_ombro_share_site at a tower; 1 without C-13.
+            IF (DEF_WETLAND_INFLOW_AREA_SPLIT) THEN
+               ! Area split: the column is the area mean of the fed share,
+               ! held at the floor, and the share without inflow, whose own
+               ! deficit below the floor wetdef_noinfl carries between steps.
+               ! The change of the tile deficit since the last refill,
+               ! wsupply - (1 - finfl) wetdef_noinfl, falls on both shares
+               ! alike; the fed share takes its part back, the other keeps
+               ! it. Water lifting the fed share above the floor is not kept
+               ! apart: the next step books the change as if it sat there.
+               finfl = wetland_inflow_share(ipatch)
+               IF (finfl < 1._r8) THEN
+                  wrefill = finfl * max(wsupply - (1._r8 - finfl) * wetdef_noinfl(ipatch), 0._r8)
+                  wetdef_noinfl(ipatch) = wsupply + finfl * wetdef_noinfl(ipatch)
+               ELSE
+                  wrefill = wsupply
+                  wetdef_noinfl(ipatch) = 0._r8
+               ENDIF
+               rsubst = - wrefill / deltim
+            ELSE
+               ! C-38: the rain-fed share of the tile takes no lateral inflow
+               rsubst = - wsupply / deltim * wetland_inflow_share(ipatch)
+            ENDIF
          ELSE
             ! Above the floor the tile drains laterally through its
             ! saturated zone (peat transmissivity, off unless configured).
-            rsubst = wetland_peat_outflow(nl_soil, zi_soisno(0:nl_soil), hksati(1:nl_soil), &
+            rsubst = wetland_peat_outflow(nl_soil, zi_drain(0:nl_soil), hksati(1:nl_soil), &
                OM_density(1:nl_soil,ipatch), zwtmm / 1000.)
+            ! With the area split the two shares merge above the floor.
+            IF (DEF_WETLAND_INFLOW_AREA_SPLIT) wetdef_noinfl(ipatch) = 0._r8
          ENDIF
+      ENDIF
+#endif
+
+      hks_vert(1:nl_soil) = hksati(1:nl_soil)
+#ifdef CROP
+      IF (patchtype == 0 .and. DEF_USE_IRRIGATION .and. DEF_PADDY_RICE_BUND) THEN
+         ps = patch_pft_s(ipatch)
+         pe = patch_pft_e(ipatch)
+         DO m = ps, pe
+            IF (paddy_bunded(m)) THEN
+               WHERE (sp_zc(1:nl_soil) >= 150. .and. sp_zc(1:nl_soil) <= 350.) &
+                  hks_vert(1:nl_soil) = min(hks_vert(1:nl_soil), paddy_plowpan_k)
+            ENDIF
+         ENDDO
       ENDIF
 #endif
 
       CALL soil_water_vertical_movement ( &
          nl_soil,                 deltim,                   sp_zc(1:nl_soil),    sp_zi(0:nl_soil), &
          is_permeable(1:nl_soil), eff_porosity(1:nl_soil),  theta_r(1:nl_soil),  psi0(1:nl_soil),  &
-         hksati(1:nl_soil),       nprms, prms(:,1:nl_soil), porsl(nl_soil),      qgtop,            &
+         hks_vert(1:nl_soil),     nprms, prms(:,1:nl_soil), porsl(nl_soil),      qgtop,            &
          etr,                     rootr(1:nl_soil),         rootflux(1:nl_soil), rsubst,           &
          qinfl,                   wdsrf,                    zwtmm,               wa,               &
          vol_liq(1:nl_soil),      smp(1:nl_soil),           hk(1:nl_soil),       qlayer(0:nl_soil),&
@@ -1445,11 +1741,11 @@ ENDIF
          ps = patch_pft_s(ipatch)
          pe = patch_pft_e(ipatch)
          DO m = ps, pe
-            IF(irrig_method_p(m).eq.irrig_method_paddy .AND. wdsrf.gt.pondmxc)THEN
+            IF(paddy_bunded(m) .AND. wdsrf.gt.pondmxc)THEN
                rsur = rsur + (wdsrf - pondmxc)/deltim
                rsur_ie = rsur_ie + (wdsrf - pondmxc) / deltim
                wdsrf = pondmxc
-            ELSEIF(irrig_method_p(m).ne.irrig_method_paddy .AND. wdsrf.gt.pondmx)THEN
+            ELSEIF(.not. paddy_bunded(m) .AND. wdsrf.gt.pondmx)THEN
                rsur = rsur + (wdsrf - pondmx) / deltim
                rsur_ie = rsur_ie + (wdsrf - pondmx) / deltim
                wdsrf = pondmx
@@ -1479,10 +1775,24 @@ ENDIF
             ! total runoff (mm/s)
             rnof = rsubst + rsur
          ELSEIF (patchtype == 2) THEN ! for wetland
-            IF (wdsrf > wetwatmax) THEN
-               rsur_se = (wdsrf - wetwatmax) / deltim
-               wdsrf = wetwatmax
+            IF (wdsrf > pond_max) THEN
+               rsur_se = (wdsrf - pond_max) / deltim
+               wdsrf = pond_max
             ENDIF
+#if (defined TRACER) && (defined BGC)
+            ! Candidate 13 (paper V2): ponded water on an unfrozen dynamic
+            ! wetland tile leaves over the surface at the lateral outflow of a
+            ! water table at the surface (PEAT-CLSM semisurficial runoff,
+            ! Bechtold et al. 2019); the subsurface outflow above cannot reach
+            ! it over frozen or impermeable layers
+            IF (DEF_WETLAND_POND_OUTFLOW .and. DEF_USE_Dynamic_Wetland .and. (wdsrf > 0.) &
+                .and. (t_soisno(1) > tfrz)) THEN
+               qpond = min(wdsrf / deltim, wetland_peat_outflow(nl_soil, zi_drain(0:nl_soil), &
+                  hksati(1:nl_soil), OM_density(1:nl_soil,ipatch), 0._r8))
+               rsur_se = rsur_se + qpond
+               wdsrf = wdsrf - qpond * deltim
+            ENDIF
+#endif
 
             rsur = rsur_se
             ! total runoff (mm/s); a negative rsubst is the lateral inflow
@@ -1531,6 +1841,9 @@ ENDIF
          err_solver = err_solver-(gfld-rsur_fld)*fldfrc*deltim
       ENDIF
 #endif
+      IF (DEF_FLOODPLAIN_INFILTRATION .and. allocated(fld_qinfl_p)) THEN
+         IF (ipatch >= 1 .and. ipatch <= size(fld_qinfl_p)) err_solver = err_solver - fld_qinfl_p(ipatch)*deltim
+      ENDIF
 
 #if (defined CoLMDEBUG)
       IF(abs(err_solver) > 1.e-3)THEN
@@ -2878,6 +3191,44 @@ ENDIF
 
    END SUBROUTINE groundwater
 
+#ifdef CROP
+   !-----------------------------------------------------------------------
+   ! A paddy holds surface water behind its bunds (no surface runoff, ponding
+   ! up to pondmxc). Upstream: every pft with the paddy method, all year.
+   ! C-32 (DEF_PADDY_RICE_BUND): only from planting to the start of grain
+   ! fill (C-32e, irrig_min_cphase <= cphase < 3); the field is then drained
+   ! and after harvest drains like any other soil column.
+   ! Candidate 25 (DEF_PADDY_FALLOW_FLOOD): an irrigated paddy is bunded again
+   ! from the set number of days before its next sowing (CalPaddyFallowFlood).
+   !-----------------------------------------------------------------------
+   logical FUNCTION paddy_bunded(m)
+
+   ! DEF_PADDY_RICE_BUND comes from the module header
+   USE MOD_Vars_Global, only: irrig_method_paddy, irrig_min_cphase, irrig_max_cphase
+   USE MOD_Vars_PFTimeVariables, only: irrig_method_p
+   USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p, paddy_predrain_p, paddy_fallow_flood_p
+   USE MOD_Namelist, only: DEF_PADDY_DRAIN_DAYS
+
+   IMPLICIT NONE
+   integer, intent(in) :: m
+
+      paddy_bunded = (irrig_method_p(m) == irrig_method_paddy)
+      IF (paddy_bunded .and. DEF_PADDY_RICE_BUND) THEN
+         IF (DEF_PADDY_DRAIN_DAYS >= 0._r8) THEN
+            ! C-47: drained DEF_PADDY_DRAIN_DAYS before the projected harvest
+            paddy_bunded = (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m) < irrig_max_cphase) &
+                           .and. (.not. paddy_predrain_p(m))
+         ELSE
+            ! C-32e: the field is drained from the start of grain fill (cphase 3),
+            ! so it dries in the last two to three weeks before harvest
+            paddy_bunded = (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m) < 3._r8)
+         ENDIF
+         ! candidate 25: pre-sowing flood window of an irrigated paddy
+         paddy_bunded = paddy_bunded .or. paddy_fallow_flood_p(m)
+      ENDIF
+
+   END FUNCTION paddy_bunded
+#endif
 
 END MODULE MOD_SoilSnowHydrology
 ! ---------- EOP ------------

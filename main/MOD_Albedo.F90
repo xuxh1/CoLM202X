@@ -418,8 +418,24 @@ ENDIF
             alb(:,:) = albv(:,:)
 #endif
          ELSE  !other patchtypes (/=0)
-            CALL twostream (chil,rho,tau,green,lai,sai,fwet_snow,&
-                            czen,albg,albv,tran,thermk,extkb,extkd,ssun,ssha)
+            IF (patchtype == 2 .and. fveg > 0. .and. fveg < 1.) THEN
+               ! Tower wetland (C-83): the canopy fills fveg of the patch at the
+               ! in-canopy leaf and stem area and the open rest sees the ground,
+               ! averaged as twostream_wrap averages a bare PFT. thermk, extkb
+               ! and extkd stay those of the canopy for THERMAL.
+               CALL twostream (chil,rho,tau,green,lai/fveg,sai/fveg,fwet_snow,&
+                               czen,albg,albv,tran,thermk,extkb,extkd,ssun,ssha)
+
+               albv(:,:) = fveg*albv(:,:) + (1.-fveg)*albg(:,:)
+               ssun(:,:) = fveg*ssun(:,:)
+               ssha(:,:) = fveg*ssha(:,:)
+               tran(:,1) = fveg*tran(:,1)
+               tran(:,2) = fveg*tran(:,2) + (1.-fveg)
+               tran(:,3) = fveg*tran(:,3) + (1.-fveg)
+            ELSE
+               CALL twostream (chil,rho,tau,green,lai,sai,fwet_snow,&
+                               czen,albg,albv,tran,thermk,extkb,extkd,ssun,ssha)
+            ENDIF
 
             ! 08/31/2023, yuan: to be consistent with PFT and PC
             alb(:,:) = albv(:,:)

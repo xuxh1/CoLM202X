@@ -6,7 +6,7 @@ MODULE MOD_LeafTemperature
    USE MOD_Precision
    USE MOD_Namelist, only: DEF_USE_CBL_HEIGHT, DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, &
                            DEF_RSS_SCHEME, DEF_Interception_scheme, DEF_SPLIT_SOILSNOW, &
-                           DEF_VEG_SNOW
+                           DEF_VEG_SNOW, DEF_PAR_LEAF_ONLY
    USE MOD_SPMD_Task
 #ifdef TRACER
    USE MOD_LeafInterception, only: canopy_storage_capacity_colm2024
@@ -65,9 +65,9 @@ CONTAINS
 #ifdef TRACER
               hk         ,hksati     ,rootflux                                        &
              ,canopy_smelt_mass_out, canopy_frzc_mass_out, raw_trc_out               &
-             ,ipft_index)
+             ,ipft_index ,raw_grnd_out)
 #else
-              hk         ,hksati     ,rootflux                                        )
+              hk         ,hksati     ,rootflux   ,raw_grnd_out                        )
 #endif
 
 !=======================================================================
@@ -282,6 +282,11 @@ CONTAINS
         gssun,      &! stomata conductance of sunlit leaf
         gssha,      &! stomata conductance of shaded leaf
         rootflux(1:nl_soil)  ! root water uptake from different layers
+
+   ! water vapour aerodynamic resistance from the ground to the reference
+   ! height, rd + raw of the last iteration [s/m]
+   real(r8), intent(out), optional :: raw_grnd_out
+
 #ifdef TRACER
 
    real(r8), intent(inout) :: &
@@ -431,6 +436,7 @@ CONTAINS
    real(r8) evplwet, evplwet_dtl, etr_dtl, elwmax, elwdif, etr0, sumrootr
    real(r8) irab, dirab_dtl, fsenl_dtl, fevpl_dtl
    real(r8) w, csoilcn, z0mg, cintsun(3), cintsha(3)
+   real(r8) parsun_leaf, parsha_leaf   ! par absorbed by sunlit/shaded leaves for photosynthesis [W/m2]
    real(r8) fevpl_bef, fevpl_noadj, dtl_noadj, htvpl, erre
    real(r8) qevpl, qdewl, qsubl, qfrol, qmelt, qfrz
 
@@ -497,6 +503,21 @@ CONTAINS
       cintsha(1) = (1.-exp(-0.110*lai))/0.110 - cintsun(1)
       cintsha(2) = (1.-exp(-extkd*lai))/extkd - cintsun(2)
       cintsha(3) = lai - cintsun(3)
+
+! par for leaf photosynthesis: parsun and parsha are absorbed by leaves and
+! stems (two-stream over lai+sai, MOD_Albedo). With DEF_PAR_LEAF_ONLY only the
+! leaf share lai/(lai+sai) drives photosynthesis, as in CLM (APAR per unit
+! lai+sai, used per unit lai). The same factor for sunlit and shaded keeps
+! their split. sabv and the energy balance keep the whole-canopy absorption.
+      parsun_leaf = parsun
+      parsha_leaf = parsha
+#ifndef LULC_USGS
+      ! LULC_USGS leaves stems out of the two-stream (sai_ = 0 in MOD_Albedo)
+      IF (DEF_PAR_LEAF_ONLY .and. lai+sai > 0.) THEN
+         parsun_leaf = parsun * lai/(lai+sai)
+         parsha_leaf = parsha * lai/(lai+sai)
+      ENDIF
+#endif
 
 !-----------------------------------------------------------------------
 ! get fraction of wet and dry canopy surface (fwet & fdry)
@@ -727,7 +748,7 @@ CONTAINS
                  shti     ,hhti     ,trda     ,trdm     ,trop     ,&
                  g1       ,g0       ,gradm    ,binter   ,thm      ,&
                  psrf     ,po2m     ,pco2m    ,pco2a    ,eah      ,&
-                 ei       ,tl       ,parsun   ,&
+                 ei       ,tl       ,parsun_leaf,&
             !Ozone stress variables
                  o3coefv_sun   ,o3coefg_sun   ,&
             !End ozone stress variables
@@ -742,7 +763,7 @@ CONTAINS
                  shti     ,hhti     ,trda     ,trdm     ,trop     ,&
                  g1       ,g0       ,gradm    ,binter   ,thm      ,&
                  psrf     ,po2m     ,pco2m    ,pco2a    ,eah      ,&
-                 ei       ,tl       ,parsha   ,&
+                 ei       ,tl       ,parsha_leaf,&
             ! Ozone stress variables
                  o3coefv_sha    ,o3coefg_sha  ,&
             ! End ozone stress variables
@@ -777,11 +798,11 @@ CONTAINS
                gssun = gssun * laisun
                gssha = gssha * laisha
 
-               CALL update_photosyn(tl, po2m, pco2m, pco2a, parsun, psrf, rstfacsun, rb, gssun, &
+               CALL update_photosyn(tl, po2m, pco2m, pco2a, parsun_leaf, psrf, rstfacsun, rb, gssun, &
                                     effcon, vmax25, c3c4, gradm, trop, slti, hlti, shti, hhti, trda, &
                                     trdm, cintsun, assimsun, respcsun)
 
-               CALL update_photosyn(tl, po2m, pco2m, pco2a, parsha, psrf, rstfacsha, rb, gssha, &
+               CALL update_photosyn(tl, po2m, pco2m, pco2a, parsha_leaf, psrf, rstfacsha, rb, gssha, &
                                     effcon, vmax25, c3c4, gradm, trop, slti, hlti, shti, hhti, trda, &
                                     trdm, cintsha, assimsha, respcsha)
 
@@ -1067,6 +1088,14 @@ ENDIF
       ENDIF
 
 #endif
+      ! Ground-to-reference-height water vapour resistance: the ground to
+      ! canopy air resistance rd in series with the canopy air to reference
+      ! height resistance raw, both from the last iteration (the values the
+      ! fluxes above were solved with). The soil surface resistance rss is not
+      ! included. Same quantity as CLM's 1/grnd_ch4_cond
+      ! (CanopyFluxesMod.F90: raw(p,above_canopy)+raw(p,below_canopy)).
+      IF (present(raw_grnd_out)) raw_grnd_out = raw + rd
+
       z0m = z0mv
       zol = zeta
       rib = min(5.,zol*ustar**2/(vonkar**2/fh*um**2))

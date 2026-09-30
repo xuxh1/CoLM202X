@@ -6,12 +6,14 @@ MODULE MOD_Irrigation
 !      This MODULE has all irrigation related subroutines for irrigated crop at either IGBP/USGS or PFT Land type classification and even in the C and N cycle.
    USE MOD_Precision
    USE MOD_TimeManager
-   USE MOD_Namelist, only: DEF_simulation_time, DEF_IRRIGATION_ALLOCATION, DEF_USE_VariablySaturatedFlow
+   USE MOD_Namelist, only: DEF_simulation_time, DEF_IRRIGATION_ALLOCATION, DEF_USE_VariablySaturatedFlow, &
+       DEF_PADDY_RICE_BUND, DEF_PADDY_DRAIN_DAYS, DEF_PADDY_FALLOW_FLOOD, DEF_RICE_SECOND_SOW_DAYS
    USE MOD_Const_Physical, only: tfrz, denice, denh2o
    USE MOD_Const_PFT, only: irrig_crop
    USE MOD_LandPFT, only : patch_pft_s, patch_pft_e
    USE MOD_Vars_Global, only: irrig_start_time, irrig_max_depth, irrig_threshold_fraction, irrig_supply_fraction, irrig_min_cphase, irrig_max_cphase, irrig_time_per_day, &
-       irrig_method_drip, irrig_method_sprinkler, irrig_method_flood, irrig_method_paddy
+       irrig_method_drip, irrig_method_sprinkler, irrig_method_flood, irrig_method_paddy, &
+       nirrig_rice, spval
    USE MOD_Qsadv, only: qsadv
    USE MOD_Vars_TimeInvariants, only: pondmx, &
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
@@ -23,10 +25,12 @@ MODULE MOD_Irrigation
        tairday, usday, vsday, pairday, rnetday, fgrndday, potential_evapotranspiration,&
        groundwater_demand, groundwater_supply, reservoirriver_demand, reservoirriver_supply, &
        reservoir_supply, river_supply, runoff_supply, &
-       waterstorage, deficit_irrig, actual_irrig, irrig_gw_alloc, irrig_sw_alloc, zwt_stand
+       waterstorage, deficit_irrig, actual_irrig, irrig_gw_alloc, irrig_sw_alloc, zwt_stand, wdsrf
    USE MOD_Vars_PFTimeInvariants, only: pftclass
    USE MOD_Vars_PFTimeVariables, only: irrig_method_p
-   USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p
+   USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p, paddy_predrain_p, &
+       paddy_fallow_flood_p, croplive_p, plantdate_p, rice_double_p
+   USE MOD_BGC_Vars_TimeVariables, only: pdrice2
    USE MOD_Vars_1DForcing, only: forc_t, forc_frl, forc_psrf, forc_us, forc_vs
    USE MOD_Vars_1DFluxes, only: sabg, sabvsun, sabvsha, olrg, fgrnd
    USE MOD_Hydro_SoilFunction, only: soil_vliq_from_psi
@@ -38,6 +42,12 @@ MODULE MOD_Irrigation
 
    PUBLIC :: CalIrrigationNeeded
    PUBLIC :: CalIrrigationApplicationFluxes
+   PUBLIC :: CalPaddyFallowFlood
+
+   ! C-32b (paper V2, DEF_PADDY_RICE_BUND): standing water an irrigated paddy is
+   ! kept at, 5-10 cm under continuous flooding (Bouman et al. 2007, IRRI,
+   ! Water management in irrigated rice); below the bund height pondmxc (100 mm).
+   real(r8), parameter :: paddy_pond_target = 50._r8   ! [mm]
 
 CONTAINS
 
@@ -151,6 +161,7 @@ CONTAINS
       real(r8) :: h2osoi_liq_field_capacity(1:nl_soil)
       real(r8) :: h2osoi_liq_saturation_capacity(1:nl_soil)
       real(r8) :: h2osoi_liq_at_threshold
+      real(r8) :: h2osoi_liq_top, h2osoi_liq_saturation_top   ! C-32d: above the plow pan
 
       real(r8) :: smpswc = -1.5e5
       real(r8) :: smpsfc = -3.3e3
@@ -162,6 +173,8 @@ CONTAINS
       h2osoi_liq_wilting_point_tot = 0._r8
       h2osoi_liq_field_capacity_tot = 0._r8
       h2osoi_liq_saturation_capacity_tot = 0._r8
+      h2osoi_liq_top = 0._r8
+      h2osoi_liq_saturation_top = 0._r8
 
       !  calculate wilting point and field capacity
       DO j = 1, nl_soil
@@ -198,6 +211,10 @@ CONTAINS
                   h2osoi_liq_wilting_point_tot = h2osoi_liq_wilting_point_tot + h2osoi_liq_wilting_point(j)
                   h2osoi_liq_field_capacity_tot = h2osoi_liq_field_capacity_tot + h2osoi_liq_field_capacity(j)
                   h2osoi_liq_saturation_capacity_tot = h2osoi_liq_saturation_capacity_tot + h2osoi_liq_saturation_capacity(j)
+                  IF (z_soi(j) < 0.15_r8) THEN
+                     h2osoi_liq_top = h2osoi_liq_top + wliq_soisno(j,i)
+                     h2osoi_liq_saturation_top = h2osoi_liq_saturation_top + h2osoi_liq_saturation_capacity(j)
+                  ENDIF
                ENDIF
             ENDIF
          ENDDO
@@ -219,6 +236,17 @@ CONTAINS
 
       !   calculate total irrigation
       DO m = ps, pe
+         IF (DEF_PADDY_RICE_BUND .and. irrig_method_p(m) == irrig_method_paddy) THEN
+            ! C-32b: a paddy is topped up to a saturated root zone plus its
+            ! standing water. Upstream took the saturation threshold but the
+            ! field-capacity amount, so a soil between the two got nothing.
+            ! C-32d: only the puddled soil above the plow pan (centres above
+            ! 0.15 m, MOD_SoilSnowHydrology) is kept saturated; below the pan
+            ! the soil drains and irrigation does not chase it.
+            deficit_irrig(i) = irrig_supply_fraction * (max(h2osoi_liq_saturation_top - h2osoi_liq_top, 0._r8) &
+               + max(paddy_pond_target - wdsrf(i), 0._r8))
+            CYCLE
+         ENDIF
          IF (h2osoi_liq_tot < h2osoi_liq_at_threshold) THEN
             IF (irrig_method_p(m) == irrig_method_sprinkler) THEN
                 deficit_irrig(i) = irrig_supply_fraction * (h2osoi_liq_field_capacity_tot - h2osoi_liq_tot)
@@ -297,12 +325,25 @@ CONTAINS
          IF ((ivt == 62) .and. (irrig_method_p(m) == irrig_method_flood)) THEN
             irrig_method_p(m) = irrig_method_paddy
          ENDIF
+         ! C-32: rainfed lowland rice is bunded too; irrig_crop(61) is false, so
+         ! the paddy method gives it the bunds but no irrigation water.
+         IF (DEF_PADDY_RICE_BUND .and. (ivt == 61) .and. (irrig_method_p(m) == irrig_method_flood)) THEN
+            irrig_method_p(m) = irrig_method_paddy
+         ENDIF
       ENDDO
 
       DO m = ps, pe
          ivt = pftclass(m)
          IF ((ivt >= npcropmin) .and. (irrig_crop(ivt)) .and. &
-            (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m)<irrig_max_cphase)) THEN
+            (((cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m)<irrig_max_cphase) .and. &
+            ! C-32e: paddies are not irrigated from the start of grain fill;
+            ! C-47: or, with DEF_PADDY_DRAIN_DAYS set, in the pre-harvest drain window
+            .not. (DEF_PADDY_RICE_BUND .and. irrig_method_p(m) == irrig_method_paddy .and. &
+                   ((DEF_PADDY_DRAIN_DAYS <  0._r8 .and. cphase_p(m) >= 3._r8) .or. &
+                    (DEF_PADDY_DRAIN_DAYS >= 0._r8 .and. paddy_predrain_p(m))))) .or. &
+            ! candidate 25: an irrigated paddy in its pre-sowing flood window is
+            ! topped up too, but no water is pumped onto frozen ground
+            (paddy_fallow_flood_p(m) .and. t_soisno(1,i) > tfrz))) THEN
             IF (DEF_simulation_time%greenwich) THEN
                 CALL gmt2local(idate, dlon, ldate)
                 seconds_since_irrig_start_time = ldate(3) - irrig_start_time + deltim
@@ -320,6 +361,59 @@ CONTAINS
       ENDDO
 
    END SUBROUTINE PointNeedsCheckForIrrig
+
+   SUBROUTINE CalPaddyFallowFlood(i,idate)
+      !   DESCRIPTION:
+      !   Candidate 25 (paper V2, DEF_PADDY_FALLOW_FLOOD): flags an irrigated
+      !   paddy (PFT 62) that is not growing and is at most DEF_PADDY_FALLOW_FLOOD
+      !   days before its next sowing, on the first-season date or, for
+      !   double-cropped rice (C-45), the second-season date. A flagged paddy is
+      !   bunded (paddy_bunded, MOD_SoilSnowHydrology) and topped up by the paddy
+      !   irrigation (C-32b) as in the growing season, so pre-season flooding
+      !   puts water on the field through the irrigation supply. Called at the
+      !   start of the time step, before the hydrology, from dates and restart
+      !   state only, so a restart gives the same flag. With C-95
+      !   (DEF_RICE_SECOND_SOW_DAYS) the second season has no fixed date and
+      !   follows the harvest after a land-preparation interval, so only the
+      !   first-season date counts.
+      integer, intent(in) :: i
+      integer, intent(in) :: idate(3)
+
+      integer :: ps, pe, m, ndays, days_to_sow
+
+      ps = patch_pft_s(i)
+      pe = patch_pft_e(i)
+
+      DO m = ps, pe
+         paddy_fallow_flood_p(m) = .false.
+      ENDDO
+      IF (DEF_PADDY_FALLOW_FLOOD <= 0._r8 .or. .not. DEF_PADDY_RICE_BUND) RETURN
+
+      IF (isleapyear(idate(1))) THEN
+         ndays = 366
+      ELSE
+         ndays = 365
+      ENDIF
+
+      DO m = ps, pe
+         IF (pftclass(m) /= nirrig_rice) CYCLE
+         IF (irrig_method_p(m) /= irrig_method_paddy .and. irrig_method_p(m) /= irrig_method_flood) CYCLE
+         IF (croplive_p(m)) CYCLE
+         days_to_sow = -1
+         IF (plantdate_p(m) > 0._r8 .and. plantdate_p(m) /= spval) &
+            days_to_sow = modulo(int(plantdate_p(m)) - idate(2), ndays)
+         IF (rice_double_p(m) >= 0.5_r8 .and. pdrice2(i) > 0._r8 .and. pdrice2(i) /= spval &
+             .and. DEF_RICE_SECOND_SOW_DAYS < 0._r8) THEN
+            IF (days_to_sow < 0) THEN
+               days_to_sow = modulo(int(pdrice2(i)) - idate(2), ndays)
+            ELSE
+               days_to_sow = min(days_to_sow, modulo(int(pdrice2(i)) - idate(2), ndays))
+            ENDIF
+         ENDIF
+         IF (days_to_sow >= 0) paddy_fallow_flood_p(m) = real(days_to_sow, r8) <= DEF_PADDY_FALLOW_FLOOD
+      ENDDO
+
+   END SUBROUTINE CalPaddyFallowFlood
 
    ! SUBROUTINE CalPotentialEvapotranspiration(i,idate,dlon,deltim)
    !     !   DESCRIPTION:

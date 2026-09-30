@@ -102,6 +102,12 @@ PROGRAM CoLM
    USE MOD_Aerosol, only: AerosolDepInit, AerosolDepReadin
 
    USE MOD_ParameterOptimization
+#if (defined BGC) && (defined CROP)
+   USE MOD_BGC_Veg_CNPhenology, only: CropGDDSpinCycleEnd
+#endif
+#if (defined TRACER) && (defined BGC)
+   USE MOD_Tracer_Reactive_Methane_WetlandVeg, only: wetveg_lai_peak_needed, wetveg_track_lai_peak
+#endif
 #ifdef TRACER
    USE MOD_Tracer_LandPhase, only: land_tracer_init, land_tracer_final
    USE MOD_Tracer_Lifecycle, only: tracer_lifecycle_reset
@@ -117,6 +123,10 @@ PROGRAM CoLM
 #endif
 #if (defined TRACER) && (defined BGC)
    USE MOD_Tracer_Reactive_Methane_WetlandVeg, only: wetveg_cap_lai
+   USE MOD_Tracer_Reactive_BgcShim, only: wetland_bgc_sasu_init, wetland_bgc_sasu_cycle_end
+   USE MOD_Tracer_Reactive_Methane_Const, only: DEF_METHANE
+   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_tile_peat_share
+   USE MOD_Initialize, only: wetland_peat_share_read
 #endif
 
 #ifdef DataAssimilation
@@ -163,6 +173,7 @@ PROGRAM CoLM
    integer :: e_year, e_month, e_day, e_seconds, e_julian
    integer :: p_year, p_month, p_day, p_seconds, p_julian
    integer :: lc_year, lai_year, restart_lc_year
+   integer :: m_lai         ! month or 8-day index of the wetland LAI peak pass
    integer :: month, mday, year_p, month_p, mday_p, month_prev, mday_prev
    integer :: n_spinupcycle, i_spinupcycle, istep
 #if (defined TRACER) && (defined CaMa_Flood)
@@ -344,6 +355,15 @@ PROGRAM CoLM
          casename, dir_restart, dir_landdata, ldew_rain, ldew_snow, wliq_soisno, &
          wice_soisno, wa, wdsrf, wetwat, scv, waterstorage, &
          loaded_restart=tracer_loaded_restart, restart_file=tracer_restart_file)
+#endif
+#if (defined TRACER) && (defined BGC)
+      ! Wetland semi-analytic spin-up (DEF_METHANE%wetland_bgc_sasu, read by
+      ! land_tracer_init): armed only when this run makes spin-up cycles.
+      CALL wetland_bgc_sasu_init (merge(n_spinupcycle, 0, is_spinup))
+      ! Peatland share of each wetland tile for its moss surface resistance (C-26)
+      ! and its tropical peat f_methane (C-29)
+      IF (DEF_METHANE%wetland_moss_rss .or. DEF_METHANE%wetland_f_tropical_peat >= 0._r8) &
+         CALL wetland_peat_share_read (wetland_tile_peat_share)
 #endif
 
       ! Read in SNICAR optical and aging parameters
@@ -648,6 +668,16 @@ PROGRAM CoLM
 
          IF (DEF_LAI_MONTHLY) THEN
             IF (month /= month_p) THEN
+#if (defined TRACER) && (defined BGC)
+               ! Wetland LAI shape: annual peak of this LAI year before the cap
+               ! (no-op unless DEF_METHANE%wetland_lai_shape)
+               IF (wetveg_lai_peak_needed (lai_year)) THEN
+                  DO m_lai = 1, 12
+                     CALL LAI_readin (lai_year, m_lai, dir_landdata)
+                     CALL wetveg_track_lai_peak (m_lai == 1, lai_year)
+                  ENDDO
+               ENDIF
+#endif
                CALL LAI_readin (lai_year, month, dir_landdata)
 #if (defined TRACER) && (defined BGC)
                CALL wetveg_cap_lai ()   ! C-13: no-op unless DEF_METHANE%wetland_veg_glwd
@@ -660,6 +690,14 @@ PROGRAM CoLM
             ! Update every 8 days (time interval of the MODIS LAI data)
             Julian_8day = int(calendarday(jdate)-1)/8*8 + 1
             IF (Julian_8day /= Julian_8day_p) THEN
+#if (defined TRACER) && (defined BGC)
+               IF (wetveg_lai_peak_needed (jdate(1))) THEN
+                  DO m_lai = 1, 361, 8
+                     CALL LAI_readin (jdate(1), m_lai, dir_landdata)
+                     CALL wetveg_track_lai_peak (m_lai == 1, jdate(1))
+                  ENDDO
+               ENDIF
+#endif
                CALL LAI_readin (jdate(1), Julian_8day, dir_landdata)
 #if (defined TRACER) && (defined BGC)
                CALL wetveg_cap_lai ()   ! C-13: no-op unless DEF_METHANE%wetland_veg_glwd
@@ -732,6 +770,16 @@ PROGRAM CoLM
          IF (is_spinup) THEN
             IF (ptstamp <= itstamp) THEN
                IF (i_spinupcycle < n_spinupcycle) THEN
+#if (defined TRACER) && (defined BGC)
+                  ! The wetland pools jump to the steady state of the cycle just
+                  ! run (no-op unless DEF_METHANE%wetland_bgc_sasu); the last
+                  ! cycle runs plain.
+                  IF (p_is_worker) CALL wetland_bgc_sasu_cycle_end (i_spinupcycle + 1 == n_spinupcycle)
+#endif
+#if (defined BGC) && (defined CROP)
+                  ! Q-48: a cycle that did not pass 1 January closes its GDD year here
+                  IF (p_is_worker) CALL CropGDDSpinCycleEnd ()
+#endif
                   i_spinupcycle = i_spinupcycle + 1
                   idate   = sdate
                   jdate   = sdate

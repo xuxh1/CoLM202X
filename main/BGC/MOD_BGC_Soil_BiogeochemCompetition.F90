@@ -470,12 +470,39 @@ CONTAINS
    END SUBROUTINE SoilBiogeochemCompetition
 
 #ifdef TRACER
-   SUBROUTINE SoilBiogeochemCompetitionNoPlant(i, deltim, nl_soil, dz_soi)
+   SUBROUTINE SoilBiogeochemCompetitionNoPlant(i, deltim, nl_soil, dz_soi, n_unlimited, plant_ndemand_col)
 
       integer,  intent(in) :: i, nl_soil
       real(r8), intent(in) :: deltim, dz_soi(1:nl_soil)
+      ! Optional N closure for a tile whose litter input is prescribed rather
+      ! than grown by a plant (the wetland tile). Absent, the tile has no plant
+      ! and immobilization is limited by each layer's mineral N, as before.
+      ! n_unlimited: immobilization proceeds at its potential rate and the N a
+      !   layer lacks enters through supplement_to_sminn_vr, as in CLM's
+      !   carbon-only supplemental N (suplnitro = 'ALL'); fpi(i) still reports
+      !   the share the soil itself supplied.
+      ! plant_ndemand_col [gN m-2 s-1]: N returned in the prescribed litter; it
+      !   is taken up from the mineral N left after immobilization, each layer
+      !   in proportion to its residual (the column-wide nuptake_prof of
+      !   SoilBiogeochemCompetition), and fpg(i) reports the share the soil
+      !   supplied.
+      logical,  intent(in), optional :: n_unlimited
+      real(r8), intent(in), optional :: plant_ndemand_col
       integer :: j
       real(r8) :: available, remaining, actual_immob, potential_immob
+      real(r8) :: resid_nh4(1:nl_soil), resid_no3(1:nl_soil), resid_tot, take
+      logical  :: unlimited
+
+      unlimited = .false.
+      IF (present(n_unlimited)) unlimited = n_unlimited
+      ! The wetland path never runs CNZeroFluxes, so these fluxes are cleared
+      ! here whenever they are about to be used.
+      IF (unlimited) supplement_to_sminn_vr(1:nl_soil,i) = 0._r8
+      IF (present(plant_ndemand_col)) THEN
+         smin_nh4_to_plant_vr(1:nl_soil,i) = 0._r8
+         smin_no3_to_plant_vr(1:nl_soil,i) = 0._r8
+         sminn_to_plant_vr   (1:nl_soil,i) = 0._r8
+      ENDIF
 
       actual_immob = 0._r8
       potential_immob = 0._r8
@@ -508,6 +535,15 @@ CONTAINS
          ENDIF
          actual_immob = actual_immob + actual_immob_vr(j,i) * dz_soi(j)
          potential_immob = potential_immob + max(potential_immob_vr(j,i), 0._r8) * dz_soi(j)
+
+         ! Supplemental N: the shortfall is added to the NH4 (or bulk) pool by
+         ! the caller, so the pool never goes negative.
+         IF (unlimited .and. potential_immob_vr(j,i) > actual_immob_vr(j,i)) THEN
+            supplement_to_sminn_vr(j,i) = potential_immob_vr(j,i) - actual_immob_vr(j,i)
+            IF (DEF_USE_NITRIF) actual_immob_nh4_vr(j,i) = actual_immob_nh4_vr(j,i) + supplement_to_sminn_vr(j,i)
+            actual_immob_vr(j,i) = potential_immob_vr(j,i)
+            fpi_vr(j,i) = 1._r8
+         ENDIF
       ENDDO
 
       sminn_to_plant(i) = 0._r8
@@ -516,6 +552,37 @@ CONTAINS
          fpi(i) = actual_immob / potential_immob
       ELSE
          fpi(i) = 1._r8
+      ENDIF
+
+      ! Uptake of the prescribed litter N from what immobilization left in the
+      ! pools; the supplement is not counted as residual, since it only covers
+      ! immobilization.
+      IF (present(plant_ndemand_col)) THEN
+         IF (plant_ndemand_col > 0._r8) THEN
+            resid_tot = 0._r8
+            DO j = 1, nl_soil
+               IF (DEF_USE_NITRIF) THEN
+                  resid_nh4(j) = max(smin_nh4_vr(j,i) - (actual_immob_nh4_vr(j,i) &
+                     - supplement_to_sminn_vr(j,i)) * deltim, 0._r8)
+                  resid_no3(j) = max(smin_no3_vr(j,i) - actual_immob_no3_vr(j,i) * deltim, 0._r8)
+               ELSE
+                  resid_nh4(j) = max(sminn_vr(j,i) - (actual_immob_vr(j,i) &
+                     - supplement_to_sminn_vr(j,i)) * deltim, 0._r8)
+                  resid_no3(j) = 0._r8
+               ENDIF
+               resid_tot = resid_tot + (resid_nh4(j) + resid_no3(j)) * dz_soi(j)
+            ENDDO
+            IF (resid_tot > 0._r8) THEN
+               take = min(plant_ndemand_col * deltim / resid_tot, 1._r8) / deltim
+               DO j = 1, nl_soil
+                  smin_nh4_to_plant_vr(j,i) = resid_nh4(j) * take
+                  smin_no3_to_plant_vr(j,i) = resid_no3(j) * take
+                  sminn_to_plant_vr(j,i) = smin_nh4_to_plant_vr(j,i) + smin_no3_to_plant_vr(j,i)
+                  sminn_to_plant(i) = sminn_to_plant(i) + sminn_to_plant_vr(j,i) * dz_soi(j)
+               ENDDO
+            ENDIF
+            fpg(i) = sminn_to_plant(i) / plant_ndemand_col
+         ENDIF
       ENDIF
 
    END SUBROUTINE SoilBiogeochemCompetitionNoPlant

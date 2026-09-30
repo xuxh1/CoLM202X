@@ -39,7 +39,7 @@ MODULE MOD_Tracer_LandPhase
    ! -- Column phase: per-patch soil-water/precip/evap/snow transport,
    !    called inside the CoLMMAIN patch loop (per ipatch, snl, nl_soil) --
    PUBLIC :: ntracers, trc_tiny, tracer_uses_land_water_transport
-   PUBLIC :: tracer_precip, tracer_evapo, tracer_soil_water, tracer_wetland
+   PUBLIC :: tracer_precip, tracer_evapo, tracer_soil_water, tracer_wetland, tracer_prescribed_column
    PUBLIC :: tracer_flood_evap_loss
    PUBLIC :: tracer_newsnow, tracer_save_storage, tracer_balance_check
    PUBLIC :: tracer_apply_reactive_processes

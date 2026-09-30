@@ -43,7 +43,8 @@ MODULE MOD_BGC_Soil_BiogeochemLittVertTransp
 
 CONTAINS
 
-   SUBROUTINE SoilBiogeochemLittVertTransp(i,deltim,nl_soil,nl_soil_full,ndecomp_pools,nbedrock,z_soi,zi_soi,dz_soi)
+   SUBROUTINE SoilBiogeochemLittVertTransp(i,deltim,nl_soil,nl_soil_full,ndecomp_pools,nbedrock,z_soi,zi_soi,dz_soi, &
+                                           adv_flux_in)
 
    integer ,intent(in) :: i                        ! patch index
    real(r8),intent(in) :: deltim                   ! time step in seconds
@@ -54,6 +55,7 @@ CONTAINS
    real(r8),intent(in) :: z_soi (1:nl_soil_full)   ! depth of each soil layer (m)
    real(r8),intent(in) :: zi_soi(0:nl_soil_full)   ! interface level below a zsoi level (m)
    real(r8),intent(in) :: dz_soi(1:nl_soil_full)   ! thicknesses of each soil layer (m)
+   real(r8),intent(in),optional :: adv_flux_in     ! downward advection replacing som_adv_flux (m/s), e.g. peat burial
 
    ! !LOCAL VARIABLES:
    real(r8) :: diffus (1:nl_soil+1)                    ! diffusivity (m2/s)  (includes spinup correction, if any)
@@ -81,11 +83,14 @@ CONTAINS
    integer  :: jtop                                    ! top level at each column
    real(r8) :: spinup_term                             ! spinup accelerated decomposition factor, used to accelerate transport as well
    real(r8) :: epsilon                                 ! small number
+   real(r8) :: adv_const                               ! advective flux of the non-cryoturbated profile (m/s)
 
       aaa (pe) = max (0._r8, (1._r8 - 0.1_r8 * abs(pe))**5)  ! A function from Patankar, Table 5.2, pg 95
 
       epsilon = 1.e-30
       spinup_term = 1._r8
+      adv_const = som_adv_flux
+      IF (present(adv_flux_in)) adv_const = adv_flux_in
 
       IF  (( max(altmax(i), altmax_lastyear(i)) <= max_altdepth_cryoturbation ) .and. &
           ( max(altmax(i), altmax_lastyear(i)) > 0._r8) ) THEN
@@ -110,7 +115,7 @@ CONTAINS
          ! constant advection, constant diffusion
          DO j = 1,nl_soil+1
             IF ( j <= nbedrock+1 ) THEN
-               som_adv_coef(j,i) = som_adv_flux
+               som_adv_coef(j,i) = adv_const
                som_diffus_coef(j,i) = som_diffus
             ELSE
                som_adv_coef(j,i) = 0._r8

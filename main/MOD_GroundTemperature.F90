@@ -34,7 +34,7 @@ CONTAINS
                          t_soisno,t_grnd,t_soil,t_snow,wice_soisno,wliq_soisno,scv,snowdp,fsno,&
                          frl,dlrad,sabg,sabg_soil,sabg_snow,sabg_snow_lyr,&
                          fseng,fseng_soil,fseng_snow,fevpg,fevpg_soil,fevpg_snow,cgrnd,htvp,emg,&
-                         imelt,snofrz,sm,xmf,fact,pg_rain,pg_snow,t_precip &
+                         imelt,snofrz,sm,xmf,fact,pg_rain,pg_snow,t_precip,wpond &
 #ifdef TRACER
                         ,qphs_thaw_lay,qphs_frzc_lay &
 #endif
@@ -73,7 +73,7 @@ CONTAINS
 
    USE MOD_Precision
    USE MOD_Const_Physical, only: stefnc,denh2o,denice,tfrz,cpice,cpliq,tkwat,tkice,tkair
-   USE MOD_Namelist, only: DEF_USE_SNICAR, DEF_SPLIT_SOILSNOW
+   USE MOD_Namelist, only: DEF_USE_SNICAR, DEF_SPLIT_SOILSNOW, DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME
    USE MOD_PhaseChange
    USE MOD_SoilThermalParameters
    USE MOD_SPMD_Task
@@ -148,6 +148,7 @@ CONTAINS
    real(r8), intent(in) :: pg_rain      !rainfall onto ground including canopy runoff [kg/(m2 s)]
    real(r8), intent(in) :: pg_snow      !snowfall onto ground including canopy runoff [kg/(m2 s)]
    real(r8), intent(in) :: t_precip     !snowfall/rainfall temperature [kelvin]
+   real(r8), intent(in) :: wpond        !ponded water sharing the first soil layer temperature [kg/m2]
 
    real(r8), intent(inout) :: t_soisno   (lb:nl_soil) !soil temperature [K]
    real(r8), intent(inout) :: wice_soisno(lb:nl_soil) !ice lens [kg/m2]
@@ -209,6 +210,9 @@ CONTAINS
          cv(i) = hcap(i)*dz_soisno(i)
       ENDDO
       IF(lb==1 .and. scv>0.) cv(1) = cv(1) + cpice*scv
+      ! ponded water under snow stores heat with the first soil layer
+      ! (DEF_PONDING_HEAT); on a snow-free surface layer see fact below
+      IF(lb<1 .and. wpond>0.) cv(1) = cv(1) + cpliq*wpond
 
 ! Snow heat capacity
       IF(lb <= 0)THEN
@@ -220,11 +224,22 @@ CONTAINS
          DO i = lb, 0
          rhosnow = (wice_soisno(i)+wliq_soisno(i))/dz_soisno(i)
 
-         ! presently option [1] is the default option
+         ! DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME selects the option; [1] is the default
+         IF (DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME == 2) THEN
+         ! [2] Sturm et al. (1997) regression over seasonal snow (taiga and tundra),
+         !     rho in g cm-3: 0.138 - 1.01 rho + 3.233 rho^2 for 0.156 <= rho <= 0.6,
+         !     0.023 + 0.234 rho below 0.156; the quadratic is held beyond 0.6
+            IF (rhosnow < 156.) THEN
+               thk(i) = 0.023 + 0.234e-3*rhosnow
+            ELSE
+               thk(i) = 0.138 - 1.01e-3*rhosnow + 3.233e-6*rhosnow*rhosnow
+            ENDIF
+         ELSE
          ! [1] Jordan (1991) pp. 18
-         thk(i) = tkair+(7.75e-5*rhosnow+1.105e-6*rhosnow*rhosnow)*(tkice-tkair)
+            thk(i) = tkair+(7.75e-5*rhosnow+1.105e-6*rhosnow*rhosnow)*(tkice-tkair)
+         ENDIF
 
-         ! [2] Sturm et al (1997)
+         ! [2] as once commented here (wrong signs, not Sturm et al. 1997)
          ! thk(i) = 0.0138 + 1.01e-3*rhosnow + 3.233e-6*rhosnow**2
          ! [3] Ostin and Andersson presented in Sturm et al., (1997)
          ! thk(i) = -0.871e-2 + 0.439e-3*rhosnow + 1.05e-6*rhosnow**2
@@ -319,6 +334,9 @@ CONTAINS
       j       = lb
       fact(j) = deltim / cv(j) * dz_soisno(j) &
               / (0.5*(z_soisno(j)-zi_soisno(j-1)+capr*(z_soisno(j+1)-zi_soisno(j-1))))
+      ! ponded water on a snow-free surface layer adds its whole heat
+      ! capacity, not the capr-scaled share of the surface soil layer
+      IF(lb==1 .and. wpond>0.) fact(j) = deltim / (deltim/fact(j) + cpliq*wpond)
 
       DO j = lb + 1, nl_soil
          fact(j) = deltim/cv(j)

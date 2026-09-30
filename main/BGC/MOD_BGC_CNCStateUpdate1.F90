@@ -88,7 +88,7 @@ MODULE MOD_BGC_CNCStateUpdate1
    USE MOD_BGC_Vars_1DPFTFluxes, only: &
 ! vegetation carbon flux variables (in)
 ! Vegetation physiology
-            psn_to_cpool_p, &
+            psn_to_cpool_p, rice_exudc_p, &
 
 ! xfer to display
             leafc_xfer_to_leafc_p          , frootc_xfer_to_frootc_p        , &
@@ -329,6 +329,8 @@ CONTAINS
 #ifdef FUN
          cpool_p   (m) = cpool_p   (m) - soilc_change_p     (m) * deltim
 #endif
+         ! C-37: rice root exudates, booked into metabolic litter this step
+         cpool_p   (m) = cpool_p   (m) - rice_exudc_p       (m) * deltim
          xsmrpool_p(m) = xsmrpool_p(m) + cpool_to_xsmrpool_p(m) * deltim
          xsmrpool_p(m) = xsmrpool_p(m) - leaf_xsmr_p        (m) * deltim
          xsmrpool_p(m) = xsmrpool_p(m) - froot_xsmr_p       (m) * deltim

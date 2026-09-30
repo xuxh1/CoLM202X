@@ -72,7 +72,7 @@ CONTAINS
                hpbl, &
                qintr_rain ,qintr_snow ,t_precip   ,hprl       ,&
                dheatl     ,smp        ,hk         ,hksati     ,&
-               rootflux                                            &
+               rootflux   ,raw_grnd_out                            &
 #ifdef TRACER
               ,canopy_smelt_mass_p_out, canopy_frzc_mass_p_out, raw_trc_out &
 #endif
@@ -270,6 +270,11 @@ CONTAINS
         tref,          &! 2 m height air temperature (kelvin)
         qref,          &! 2 m height air specific humidity
         rootflux(nl_soil,ps:pe)    ! root water uptake from different layers
+
+   ! water vapour aerodynamic resistance from the ground to the reference
+   ! height through the canopy layers, of the last iteration [s/m];
+   ! 0 when no layer is vegetated
+   real(r8), intent(out), optional :: raw_grnd_out
 
 #ifdef TRACER
    real(r8), dimension(ps:pe), intent(out), optional :: canopy_smelt_mass_p_out
@@ -543,6 +548,7 @@ CONTAINS
       IF (present(canopy_smelt_mass_p_out)) canopy_smelt_mass_p_out(:) = 0._r8
       IF (present(canopy_frzc_mass_p_out))  canopy_frzc_mass_p_out(:)  = 0._r8
 #endif
+      IF (present(raw_grnd_out)) raw_grnd_out = 0._r8
 
       lsai(:) = lai(:) + sai(:)
       is_vegetated_patch = .false.
@@ -1800,6 +1806,17 @@ ENDIF
       ENDDO
 
 #endif
+      ! Ground-to-reference-height water vapour resistance: the resistance
+      ! rd(i) below each vegetated layer i (to the next vegetated layer or
+      ! the ground) in series with raw above the top layer, from the last
+      ! iteration. The soil surface resistance rss is not included.
+      IF (present(raw_grnd_out)) THEN
+         raw_grnd_out = raw
+         DO i = 1, nlay
+            IF (fcover_lay(i)>0 .and. lsai_lay(i)>0) raw_grnd_out = raw_grnd_out + rd(i)
+         ENDDO
+      ENDIF
+
       IF(DEF_USE_OZONESTRESS)THEN
          DO i = ps, pe
             p = pftclass(i)

@@ -164,6 +164,9 @@ MODULE MOD_BGC_Vars_PFTimeVariables
    real(r8),allocatable :: fert_p                    (:)     ! fertilizer nitrogen (gN m-2) including manure
    real(r8),allocatable :: latbaset_p                (:)     ! latitude vary base temperature for gddplant (degree C)
    real(r8),allocatable :: plantdate_p               (:)     ! planting date (input)
+   real(r8),allocatable :: rice_double_p             (:)     ! C-45: share of double-cropped irrigated rice (input, not in restart)
+   logical ,allocatable :: paddy_predrain_p          (:)     ! C-47: paddy in its pre-harvest drain window (set by CropPhenology, not in restart)
+   logical ,allocatable :: paddy_fallow_flood_p      (:)     ! candidate 25: irrigated paddy in its pre-sowing flood window (set by CalPaddyFallowFlood, not in restart)
 #endif
 ! --------------------- END CROP variables -------------------------
 
@@ -559,6 +562,9 @@ CONTAINS
             allocate (fert_p                   (numpft)); fert_p                   (:) = spval
             allocate (latbaset_p               (numpft)); latbaset_p               (:) = spval
             allocate (plantdate_p              (numpft)); plantdate_p              (:) = spval
+            allocate (rice_double_p            (numpft)); rice_double_p            (:) = 0._r8
+            allocate (paddy_predrain_p         (numpft)); paddy_predrain_p         (:) = .false.
+            allocate (paddy_fallow_flood_p     (numpft)); paddy_fallow_flood_p     (:) = .false.
 #endif
 
 ! SASU variables
@@ -2094,6 +2100,9 @@ CONTAINS
             deallocate (fert_p                   )
             deallocate (latbaset_p               )
             deallocate (plantdate_p              )
+            deallocate (rice_double_p            )
+            deallocate (paddy_predrain_p         )
+            deallocate (paddy_fallow_flood_p     )
 #endif
 
 ! SASU variables

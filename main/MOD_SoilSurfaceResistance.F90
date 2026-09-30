@@ -44,7 +44,7 @@ CONTAINS
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
                               theta_r, alpha_vgm, n_vgm, L_vgm, sc_vgm, fc_vgm, &
 #endif
-                              dz_soisno,t_soisno,wliq_soisno,wice_soisno,fsno,qg,rss)
+                              dz_soisno,t_soisno,wliq_soisno,wice_soisno,fsno,qg,rss,rss_min)
 
 !=======================================================================
 ! !DESCRIPTION:
@@ -61,7 +61,7 @@ CONTAINS
 
    USE MOD_Precision
    USE MOD_Const_Physical, only: denice, denh2o
-   USE MOD_Namelist, only: DEF_RSS_SCHEME
+   USE MOD_Namelist, only: DEF_RSS_SCHEME, DEF_VG_ALPHA_MM
    USE MOD_Hydro_SoilFunction
    IMPLICIT NONE
 
@@ -98,6 +98,9 @@ CONTAINS
    real(r8), intent(out) :: &
         rss                           ! soil surface resistance [s/m]
 
+   real(r8), intent(in), optional :: &
+        rss_min                       ! floor of the snow-free resistance [s/m]
+
 !-------------------------- Local Variables ----------------------------
 
    REAL(r8) :: &
@@ -114,6 +117,7 @@ CONTAINS
         dw,               &! aqueous diffusivity [m2/s]
         hk,               &! hydraulic conductivity [m h2o/s]
         m_vgm,            &! pore-connectivity related parameter [dimensionless]
+        k_vgm,            &! alpha_vgm of the first layer in the unit of 1/smp_node
         S,                &! Van Genuchten relative saturation [-]
         wfc,              &! field capacity of the first layer soil
         rg_1,             &! inverse of vapor diffusion resistance [m/s]
@@ -219,8 +223,11 @@ CONTAINS
       ! dw = -hk*(m-1)/(k*m*(theta_s-theta_r))*S**(-1/m)*(1-S**(1/m))**(-m)
       ! where k=alpha_vgm, S=(1+(-k*smp_node)**(n))**(-m), m=m_vgm=1-1/n_vgm
       m_vgm = 1. - 1./n_vgm(1)
-      S     = (1. + (- alpha_vgm(1)*smp_node)**(n_vgm(1)))**(-m_vgm)
-      dw    = -hk*(m_vgm-1.)/(alpha_vgm(1)*m_vgm*(porsl(1)-theta_r(1))) &
+      k_vgm = alpha_vgm(1)
+      ! C-94 (paper V2): smp_node is in m here, alpha_vgm in 1/mm
+      IF (DEF_VG_ALPHA_MM) k_vgm = alpha_vgm(1)*1000.
+      S     = (1. + (- k_vgm*smp_node)**(n_vgm(1)))**(-m_vgm)
+      dw    = -hk*(m_vgm-1.)/(k_vgm*m_vgm*(porsl(1)-theta_r(1))) &
             * S**(-1./m_vgm)*(1.-S**(1./m_vgm))**(-m_vgm)
 #endif
 
@@ -270,7 +277,12 @@ CONTAINS
          !wfc = porsl(1)*(-3399._r8/psi0(1))**(-1./bsw(1))
 #endif
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
-         wfc = theta_r(1)+(porsl(1)-theta_r(1))*(1+(alpha_vgm(1)*339.9)**n_vgm(1))**(1.0/n_vgm(1)-1)
+         IF (DEF_VG_ALPHA_MM) THEN
+            ! C-94 (paper V2): alpha_vgm in 1/mm, field capacity at -3399 mm
+            wfc = theta_r(1)+(porsl(1)-theta_r(1))*(1+(alpha_vgm(1)*3399.)**n_vgm(1))**(1.0/n_vgm(1)-1)
+         ELSE
+            wfc = theta_r(1)+(porsl(1)-theta_r(1))*(1+(alpha_vgm(1)*339.9)**n_vgm(1))**(1.0/n_vgm(1)-1)
+         ENDIF
 #endif
 
          ! Lee and Pielke 1992 beta
@@ -292,6 +304,10 @@ CONTAINS
          rss = exp(8.206-6.0*fac)     !adjusted Sellers (1992) to decrease rss
                                       !for wet soil according to Noah-MP v5
       ENDSELECT
+
+      ! floor of the snow-free resistance, e.g. the moss and peat surface
+      ! of a wetland tile (C-26 of the paper V2 methane code)
+      IF (present(rss_min) .and. DEF_RSS_SCHEME .ne. 4) rss = max(rss, rss_min)
 
 !-----------------------------------------------------------------------
       ! account for snow fractional cover for rss

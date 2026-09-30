@@ -122,6 +122,8 @@ CONTAINS
    integer  :: wetland_ipool
    real(r8), allocatable :: wetland_colc(:), wetland_coln(:)
    real(r8) :: wetland_layer_c, wetland_colsum
+   real(r8), allocatable :: wetland_peat_share(:)
+   real(r8) :: wetland_share
    real(r8), parameter :: wetland_cn_ratio = 15._r8
    real(r8), parameter :: carbon_per_kg_om = 580._r8
 #endif
@@ -409,6 +411,11 @@ ENDIF
          ENDDO
       ENDIF
 #endif
+#endif
+
+#if (defined TRACER) && (defined BGC)
+      ! Q-45 (paper V2): peat soil of the wetland tile
+      IF (DEF_WETLAND_PEAT_SOIL > 0) CALL wetland_peat_soil ()
 #endif
 
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
@@ -1050,6 +1057,12 @@ ENDIF
             CALL mc2f%grid2pset (livecrootc_grid, livecrootcin_p )
             CALL mc2f%grid2pset (deadcrootc_grid, deadcrootcin_p )
 
+#if (defined TRACER) && (defined BGC)
+            ! C-17c: peatland share of each patch's wetland tile (collective read)
+            IF (DEF_USE_WETLAND_PEAT_C .and. DEF_WETLAND_PEAT_C_PASSIVE) &
+               CALL wetland_peat_share_read (wetland_peat_share)
+#endif
+
             IF (p_is_worker) THEN
                DO i = 1, numpatch
 #ifdef TRACER
@@ -1176,6 +1189,35 @@ ENDIF
                               ENDDO
                            ENDIF
                            deallocate (wetland_colc, wetland_coln)
+                        ENDIF
+                        ! Old peat is humified residue: move each layer's seeded
+                        ! stock into the passive pool at its fixed C:N (paper V2
+                        ! C-17). The fresh pools then fill from the plant input.
+                        IF (DEF_WETLAND_PEAT_C_PASSIVE) THEN
+                           ! C-17c: only the peatland share moves; the mineral
+                           ! share keeps the dataset's split (1 without a share).
+                           wetland_share = 1._r8
+                           IF (allocated(wetland_peat_share)) wetland_share = wetland_peat_share(i)
+                           DO nsl = 1, nl_soil
+                              ! C-17b: the acrotelm above ZTOP keeps the dataset's split.
+                              IF (z_soi(nsl) < DEF_WETLAND_PEAT_C_PASSIVE_ZTOP) CYCLE
+                              wetland_layer_c = sum(max(decomp_cpools_vr(nsl, :, i), 0._r8), &
+                                 mask = decomp_cpools_vr(nsl, :, i) < 1.e30_r8)
+                              WHERE (decomp_cpools_vr(nsl, :, i) < 1.e30_r8)
+                                 decomp_cpools_vr(nsl, :, i) = (1._r8 - wetland_share) * max(decomp_cpools_vr(nsl, :, i), 0._r8)
+                              ELSEWHERE
+                                 decomp_cpools_vr(nsl, :, i) = 0._r8
+                              END WHERE
+                              WHERE (decomp_npools_vr(nsl, :, i) < 1.e30_r8)
+                                 decomp_npools_vr(nsl, :, i) = (1._r8 - wetland_share) * max(decomp_npools_vr(nsl, :, i), 0._r8)
+                              ELSEWHERE
+                                 decomp_npools_vr(nsl, :, i) = 0._r8
+                              END WHERE
+                              decomp_cpools_vr(nsl, i_soil3, i) = decomp_cpools_vr(nsl, i_soil3, i) &
+                                 + wetland_share * wetland_layer_c
+                              decomp_npools_vr(nsl, i_soil3, i) = decomp_npools_vr(nsl, i_soil3, i) &
+                                 + wetland_share * wetland_layer_c / initial_cn_ratio(i_soil3)
+                           ENDDO
                         ENDIF
                      ENDIF
                   ENDIF
@@ -1809,6 +1851,223 @@ ENDIF
       IF (allocated(soil_w)) deallocate (soil_w)
 
    END SUBROUTINE initialize
+
+#if (defined TRACER) && (defined BGC)
+   SUBROUTINE wetland_peat_soil ()
+      ! Q-45 (paper V2): the soil of a dynamic wetland tile is mixed layer by
+      ! layer towards a peat column by the tile's peatland share (C-17c). The
+      ! peat end member is the organic soil of CLM4.5 (Lawrence and Slater
+      ! 2008; fibric to sapric peat with depth after Letts et al. 2000):
+      ! porosity 0.93 to 0.83, Clapp-Hornberger b 2.7 to 12, saturated suction
+      ! 10.3 to 10.1 mm and saturated conductivity 0.28 to 1e-4 mm/s, either
+      ! over 0-0.5 m as in CLM4.5 (DEF_WETLAND_PEAT_SOIL = 1) or as an
+      ! acrotelm above DEF_WETLAND_PEAT_C_PASSIVE_ZTOP (0.3 m when unset) over
+      ! a catotelm (= 2), so the hydraulic and the carbon boundary coincide.
+      ! The van Genuchten form takes theta_r = 0, alpha = 1/suction and
+      ! n = 1 + 1/b, which follows the Campbell curve beyond the air entry.
+      ! Thermal properties use the organic constants of the CoLM soil
+      ! preprocessing (solid heat capacity 2.51e6 J m-3 K-1, solid and dry
+      ! conductivity 0.25 and 0.05 W m-1 K-1) at the peat porosity.
+      ! Conductivities mix geometrically, the rest linearly; OM_density, and
+      ! the carbon seeded from it, are left alone.
+      ! C-91: a tile within DEF_WETLAND_PEAT_TROP_LAT of the equator mixes
+      ! towards the tropical acrotelm and catotelm of the namelist instead;
+      ! the woody peat of tropical swamp forests is not Sphagnum peat.
+      USE MOD_Precision
+      USE MOD_SPMD_Task
+      USE MOD_Namelist, only: DEF_WETLAND_PEAT_SOIL, DEF_WETLAND_PEAT_C_PASSIVE_ZTOP, &
+         DEF_WETLAND_PEAT_TROP_LAT, DEF_WETLAND_PEAT_TROP_ACRO, DEF_WETLAND_PEAT_TROP_CATO, &
+         DEF_VG_ALPHA_MM
+      USE MOD_LandPatch, only: numpatch
+      USE MOD_Vars_Global, only: nl_soil, z_soi, PI
+      USE MOD_Vars_TimeInvariants
+      real(r8), allocatable :: share(:)
+      real(r8) :: w, zac, f, ps, pb, psuc, pks, pksol
+      real(r8) :: ea(4), ec(4)   ! tropical acrotelm and catotelm end members
+      logical  :: trop
+      integer  :: ip, j
+
+      CALL wetland_peat_share_read (share)
+      IF (p_is_worker .and. numpatch > 0) THEN
+         zac = DEF_WETLAND_PEAT_C_PASSIVE_ZTOP
+         IF (zac <= 0._r8) zac = 0.3_r8
+         ea = DEF_WETLAND_PEAT_TROP_ACRO
+         ec = DEF_WETLAND_PEAT_TROP_CATO
+         DO ip = 1, numpatch
+            IF (patchtype(ip) /= 2) CYCLE
+            w = min(max(share(ip), 0._r8), 1._r8)
+            IF (w <= 0._r8) CYCLE
+            trop = (DEF_WETLAND_PEAT_TROP_LAT >= 0._r8) .and. &
+               (abs(patchlatr(ip)) * 180._r8 / PI <= DEF_WETLAND_PEAT_TROP_LAT)
+            DO j = 1, nl_soil
+               IF (DEF_WETLAND_PEAT_SOIL == 2) THEN
+                  f = merge(0._r8, 1._r8, z_soi(j) < zac)
+               ELSE
+                  f = min(z_soi(j) / 0.5_r8, 1._r8)
+               ENDIF
+               IF (trop) THEN
+                  ps   = (1._r8 - f) * ea(1) + f * ec(1)
+                  pb   = (1._r8 - f) * ea(2) + f * ec(2)
+                  psuc = (1._r8 - f) * ea(3) + f * ec(3)
+                  pks  = (1._r8 - f) * ea(4) + f * ec(4)
+               ELSE
+                  ps    = 0.93_r8 - 0.1_r8 * f          ! porosity
+                  pb    = 2.7_r8 + 9.3_r8 * f           ! Clapp-Hornberger b
+                  psuc  = 10.3_r8 - 0.2_r8 * f          ! saturated suction [mm]
+                  pks   = 0.28_r8 - 0.2799_r8 * f       ! saturated conductivity [mm/s]
+               ENDIF
+               pksol = 0.25_r8 ** (1._r8 - ps)       ! solids at the peat porosity
+
+               porsl(j,ip) = (1._r8 - w) * porsl(j,ip) + w * ps
+               bsw  (j,ip) = (1._r8 - w) * bsw(j,ip)   + w * pb
+#ifdef vanGenuchten_Mualem_SOIL_MODEL
+               theta_r  (j,ip) = (1._r8 - w) * theta_r(j,ip)
+               n_vgm    (j,ip) = (1._r8 - w) * n_vgm(j,ip)     + w * (1._r8 + 1._r8 / pb)
+               L_vgm    (j,ip) = (1._r8 - w) * L_vgm(j,ip)     + w * 0.5_r8
+               IF (DEF_VG_ALPHA_MM) THEN
+                  ! C-94: alpha already converted to 1/mm on read-in
+                  alpha_vgm(j,ip) = (1._r8 - w) * alpha_vgm(j,ip) + w * 1._r8 / psuc    ! [1/mm]
+                  wfc      (j,ip) = theta_r(j,ip) + (porsl(j,ip) - theta_r(j,ip)) &
+                     * (1._r8 + (alpha_vgm(j,ip) * 3399._r8) ** n_vgm(j,ip)) ** (1._r8 / n_vgm(j,ip) - 1._r8)
+               ELSE
+                  alpha_vgm(j,ip) = (1._r8 - w) * alpha_vgm(j,ip) + w * 10._r8 / psuc   ! [1/cm]
+                  wfc      (j,ip) = theta_r(j,ip) + (porsl(j,ip) - theta_r(j,ip)) &
+                     * (1._r8 + (alpha_vgm(j,ip) * 339.9_r8) ** n_vgm(j,ip)) ** (1._r8 / n_vgm(j,ip) - 1._r8)
+               ENDIF
+#else
+               psi0     (j,ip) = (1._r8 - w) * psi0(j,ip) - w * psuc
+               wfc      (j,ip) = (-3399._r8 / psi0(j,ip)) ** (-1._r8 / bsw(j,ip)) * porsl(j,ip)
+#endif
+               hksati  (j,ip) = hksati(j,ip) ** (1._r8 - w) * pks ** w
+               csol    (j,ip) = (1._r8 - w) * csol(j,ip) + w * 2.51e6_r8 * (1._r8 - ps)
+               k_solids(j,ip) = k_solids(j,ip) ** (1._r8 - w) * pksol ** w
+               dksatu  (j,ip) = dksatu(j,ip)   ** (1._r8 - w) * (pksol * 0.57_r8 ** ps) ** w
+               dksatf  (j,ip) = dksatf(j,ip)   ** (1._r8 - w) * (pksol * 2.29_r8 ** ps) ** w
+               dkdry   (j,ip) = dkdry(j,ip)    ** (1._r8 - w) * 0.05_r8 ** w
+               vf_om     (j,ip) = (1._r8 - w) * vf_om(j,ip) + w
+               vf_sand   (j,ip) = (1._r8 - w) * vf_sand(j,ip)
+               vf_gravels(j,ip) = (1._r8 - w) * vf_gravels(j,ip)
+            ENDDO
+         ENDDO
+      ENDIF
+      IF (allocated(share)) deallocate (share)
+
+   END SUBROUTINE wetland_peat_soil
+
+   SUBROUTINE wetland_peat_share_read (share)
+      ! Peatland share of each patch's wetland tile for C-17c (paper V2):
+      ! GLWD v2 peatland classes 22-27 over the tile classes 16-19 and 22-27
+      ! in the cell of DEF_WETLAND_PEAT_SHARE_FILE nearest to the patch; a
+      ! cell without tile classes, or no file, gives 1 (C-17b). A single-point
+      ! run gives its own share in DEF_WETLAND_PEAT_SHARE_SITE.
+      ! MPI names come through MOD_SPMD_Task (a second USE MPI here clashes)
+      USE netcdf
+      USE MOD_Precision
+      USE MOD_Namelist, only: DEF_WETLAND_PEAT_SHARE_FILE, DEF_WETLAND_PEAT_SHARE_SITE
+      USE MOD_SPMD_Task
+      USE MOD_LandPatch, only: numpatch
+      USE MOD_Vars_Global, only: PI
+      USE MOD_Vars_TimeInvariants, only: patchlatr, patchlonr
+      real(r8), allocatable, intent(out) :: share(:)
+
+      integer, parameter :: npeat = 6, nmin = 4
+      integer, parameter :: peat_classes(npeat) = (/22, 23, 24, 25, 26, 27/)
+      integer, parameter :: min_classes(nmin) = (/16, 17, 18, 19/)
+      integer :: ncid, vid, ierr, dims(2), bad, nlat, nlon, k, ip, ilat, ilon
+      real(r8), allocatable :: lat_g(:), lon_g(:), share_g(:,:), a(:,:), apeat(:,:), amin(:,:)
+      real(r8) :: lat_deg, lon_deg, d, dmin
+      character(len=16) :: vname
+
+      IF (p_is_worker) THEN
+         allocate (share(max(numpatch,0)))
+         share(:) = 1._r8
+      ENDIF
+      IF (DEF_WETLAND_PEAT_SHARE_SITE >= 0._r8) THEN
+         IF (p_is_worker) share(:) = min(DEF_WETLAND_PEAT_SHARE_SITE, 1._r8)
+         IF (p_is_master) write(*,'(A,F6.3)') ' C-17c peatland share of the wetland tile (site): ', &
+            min(DEF_WETLAND_PEAT_SHARE_SITE, 1._r8)
+         RETURN
+      ENDIF
+      IF (trim(DEF_WETLAND_PEAT_SHARE_FILE) == 'null') RETURN
+
+      bad = 0; dims = 0
+      IF (p_is_master) THEN
+         ierr = nf90_open(trim(DEF_WETLAND_PEAT_SHARE_FILE), NF90_NOWRITE, ncid)
+         IF (ierr == NF90_NOERR) ierr = nf90_inq_dimid(ncid, 'lat', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_inquire_dimension(ncid, vid, len = dims(1))
+         IF (ierr == NF90_NOERR) ierr = nf90_inq_dimid(ncid, 'lon', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_inquire_dimension(ncid, vid, len = dims(2))
+         IF (ierr /= NF90_NOERR .or. dims(1) <= 0 .or. dims(2) <= 0) bad = 1
+      ENDIF
+#ifdef USEMPI
+      CALL mpi_bcast (bad,  1, MPI_INTEGER, p_address_master, p_comm_glb, p_err)
+      CALL mpi_bcast (dims, 2, MPI_INTEGER, p_address_master, p_comm_glb, p_err)
+#endif
+      IF (bad /= 0) CALL CoLM_stop (' ***** ERROR: cannot read DEF_WETLAND_PEAT_SHARE_FILE.')
+      nlat = dims(1); nlon = dims(2)
+      allocate (lat_g(nlat), lon_g(nlon), share_g(nlat,nlon))
+
+      IF (p_is_master) THEN
+         allocate (a(nlon,nlat), apeat(nlat,nlon), amin(nlat,nlon))
+         ierr = nf90_inq_varid(ncid, 'lat', vid); IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, lat_g)
+         IF (ierr == NF90_NOERR) ierr = nf90_inq_varid(ncid, 'lon', vid)
+         IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, lon_g)
+         apeat = 0._r8; amin = 0._r8
+         DO k = 1, npeat
+            write(vname,'(A,I2.2)') 'area_class_', peat_classes(k)
+            IF (ierr == NF90_NOERR) ierr = nf90_inq_varid(ncid, trim(vname), vid)
+            IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, a)
+            apeat = apeat + max(transpose(a), 0._r8)
+         ENDDO
+         DO k = 1, nmin
+            write(vname,'(A,I2.2)') 'area_class_', min_classes(k)
+            IF (ierr == NF90_NOERR) ierr = nf90_inq_varid(ncid, trim(vname), vid)
+            IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, a)
+            amin = amin + max(transpose(a), 0._r8)
+         ENDDO
+         IF (ierr /= NF90_NOERR) bad = 1
+         ierr = nf90_close(ncid)
+         ! netCDF fill reads as a huge positive area; no tile class keeps C-17b
+         WHERE (apeat > 1.e30_r8) apeat = 0._r8
+         WHERE (amin  > 1.e30_r8) amin  = 0._r8
+         WHERE (apeat + amin > 0._r8)
+            share_g = apeat / (apeat + amin)
+         ELSEWHERE
+            share_g = 1._r8
+         END WHERE
+         deallocate (a, apeat, amin)
+      ENDIF
+#ifdef USEMPI
+      CALL mpi_bcast (bad,     1,         MPI_INTEGER, p_address_master, p_comm_glb, p_err)
+      CALL mpi_bcast (lat_g,   nlat,      MPI_REAL8,   p_address_master, p_comm_glb, p_err)
+      CALL mpi_bcast (lon_g,   nlon,      MPI_REAL8,   p_address_master, p_comm_glb, p_err)
+      CALL mpi_bcast (share_g, nlat*nlon, MPI_REAL8,   p_address_master, p_comm_glb, p_err)
+#endif
+      IF (bad /= 0) CALL CoLM_stop (' ***** ERROR: DEF_WETLAND_PEAT_SHARE_FILE lacks lat, lon or area_class_NN.')
+
+      IF (p_is_worker) THEN
+         DO ip = 1, numpatch
+            lat_deg = patchlatr(ip) * 180._r8 / PI
+            lon_deg = patchlonr(ip) * 180._r8 / PI
+            dmin = huge(1._r8); ilat = 1
+            DO k = 1, nlat
+               d = abs(lat_g(k) - lat_deg)
+               IF (d < dmin) THEN; dmin = d; ilat = k; ENDIF
+            ENDDO
+            dmin = huge(1._r8); ilon = 1
+            DO k = 1, nlon
+               d = abs(modulo(lon_g(k) - lon_deg + 180._r8, 360._r8) - 180._r8)
+               IF (d < dmin) THEN; dmin = d; ilon = k; ENDIF
+            ENDDO
+            share(ip) = share_g(ilat, ilon)
+         ENDDO
+      ENDIF
+      deallocate (lat_g, lon_g, share_g)
+      IF (p_is_master) write(*,'(A,A)') ' C-17c peatland share of the wetland tile read from ', &
+         trim(DEF_WETLAND_PEAT_SHARE_FILE)
+
+   END SUBROUTINE wetland_peat_share_read
+#endif
 
 END MODULE MOD_Initialize
 ! --------------------------------------------------

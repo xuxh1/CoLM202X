@@ -555,6 +555,10 @@ MODULE MOD_Vars_TimeVariables
    real(r8), allocatable :: zwt           (:) ! the depth to water table [m]
    real(r8), allocatable :: wa            (:) ! water storage in aquifer [mm]
    real(r8), allocatable :: wetwat        (:) ! water storage in wetland [mm]
+   real(r8), allocatable :: wetdef_noinfl (:) ! deficit below the floor of the wetland share without inflow [mm]
+   real(r8), allocatable :: wetlatin      (:) ! lateral inflow offered to a wetland per unit fed area, r R_up [mm/s]
+   real(r8), allocatable :: fld_inf_left  (:) ! Q-47: flood re-infiltration the current flood may still give, patch mean [mm]
+   real(r8), allocatable :: fld_frc_evt   (:) ! Q-47: largest flooded fraction of the current flood, 0 without one [-]
    real(r8), allocatable :: wat           (:) ! total water storage [mm]
    real(r8), allocatable :: wdsrf         (:) ! depth of surface water [mm]
    real(r8), allocatable :: rss           (:) ! soil surface resistance [s/m]
@@ -748,6 +752,10 @@ CONTAINS
             allocate (zwt                         (numpatch)); zwt           (:) = spval
             allocate (wa                          (numpatch)); wa            (:) = spval
             allocate (wetwat                      (numpatch)); wetwat        (:) = spval
+            allocate (wetdef_noinfl               (numpatch)); wetdef_noinfl (:) = 0._r8
+            allocate (wetlatin                    (numpatch)); wetlatin      (:) = 0._r8
+            allocate (fld_inf_left                (numpatch)); fld_inf_left  (:) = 0._r8
+            allocate (fld_frc_evt                 (numpatch)); fld_frc_evt   (:) = 0._r8
             allocate (wat                         (numpatch)); wat           (:) = spval
             allocate (wdsrf                       (numpatch)); wdsrf         (:) = spval
             allocate (rss                         (numpatch)); rss           (:) = spval
@@ -948,6 +956,10 @@ CONTAINS
             deallocate (zwt                    )
             deallocate (wa                     )
             deallocate (wetwat                 )
+            deallocate (wetdef_noinfl          )
+            deallocate (wetlatin               )
+            deallocate (fld_inf_left           )
+            deallocate (fld_frc_evt            )
             deallocate (wat                    )
             deallocate (wdsrf                  )
             deallocate (rss                    )
@@ -1103,7 +1115,9 @@ CONTAINS
 
    USE MOD_SPMD_Task
    USE MOD_Namelist, only: DEF_REST_CompressLevel, DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, &
-                           DEF_USE_IRRIGATION, DEF_USE_Dynamic_Lake, SITE_landtype
+                           DEF_USE_IRRIGATION, DEF_USE_Dynamic_Lake, SITE_landtype, &
+                           DEF_WETLAND_INFLOW_AREA_SPLIT, DEF_WETLAND_LATERAL_INFLOW, &
+                           DEF_FLOODPLAIN_INFILTRATION, DEF_FLOODPLAIN_INFILT_FIX
    USE MOD_LandPatch
    USE MOD_NetCDFVector
    USE MOD_Vars_Global
@@ -1224,6 +1238,14 @@ ENDIF
       CALL ncio_write_vector (file_restart, 'zwt     '   , 'patch', landpatch, zwt       , compress)                    ! the depth to water table [m]
       CALL ncio_write_vector (file_restart, 'wa      '   , 'patch', landpatch, wa        , compress)                    ! water storage in aquifer [mm]
       CALL ncio_write_vector (file_restart, 'wetwat  '   , 'patch', landpatch, wetwat    , compress)                    ! water storage in wetland [mm]
+      IF (DEF_WETLAND_INFLOW_AREA_SPLIT) &
+      CALL ncio_write_vector (file_restart, 'wetdef_noinfl', 'patch', landpatch, wetdef_noinfl, compress)               ! deficit of the wetland share without inflow [mm]
+      IF (DEF_WETLAND_LATERAL_INFLOW) &
+      CALL ncio_write_vector (file_restart, 'wetlatin', 'patch', landpatch, wetlatin, compress)                         ! lateral inflow offered to a wetland [mm/s]
+      IF (DEF_FLOODPLAIN_INFILTRATION .and. DEF_FLOODPLAIN_INFILT_FIX) THEN
+      CALL ncio_write_vector (file_restart, 'fld_inf_left', 'patch', landpatch, fld_inf_left, compress)                 ! re-infiltration the current flood may still give [mm]
+      CALL ncio_write_vector (file_restart, 'fld_frc_evt', 'patch', landpatch, fld_frc_evt, compress)                   ! largest flooded fraction of the current flood [-]
+      ENDIF
       CALL ncio_write_vector (file_restart, 'wdsrf   '   , 'patch', landpatch, wdsrf     , compress)                    ! depth of surface water [mm]
       CALL ncio_write_vector (file_restart, 'rss     '   , 'patch', landpatch, rss       , compress)                    ! soil surface resistance [s/m]
 
@@ -1458,6 +1480,20 @@ ENDIF
       CALL ncio_read_vector (file_restart, 'zwt     '   , landpatch, zwt        ) ! the depth to water table [m]
       CALL ncio_read_vector (file_restart, 'wa      '   , landpatch, wa         ) ! water storage in aquifer [mm]
       CALL ncio_read_vector (file_restart, 'wetwat  '   , landpatch, wetwat     ) ! water storage in wetland [mm]
+      ! A restart written with DEF_WETLAND_INFLOW_AREA_SPLIT off starts the
+      ! share without inflow at the floor.
+      IF (DEF_WETLAND_INFLOW_AREA_SPLIT) &
+      CALL ncio_read_vector (file_restart, 'wetdef_noinfl', landpatch, wetdef_noinfl, defval = 0._r8) ! [mm]
+      ! A restart written with DEF_WETLAND_LATERAL_INFLOW off offers no
+      ! inflow in the first step.
+      IF (DEF_WETLAND_LATERAL_INFLOW) &
+      CALL ncio_read_vector (file_restart, 'wetlatin', landpatch, wetlatin, defval = 0._r8) ! [mm/s]
+      ! A restart written without DEF_FLOODPLAIN_INFILT_FIX has no flood
+      ! under way: a patch flooded at the first step starts a new one.
+      IF (DEF_FLOODPLAIN_INFILTRATION .and. DEF_FLOODPLAIN_INFILT_FIX) THEN
+      CALL ncio_read_vector (file_restart, 'fld_inf_left', landpatch, fld_inf_left, defval = 0._r8) ! [mm]
+      CALL ncio_read_vector (file_restart, 'fld_frc_evt', landpatch, fld_frc_evt, defval = 0._r8)   ! [-]
+      ENDIF
       CALL ncio_read_vector (file_restart, 'wdsrf   '   , landpatch, wdsrf      ) ! depth of surface water [mm]
       CALL ncio_read_vector (file_restart, 'rss     '   , landpatch, rss        ) ! soil surface resistance [s/m]
 
@@ -1496,23 +1532,25 @@ ENDIF
       CALL ncio_read_vector (file_restart, 'fq   ', landpatch, fq   ) ! integral of profile FUNCTION for moisture
 
 IF (DEF_USE_IRRIGATION) THEN
-      CALL ncio_read_vector (file_restart, 'irrig_rate            ' , landpatch, irrig_rate            )
-      CALL ncio_read_vector (file_restart, 'sum_irrig             ' , landpatch, sum_irrig             )
-      CALL ncio_read_vector (file_restart, 'sum_deficit_irrig     ' , landpatch, sum_deficit_irrig     )
-      CALL ncio_read_vector (file_restart, 'sum_irrig_count       ' , landpatch, sum_irrig_count       )
-      CALL ncio_read_vector (file_restart, 'n_irrig_steps_left    ' , landpatch, n_irrig_steps_left    )
-      CALL ncio_read_vector (file_restart, 'waterstorage          ' , landpatch, waterstorage          )
-      CALL ncio_read_vector (file_restart, 'irrig_method_corn     ' , landpatch, irrig_method_corn     )
-      CALL ncio_read_vector (file_restart, 'irrig_method_swheat   ' , landpatch, irrig_method_swheat   )
-      CALL ncio_read_vector (file_restart, 'irrig_method_wwheat   ' , landpatch, irrig_method_wwheat   )
-      CALL ncio_read_vector (file_restart, 'irrig_method_soybean  ' , landpatch, irrig_method_soybean  )
-      CALL ncio_read_vector (file_restart, 'irrig_method_cotton   ' , landpatch, irrig_method_cotton   )
-      CALL ncio_read_vector (file_restart, 'irrig_method_rice1    ' , landpatch, irrig_method_rice1    )
-      CALL ncio_read_vector (file_restart, 'irrig_method_rice2    ' , landpatch, irrig_method_rice2    )
-      CALL ncio_read_vector (file_restart, 'irrig_method_sugarcane' , landpatch, irrig_method_sugarcane)
-      CALL ncio_read_vector (file_restart, 'irrig_gw_alloc        ' , landpatch, irrig_gw_alloc        )
-      CALL ncio_read_vector (file_restart, 'irrig_sw_alloc        ' , landpatch, irrig_sw_alloc        )
-      CALL ncio_read_vector (file_restart, 'zwt_stand             ' , landpatch, zwt_stand             )
+      ! C-32 (paper V2): a run that switches irrigation on from a restart written
+      ! without it starts the irrigation state at zero instead of stopping.
+      CALL ncio_read_vector (file_restart, 'irrig_rate            ' , landpatch, irrig_rate            , defval = 0._r8)
+      CALL ncio_read_vector (file_restart, 'sum_irrig             ' , landpatch, sum_irrig             , defval = 0._r8)
+      CALL ncio_read_vector (file_restart, 'sum_deficit_irrig     ' , landpatch, sum_deficit_irrig     , defval = 0._r8)
+      CALL ncio_read_vector (file_restart, 'sum_irrig_count       ' , landpatch, sum_irrig_count       , defval = 0._r8)
+      CALL ncio_read_vector (file_restart, 'n_irrig_steps_left    ' , landpatch, n_irrig_steps_left    , defval = 0)
+      CALL ncio_read_vector (file_restart, 'waterstorage          ' , landpatch, waterstorage          , defval = 0._r8)
+      CALL ncio_read_vector (file_restart, 'irrig_method_corn     ' , landpatch, irrig_method_corn     , defval = 0)
+      CALL ncio_read_vector (file_restart, 'irrig_method_swheat   ' , landpatch, irrig_method_swheat   , defval = 0)
+      CALL ncio_read_vector (file_restart, 'irrig_method_wwheat   ' , landpatch, irrig_method_wwheat   , defval = 0)
+      CALL ncio_read_vector (file_restart, 'irrig_method_soybean  ' , landpatch, irrig_method_soybean  , defval = 0)
+      CALL ncio_read_vector (file_restart, 'irrig_method_cotton   ' , landpatch, irrig_method_cotton   , defval = 0)
+      CALL ncio_read_vector (file_restart, 'irrig_method_rice1    ' , landpatch, irrig_method_rice1    , defval = 0)
+      CALL ncio_read_vector (file_restart, 'irrig_method_rice2    ' , landpatch, irrig_method_rice2    , defval = 0)
+      CALL ncio_read_vector (file_restart, 'irrig_method_sugarcane' , landpatch, irrig_method_sugarcane, defval = 0)
+      CALL ncio_read_vector (file_restart, 'irrig_gw_alloc        ' , landpatch, irrig_gw_alloc        , defval = 0._r8)
+      CALL ncio_read_vector (file_restart, 'irrig_sw_alloc        ' , landpatch, irrig_sw_alloc        , defval = 0._r8)
+      CALL ncio_read_vector (file_restart, 'zwt_stand             ' , landpatch, zwt_stand             , defval = 0._r8)
 ENDIF
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
@@ -1572,7 +1610,8 @@ ENDIF
    USE MOD_SPMD_Task
    USE MOD_RangeCheck
    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, DEF_USE_IRRIGATION, &
-                           DEF_USE_SNICAR, DEF_USE_Dynamic_Lake
+                           DEF_USE_SNICAR, DEF_USE_Dynamic_Lake, DEF_WETLAND_INFLOW_AREA_SPLIT, &
+                           DEF_WETLAND_LATERAL_INFLOW, DEF_FLOODPLAIN_INFILTRATION, DEF_FLOODPLAIN_INFILT_FIX
    USE MOD_Vars_TimeInvariants, only: dz_lake
 
    IMPLICIT NONE
@@ -1613,6 +1652,14 @@ ENDIF
       CALL check_vector_data ('zwt         [m]    ', zwt        ) ! the depth to water table [m]
       CALL check_vector_data ('wa          [mm]   ', wa         ) ! water storage in aquifer [mm]
       CALL check_vector_data ('wetwat      [mm]   ', wetwat     ) ! water storage in wetland [mm]
+      IF (DEF_WETLAND_INFLOW_AREA_SPLIT) &
+      CALL check_vector_data ('wetdef_noinfl [mm] ', wetdef_noinfl) ! deficit of the wetland share without inflow [mm]
+      IF (DEF_WETLAND_LATERAL_INFLOW) &
+      CALL check_vector_data ('wetlatin    [mm/s] ', wetlatin     ) ! lateral inflow offered to a wetland [mm/s]
+      IF (DEF_FLOODPLAIN_INFILTRATION .and. DEF_FLOODPLAIN_INFILT_FIX) THEN
+      CALL check_vector_data ('fld_inf_left  [mm] ', fld_inf_left ) ! re-infiltration the current flood may still give [mm]
+      CALL check_vector_data ('fld_frc_evt   [-]  ', fld_frc_evt  ) ! largest flooded fraction of the current flood [-]
+      ENDIF
       CALL check_vector_data ('wdsrf       [mm]   ', wdsrf      ) ! depth of surface water [mm]
       CALL check_vector_data ('rss         [s/m]  ', rss        ) ! soil surface resistance [s/m]
 IF (DEF_USE_Dynamic_Lake) THEN

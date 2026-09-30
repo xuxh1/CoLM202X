@@ -74,11 +74,13 @@ MODULE MOD_Vars_1DFluxes
    real(r8), allocatable :: rsur_ie(:) !infiltration excess surface runoff (mm h2o/s)
    real(r8), allocatable :: rsub   (:) !subsurface runoff (mm h2o/s)
    real(r8), allocatable :: rnof   (:) !total runoff (mm h2o/s)
+   real(r8), allocatable :: wetinflow(:) !lateral inflow taken by a dynamic wetland (mm h2o/s)
    real(r8), allocatable :: qintr  (:) !interception (mm h2o/s)
    real(r8), allocatable :: qinfl  (:) !infiltration (mm h2o/s)
    real(r8), allocatable :: qdrip  (:) !throughfall (mm h2o/s)
    real(r8), allocatable :: assim  (:) !canopy assimilation rate (mol m-2 s-1)
    real(r8), allocatable :: respc  (:) !canopy respiration (mol m-2 s-1)
+   real(r8), allocatable :: raw_grnd(:) !water vapour aerodynamic resistance, ground to reference height [s/m]
 
    real(r8), allocatable :: qcharge(:) !groundwater recharge [mm/s]
 
@@ -164,11 +166,13 @@ CONTAINS
             allocate ( rsur_ie(numpatch) )  ; rsur_ie(:) = spval ! infiltration excess surface runoff (mm h2o/s)
             allocate ( rsub   (numpatch) )  ; rsub   (:) = spval ! subsurface runoff (mm h2o/s)
             allocate ( rnof   (numpatch) )  ; rnof   (:) = spval ! total runoff (mm h2o/s)
+            allocate ( wetinflow(numpatch) ); wetinflow(:) = 0._r8 ! lateral inflow taken by a dynamic wetland (mm h2o/s)
             allocate ( qintr  (numpatch) )  ; qintr  (:) = spval ! interception (mm h2o/s)
             allocate ( qinfl  (numpatch) )  ; qinfl  (:) = spval ! infiltration (mm h2o/s)
             allocate ( qdrip  (numpatch) )  ; qdrip  (:) = spval ! throughfall (mm h2o/s)
             allocate ( assim  (numpatch) )  ; assim  (:) = spval ! canopy assimilation rate (mol m-2 s-1)
             allocate ( respc  (numpatch) )  ; respc  (:) = spval ! canopy respiration (mol m-2 s-1)
+            allocate ( raw_grnd(numpatch) ) ; raw_grnd(:) = spval ! water vapour aerodynamic resistance, ground to reference height [s/m]
 
             allocate ( qcharge(numpatch) )  ; qcharge(:) = spval ! groundwater recharge [mm/s]
 
@@ -261,11 +265,13 @@ CONTAINS
             deallocate ( rsur_ie )  ! infiltration excess surface runoff (mm h2o/s)
             deallocate ( rsub    )  ! subsurface runoff (mm h2o/s)
             deallocate ( rnof    )  ! total runoff (mm h2o/s)
+            deallocate ( wetinflow )  ! lateral inflow taken by a dynamic wetland (mm h2o/s)
             deallocate ( qintr   )  ! interception (mm h2o/s)
             deallocate ( qinfl   )  ! infiltration (mm h2o/s)
             deallocate ( qdrip   )  ! throughfall (mm h2o/s)
             deallocate ( assim   )  ! canopy assimilation rate (mol m-2 s-1)
             deallocate ( respc   )  ! canopy respiration (mol m-2 s-1)
+            deallocate ( raw_grnd)  ! water vapour aerodynamic resistance, ground to reference height [s/m]
 
             deallocate ( qcharge )  ! groundwater recharge [mm/s]
             deallocate ( qlayer  )  ! water flux between soil layer [mm h2o/s]

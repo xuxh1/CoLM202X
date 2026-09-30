@@ -138,10 +138,17 @@ CONTAINS
    USE MOD_Hydro_SoilFunction, only: soil_psi_from_vliq
 #endif
    USE MOD_SPMD_Task
+   USE MOD_Vars_1DFluxes, only: raw_grnd
    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_RSS_SCHEME, DEF_SPLIT_SOILSNOW, &
-                           DEF_USE_LCT,DEF_USE_PFT,DEF_USE_PC,DEF_PC_CROP_SPLIT
+                           DEF_USE_LCT,DEF_USE_PFT,DEF_USE_PC,DEF_PC_CROP_SPLIT, &
+                           DEF_PONDING_HEAT, DEF_WETLAND_POND_LITTER_RSS
+   USE MOD_Vars_TimeVariables, only: wdsrf, fveg
 #ifdef TRACER
    USE MOD_Namelist, only: DEF_VEG_SNOW
+#endif
+#if (defined TRACER) && (defined BGC)
+   USE MOD_Vars_TimeVariables, only: zwt
+   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_moss_rss, wetland_emergent_share
 #endif
 #if (defined CaMa_Flood) || (defined GridRiverLakeFlow)
    USE MOD_CaMa_colmCaMa, only: get_fldevp
@@ -464,6 +471,7 @@ CONTAINS
        t_soil,                   &! ground soil temperature
        t_snow,                   &! ground snow temperature
        t_soisno_bef(lb:nl_soil), &! soil/snow temperature before update
+       wpond,                    &! ponded water in the first soil layer heat capacity [kg/m2]
        tinc,                     &! temperature difference of two time step
        ur,                       &! wind speed at reference height [m/s]
        ulrad,                    &! upward longwave radiation above the canopy [W/m2]
@@ -524,6 +532,20 @@ CONTAINS
    real(r8), allocatable :: assimsha_p    (:)
    real(r8), allocatable :: etrsha_p      (:)
    real(r8), allocatable :: dheatl_p      (:)
+   real(r8), allocatable :: raw_grnd_p    (:)
+   real(r8) :: raw_grnd_pc  ! ground to reference height resistance of the PC canopy [s/m]
+   real(r8) :: cond_grnd    ! fraction-weighted ground to reference height conductance [m/s]
+   real(r8) :: rss_min  ! floor of the snow-free soil surface resistance [s/m]
+   real(r8) :: rss_open ! soil surface resistance of the open ground of [3] [s/m]
+
+   ! canopy on a fraction of a tower wetland patch (C-83)
+   real(r8) :: fcan                        ! vegetated fraction of the patch [-]
+   real(r8) :: lai_c, sai_c                ! leaf and stem area index of the canopy part [-]
+   real(r8) :: sabv_c, parsun_c, parsha_c  ! solar radiation and PAR per unit canopy area [W/m2]
+   real(r8) :: qintr_rain_c, qintr_snow_c  ! interception per unit canopy area [mm/s]
+   real(r8) :: taux_o, tauy_o, fseng_o, fseng_soil_o, fseng_snow_o, &
+               fevpg_o, fevpg_soil_o, fevpg_snow_o, cgrnd_o, cgrndl_o, cgrnds_o, &
+               tref_o, qref_o, ulrad_o, raw_o   ! open ground, from GroundFluxes in [3]
 #ifdef TRACER
    real(r8) :: canopy_smelt_mass_local, canopy_frzc_mass_local, raw_trc_local, raw_trc_pc
    real(r8), allocatable :: canopy_smelt_mass_p_local(:), canopy_frzc_mass_p_local(:), raw_trc_p(:)
@@ -689,6 +711,18 @@ ENDIF
 
          !NOTE: If the beta scheme is used, the rss is not soil resistance,
          !but soil beta factor (soil wetness relative to field capacity [0-1]).
+         rss_min = 0.
+         ! litter over the ponded water of a wetland tile
+         IF ((patchtype==2) .and. (wdsrf(ipatch) > 1.)) &
+            rss_min = max(DEF_WETLAND_POND_LITTER_RSS, 0.)
+#if (defined TRACER) && (defined BGC)
+         ! the litter mat of emergent marshes, on the emergent marsh share of
+         ! the tile (the temperate marsh class, 1 or 0, without C-88)
+         rss_min = rss_min * wetland_emergent_share(ipatch)
+         ! moss and peat surface of a dynamic wetland tile (C-26)
+         IF (DEF_USE_Dynamic_Wetland .and. (patchtype==2)) &
+            rss_min = max(rss_min, wetland_moss_rss(ipatch, zwt(ipatch), wdsrf(ipatch)))
+#endif
          CALL SoilSurfaceResistance (nl_soil,forc_rhoair,hksati,porsl,psi0, &
 #ifdef Campbell_SOIL_MODEL
                             bsw, &
@@ -696,13 +730,35 @@ ENDIF
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
                             theta_r, alpha_vgm, n_vgm, L_vgm, sc_vgm, fc_vgm, &
 #endif
-                            dz_soisno,t_soisno,wliq_soisno,wice_soisno,fsno,qg,rss)
+                            dz_soisno,t_soisno,wliq_soisno,wice_soisno,fsno,qg,rss,rss_min)
       ELSE
          IF (DEF_RSS_SCHEME == 4) THEN
             rss = 1.        !LP92
          ELSE
             rss = 0.        !the other RSS schemes
          ENDIF
+      ENDIF
+
+      ! Tower wetland with a vegetated fraction (C-83): the pond litter lies
+      ! under the canopy only; the open water, the bare ground of [3] when the
+      ! canopy is solved in [4], evaporates without it
+      rss_open = rss
+      IF (DEF_RSS_SCHEME>0 .and. rss/=spval .and. (patchtype==2) .and. (wdsrf(ipatch) > 1.) &
+          .and. (DEF_WETLAND_POND_LITTER_RSS > 0.) .and. (fveg(ipatch) > 0.) .and. (fveg(ipatch) < 1.) &
+          .and. (lai+sai > 1e-6)) THEN
+         rss_min = 0.
+#if (defined TRACER) && (defined BGC)
+         IF (DEF_USE_Dynamic_Wetland) &
+            rss_min = wetland_moss_rss(ipatch, zwt(ipatch), wdsrf(ipatch))
+#endif
+         CALL SoilSurfaceResistance (nl_soil,forc_rhoair,hksati,porsl,psi0, &
+#ifdef Campbell_SOIL_MODEL
+                            bsw, &
+#endif
+#ifdef vanGenuchten_Mualem_SOIL_MODEL
+                            theta_r, alpha_vgm, n_vgm, L_vgm, sc_vgm, fc_vgm, &
+#endif
+                            dz_soisno,t_soisno,wliq_soisno,wice_soisno,fsno,qg,rss_open,rss_min)
       ENDIF
 
 !=======================================================================
@@ -714,7 +770,7 @@ ENDIF
       ! Always CALL GroundFluxes for bare ground CASE
       CALL GroundFluxes (zlnd,zsno,forc_hgt_u,forc_hgt_t,forc_hgt_q,forc_hpbl, &
                          forc_us,forc_vs,forc_t,forc_q,forc_rhoair,forc_psrf, &
-                         ur,thm,th,thv,t_grnd,qg,rss,dqgdT,htvp, &
+                         ur,thm,th,thv,t_grnd,qg,rss_open,dqgdT,htvp, &
                          fsno,cgrnd,cgrndl,cgrnds, &
                          t_soil,t_snow,q_soil,q_snow, &
                          !taux,tauy,fseng,fevpg,tref,qref, &
@@ -729,6 +785,11 @@ ENDIF
 
       obu_g = forc_hgt_u / zol_g
 
+      ! Water vapour aerodynamic resistance from the ground to the reference
+      ! height, bare-ground value (raw of GroundFluxes); replaced below where a
+      ! canopy is solved. Soil surface resistance rss is not included.
+      raw_grnd(ipatch) = 1./(vonkar/fq_g*ustar_g)
+
 
 !=======================================================================
 ! [4] Canopy temperature, fluxes from the canopy
@@ -738,7 +799,54 @@ IF ( patchtype==0.and.DEF_USE_LCT .or. patchtype>0 ) THEN
 
       sabv = sabvsun + sabvsha
 
+      ! Tower wetland (C-83, DEF_WETLAND_FVEG_SITE): the canopy fills fcan =
+      ! fveg of the patch and the open rest keeps the bare-ground fluxes of
+      ! [3]. The canopy is solved per unit canopy area, with the leaf and stem
+      ! area, absorbed radiation, foliage water and interception divided by
+      ! fcan, and the two parts are averaged as the PFTs of a soil patch.
+      ! fcan = 1 on every other patch, where the canopy covers the patch.
+      fcan = 1.
+      IF (patchtype == 2 .and. fveg(ipatch) > 0. .and. fveg(ipatch) < 1.) fcan = fveg(ipatch)
+
       IF (lai+sai > 1e-6) THEN
+
+         lai_c        = lai
+         sai_c        = sai
+         sabv_c       = sabv
+         parsun_c     = parsun
+         parsha_c     = parsha
+         qintr_rain_c = qintr_rain
+         qintr_snow_c = qintr_snow
+
+         IF (fcan < 1.) THEN
+            lai_c        = lai        / fcan
+            sai_c        = sai        / fcan
+            sabv_c       = sabv       / fcan
+            parsun_c     = parsun     / fcan
+            parsha_c     = parsha     / fcan
+            qintr_rain_c = qintr_rain / fcan
+            qintr_snow_c = qintr_snow / fcan
+            ldew         = ldew       / fcan
+            ldew_rain    = ldew_rain  / fcan
+            ldew_snow    = ldew_snow  / fcan
+
+            ! open ground, before LeafTemperature overwrites them
+            taux_o       = taux
+            tauy_o       = tauy
+            fseng_o      = fseng
+            fseng_soil_o = fseng_soil
+            fseng_snow_o = fseng_snow
+            fevpg_o      = fevpg
+            fevpg_soil_o = fevpg_soil
+            fevpg_snow_o = fevpg_snow
+            cgrnd_o      = cgrnd
+            cgrndl_o     = cgrndl
+            cgrnds_o     = cgrnds
+            tref_o       = tref
+            qref_o       = qref
+            ulrad_o      = ulrad
+            raw_o        = raw_grnd(ipatch)
+         ENDIF
 
          ! soil water stress factor on stomatal resistance
          CALL eroot (nl_soil,trsmx0,porsl,&
@@ -751,23 +859,23 @@ IF ( patchtype==0.and.DEF_USE_LCT .or. patchtype>0 ) THEN
             psi0,rootfr,dz_soisno,t_soisno,wliq_soisno,rootr,etrc,rstfac)
 
          ! fraction of sunlit and shaded leaves of canopy
-         fsun = ( 1. - exp(-min(extkb*lai,40.))) / max( min(extkb*lai,40.), 1.e-6 )
+         fsun = ( 1. - exp(-min(extkb*lai_c,40.))) / max( min(extkb*lai_c,40.), 1.e-6 )
 
-         IF (coszen<=0.0 .or. sabv<1.) fsun = 0.5
+         IF (coszen<=0.0 .or. sabv_c<1.) fsun = 0.5
 
-         laisun = lai*fsun
-         laisha = lai*(1-fsun)
+         laisun = lai_c*fsun
+         laisha = lai_c*(1-fsun)
          rstfacsun_out = rstfac
          rstfacsha_out = rstfac
 
          CALL LeafTemperature(ipatch,1,deltim,csoilc   ,dewmx       ,htvp        ,&
-                 lai         ,sai         ,htop        ,hbot        ,sqrtdi      ,&
+                 lai_c       ,sai_c       ,htop        ,hbot        ,sqrtdi      ,&
                  effcon      ,vmax25      ,c3c4        ,slti        ,hlti        ,shti        ,&
                  hhti        ,trda        ,trdm        ,trop        ,g1          ,&
                  g0          ,gradm       ,binter      ,extkn       ,extkb       ,&
                  extkd       ,forc_hgt_u  ,forc_hgt_t  ,forc_hgt_q  ,forc_us     ,&
                  forc_vs     ,thm         ,th          ,thv         ,forc_q      ,&
-                 forc_psrf   ,forc_rhoair ,parsun      ,parsha      ,sabv        ,&
+                 forc_psrf   ,forc_rhoair ,parsun_c    ,parsha_c    ,sabv_c      ,&
                  frl         ,fsun        ,thermk    ,rstfacsun_out,rstfacsha_out,&
                  gssun_out   ,gssha_out   ,forc_po2m   ,forc_pco2m  ,z0h_g       ,&
                  obu_g       ,ustar_g     ,zlnd        ,zsno        ,fsno        ,&
@@ -794,14 +902,75 @@ IF ( patchtype==0.and.DEF_USE_LCT .or. patchtype>0 ) THEN
                  lambda      ,&! Marginal water cost of carbon gain ((mol h2o) (mol co2)-1)
 !End WUE stomata model parameter
                  forc_hpbl   ,&
-                 qintr_rain  ,qintr_snow  ,t_precip    ,hprl        ,dheatl      ,&
+                 qintr_rain_c,qintr_snow_c,t_precip    ,hprl        ,dheatl      ,&
                  smp         ,hk(1:)      ,hksati(1:)  ,rootflux(1:)              &
+                ,raw_grnd_out=raw_grnd(ipatch)                                   &
 #ifdef TRACER
                 ,canopy_smelt_mass_out=canopy_smelt_mass_local, &
                  canopy_frzc_mass_out =canopy_frzc_mass_local, &
                  raw_trc_out=raw_trc_local                     &
 #endif
                  )
+
+         ! sai may be raised to its floor under plant hydraulics
+         sai = sai_c
+
+         IF (fcan < 1.) THEN
+            ! Patch means: canopy fluxes and water times fcan; turbulent and
+            ! ground fluxes averaged with the open ground (bare PFT of a soil
+            ! patch). Leaf temperature, vegetation water potential, stomatal
+            ! terms, ozone state and z0m stay those of the canopy, which the
+            ! next step, interception and snow burial read.
+            sai          = sai_c        * fcan
+            laisun       = laisun       * fcan
+            laisha       = laisha       * fcan
+            ldew         = ldew         * fcan
+            ldew_rain    = ldew_rain    * fcan
+            ldew_snow    = ldew_snow    * fcan
+            assim        = assim        * fcan
+            respc        = respc        * fcan
+            fsenl        = fsenl        * fcan
+            fevpl        = fevpl        * fcan
+            etr          = etr          * fcan
+            hprl         = hprl         * fcan
+            dheatl       = dheatl       * fcan
+            assimsun_out = assimsun_out * fcan
+            etrsun_out   = etrsun_out   * fcan
+            assimsha_out = assimsha_out * fcan
+            etrsha_out   = etrsha_out   * fcan
+            rootflux(:)  = rootflux(:)  * fcan
+#ifdef TRACER
+            canopy_smelt_mass_local = canopy_smelt_mass_local * fcan
+            canopy_frzc_mass_local  = canopy_frzc_mass_local  * fcan
+#endif
+
+            taux       = fcan*taux       + (1.-fcan)*taux_o
+            tauy       = fcan*tauy       + (1.-fcan)*tauy_o
+            fseng      = fcan*fseng      + (1.-fcan)*fseng_o
+            fseng_soil = fcan*fseng_soil + (1.-fcan)*fseng_soil_o
+            fseng_snow = fcan*fseng_snow + (1.-fcan)*fseng_snow_o
+            fevpg      = fcan*fevpg      + (1.-fcan)*fevpg_o
+            fevpg_soil = fcan*fevpg_soil + (1.-fcan)*fevpg_soil_o
+            fevpg_snow = fcan*fevpg_snow + (1.-fcan)*fevpg_snow_o
+            cgrnd      = fcan*cgrnd      + (1.-fcan)*cgrnd_o
+            cgrndl     = fcan*cgrndl     + (1.-fcan)*cgrndl_o
+            cgrnds     = fcan*cgrnds     + (1.-fcan)*cgrnds_o
+            tref       = fcan*tref       + (1.-fcan)*tref_o
+            qref       = fcan*qref       + (1.-fcan)*qref_o
+            dlrad      = fcan*dlrad      + (1.-fcan)*frl
+            ulrad      = fcan*ulrad      + (1.-fcan)*ulrad_o
+            zol        = fcan*zol        + (1.-fcan)*zol_g
+            rib        = fcan*rib        + (1.-fcan)*rib_g
+            ustar      = fcan*ustar      + (1.-fcan)*ustar_g
+            qstar      = fcan*qstar      + (1.-fcan)*qstar_g
+            tstar      = fcan*tstar      + (1.-fcan)*tstar_g
+            fm         = fcan*fm         + (1.-fcan)*fm_g
+            fh         = fcan*fh         + (1.-fcan)*fh_g
+            fq         = fcan*fq         + (1.-fcan)*fq_g
+
+            ! conductances in parallel, as for the PFTs of a soil patch
+            raw_grnd(ipatch) = 1./(fcan/raw_grnd(ipatch) + (1.-fcan)/raw_o)
+         ENDIF
       ELSE
          tleaf         = forc_t
          laisun        = 0.
@@ -868,6 +1037,9 @@ IF (patchtype == 0) THEN
       allocate ( assimsha_p       (ps:pe) )
       allocate ( etrsha_p         (ps:pe) )
       allocate ( dheatl_p         (ps:pe) )
+      allocate ( raw_grnd_p       (ps:pe) )
+      ! bare-ground value until a canopy is solved for the PFT
+      raw_grnd_p(:) = raw_grnd(ipatch)
 #ifdef TRACER
       allocate ( canopy_smelt_mass_p_local(ps:pe) )
       allocate ( canopy_frzc_mass_p_local (ps:pe) )
@@ -1030,9 +1202,11 @@ IF (patchtype == 0) THEN
                 ,canopy_smelt_mass_out=canopy_smelt_mass_p_local(i), &
                  canopy_frzc_mass_out =canopy_frzc_mass_p_local (i), &
                  raw_trc_out=raw_trc_p(i),                           &
-                 ipft_index=i)
+                 ipft_index=i                                       &
+                ,raw_grnd_out=raw_grnd_p(i))
 #else
-                 smp             ,hk(1:)          ,hksati(1:)      ,rootflux_p(1:,i)                )
+                 smp             ,hk(1:)          ,hksati(1:)      ,rootflux_p(1:,i)                &
+                ,raw_grnd_out=raw_grnd_p(i)                                                         )
 #endif
          ELSE
 
@@ -1050,6 +1224,7 @@ IF (patchtype == 0) THEN
                                qstar_p(i),tstar_p(i),fm_p(i),fh_p(i),fq_p(i))
 #endif
 
+            raw_grnd_p   (i) = 1./(vonkar/fq_p(i)*ustar_p(i))
             tleaf_p      (i) = forc_t
             gssun_p      (i) = 0.
             gssha_p      (i) = 0.
@@ -1170,6 +1345,7 @@ IF ( DEF_USE_PC .and. pn.ge.ps ) THEN
          qintr_rain_p(ps:pe)  ,qintr_snow_p(ps:pe)  ,t_precip             ,hprl_p(:)            ,&
          dheatl_p(ps:pe)      ,smp                  ,hk(1:)               ,hksati(1:)           ,&
          rootflux_p(:,:)                                                                  &
+        ,raw_grnd_out=raw_grnd_pc                                                         &
 #ifdef TRACER
         ,canopy_smelt_mass_p_out=canopy_smelt_mass_p_local(ps:pe),&
          canopy_frzc_mass_p_out =canopy_frzc_mass_p_local (ps:pe),&
@@ -1204,6 +1380,7 @@ IF ( DEF_USE_PC .and. pn.ge.ps ) THEN
 #ifdef TRACER
       raw_trc_p    (ps:pe) = raw_trc_pc
 #endif
+      IF (raw_grnd_pc > 0.) raw_grnd_p(ps:pe) = raw_grnd_pc
 ENDIF
 
       pe = patch_pft_e(ipatch)
@@ -1248,6 +1425,11 @@ ENDIF
       fm            = sum( fm_p        (ps:pe)*pftfrac(ps:pe) )
       fh            = sum( fh_p        (ps:pe)*pftfrac(ps:pe) )
       fq            = sum( fq_p        (ps:pe)*pftfrac(ps:pe) )
+
+      ! PFT conductances in parallel, weighted by fraction (as CLM's p2c of
+      ! grnd_ch4_cond); an empty PFT slice keeps the bare-ground value
+      cond_grnd     = sum( pftfrac(ps:pe)/raw_grnd_p(ps:pe) )
+      IF (cond_grnd > 0.) raw_grnd(ipatch) = 1./cond_grnd
 
       rstfacsun_out = sum( rstfacsun_p (ps:pe)*pftfrac(ps:pe) )
       rstfacsha_out = sum( rstfacsha_p (ps:pe)*pftfrac(ps:pe) )
@@ -1322,6 +1504,7 @@ END IF
       deallocate ( assimsha_p  )
       deallocate ( etrsha_p    )
       deallocate ( dheatl_p    )
+      deallocate ( raw_grnd_p  )
 #ifdef TRACER
       deallocate ( canopy_smelt_mass_p_local )
       deallocate ( canopy_frzc_mass_p_local  )
@@ -1375,6 +1558,11 @@ ENDIF
 ! [5] Ground temperature
 !=======================================================================
 
+      ! Ponded water of soil, urban and wetland ground joins the heat
+      ! capacity of the first soil layer (DEF_PONDING_HEAT); zero otherwise
+      wpond = 0.
+      IF (DEF_PONDING_HEAT .and. patchtype <= 2) wpond = max(wdsrf(ipatch), 0.)
+
       CALL GroundTemperature (patchtype,is_dry_lake,lb,nl_soil,deltim,&
                       capr,cnfac,vf_quartz,vf_gravels,vf_om,vf_sand,wf_gravels,wf_sand,&
                       porsl,psi0,&
@@ -1391,7 +1579,7 @@ ENDIF
                       t_soisno,t_grnd,t_soil,t_snow,wice_soisno,wliq_soisno,scv,snowdp,fsno,&
                       frl,dlrad,sabg,sabg_soil,sabg_snow,sabg_snow_lyr,&
                       fseng,fseng_soil,fseng_snow,fevpg,fevpg_soil,fevpg_snow,cgrnd,htvp,emg,&
-                      imelt,snofrz,sm,xmf,fact,pg_rain,pg_snow,t_precip &
+                      imelt,snofrz,sm,xmf,fact,pg_rain,pg_snow,t_precip,wpond &
 #ifdef TRACER
                      ,qphs_thaw_lay=qphs_thaw_lay_th, &
                       qphs_frzc_lay=qphs_frzc_lay_th &

@@ -298,6 +298,7 @@ MODULE MOD_BGC_Vars_1DPFTFluxes
    real(r8), allocatable :: psn_to_cpool_p               (:) ! pft level: photosynthesis rate (gC m-2 s-1)
    real(r8), allocatable :: gpp_p                        (:) ! pft level: gross primary production (gC m-2 s-1)
    real(r8), allocatable :: availc_p                     (:) ! pft level: available C (gC m-2 s-1)
+   real(r8), allocatable :: rice_exudc_p                 (:) ! pft level: rice root exudate C to metabolic litter (gC m-2 s-1), C-37
    real(r8), allocatable :: avail_retransn_p             (:) ! pft level: available retranslocated N (gN m-2 s-1)
    real(r8), allocatable :: xsmrpool_recover_p           (:) ! pft level: available C to maintenance respiration storage C to recover previous excess mainte
    real(r8), allocatable :: excess_cflux_p               (:) ! pft level: excess C due to N limitation (gC m-2 s-1)
@@ -629,6 +630,7 @@ CONTAINS
             allocate (psn_to_cpool_p               (numpft)) ; psn_to_cpool_p               (:) = spval
             allocate (gpp_p                        (numpft)) ; gpp_p                        (:) = spval
             allocate (availc_p                     (numpft)) ; availc_p                     (:) = spval
+            allocate (rice_exudc_p                 (numpft)) ; rice_exudc_p                 (:) = 0._r8
             allocate (avail_retransn_p             (numpft)) ; avail_retransn_p             (:) = spval
             allocate (xsmrpool_recover_p           (numpft)) ; xsmrpool_recover_p           (:) = spval
             allocate (excess_cflux_p               (numpft)) ; excess_cflux_p               (:) = spval
@@ -951,6 +953,7 @@ CONTAINS
             deallocate (psn_to_cpool_p               )
             deallocate (gpp_p                        )
             deallocate (availc_p                     )
+            deallocate (rice_exudc_p                 )
             deallocate (avail_retransn_p             )
             deallocate (xsmrpool_recover_p           )
             deallocate (excess_cflux_p               )

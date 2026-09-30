@@ -255,6 +255,22 @@ CONTAINS
                   green(npatch) = 0.
                ENDIF
 
+#ifdef SinglePoint
+               ! Tower wetland (C-83): vegetated fraction from the measured cover
+               ! of the footprint. tlai and tsai stay patch means, as the methane
+               ! module, the wetland LAI cap and interception read them; albland
+               ! and THERMAL solve the canopy at lai/fveg and sai/fveg over the
+               ! vegetated fraction and average it with the open rest.
+               IF (DEF_WETLAND_FVEG_SITE >= 0. .and. patchtype(npatch) == 2) THEN
+                  fveg(npatch) = min(DEF_WETLAND_FVEG_SITE, 1._r8)
+                  IF (fveg(npatch) <= 0.) THEN
+                     tlai(npatch)  = 0.
+                     tsai(npatch)  = 0.
+                     green(npatch) = 0.
+                  ENDIF
+               ENDIF
+#endif
+
             ENDDO
          ENDIF
       ENDIF

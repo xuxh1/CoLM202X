@@ -170,6 +170,13 @@ SUBROUTINE CoLMMAIN ( &
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
    USE MOD_LandPFT, only: patch_pft_s, patch_pft_e
    USE MOD_Vars_PFTimeInvariants, only: pftfrac
+   USE MOD_FloodInfiltration, only: fld_qinfl_p
+   USE MOD_Namelist, only: DEF_FLOODPLAIN_INFILTRATION
+#ifdef CROP
+   USE MOD_Vars_PFTimeInvariants, only: pftclass
+   USE MOD_BGC_Vars_PFTimeVariables, only: croplive_p
+   USE MOD_Namelist, only: DEF_CROP_FALLOW_NO_LAI
+#endif
    USE MOD_Vars_PFTimeVariables, only: tlai_p, lai_p, tsai_p, sai_p, sigf_p
 #endif
    USE MOD_RainSnowTemp, only: rain_snow_temp
@@ -201,9 +208,12 @@ SUBROUTINE CoLMMAIN ( &
    USE MOD_TimeManager
    USE MOD_Namelist, only: DEF_Interception_scheme, DEF_USE_VariablySaturatedFlow, &
       DEF_USE_PLANTHYDRAULICS, DEF_USE_IRRIGATION, DEF_SPLIT_SOILSNOW, &
-      DEF_USE_Dynamic_Wetland, DEF_VEG_SNOW, DEF_URBAN_RUN
+      DEF_USE_Dynamic_Wetland, DEF_VEG_SNOW, DEF_URBAN_RUN, USE_SITE_WTD
+#ifdef SinglePoint
+   USE MOD_SingleSrfdata, only: SITE_WTD_valid
+#endif
    USE MOD_Tracer_LandPhase, only: ntracers, trc_tiny, tracer_uses_land_water_transport, &
-      tracer_precip, tracer_evapo, tracer_flood_evap_loss, tracer_soil_water, tracer_wetland, &
+      tracer_precip, tracer_evapo, tracer_flood_evap_loss, tracer_soil_water, tracer_wetland, tracer_prescribed_column, &
       tracer_newsnow, tracer_save_storage, tracer_balance_check, &
       tracer_apply_reactive_processes, &
       trc_wliq_soisno, trc_wice_soisno, trc_solid_soisno, trc_scv, &
@@ -270,7 +280,7 @@ SUBROUTINE CoLMMAIN ( &
 #endif
 #endif
 #ifdef CROP
-   USE MOD_Irrigation, only: CalIrrigationApplicationFluxes
+   USE MOD_Irrigation, only: CalIrrigationApplicationFluxes, CalPaddyFallowFlood
 #endif
    USE MOD_SPMD_Task
 
@@ -728,6 +738,8 @@ SUBROUTINE CoLMMAIN ( &
    integer ps, pe, pc
 
 #endif
+   integer :: mpft             ! pft index for the crop fallow LAI (Q-33)
+   logical :: fallow_zeroed
 #if (defined CaMa_Flood)
    !add variables for flood evaporation [mm/s] and re-infiltration [mm/s] calculation.
    real(r8) :: kk
@@ -919,6 +931,9 @@ SUBROUTINE CoLMMAIN ( &
             waterstorage_trc_beg = max(waterstorage(ipatch), 0._r8)
 #endif
             IF (patchtype == 0) THEN
+               ! candidate 25: pre-sowing flood window of irrigated paddies,
+               ! set before the hydrology bunds the field (off: all false)
+               CALL CalPaddyFallowFlood(ipatch,idate)
                CALL CalIrrigationApplicationFluxes(ipatch,deltim,qflx_irrig_drip, &
                   qflx_irrig_sprinkler,qflx_irrig_flood,qflx_irrig_paddy)
             ENDIF
@@ -1358,7 +1373,17 @@ SUBROUTINE CoLMMAIN ( &
             qcharge_trc = (wa - wa_old_trc + etroot_aquifer_trc + &
                max(rsub_source_aquifer_trc, 0._r8)) / max(deltim, trc_tiny)
 
+#ifdef SinglePoint
+            IF (USE_SITE_WTD .and. SITE_WTD_valid) THEN
+               ! Observed water table (B-3): the host column was re-diagnosed,
+               ! not fluxed; keep every pool's tracer ratio.
+               CALL tracer_prescribed_column (ipatch, nl_soil, &
+                  wliq_soisno(1:nl_soil), wliq_soisno_old_trc(1:nl_soil), &
+                  wa, wa_old_trc, wdsrf, wdsrf_old_trc, wetwat, wetwat_old_trc)
+            ELSEIF (patchtype == 2 .and. .not. DEF_USE_Dynamic_Wetland) THEN
+#else
             IF (patchtype == 2 .and. .not. DEF_USE_Dynamic_Wetland) THEN
+#endif
                CALL tracer_wetland(ipatch, deltim, snl, nl_soil, &
                   rsur, &
                   qseva, qsdew, qsubl, qfros, &
@@ -1616,6 +1641,10 @@ SUBROUTINE CoLMMAIN ( &
             ENDIF
          ENDIF
 #endif
+         ! Q-43: flood water that re-infiltrated this step came from the routing
+         IF (DEF_FLOODPLAIN_INFILTRATION .and. allocated(fld_qinfl_p)) THEN
+            IF (ipatch >= 1 .and. ipatch <= size(fld_qinfl_p)) endwb = endwb - fld_qinfl_p(ipatch)*deltim
+         ENDIF
 
 #ifndef CatchLateralFlow
          errorw=(endwb-totwb)-(forc_prc+forc_prl-fevpa-rnof)*deltim
@@ -1634,6 +1663,10 @@ SUBROUTINE CoLMMAIN ( &
          IF (.not. DEF_USE_VariablySaturatedFlow) THEN
             IF (patchtype==2) errorw=0.    !wetland
          ENDIF
+#ifdef SinglePoint
+         ! Observed water table: the column is a forcing, not a budget (B-3)
+         IF (USE_SITE_WTD .and. SITE_WTD_valid) errorw = 0.
+#endif
 
          xerr=errorw/deltim
 #ifdef TRACER
@@ -2227,6 +2260,21 @@ SUBROUTINE CoLMMAIN ( &
                   lai_p(ps:pe) = tlai_p(ps:pe)*sigf_p(ps:pe)
                   lai = sum(lai_p(ps:pe)*pftfrac(ps:pe))
                ENDIF
+#ifdef CROP
+               ! Q-33 (paper V2): no leaf area on a crop pft between harvest
+               ! and sowing; the patch LAI is summed again only if one changed
+               IF (DEF_CROP_FALLOW_NO_LAI) THEN
+                  fallow_zeroed = .false.
+                  DO mpft = ps, pe
+                     IF (pftclass(mpft) >= npcropmin .and. (.not. croplive_p(mpft)) &
+                         .and. lai_p(mpft) > 0._r8) THEN
+                        lai_p(mpft) = 0._r8
+                        fallow_zeroed = .true.
+                     ENDIF
+                  ENDDO
+                  IF (fallow_zeroed) lai = sum(lai_p(ps:pe)*pftfrac(ps:pe))
+               ENDIF
+#endif
             ENDIF
             sai_p(ps:pe) = tsai_p(ps:pe) * sigf_p(ps:pe)
             sai = sum(sai_p(ps:pe)*pftfrac(ps:pe))

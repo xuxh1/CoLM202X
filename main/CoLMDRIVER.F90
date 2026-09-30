@@ -27,7 +27,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
    USE MOD_Vars_1DFluxes
    USE MOD_LandPatch, only: numpatch,landpatch
    USE MOD_LandUrban, only: patch2urban
-   USE MOD_Namelist, only: DEF_forcing, DEF_URBAN_RUN
+   USE MOD_Namelist, only: DEF_forcing, DEF_URBAN_RUN, DEF_WETLAND_LATERAL_INFLOW
    USE MOD_Forcing, only: forcmask_pch
    USE omp_lib
 #ifdef TRACER
@@ -48,6 +48,9 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
    USE MOD_Grid_RiverLakeFlow, only: flddepth_cama => flood_depth_patch, &
       fldfrc_cama => flood_fraction_patch, fevpg_fld => flood_evap_patch, &
       finfg_fld => flood_infil_patch
+#endif
+#ifdef SinglePoint
+   USE MOD_SingleSrfdata, only: site_wtd_update
 #endif
 
 #if (defined TRACER) && (defined OPENMP)
@@ -79,6 +82,19 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 #ifdef TRACER
       CALL tracer_resolve_step (istep_in, istep_local)
 #endif
+#ifdef SinglePoint
+      CALL site_wtd_update (idate)
+#endif
+
+      ! Candidate 17 (paper V2): the lateral inflow taken by a dynamic wetland
+      ! is booked by the host hydrology; patches that skip that branch keep
+      ! zero. At a tower the inflow offered this step comes from the namelist.
+      IF (DEF_WETLAND_LATERAL_INFLOW .and. (numpatch > 0)) THEN
+         wetinflow(:) = 0._r8
+#ifdef SinglePoint
+         CALL wetland_inflow_site ()
+#endif
+      ENDIF
 
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
@@ -417,9 +433,117 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 !$OMP END PARALLEL DO
 #endif
 
+#ifndef SinglePoint
+      ! Candidate 17: the runoff of this step from the uplands of each element
+      ! is offered to its dynamic wetlands at the next step, once every patch
+      ! has run, so the result does not depend on the order of the patches.
+      IF (DEF_WETLAND_LATERAL_INFLOW .and. (numpatch > 0)) CALL wetland_inflow_upland ()
+#endif
+
 #ifdef TRACER
       CALL tracer_report ()
 #endif
+
+CONTAINS
+
+   SUBROUTINE wetland_inflow_upland ()
+   !--------------------------------------------------------------------
+   ! Candidate 17: lateral inflow offered to the dynamic wetland patches of
+   ! each element per unit area of their fed share, wetlatin = r R_up.
+   ! The runoff of the other soil tiles of a grid cell feeds its peat tile
+   ! in ORCHIDEE-PEAT (Qiu et al. 2018, p. 501; Largeron et al. 2018, eq. 1);
+   ! per unit wetland area it is the upland runoff times A_up / A_wet
+   ! (Hayashi et al. 2016, eq. 1). R_up is the area mean total runoff rnof
+   ! of this step over the soil patches of the element (patchtype 0), rice
+   ! paddies excepted, whose bunds hold their water; A_up and A_wet are the
+   ! area shares of those patches and of all wetland patches (patchtype 2)
+   ! in the element, and r = min(A_up / A_wet, DEF_WETLAND_INFLOW_RATIO_MAX).
+   ! The patches of an element sit on one process (elm_patch pairs the
+   ! local elements with the local patches). The upland runoff is not taken
+   ! off the uplands: the inflow is outside water, bounded by the runoff.
+   !--------------------------------------------------------------------
+   USE MOD_Mesh,      only: numelm
+   USE MOD_LandPatch, only: elm_patch
+   USE MOD_Namelist,  only: DEF_WETLAND_INFLOW_RATIO_MAX
+#ifdef CROP
+   USE MOD_LandPFT,   only: patch_pft_s, patch_pft_e
+   USE MOD_Vars_PFTimeInvariants, only: pftclass
+#endif
+
+   IMPLICIT NONE
+
+   integer  :: ielm, istt, iend, ip, ipft
+   real(r8) :: aup, awet, rup
+   logical  :: upland
+
+      wetlatin(:) = 0._r8
+      IF (.not. allocated(elm_patch%substt)) RETURN
+
+      DO ielm = 1, numelm
+         istt = elm_patch%substt(ielm)
+         iend = elm_patch%subend(ielm)
+         IF ((istt < 1) .or. (iend < istt)) CYCLE
+
+         aup  = 0._r8
+         awet = 0._r8
+         rup  = 0._r8
+         DO ip = istt, iend
+            IF (.not. patchmask(ip)) CYCLE
+            IF (DEF_forcing%has_missing_value) THEN
+               IF (.not. forcmask_pch(ip)) CYCLE
+            ENDIF
+            IF (patchtype(ip) == 2) THEN
+               awet = awet + elm_patch%subfrc(ip)
+            ELSEIF (patchtype(ip) == 0) THEN
+               upland = (rnof(ip) /= spval)
+#ifdef CROP
+               IF (patch_pft_s(ip) > 0) THEN
+                  DO ipft = patch_pft_s(ip), patch_pft_e(ip)
+                     IF ((pftclass(ipft) == nrice) .or. (pftclass(ipft) == nirrig_rice)) upland = .false.
+                  ENDDO
+               ENDIF
+#endif
+               IF (upland) THEN
+                  aup = aup + elm_patch%subfrc(ip)
+                  rup = rup + elm_patch%subfrc(ip) * rnof(ip)
+               ENDIF
+            ENDIF
+         ENDDO
+
+         IF ((aup > 0._r8) .and. (awet > 0._r8)) THEN
+            DO ip = istt, iend
+               IF (patchtype(ip) == 2) wetlatin(ip) = max(rup / aup, 0._r8) &
+                  * min(aup / awet, DEF_WETLAND_INFLOW_RATIO_MAX)
+            ENDDO
+         ENDIF
+      ENDDO
+
+   END SUBROUTINE wetland_inflow_upland
+
+   SUBROUTINE wetland_inflow_site ()
+   !--------------------------------------------------------------------
+   ! Candidate 17 at a tower (one wetland patch, no upland patch beside it):
+   ! wetlatin = r R_up with R_up the monthly climatology of the upland runoff
+   ! DEF_WETLAND_INFLOW_SITE_RUNOFF [mm/day] and r the upland-to-wetland area
+   ! ratio DEF_WETLAND_INFLOW_RATIO_SITE of the tower; both default to zero,
+   ! a rain-fed tile. The month is that of idate, the end of this step.
+   !--------------------------------------------------------------------
+   USE MOD_TimeManager, only: julian2monthday
+   USE MOD_Namelist,    only: DEF_WETLAND_INFLOW_SITE_RUNOFF, DEF_WETLAND_INFLOW_RATIO_SITE
+
+   IMPLICIT NONE
+
+   integer :: imonth, iday
+
+      CALL julian2monthday (idate(1), idate(2), imonth, iday)
+      WHERE (patchtype == 2)
+         wetlatin = max(DEF_WETLAND_INFLOW_SITE_RUNOFF(imonth), 0._r8) / 86400._r8 &
+            * max(DEF_WETLAND_INFLOW_RATIO_SITE, 0._r8)
+      ELSEWHERE
+         wetlatin = 0._r8
+      END WHERE
+
+   END SUBROUTINE wetland_inflow_site
 
 END SUBROUTINE CoLMDRIVER
 ! ---------- EOP ------------

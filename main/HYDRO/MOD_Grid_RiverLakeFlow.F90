@@ -59,6 +59,18 @@ MODULE MOD_Grid_RiverLakeFlow
    real(r8), allocatable :: flood_visible_tracer_uc(:,:), flood_protected_tracer_uc(:,:)
    integer, save :: flood_tracer_ledger_reports = 0
 #endif
+   ! DEF_LAKE_EVAP_ROUTING: the lake evaporation deficit of
+   ! the lake patches and the part of it that reached a unit catchment since
+   ! the last routing step [m3], per worker; and the yearly totals of these
+   ! two and of what the storage gave, with what it still owed after the last
+   ! routing step [m3], master only
+   real(r8), save :: ldef_land_acc   = 0._r8
+   real(r8), save :: ldef_route_acc  = 0._r8
+   real(r8), save :: ldef_year_land  = 0._r8
+   real(r8), save :: ldef_year_route = 0._r8
+   real(r8), save :: ldef_year_take  = 0._r8
+   real(r8), save :: ldef_carry_last = 0._r8
+   integer,  save :: ldef_year = -1
 
 CONTAINS
 
@@ -88,6 +100,17 @@ CONTAINS
 #endif
 
       acctime_rnof_max = DEF_GRIDBASED_ROUTING_MAX_DT
+
+#ifdef TRACER
+      ! The lake deficit leaves the storage as pure water, which the
+      ! land-water tracers would not follow
+      IF (DEF_LAKE_EVAP_ROUTING) THEN
+         DO i = 1, ntracers
+            IF (tracer_uses_land_water_transport(i)) &
+               CALL CoLM_stop ('DEF_LAKE_EVAP_ROUTING cannot run with land-water tracers.')
+         ENDDO
+      ENDIF
+#endif
 
       ! excluding (patchtype >= 99), virtual patches and those forcing missed
       IF (p_is_worker) THEN
@@ -377,6 +400,7 @@ CONTAINS
    real(r8) :: fldfrc_levee, visible_hflux, protected_hflux, protected_clip
    real(r8) :: vis_vol_bef_lv, levsto_bef_lv, vis_vol_bef_lv2, levsto_bef_lv2
    real(r8) :: totalflood_evap, totalflood_infil, flood_vec(2)
+   real(r8) :: ldtake, totalldtake, ldef_vec(4)
    real(r8),  allocatable :: dt_res(:), dt_all(:)
    logical,   allocatable :: ucatfilter(:)
    logical :: loop_active, next_loop_active
@@ -388,6 +412,8 @@ CONTAINS
 #endif
 #endif
 
+
+      totalldtake = 0._r8
 
       IF (p_is_worker) THEN
 
@@ -495,6 +521,8 @@ CONTAINS
             deallocate(prcp_pch, filter_prcp, prcp_gd, prcp_area_gd, prcp_uc, prcp_area_uc)
          ENDIF
 #endif
+
+         IF (DEF_LAKE_EVAP_ROUTING) CALL accumulate_lake_deficit (deltime)
 
       ENDIF
 
@@ -649,6 +677,19 @@ CONTAINS
 #endif
 
             volwater = volwater + acc_rnof_uc(i)
+
+            ! The lake patches' evaporation beyond their precipitation
+            ! comes out of the storage they drain to, as far as it goes; what
+            ! it cannot give now it gives later
+            IF (DEF_LAKE_EVAP_ROUTING) THEN
+               ldtake = min(max(acc_ldef_uc(i), 0._r8), max(volwater, 0._r8))
+               volwater    = volwater - ldtake
+#ifdef CoLMDEBUG
+               totalrnof   = totalrnof - ldtake
+#endif
+               totalldtake = totalldtake + ldtake
+               acc_ldef_uc(i) = acc_ldef_uc(i) - ldtake
+            ENDIF
 
             IF (.not. is_built_resv(i)) THEN
                IF (DEF_USE_LEVEE .and. has_levee(i)) THEN
@@ -1408,6 +1449,42 @@ CONTAINS
          flood_infil_period = 0._r8
       ENDIF
 
+      ! Lake evaporation deficit of the lake patches, the part that
+      ! reached a unit catchment, what the storage gave and what it still
+      ! owes; one log line per year
+      IF (DEF_LAKE_EVAP_ROUTING) THEN
+         ldef_vec = 0._r8
+         IF (p_is_worker) THEN
+            ldef_vec(1) = ldef_land_acc
+            ldef_vec(2) = ldef_route_acc
+            ldef_vec(3) = totalldtake
+            IF (numucat > 0) ldef_vec(4) = sum(acc_ldef_uc)
+         ENDIF
+#ifdef USEMPI
+         CALL mpi_allreduce (MPI_IN_PLACE, ldef_vec, 4, MPI_REAL8, MPI_SUM, p_comm_glb, p_err)
+#endif
+         ldef_land_acc  = 0._r8
+         ldef_route_acc = 0._r8
+         IF (p_is_master) THEN
+            IF (ldef_year /= year) THEN
+               IF (ldef_year > 0) THEN
+                  write(*,'(A,I5,A,ES12.4,A,ES12.4,A,ES12.4,A,ES12.4,A)') ' Lake evaporation deficit', &
+                     ldef_year, ': lake patches', ldef_year_land*1.e-9_r8, ' km3; to unit catchments', &
+                     ldef_year_route*1.e-9_r8, ' km3; taken from storage', ldef_year_take*1.e-9_r8, &
+                     ' km3; owed at year end', ldef_carry_last*1.e-9_r8, ' km3'
+               ENDIF
+               ldef_year = year
+               ldef_year_land  = 0._r8
+               ldef_year_route = 0._r8
+               ldef_year_take  = 0._r8
+            ENDIF
+            ldef_year_land  = ldef_year_land  + ldef_vec(1)
+            ldef_year_route = ldef_year_route + ldef_vec(2)
+            ldef_year_take  = ldef_year_take  + ldef_vec(3)
+            ldef_carry_last = ldef_vec(4)
+         ENDIF
+      ENDIF
+
 #ifdef TRACER
       IF (p_is_worker) THEN
          CALL tracer_limiter_stats (lim_calls, lim_iter_sum, lim_iter_peak, lim_over_soft, reset = .true.)
@@ -1645,6 +1722,7 @@ CONTAINS
 
    USE MOD_LandPatch, only: numpatch
    USE MOD_Vars_Global, only: spval
+   USE MOD_FloodInfiltration, only: fld_cap_p
 #ifdef TRACER
    USE MOD_Tracer_Defs, only: ntracers, tracer_uses_land_water_transport
 #endif
@@ -1745,6 +1823,14 @@ CONTAINS
          flood_depth_patch = 0._r8
          WHERE (flood_fraction_patch > epsilon(1._r8)) &
             flood_depth_patch = 1000._r8 * flood_credit_patch / max(flood_fraction_patch, tiny(1._r8))
+         ! The soil floods only up to the bound the land sets
+         ! (fld_cap_p, from DEF_METHANE%floodplain_glwd_cap_file); the depth
+         ! over the flooded part stays, the rest of the credit stays routed
+         IF (allocated(fld_cap_p)) THEN
+            DO i = 1, min(numpatch, size(fld_cap_p))
+               flood_fraction_patch(i) = min(flood_fraction_patch(i), fld_cap_p(i))
+            ENDDO
+         ENDIF
       ENDIF
 #ifdef TRACER
       IF (allocated(flood_visible_tracer_uc)) THEN
@@ -2029,6 +2115,53 @@ CONTAINS
    END SUBROUTINE debit_flood_feedback
 
    ! ---------
+   SUBROUTINE accumulate_lake_deficit (deltime)
+   ! The lake patches (patchtype 4) give no runoff when their
+   ! evaporation exceeds their precipitation, and the land side books the
+   ! difference (lake_deficit, mm/s) as water put back into the patch. Gather
+   ! it per unit catchment the way runoff is [m3], for the routing step to
+   ! take out of the storage.
+   USE MOD_LandPatch,           only: numpatch
+   USE MOD_Vars_TimeInvariants, only: patchtype
+   USE MOD_Vars_1DFluxes,       only: lake_deficit
+   USE MOD_Vars_Global,         only: spval
+   IMPLICIT NONE
+
+   real(r8), intent(in) :: deltime
+
+   real(r8), allocatable :: d_pch(:), d_gd(:), d_uc(:)
+   integer :: ip
+
+      allocate (d_pch (max(numpatch,0)))
+      allocate (d_gd  (max(numinpm, 0)))
+      allocate (d_uc  (max(numucat, 0)))
+
+      DO ip = 1, numpatch
+         d_pch(ip) = 0._r8
+         IF (patchtype(ip) == 4 .and. filter_rnof(ip)) THEN
+            IF (lake_deficit(ip) /= spval) d_pch(ip) = max(lake_deficit(ip), 0._r8)
+         ENDIF
+      ENDDO
+
+      CALL worker_remap_data_pset2grid (remap_patch2inpm, d_pch, d_gd, &
+         fillvalue = 0._r8, filter = filter_rnof)
+      IF (numinpm > 0) THEN
+         ldef_land_acc = ldef_land_acc + sum(d_gd) * 1.e-3_r8 * deltime
+         WHERE (push_ucat2inpm%sum_area > 0)
+            d_gd = d_gd / push_ucat2inpm%sum_area
+         END WHERE
+      ENDIF
+      CALL worker_push_data (push_inpm2ucat, d_gd, d_uc, fillvalue = 0._r8, mode = 'sum')
+
+      IF (numucat > 0) THEN
+         acc_ldef_uc    = acc_ldef_uc + d_uc * 1.e-3_r8 * deltime
+         ldef_route_acc = ldef_route_acc + sum(d_uc) * 1.e-3_r8 * deltime
+      ENDIF
+
+      deallocate (d_pch, d_gd, d_uc)
+
+   END SUBROUTINE accumulate_lake_deficit
+
    SUBROUTINE grid_riverlake_flow_final ()
 
       CALL riverlake_network_final ()

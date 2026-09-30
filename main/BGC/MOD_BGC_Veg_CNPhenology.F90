@@ -43,6 +43,9 @@ MODULE MOD_BGC_Veg_CNPhenology
 
    USE MOD_BGC_Vars_TimeVariables, only: &
        dayl, prev_dayl, prec10, prec60, prec365, prec_today, prec_daily, accumnstep
+#ifdef CROP
+   USE MOD_BGC_Vars_TimeVariables, only: pdrice2
+#endif
 
    USE MOD_Vars_PFTimeVariables, only: &
        tref_p       ,tlai_p
@@ -78,6 +81,7 @@ MODULE MOD_BGC_Veg_CNPhenology
        hui_p             , peaklai_p           , &
        tref_min_p        , tref_max_p          , tref_min_inst_p     , tref_max_inst_p  , &
        manunitro_p       , fertnitro_p         , plantdate_p         , fert_p           , &! input from files
+       rice_double_p     , paddy_predrain_p    , &
 #endif
 
        leaf_prof_p        , froot_prof_p        , &
@@ -129,16 +133,21 @@ MODULE MOD_BGC_Veg_CNPhenology
 
    USE MOD_TimeManager
    USE MOD_Precision
-   USE MOD_Namelist, only: DEF_USE_FERT
+   USE MOD_Namelist, only: DEF_USE_FERT, DEF_RICE_GRNFILL, DEF_PADDY_DRAIN_DAYS, DEF_RICE_SECOND_SOW_DAYS
    USE MOD_BGC_Daylength, only: daylength
    USE MOD_SPMD_Task
 
    IMPLICIT NONE
 
    PUBLIC CNPhenology
+   PUBLIC CropGDDSpinCycleEnd
 
    integer, parameter :: NOT_Planted   = 999 ! If not planted   yet in year
    integer, parameter :: NOT_Harvested = 999 ! If not harvested yet in year
+
+   real(r8), parameter :: yravg   = 20.0_r8      ! length of years to average for gdd
+   real(r8), parameter :: yravgm1 = yravg-1.0_r8 ! minus 1 of above
+   logical :: gdd_year_closed = .false.          ! Q-48: the 1 January gdd..20 update ran in this spin-up cycle
 
 CONTAINS
 
@@ -244,8 +253,6 @@ CONTAINS
    real(r8),intent(in) :: dlat            ! latitude (degrees)
 
   ! !LOCAL VARIABLES:
-   real(r8), parameter :: yravg   = 20.0_r8      ! length of years to average for gdd
-   real(r8), parameter :: yravgm1 = yravg-1.0_r8 ! minus 1 of above
    integer :: m,ivt
    logical , parameter :: isconst_baset = .true. ! .true. for constant base temperature
                                                 ! .false. for latidinal varied base temperature
@@ -318,6 +325,7 @@ CONTAINS
       DO m = ps , pe
          ivt = pftclass(m)
          IF (idate(2) == 1 .and. idate(3) == deltim)THEN
+            gdd_year_closed = .true.
             IF(nyrs_crop_active_p(m) == 0) THEN ! YR 1:
                gdd020_p(m)  = 0._r8                      ! set gdd..20 variables to 0
                gdd820_p(m)  = 0._r8                      ! and crops will not be planted
@@ -343,6 +351,39 @@ CONTAINS
       ENDDO
 
    END SUBROUTINE CNPhenologyClimate
+
+   SUBROUTINE CropGDDSpinCycleEnd ()
+
+! !DESCRIPTION:
+! Q-48: a spin-up cycle over single-year or part-year site forcing that does
+! not pass the first step of 1 January never updates gdd020/gdd820/gdd1020, so
+! they stay at the cold-start 0 and rice matures at the constant term of
+! gddmaturity (587 GDD, harvest 52-62 days after sowing). Such a cycle closes
+! its GDD year at the wrap, as CNPhenologyClimate does on 1 January; a cycle
+! that passed 1 January is left alone. Called at every spin-up wrap.
+
+   integer :: m
+
+      IF (.not. gdd_year_closed .and. allocated(gdd020_p)) THEN
+         DO m = 1, size(gdd020_p)
+            nyrs_crop_active_p(m) = nyrs_crop_active_p(m) + 1
+            IF (nyrs_crop_active_p(m) == 1) THEN
+               gdd020_p(m)  = gdd0_p(m)
+               gdd820_p(m)  = gdd8_p(m)
+               gdd1020_p(m) = gdd10_p(m)
+            ELSE
+               gdd020_p(m)  = (yravgm1* gdd020_p(m)  + gdd0_p(m))  / yravg
+               gdd820_p(m)  = (yravgm1* gdd820_p(m)  + gdd8_p(m))  / yravg
+               gdd1020_p(m) = (yravgm1* gdd1020_p(m) + gdd10_p(m)) / yravg
+            ENDIF
+            gdd0_p (m) = 0._r8
+            gdd8_p (m) = 0._r8
+            gdd10_p(m) = 0._r8
+         ENDDO
+      ENDIF
+      gdd_year_closed = .false.
+
+   END SUBROUTINE CropGDDSpinCycleEnd
 
 
    SUBROUTINE CNEvergreenPhenology (i,ps,pe,deltim,dayspyr)
@@ -1021,6 +1062,9 @@ CONTAINS
    integer :: jdayyrstart(2)
    real(r8) :: initial_seed_at_planting = 3._r8 ! Initial seed at planting
    integer ivt
+   logical :: sow_now, end_second
+   real(r8) :: gf      ! grain-fill threshold of this crop (Q-33: rice may take DEF_RICE_GRNFILL)
+   real(r8) :: days_left ! C-47: projected days to harvest
 
     !------------------------------------------------------------------------
 
@@ -1037,6 +1081,8 @@ CONTAINS
       DO m = ps, pe
          ivt = pftclass(m)
          IF(ivt >= npcropmin)THEN
+            gf = grnfill(ivt)
+            IF (DEF_RICE_GRNFILL >= 0._r8 .and. (ivt == nrice .or. ivt == nirrig_rice)) gf = DEF_RICE_GRNFILL
             bglfr_p(m) = 0._r8 ! this value changes later in a crop's life CYCLE
             bgtr_p(m)  = 0._r8
             lgsf_p(m)  = 0._r8
@@ -1045,17 +1091,34 @@ CONTAINS
            !  plantdate is read in
            !  determine IF the cft is planted in this time step
             IF ( (.not. croplive_p(m)) .and. (.not. cropplant_p(m)) ) THEN
-               IF (jday == int(plantdate_p(m))) THEN
+               sow_now = jday == int(plantdate_p(m))
+               ! C-45 (paper V2): double-cropped irrigated rice is sown again
+               ! on the second rice date once the first season is harvested;
+               ! a first season still growing on that date skips it
+               ! C-95 (paper V2): with DEF_RICE_SECOND_SOW_DAYS, the second
+               ! season follows the first-season harvest instead (RiceSecondSow)
+               IF ((.not. sow_now) .and. ivt == nirrig_rice .and. rice_double_p(m) >= 0.5_r8) THEN
+                  IF (DEF_RICE_SECOND_SOW_DAYS >= 0._r8) THEN
+                     sow_now = RiceSecondSow(m, ivt, jday, h, dayspyr)
+                  ELSE IF (pdrice2(i) > 0._r8 .and. pdrice2(i) /= spval) THEN
+                     sow_now = jday == int(pdrice2(i))
+                  ENDIF
+               ENDIF
+               IF (sow_now) THEN
                   cumvd_p(m)       = 0._r8
                   vf_p(m)          = 0._r8
                   croplive_p(m)    = .true.
                   cropplant_p(m)   = .true.
                   idop_p(m)        = jday
                   harvdate_p(m)    = NOT_Harvested
+                  ! C-45: a crop harvested on the step before (second rice
+                  ! season ended on the first-season sowing date) may still
+                  ! hold unemerged seed in leaf*_xfer; it goes back to the seed
+                  ! pool as the new seed replaces it (zero otherwise)
+                  crop_seedc_to_leaf_p(m) = (initial_seed_at_planting - leafc_xfer_p(m))/deltim
+                  crop_seedn_to_leaf_p(m) = (initial_seed_at_planting/leafcn(ivt) - leafn_xfer_p(m))/deltim
                   leafc_xfer_p(m)  = initial_seed_at_planting
                   leafn_xfer_p(m)  = leafc_xfer_p(m) / leafcn(ivt) ! with onset
-                  crop_seedc_to_leaf_p(m) = leafc_xfer_p(m)/deltim
-                  crop_seedn_to_leaf_p(m) = leafn_xfer_p(m)/deltim
                ENDIF
             ENDIF
            ! calculate gddmaturity
@@ -1107,10 +1170,36 @@ CONTAINS
                   idpp = int(dayspyr) + jday - idop_p(m)
                ENDIF
 
+              ! C-47: the pre-harvest drain window of a paddy, from the days
+              ! left to the earlier of maturity (at the season's mean heat-unit
+              ! rate so far) and the maximum season length
+               paddy_predrain_p(m) = .false.
+               IF (DEF_PADDY_DRAIN_DAYS >= 0._r8 .and. (ivt == nrice .or. ivt == nirrig_rice)) THEN
+                  days_left = real(mxmat(ivt) - idpp, r8)
+                  IF (hui_p(m) > 0.05_r8 .and. idpp > 0) &
+                     days_left = min(days_left, real(idpp, r8) * (1._r8 - hui_p(m)) / hui_p(m))
+                  paddy_predrain_p(m) = days_left <= DEF_PADDY_DRAIN_DAYS
+               ENDIF
+
               ! onset_counter initialized to zero when .not. croplive
               ! offset_counter relevant only at time step of harvest
 
                onset_counter_p(m) = onset_counter_p(m) - deltim
+
+              ! C-45: a second-season rice crop still standing on the sowing
+              ! date of the first season is harvested then, so the first
+              ! season is never skipped (it is sown on the next time step)
+              ! C-95: the second season is then any crop not sown on the
+              ! first-season date
+               end_second = .false.
+               IF (ivt == nirrig_rice .and. rice_double_p(m) >= 0.5_r8) THEN
+                  IF (DEF_RICE_SECOND_SOW_DAYS >= 0._r8) THEN
+                     end_second = idop_p(m) /= int(plantdate_p(m)) .and. jday == int(plantdate_p(m))
+                  ELSE IF (pdrice2(i) > 0._r8 .and. pdrice2(i) /= spval) THEN
+                     end_second = idop_p(m) == int(pdrice2(i)) .and. jday == int(plantdate_p(m)) &
+                        .and. int(pdrice2(i)) /= int(plantdate_p(m))
+                  ENDIF
+               ENDIF
 
               ! enter phase 2 onset for one time step:
               ! transfer seed carbon to leaf emergence
@@ -1119,12 +1208,13 @@ CONTAINS
                !    hui_p(m) = max(hui_p(m),grnfill(ivt))
                ! ENDIF
 
-               IF (hui_p(m) >= lfemerg(ivt) .and. hui_p(m) < grnfill(ivt) .and. idpp < mxmat(ivt)) THEN
+               IF (hui_p(m) >= lfemerg(ivt) .and. hui_p(m) < gf .and. idpp < mxmat(ivt) &
+                   .and. .not. end_second) THEN
                   cphase_p(m) = 2._r8
               ! CALL vernalization IF winter temperate cereal planted, living, and the
               ! vernalization factor is not 1;
               ! vf affects the calculation of gddplant
-                  IF ( vf_p(m) /= 1._r8 .and. (ivt == nwwheat .or. ivt == nirrig_wwheat) .and. hui_p(m) < 0.8_r8 * grnfill(ivt)) THEN
+                  IF ( vf_p(m) /= 1._r8 .and. (ivt == nwwheat .or. ivt == nirrig_wwheat) .and. hui_p(m) < 0.8_r8 * gf) THEN
                      CALL vernalization(i,m,deltim)
                   ENDIF
 
@@ -1158,7 +1248,7 @@ CONTAINS
                  ! the onset_counter would change from dt and you'd need to make
                  ! changes to the offset SUBROUTINE below
 
-               ELSE IF (hui_p(m) >= 1._r8 .or. idpp >= mxmat(ivt)) THEN
+               ELSE IF (hui_p(m) >= 1._r8 .or. idpp >= mxmat(ivt) .or. end_second) THEN
                   IF (harvdate_p(m) >= NOT_Harvested) harvdate_p(m) = jday
                   croplive_p(m) = .false.     ! no re-entry in greater IF-block
                   cropplant_p(m)=.false.
@@ -1185,7 +1275,7 @@ CONTAINS
                  ! AgroIBIS uses a complex formula for lai decline.
                  ! USE CN's simple formula at least as a place holder (slevis)
 
-               ELSE IF (hui_p(m) >= grnfill(ivt)) THEN
+               ELSE IF (hui_p(m) >= gf) THEN
                   cphase_p(m) = 3._r8
                   bglfr_p(m) = 1._r8/(leaf_long(ivt)*dayspyr*86400.)
                ENDIF
@@ -1200,6 +1290,7 @@ CONTAINS
                ENDIF
 
             ELSE   ! crop not live
+               paddy_predrain_p(m) = .false.
               ! next 2 lines conserve mass IF leaf*_xfer > 0 due to interpinic.
               ! We subtract from any existing value in crop_seedc_to_leaf /
               ! crop_seedn_to_leaf in the unlikely event that we enter this block of
@@ -1220,6 +1311,64 @@ CONTAINS
       ENDDO ! prognostic crops loop
 
    END SUBROUTINE CropPhenology
+
+   logical FUNCTION RiceSecondSow (m, ivt, jday, h, dayspyr)
+
+! !DESCRIPTION:
+! C-95 (paper V2): second season of double-cropped irrigated rice. It is sown
+! DEF_RICE_SECOND_SOW_DAYS days after the harvest of a first season (a crop
+! sown on the calendar date plantdate), if the heat left before plantdate
+! comes round again reaches the maturity requirement of the crop just
+! harvested. The heat is projected from a sinusoidal annual cycle of 2 m air
+! temperature through the annual mean (annavg_tref) and the mean of the half
+! year the gdd0 sum covers (gdd020 over April-September, October-March south
+! of the equator), warmest mid-way through that half year, and summed above
+! the base temperature of the crop as gddplant is.
+
+   integer , intent(in) :: m       ! pft index
+   integer , intent(in) :: ivt     ! pft type
+   integer , intent(in) :: jday    ! day of the year
+   integer , intent(in) :: h       ! hemisphere indicator: 1 north, 2 south
+   real(r8), intent(in) :: dayspyr ! days per year
+
+   real(r8), parameter :: pi = 3.14159265358979323846_r8
+   integer  :: dsh, ndays, k
+   real(r8) :: tann, amp, heat
+
+      RiceSecondSow = .false.
+
+      ! the last crop was a first season, and it has been harvested
+      IF (plantdate_p(m) <= 0._r8 .or. idop_p(m) /= int(plantdate_p(m))) RETURN
+      IF (harvdate_p(m) < 1._r8 .or. harvdate_p(m) >= NOT_Harvested) RETURN
+
+      ! sowing day: DEF_RICE_SECOND_SOW_DAYS days after that harvest
+      IF (jday >= int(harvdate_p(m))) THEN
+         dsh = jday - int(harvdate_p(m))
+      ELSE
+         dsh = int(dayspyr) + jday - int(harvdate_p(m))
+      ENDIF
+      IF (dsh /= nint(DEF_RICE_SECOND_SOW_DAYS)) RETURN
+
+      ! days left before the first season is sown again
+      ndays = modulo(int(plantdate_p(m)) - jday, int(dayspyr))
+      IF (ndays <= 0) RETURN
+      IF (gdd020_p(m) <= 0._r8 .or. gdd020_p(m) == spval .or. &
+          annavg_tref_p(m) == spval .or. gddmaturity_p(m) == spval) RETURN
+
+      ! mean over the half year is tann + 2 amp / pi
+      tann = annavg_tref_p(m) - 273.15_r8
+      amp  = (gdd020_p(m) / (0.5_r8 * dayspyr) - tann) * pi / 2._r8
+      IF (h == 2) amp = -amp
+
+      heat = 0._r8
+      DO k = 0, ndays - 1
+         heat = heat + max(0._r8, tann + amp * cos(2._r8 * pi * real(jday + k - 182, r8) / dayspyr) &
+                                  - baset(ivt))
+      ENDDO
+
+      RiceSecondSow = heat >= gddmaturity_p(m)
+
+   END FUNCTION RiceSecondSow
 #endif
 
  !---------------------------------------------------------

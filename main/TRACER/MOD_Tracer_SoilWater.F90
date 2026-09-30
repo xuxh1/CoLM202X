@@ -2989,6 +2989,45 @@ CONTAINS
 
    END SUBROUTINE tracer_wetland
 
+   SUBROUTINE tracer_prescribed_column (ipatch, nl_soil, wliq, wliq_bef, &
+      wa, wa_bef, wdsrf, wdsrf_bef, wetwat, wetwat_bef)
+   ! Mirror of the observed-water-table host branch (B-3).  The host set the
+   ! column to the equilibrium of the observed depth without fluxes, so each
+   ! pool keeps its tracer ratio; a pool that appears from zero takes the
+   ! column-mean ratio of the previous step.
+      USE MOD_Tracer_Vars, only: trc_wliq_soisno, trc_wa, trc_wdsrf, trc_wetwat
+      IMPLICIT NONE
+      integer,  intent(in) :: ipatch, nl_soil
+      real(r8), intent(in) :: wliq(nl_soil), wliq_bef(nl_soil)
+      real(r8), intent(in) :: wa, wa_bef, wdsrf, wdsrf_bef, wetwat, wetwat_bef
+      integer  :: itrc, j
+      real(r8) :: w0, t0, rmean
+
+      DO itrc = 1, ntracers
+         w0 = sum(wliq_bef) + max(wa_bef,0._r8) + wdsrf_bef + wetwat_bef
+         t0 = sum(trc_wliq_soisno(itrc,1:nl_soil,ipatch)) + trc_wa(itrc,ipatch) &
+            + trc_wdsrf(itrc,ipatch) + trc_wetwat(itrc,ipatch)
+         rmean = 0._r8
+         IF (w0 > trc_tiny) rmean = t0 / w0
+         DO j = 1, nl_soil
+            trc_wliq_soisno(itrc,j,ipatch) = rescaled(trc_wliq_soisno(itrc,j,ipatch), wliq_bef(j), wliq(j), rmean)
+         ENDDO
+         trc_wa    (itrc,ipatch) = rescaled(trc_wa    (itrc,ipatch), max(wa_bef,0._r8), max(wa,0._r8), rmean)
+         trc_wdsrf (itrc,ipatch) = rescaled(trc_wdsrf (itrc,ipatch), wdsrf_bef,  wdsrf,  rmean)
+         trc_wetwat(itrc,ipatch) = rescaled(trc_wetwat(itrc,ipatch), wetwat_bef, wetwat, rmean)
+      ENDDO
+
+   CONTAINS
+      pure real(r8) FUNCTION rescaled (t, w0, w1, rmean)
+      real(r8), intent(in) :: t, w0, w1, rmean
+         IF (w0 > trc_tiny) THEN
+            rescaled = t * (w1 / w0)
+         ELSE
+            rescaled = w1 * rmean
+         ENDIF
+      END FUNCTION rescaled
+   END SUBROUTINE tracer_prescribed_column
+
    SUBROUTINE exhaust_surface_phase (itrc, ipatch, phase_tracer, water_loss, evap_kind)
       integer,  intent(in)    :: itrc, ipatch, evap_kind
       real(r8), intent(inout) :: phase_tracer
