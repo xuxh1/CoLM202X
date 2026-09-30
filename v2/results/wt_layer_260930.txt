@@ -1,0 +1,362 @@
+# wt_layer_260930：含水位层按饱和份额产甲烷、C-14 限于淹水子柱与含水位层输运按节点判定（Q-81）
+
+- **日期**：2026.09.30-18:02
+- **读者**：下一会话
+- **来源**：中控派活 methane-wtlayer（Q-81 第 ② 条），承接 `v2/results/lit_upland_ch4_260930.txt` 第 2、4、5 节、`v2/results/diag_peat_high_260930.txt` 第 1 节与第 5 节第 2 条、`v2/results/walter_norm_fix_260930.txt`，账本 C-14、C-14b、C-41、C-104、Q-72、Q-81 行；代码在分支 `wt-layer`（worktree `<worktree>`，自 methane-paper-v2 的 67e055c1 拉出，其代码与 e979f598 相同）提交 03541a4829846ee2e169dc687d5d664e5a641a3a；单点树 `cases/paper_v2/v260930/sp_v2_dev_wtl`（`CODE_COMMIT.txt`）；配置为本 worktree 的 `v2/config/v2_wtl_off`、`v2_wtl_k1`、`v2_wtl_k2`、`v2_wtl_k3`、`v2_wtl_all`（`v2_p8n` 加三键，`v2/_scratch/wtlayer/mk_cfg.py` 生成）、`v2_wtl_allo`（`v2_p8o` 加三键，`mk_cfg_o.py`）、`v2_wtl_offd` 与 `v2_wtl_alld`（逐日输出，`mk_cfg_daily.py`）；基线 tag `v2_p9n`（`sp_v2_c104` @e979f598，配置与 `v2_p8n` 逐字同）；脚本与输出在本 worktree `v2/_scratch/wtlayer/`；计分 `v2/results/scores77_v2_wtl_{all,k1,k2,k3,allo}.txt`
+- **状态**：三键已提交在 wt-layer（未合并、未 push）；键关两塔与 `v2_p9n` 逐位相同；三键单开与全开的 46 塔、FR-LGt 水位下限加全开已跑完并计分；全球未跑
+- **失效于**：三键合入 methane-paper-v2，或 `methane_prod`、非饱和子柱的 jwt 判定、`methane_tran` 的分层写法改动后
+
+口径：通量 mg CH4 m-2 d-1，正值为排放；分层收支为 µmol m-2 s-1（层速率乘层厚）；行号未注明分支的指 67e055c1（与 e979f598 同代码），标"分支"的指 03541a48。模式层底界 0.018、0.045、0.091、0.166、0.289、0.493、0.829、1.383、2.296、3.433 m，节点 0.007、0.028、0.062、0.119、0.212、0.366、0.620、1.038、1.728、2.865 m（`MOD_Vars_Global` 的 z = 0.025 (exp(0.5 (j − 0.5)) − 1)）。
+
+## 0. 覆盖面
+
+1. 读码：`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90` 的非饱和子柱分支（1406-1544）、饱和子柱分支（1545-1714）、`methane_prod`（2220-2764）、`methane_oxid`（2917-3042）、`SiteOxAere` 的水位以下判定（3283）、`methane_ebul`（3348-3444）、`methane_tran` 的 O2 与 CH4 竞争（3765-3863）、气泡注入（3990-3992）、分层浓度与扩散系数（3995-4227）、`split_ch4_o2_phases`（5082-5182），以及非饱和子柱的分水（1291-1356）；`MOD_Tracer_Reactive_Methane_Const.F90` 的 C-14 与 C-41 定义（588-595、1100-1104）；`MOD_Tracer_Reactive_BgcShim.F90` 的湿地斑块 o_scalar（112-127）；`MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90:104-109`。检索词 `jwt`（Physics 全部命中，按调用链逐处读）、`anoxic_decomp`、`mino2lim`、`floodplain_sif`、`o2_cap`、`o_scalar`（main/ 下全部命中）。
+2. 运行：键关两塔（FR-LGt、US-Myb）；三键单开与全开各 46 塔（`SUBSETS.tsv` 的 wet 组 41 塔加 US-CRT、RU-Fy2、US-Pfa、AT-Neu、CH-Cha）；全开加 FR-LGt 水位下限 0.25 m 一塔；键关与全开的逐日输出两塔（FR-LGt、CA-SCB）。逐时输出使运行慢约百倍，`sites_v2_wtl_offh`、`sites_v2_wtl_allh` 两目录是中止的未完成运行，不可用。
+3. 取数脚本：`diag_unsat.py`（非饱和子柱分层收支，月均）、`hourly_unsat.py`（按含水位层分组的逐日收支）、`budget_cmp.py`（两 tag 的斑块收支）、`cmp_scores.py`（逐塔与类中位对比）、`v2/scripts/ch4_clim.py`（月气候态）、`v2/scripts/compare_hist.py`（逐位比较）；输出在同目录 `.out`。
+4. 未看：无。
+5. 存疑：CLM4Me 氧化动力学参数（`vmax_methane_oxid` 1.25e-5 mol m-3 s-1、`k_m` 5e-3 mol m-3，均按孔隙水体积）对泥炭有氧层是否偏低，要查泥炭潜在氧化速率的实测文献并做一次敏感性运行才能定（见第 2.3 节第 4 条）。
+
+## 1. 结论
+
+1. 含水位层的现状：非饱和子柱以"水位不深于某层底界"判定 jwt（Physics.F90:1426-1431），含水位的第 jwt+1 层整层按水位以下处理；它整层产甲烷（2688-2691），整层按液相扩散、液相储存（4018-4023、4169-4172），整层产气泡（3407）、供植物通道（3283）、用饱和区氧化参数（2974）——已验证（读码）。FR-LGt 在 `v2_p9n` 的 5–9 月该层即第 4 层，贡献非饱和子柱产量的 46 %，O2 为 0.000 mol m-3——已验证（`diag_unsat_p9n.out`）。
+2. C-14 与 C-14b 的现状：非湿地、非稻田斑块置 `anoxic_decomp_patch`（1080-1081）；`methane_prod` 在层循环外对 `base_decomp` 乘因子（2515-2532），淹水子柱且开 C-41 时乘季节淹水因子，其余情形（含非饱和子柱全部层）一律乘 `mino2lim` 0.2，因而非饱和子柱各层的产量、分解 O2 需求与 CO2 诊断同乘 0.2——已验证（读码）。湿地斑块不受 C-14 作用，其缺氧限制由 BGC 的 o_scalar 在全部层取 `mino2lim` 承担（BgcShim.F90:116-127），碳库随之积累——已验证（读码）。
+3. 非饱和子柱氧化只占产量两成，主因是产出的 CH4 大多以气泡进入有氧层底部并经气相扩散快速穿过有氧层，有氧层内既不缺 O2，也没有显式上限。泥炭四塔（FR-LGt、CA-SCB、DE-SfN、FI-Si2）5–9 或 6–8 月气泡占非饱和子柱产量 0.36–0.49，扩散到大气 0.50–0.56，甲烷氧化菌氧化 0.07–0.10，根际氧化 0.08–0.10——已验证（`diag_unsat_p9n.out`）。逐日看，FR-LGt 2017 年 6–8 月水位在第 4 层的日子，第 3 层（紧邻水位之上）O2 4.05 mol m-3、O2 胁迫 0.98、CH4 胁迫 1.00，而有氧层只氧化穿过它的 CH4 的 7 %——已验证（`daily_frlgt_off.out`）。所以有氧层氧化受米氏动力学的溶解 CH4 浓度限制：气相扩散把 CH4 很快带出，溶解 CH4 远低于 `k_m`——推测。理由是 O2 与 CH4 两个胁迫因子都为 1，且同一层按平均状态估算的潜在氧化与实际氧化同量级只在假定该层体积含水量约 0.2 时成立，含水量未输出。
+4. 查出的不物理写法是第 1 条的整层判定用于输运：含水位层的气相部分被当作液相，O2 进不去，氧化带在水位以上平均半层处截止；FR-LGt 水位 0.25 m 时氧化带止于 0.166 m——已验证（读码 4011-4024、4158-4173 与层界）。据此加第三个键（按节点判定输运），不另设氧化上限的修法——已验证（读码 `methane_oxid` 与竞争段无上限项）。
+5. 实现：三键均缺省关，只改 main/TRACER 两个文件，一个提交 03541a48：`DEF_METHANE%wt_layer_sat_share`（含水位层只在水位以下的厚度份额产甲烷）、`DEF_METHANE%anoxic_decomp_flooded_only`（C-14 只作用于淹水子柱）、`DEF_METHANE%wt_layer_node_transport`（含水位层在水位低于其节点时按非饱和层参与输运、氧化、气泡与植物通道）——已验证（`git show --stat 03541a48`）。
+6. 键关逐位：`v2_wtl_off`（三键显式关）与 `v2_p9n` 在 FR-LGt（1062 个变量）、US-Myb（4779 个变量）上 0 个不同——已验证（`compare_off_vs_p9n.out`）。
+7. 全开的湿地塔：37 座共同计分的湿地塔 KGE_ln 中位 0.47 → 0.41（升 13 降 14），β 1.02 → 0.98，α 1.05 → 0.89，r 0.80 → 0.77；bog 0.60 → 0.04、fen 0.23 → 0.29、marsh 0.51 → 0.51、swamp −0.17 → −0.13、湿苔原 0.53 → 0.51、永冻 US-Uaf −0.10 → −1.20——已验证（`cmp_p9n_v2_wtl_all.out`）。变好的是偏高塔（FR-LGt β 13.19 → 9.22、DE-SfN 5.32 → 3.58、US-Los 2.58 → 1.84），变差的是原先对上的泥炭塔（CA-SCB β 0.88 → 0.53、FI-Si2 0.81 → 0.47、JP-BBY 1.04 → 0.73）——已验证（同上）。
+8. CA-SCB 夏末被压低的风险成立：月气候态 8 月 83 → 59、9 月 40 → 21，塔上 116、71——已验证（`clim_5towers.out`）。
+9. 旱地塔：全开时五塔模式均值 AT-Neu 0.04 → −0.17、CH-Cha 0.32 → 2.02、RU-Fy2 −0.19 → −0.21、US-CRT −0.13 → −0.17、US-Pfa −0.08 → 0.05（塔上 1.19、11.32、10.03、9.41、4.06）；只开键二时 AT-Neu 1.18（KGE_ln 0.14，β 0.99）、CH-Cha 2.95、符号正确 2/5 → 4/5，再开键一则因旱地产量几乎全在含水位的深层而回落——已验证（`cmp_p9n_v2_wtl_all.out`、`cmp_p9n_v2_wtl_k2.out`、`budget_p9n_all.out`、`budget_p9n_k1.out`、`budget_p9n_k2.out`）。
+10. 三键分开看：键二只动土壤斑块（湿地斑块各塔四数与模式均值两位小数不变），湿地中位 0.47 不变，swamp −0.17 → −0.09；键一与键三各自把泥炭塔排放降 10–25 %，湿地中位 0.46、0.45——已验证（`cmp_p9n_v2_wtl_k1.out`、`cmp_p9n_v2_wtl_k2.out`、`cmp_p9n_v2_wtl_k3.out`、`budget_p9n_k1.out`、`budget_p9n_k3.out`）。
+11. 三键提高了排放对水位的敏感度，但站点模式水位被下限夹在 0.07–0.14 m，敏感度无从体现：FR-LGt 只放深下限（V-191，`v2_p9o`）β 13.19 → 10.65，只开三键 9.22，两者合用 5.30（KGE_ln −0.96，7、8 月 28、8，塔上 13、4）——已验证（`scores77_v2_wtl_allo.txt`、`/share/home/dq076/mode/Methane/CoLM202X-paper-v2/v2/results/scores77_v2_p9o.txt`、`clim_frlgt_floor.out`）。
+12. 建议：键二可单独采用，它在站点上只改善或不变，但全球方向未测（C-14b 当初削减的 48.6 Tg yr-1 有 91 % 在热带洪泛），须随 G-22 跑全球——推测。理由见 `lit_upland_ch4_260930.txt` 第 5.3 节第 3 条。键一与键三是修错，但全开使原先对上的泥炭塔整体偏低、湿地中位降 0.06，不宜在现有站点水位下单独采用；宜与按塔事实放深水位下限（V-191 一类）一并评估——推测。理由是结论 11 的交互与结论 7 中变差的塔都是模式水位 0.07–0.14 m、塔上水位同样浅的塔。
+
+## 2. 读码
+
+### 2.1 含水位层的判定与产量
+
+1. 非饱和子柱：湿地斑块开 `wetland_dry_unsat_branch` 时 jwt = nl_soil（1416-1420）；否则取 zwt_unsat = zwt，从上往下找第一个满足 zwt ≤ zi(j) 的层，jwt = j − 1（1421-1431），水位在柱底以下时 jwt = nl_soil——已验证（读码）。站点基底 `inundation_mode = 'colm'` 使该分支关闭——已验证（`walter_norm_fix_260930.txt` 第 2.3 节第 2 条引 Const.F90:1475-1488 与配置；本任务复核 `v2_p8n` 第 186 行 `wetland_dry_unsat_branch = .false.`）。
+2. 饱和子柱一律 jwt_sat = 0（1608），全柱按水位以下处理——已验证（读码）。
+3. 于是第 jwt+1 层即含水位层，水位可位于其顶界与底界之间任意处，但在所有子程序里都属"j > jwt"：产量 f·base_decomp·partition_z/dz（2688-2691），替代电子受体的垂向滞后因子只作用于 j > jwt（2648-2649，层滞后在 1448-1459 以 j > jwt_unsat 更新），Walter 归一化把它计入（2347）——已验证（读码）。
+4. 同一层在输运里是液相层：储存只计液相（`epsilon_t = vol_ch4_storage`，4020），扩散系数用液相值乘 vol_aqu^satpow（4169-4172），与上一层的界面按 k_h_cc 换算（4215-4226）；气泡只从 j > jwt 的层产生，注入第 jwt 层（3407、3990-3992），植物通道只从 j > jwt 的层取 CH4（3283），氧化用饱和区参数且不乘土壤水势因子（2974、3019）——已验证（读码）。
+5. 所以含水位层的产量与状态都按全饱和计：FR-LGt 在 `v2_p9n` 5–9 月水位均值 0.110 m，含水位层为第 4 层（0.091–0.166 m，按厚度只 75 % 在水位以下），该层产量 0.054 µmol m-2 s-1，占非饱和子柱 0.117 的 46 %，O2 0.000 mol m-3、O2 胁迫 0.064——已验证（`diag_unsat_p9n.out`）。水位 0.25 m 时含水位层为第 5 层，只约三成饱和却出一半产量——已验证（`diag_peat_high_260930.txt` 第 3.3 节第 4 条）。旱地九塔第 10 层按月均水位只饱和 15–87 %——已验证（`lit_upland_ch4_260930.txt` 结论 3）。
+
+### 2.2 C-14 与 C-14b 的作用范围
+
+1. 开关：`anoxic_decomp_patch = floodplain_anoxic_decomp .and. patchtype /= 2 .and. .not. is_rice_paddy`（1080-1081），即全部非湿地、非稻田斑块，两个子柱都传入同一个值（1480、1643）——已验证（读码）。
+2. 作用：`methane_prod` 在分层之前对 `base_decomp` 乘因子（2515-2532）；淹水子柱且 `floodplain_sif` 开时乘 C-41 的季节淹水因子 (min(f̄, f) + β·max(f − f̄, 0))/f，其余情形乘 `mino2lim`（0.2）；非饱和子柱属"其余情形"，所以其全部层（含水位以上层）的分解碳 `carbon_decomp_depth`（2660）、产量、分解 O2 需求（2727-2735）与 CO2 诊断（2750-2752）都乘 0.2——已验证（读码）。账本把非饱和子柱这一部分登记为 C-14b（cc554e8d）。
+3. 旱地塔上 C-14b 使产量整乘 0.2、氧化几乎不变——已验证（`lit_upland_ch4_260930.txt` 第 3.2 节第 4 条）；C-104 修正后旱地 O2 需求里的分解项只有宿主 HR 的 0.2 倍——已验证（`walter_norm_fix_260930.txt` 结论 13）。
+4. 依据的对照：Riley et al. (2011) 附录 B 的稳态碳库 I·τ/(φβ + 1 − φ) 在常年缺氧（φ → 1）时使产量回到输入速率——已验证（`lit_upland_ch4_260930.txt` 第 4.1 节第 3 条，该文件读全文）。非饱和子柱水位以下层多为常年饱和，乘 0.2 与之不符；水位以上层是有氧土，乘 0.2 更无依据——推测。理由是第 1 条的逐层饱和统计与第 2 条的作用范围。
+
+### 2.3 非饱和子柱氧化偏低的原因
+
+1. 氧化写法：`oxid_a = vmax·vol_aqu·C/(k_m + C)·O/(k_m_o2 + O)·Q10^((T − 12 °C)/10)·smp_fact·fliq`，C、O 为孔隙水中的溶解浓度（3025-3032；分相 5164-5178）；湿地斑块水位以上也用饱和区的 `k_m` 5e-3 与 `vmax` 1.25e-5（2982-2992）；之后与分解、根呼吸在 O2 竞争里按需求比例分配（3777-3835）；模块内没有其他氧化上限，O2 也没有上限截断（3544 注释，`o2_cap_loss` 只作诊断）——已验证（读码）。
+2. 月均收支（`v2_p9n`，µmol m-2 s-1，占非饱和子柱产量的份额）：FR-LGt 5–9 月 P 0.117，气泡 0.49、扩散入大气 0.56、植物通道入大气 0.15、甲烷氧化菌 0.10、根际 0.10；CA-SCB 6–8 月 P 0.100，气泡 0.40、扩散 0.55、甲烷氧化菌 0.10；DE-SfN 气泡 0.44、扩散 0.53、甲烷氧化菌 0.10；FI-Si2 气泡 0.36、扩散 0.50、甲烷氧化菌 0.07——已验证（`diag_unsat_p9n.out`）。气泡注入第 jwt 层后仍须经有氧层扩散，故扩散份额包含气泡的大部分。
+3. 逐日收支（`v2_wtl_offd`，与 `v2_p9n` 同代码同配置、仅改为逐日输出）：FR-LGt 2017 年 6–8 月水位在第 4 层的日子占 68 %、在第 3 层 30 %，含水位层平均停留 7.1 天；水位在第 4 层时 P 0.132、气泡 0.082（P 的 62 %）、扩散 0.092、有氧层（第 1–3 层）氧化 0.007，有氧层氧化占穿过量的 0.07；第 3 层 O2 4.05 mol m-3、O2 胁迫 0.98、CH4 胁迫 1.00，含水位层 O2 0.00、O2 胁迫 0.06。CA-SCB 2014 年 6–8 月水位在第 4 层 65 %，此时气泡占 P 的 45 %，有氧层氧化占穿过量 0.05，第 3 层 O2 胁迫 0.99，含水位层 O2 0.21——已验证（`daily_frlgt_off.out`、`daily_casc_off.out`）。
+4. 由第 1–3 条，有氧层内 O2 充足、CH4 供给不受限，氧化受米氏动力学的溶解 CH4 限制：未饱和孔隙中 CH4 多在气相，溶解浓度按 k_h_cc（约 0.03）折算后远低于 `k_m`，而 `vmax` 按孔隙水体积计，排水后的有氧层含水少，一阶速率常数小；同时气相扩散在 0.09 m 的有氧层中停留时间短——推测。理由是两个胁迫因子均为 1，且按 FR-LGt 水位在第 4 层时第 3 层的平均 CH4 0.006 mol m-3 估算（k_h_cc 取 0.034、温度 15 °C），体积含水量取 0.2 时该层潜在氧化约 0.008 µmol m-2 s-1，与第 1–3 层实际氧化合计 0.007 相当；非饱和子柱各层含水量未输出，未能直接核对。参数本身取 CLM4Me 值（`v2_p8n` 第 201-205 行），是否偏低列为存疑（第 0 节第 5 条）。
+5. 写法层面的偏低来自第 2.1 节第 4 条：含水位层整层按液相处理，O2 不进入其气相部分，氧化带止于含水位层顶界，平均比真实水位浅半层；含水位层的产量又在液相状态下累积到起泡阈值（`vgc_max` 0.15），以气泡直接送入有氧层底部（3990-3992）——已验证（读码与第 3 条含水位层 O2 0.00）。这一项由第三个键修正（第 3.3 节）。
+
+## 3. 实现
+
+三键在同一提交 03541a48 中实现，只改 `MOD_Tracer_Reactive_Methane_Const.F90`（+28 行）与 `MOD_Tracer_Reactive_Methane_Physics.F90`（+45/−8 行），注释与提交信息为英文；键随 `DEF_METHANE` 由 namelist `nl_colm_methane_parameter` 读入，无需另加广播——已验证（`git show --stat 03541a48`；Const.F90 `read_methane_namelist`）。差异块由 `v2/_scratch/wtlayer/render_report.py` 从提交生成，三项合计与 `git diff --numstat` 一致。
+
+### 3.1 键一 `wt_layer_sat_share`
+
+功能概述：非饱和子柱的含水位层只在其位于水位以下的厚度份额上产甲烷，水位以上部分按非饱和土处理。
+
+问题与动机：含水位层整层产甲烷，FR-LGt 在模式水位 0.110 m 时该层只 75 % 饱和却给出非饱和子柱 46 % 的产量，水位 0.25 m 时三成饱和的层出一半产量，旱地塔第 10 层饱和 15–87 % 却整层产甲烷（第 2.1 节第 5 条）。
+
+实现方法：在 jwt_unsat 判定之后求份额 s = min(1, max(0, (zi(jwt+1) − zwt)/dz(jwt+1)))，经新参数 `wt_share` 传入 `methane_prod`（饱和子柱传 1）；在 0.5 上限之后，对 j = jwt + 1 层把 f_methane_adj 乘 s，开 `anoxicmicrosites` 时乘 s + (1 − s)/(1 + oxinhib·O2)。未转为 CH4 的碳仍计入该层的有氧 O2 需求与 CO2 诊断，子柱碳守恒不变（分支 Physics.F90:1435-1441、2297、2683-2695）。键关时 s 恒为 1，条件不成立，运算与原式相同。
+
+理论与文献依据：产甲烷只发生在饱和缺氧的孔隙中；CLM4Me 与 CTSM 以 j > jwt 整层判定是层分辨率下的近似，份额写法使产量对水位连续变化，在层内由全速到零线性过渡（`lit_upland_ch4_260930.txt` 第 5.2 节的情景 C 即此式）。
+
+代码修改：Const.F90 的一块含三键的定义，Physics.F90 的前两块含键一与键三的局部变量与判定，均归入本项；键二、键三其余的修改见第 3.2、3.3 节。
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90，新文件第 594-625 行（提交 03541a48）：
+```diff
+@@ -594,4 +594,32 @@ MODULE MOD_Tracer_Reactive_Methane_Const
+       !   share (Riley et al. 2011, appendix B). Off by default.
+       logical :: floodplain_anoxic_decomp = .false.
++      ! anoxic_decomp_flooded_only (Q-81, paper V2): with C-14 on, only the
++      !   flooded subcolumn decomposes at the anoxic rate (under C-41 when
++      !   floodplain_sif is on); the non-flooded subcolumn keeps the aerobic
++      !   rate in every layer. Its layers below the water table are saturated
++      !   for most of the year, and appendix B of Riley et al. (2011) has the
++      !   carbon stock of a layer anoxic a share phi of the year build up to
++      !   I tau / (phi beta + 1 - phi), so production returns to the input
++      !   rate as phi goes to 1 instead of staying at beta (mino2lim) times
++      !   it; the layers above the table are aerobic soil. Off by default
++      !   (C-14 in both subcolumns).
++      logical :: anoxic_decomp_flooded_only = .false.
++      ! wt_layer_sat_share (Q-81, paper V2): in the non-flooded subcolumn the
++      !   layer holding the water table makes CH4 on the share of its
++      !   thickness below the table only; the share above it is unsaturated
++      !   soil (CH4 only from anoxic microsites when anoxicmicrosites is on).
++      !   Off by default: the whole layer counts as below the table.
++      logical :: wt_layer_sat_share = .false.
++      ! wt_layer_node_transport (Q-81, paper V2): in the non-flooded
++      !   subcolumn the layer holding the water table counts as saturated for
++      !   gas and liquid transport, oxidation kinetics, ebullition and plant
++      !   uptake only when the table is above its node. The off setting counts
++      !   it saturated whatever the depth of the table inside it, which cuts
++      !   the O2 of its air-filled part and ends the oxic zone at its top, on
++      !   average half a layer above the table (0.17 m instead of 0.25 m for a
++      !   table at 0.25 m); the node rule puts the end of the oxic zone at the
++      !   layer interface nearest the table. Production keeps the interface
++      !   rule (wt_layer_sat_share sets its share). Off by default.
++      logical :: wt_layer_node_transport = .false.
+       ! If BGC later applies real o_scalar limits, set (true, false).
+       ! frozen_anoxic_decomp (C-16, paper V2): a frozen wetland layer keeps
+```
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，新文件第 586-591 行（提交 03541a48）：
+```diff
+@@ -586,4 +586,6 @@ contains
+       integer  :: jwt_sat            ! index of the soil layer right above the water table (-), saturated zone
+       integer  :: jwt_unsat          ! index of the soil layer right above the water table (-), unsaturated zone
++      real(r8) :: wt_share_unsat     ! share of layer jwt_unsat+1 below the water table (-), wt_layer_sat_share
++      integer  :: jwt_tran_unsat     ! jwt_unsat as seen by transport, oxidation, ebullition and plants (-)
+       real(r8) :: zwt_sat, wice_soisno_sat(maxsnl+1:nl_soil), wliq_soisno_sat(maxsnl+1:nl_soil), wdsrf_sat
+       real(r8) :: zwt_unsat, wice_soisno_unsat(maxsnl+1:nl_soil), wliq_soisno_unsat(maxsnl+1:nl_soil), wdsrf_unsat
+```
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，新文件第 1433-1453 行（提交 03541a48）：
+```diff
+@@ -1431,4 +1433,21 @@ contains
+                end do
+             endif
++            ! Q-81 (wt_layer_sat_share): layer jwt_unsat+1 holds the water
++            ! table and counts as below it; only the share of its thickness
++            ! under the table is saturated
++            wt_share_unsat = 1._r8
++            if (DEF_METHANE%wt_layer_sat_share .and. jwt_unsat < nl_soil) &
++               wt_share_unsat = min(1._r8, max(0._r8, &
++                  (zi_soisno(jwt_unsat+1) - zwt_unsat) / dz_soisno(jwt_unsat+1)))
++            ! Q-81 (wt_layer_node_transport): for gas transport, oxidation,
++            ! ebullition and plant uptake the layer holding the table counts
++            ! as saturated only when the table is above its node; below the
++            ! node most of it is air-filled and open to the O2 from above.
++            ! Production keeps jwt_unsat (with wt_layer_sat_share, on the
++            ! saturated share)
++            jwt_tran_unsat = jwt_unsat
++            if (DEF_METHANE%wt_layer_node_transport .and. jwt_unsat < nl_soil) then
++               if (zwt_unsat > z_soisno(jwt_unsat+1)) jwt_tran_unsat = jwt_unsat + 1
++            endif
+ 
+ 					if (methane_cold_start) then
+```
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，新文件第 1497-1501 行（提交 03541a48）：
+```diff
+@@ -1478,5 +1497,5 @@ contains
+                lai, conc_o2_unsat, rootfr, annavg_finrw, &
+                crootfr, somhr, lithr, hr_vr, o_scalar, fphr, pot_f_nit_vr, pH, layer_sat_lag, lake_soilc, &
+-               microbial_prod_potential_patch, anoxic_decomp_patch, &
++               microbial_prod_potential_patch, anoxic_decomp_patch, wt_share_unsat, &
+                methane_prod_depth_unsat, o2_decomp_depth_unsat, co2_decomp_depth_unsat )
+             ! candidate 16: alternative electron acceptors take their share of
+```
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，新文件第 1660-1664 行（提交 03541a48）：
+```diff
+@@ -1641,5 +1660,5 @@ contains
+                lai, conc_o2_sat, rootfr, annavg_finrw, &
+                crootfr, somhr, lithr, hr_vr, o_scalar, fphr, pot_f_nit_vr, pH, layer_sat_lag, lake_soilc, &
+-               microbial_prod_potential_patch, anoxic_decomp_patch, &
++               microbial_prod_potential_patch, anoxic_decomp_patch, 1._r8, &
+                methane_prod_depth_sat, o2_decomp_depth_sat, co2_decomp_depth_sat )
+             ! candidate 16: alternative electron acceptors take their share of
+```
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，新文件第 2241-2245 行（提交 03541a48）：
+```diff
+@@ -2222,5 +2241,5 @@ contains
+       lai,conc_o2,rootfr,annavg_finrw,&
+       crootfr,somhr,lithr,hr_vr,o_scalar,fphr,pot_f_nit_vr,pH,layer_sat_lag,lake_soilc,&
+-      microbial_prod_potential_layer, anoxic_decomp, &
++      microbial_prod_potential_layer, anoxic_decomp, wt_share, &
+       methane_prod_depth,o2_decomp_depth,co2_decomp_depth)!output
+       !-----------------------------------------------------------------------
+```
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，新文件第 2295-2299 行（提交 03541a48）：
+```diff
+@@ -2276,4 +2295,5 @@ contains
+ 
+       logical, intent(in) :: anoxic_decomp  ! saturated subcolumn decomposes at the anoxic rate (C-14)
++      real(r8), intent(in) :: wt_share      ! share of layer jwt+1 below the water table (-); 1 unless wt_layer_sat_share
+ 
+       real(r8), intent(out) :: &
+```
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，新文件第 2681-2698 行（提交 03541a48）：
+```diff
+@@ -2658,4 +2681,18 @@ contains
+          ! e.g. 2CH2O --> CH4 + CO2.
+ 
++         ! Q-81 (wt_layer_sat_share): the layer holding the water table makes
++         ! CH4 on its saturated share; the share above the table is aerobic
++         ! soil, producing only through anoxic microsites when those are on.
++         ! The carbon not turned into CH4 stays in the aerobic O2 demand and
++         ! the CO2 below.
++         if (j == jwt + 1 .and. wt_share < 1._r8) then
++            if (DEF_METHANE%anoxicmicrosites) then
++               f_methane_adj = f_methane_adj * (wt_share + (1._r8 - wt_share) &
++                  / (1._r8 + DEF_METHANE%oxinhib * conc_o2(j)))
++            else
++               f_methane_adj = f_methane_adj * wt_share
++            endif
++         endif
++
+          carbon_decomp_depth = max(0._r8, base_decomp * partition_z / dz_soisno(j))
+          legacy_methane_prod_depth = 0._r8
+```
+
+预期效果：含水位层靠近底界时产量下降，水位越深、层越厚，削减越大；水位在地表的子柱与饱和子柱不变。
+
+检验结果：单开时泥炭塔排放降 17–25 %（FR-LGt 76.58 → 61.03、CA-SCB 38.41 → 28.83、FI-Si2 34.80 → 26.30），37 座湿地塔 KGE_ln 中位 0.47 → 0.46，bog 0.60 → 0.39、fen 0.23 → 0.11，US-Uaf β 0.77 → 0.16——已验证（`cmp_p9n_v2_wtl_k1.out`、`budget_p9n_k1.out`）。
+
+### 3.2 键二 `anoxic_decomp_flooded_only`
+
+功能概述：C-14 的缺氧分解只作用于土壤斑块的淹水子柱（开 C-41 时即季节淹水因子），非淹水子柱各层保持有氧分解速率。
+
+问题与动机：C-14b 把非淹水子柱全部层的分解乘 0.2，与 Riley et al. (2011) 附录 B 常年饱和层产量回到输入速率的推导不符，并使水位以上层的 O2 需求也只剩宿主 HR 的 0.2 倍（第 2.2 节）。
+
+实现方法：把 C-14 的条件由 `anoxic_decomp` 改为 `anoxic_decomp .and. (sat == 1 .or. .not. anoxic_decomp_flooded_only)`（分支 Physics.F90:2535-2538）；键关时条件恒等于原条件。
+
+理论与文献依据：Riley et al. (2011) 附录 B，常年缺氧时稳态碳库补偿缺氧速率；CTSM 默认配置下季节淹水因子只用于淹水柱且在 `anoxia` 开时不用（`lit_upland_ch4_260930.txt` 第 4.5 节第 1 条、第 5.1 节第 2 条）。
+
+代码修改：
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，新文件第 2533-2540 行（提交 03541a48）：
+```diff
+@@ -2513,5 +2533,8 @@ contains
+          ! seasonal inundation factor above with no permanently inundated share
+          ! (Riley et al. 2011, appendix B).
+-         if (anoxic_decomp) then
++         ! Q-81 (anoxic_decomp_flooded_only): the flooded subcolumn only; the
++         ! non-flooded one keeps the aerobic rate (appendix B: a layer anoxic
++         ! most of the year builds its carbon back up to the input rate)
++         if (anoxic_decomp .and. (sat == 1 .or. .not. DEF_METHANE%anoxic_decomp_flooded_only)) then
+             if (DEF_METHANE%floodplain_sif .and. sat == 1) then
+                ! C-41: the flooded subcolumn of a floodplain takes the CLM4Me
+```
+
+预期效果：土壤斑块（旱地、洪泛格的非淹水部分）的产量与分解 O2 需求回到宿主 HR 水平；湿地斑块与稻田逐位不变。
+
+检验结果：单开时湿地斑块各塔四数与模式均值两位小数不变；BR-Npw KGE_ln −0.17 → −0.09（模式 39.66 → 42.20，塔上 90.58），BW-Nxr −1.93 → −1.89；旱地 AT-Neu −3.37 → 0.14（模式 0.04 → 1.18，塔上 1.19）、CH-Cha 0.32 → 2.95、US-Pfa −0.08 → 0.19，符号正确 2/5 → 4/5——已验证（`cmp_p9n_v2_wtl_k2.out`）。
+
+### 3.3 键三 `wt_layer_node_transport`
+
+功能概述：非淹水子柱的含水位层在水位低于其节点时，于输运、氧化动力学、气泡与植物通道中按水位以上层处理；产量仍按原判定（键一开时按份额）。
+
+问题与动机：含水位层整层按液相输运，其气相部分的 O2 被切断，氧化带止于含水位层顶界，平均比真实水位浅半层；含水位层 O2 0.00、O2 胁迫 0.06（第 2.3 节第 3、5 条）。
+
+实现方法：另设 jwt_tran_unsat，水位深于第 jwt+1 层节点 z(jwt+1) 时取 jwt + 1，否则等于 jwt；`methane_oxid`、`methane_ebul`、`methane_aere`、`methane_tran` 改用它，`methane_prod`、`methane_acceptor`、`methane_root_oxid` 与层滞后仍用 jwt_unsat（分支 Physics.F90:1442-1451、1508、1514、1520、1542）。键关时两者相等。
+
+理论与文献依据：属离散化修正。按节点判定时氧化带下界落在离水位最近的层界上，误差不超过半层且正负对称；按底界判定时误差恒为正，平均半层（Const.F90 注释中 0.25 m 水位的例子）。本项未检索专门文献，依据为层几何。
+
+代码修改：
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，新文件第 1506-1510 行（提交 03541a48）：
+```diff
+@@ -1487,5 +1506,5 @@ contains
+ 
+             ! Calculate CH4 oxidation in each soil layer
+-            call methane_oxid ( idate, patchtype, jwt_unsat, sat, t_soisno, fliq_unsat, dz_soisno, zi_soisno, smp, vol_aqu_unsat, &
++            call methane_oxid ( idate, patchtype, jwt_tran_unsat, sat, t_soisno, fliq_unsat, dz_soisno, zi_soisno, smp, vol_aqu_unsat, &
+                conc_o2_aqu_porsl_unsat, conc_ch4_aqu_porsl_unsat, &
+                microbial_oxid_potential_patch, &
+```
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，新文件第 1512-1516 行（提交 03541a48）：
+```diff
+@@ -1493,5 +1512,5 @@ contains
+ 
+             ! Calculate CH4 ebullition losses in each soil layer
+-            call methane_ebul ( idate, patchtype, jwt_unsat, sat, finundated, deltim, &
++            call methane_ebul ( idate, patchtype, jwt_tran_unsat, sat, finundated, deltim, &
+ 					z_soisno, dz_soisno, zi_soisno, forc_pbot, lake_depth_current, lake_icefrac, &
+                t_soisno, wdsrf_unsat, conc_methane_unsat, conc_ch4_gas_porsl_unsat, &
+```
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，新文件第 1518-1522 行（提交 03541a48）：
+```diff
+@@ -1499,5 +1518,5 @@ contains
+ 
+             ! Calculate CH4 aerenchyma losses in each soil layer
+-				call methane_aere ( ipatch, idate, jwt_unsat, sat, patchclass, lai, woody_share_unsat, &
++				call methane_aere ( ipatch, idate, jwt_tran_unsat, sat, patchclass, lai, woody_share_unsat, &
+                z_soisno, dz_soisno, zi_soisno, t_soisno, fliq_unsat, &
+ 					rootfr, rootr, etr, grnd_methane_cond_base, c_atm, annsum_npp, &
+```
+
+文件 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，新文件第 1540-1544 行（提交 03541a48）：
+```diff
+@@ -1521,5 +1540,5 @@ contains
+             ! Competition for oxygen will occur here.
+             call methane_tran ( idate, patchtype, &
+-               lb, snl, jwt_unsat, sat, finundated, &
++               lb, snl, jwt_tran_unsat, sat, finundated, &
+                dlon, dlat, deltim, z_soisno, dz_soisno, zi_soisno, t_soisno, t_grnd, forc_us, forc_vs, &
+ 					porsl, wliq_soisno_unsat, wice_soisno_unsat, wdsrf_unsat, lakedepth, dz_lake, t_lake, lake_icefrac, bsw, c_atm, prod_tran_unsat, o2_aere_depth_unsat, &
+```
+
+预期效果：水位位于含水位层下半部时，该层变为有氧层，O2 与氧化增加、气泡减少；水位在地表或层上半部时不变。
+
+检验结果：单开时泥炭塔非淹水子柱氧化占产量由 0.20–0.24 升到 0.29–0.40，排放降 10–22 %（FR-LGt 76.58 → 68.83、CA-SCB 38.41 → 32.07、DE-SfN 69.46 → 54.51），湿地中位 0.47 → 0.45，bog 0.60 → 0.38、fen 0.23 → 0.15，湿苔原几乎不变——已验证（`cmp_p9n_v2_wtl_k3.out`、`budget_p9n_k3.out`）。逐日看，CA-SCB 水位在第 4 层时该层 O2 由 0.21 升到 1.27 mol m-3（全开），含水位层及其以下各层的氧化 0.013 → 0.033 µmol m-2 s-1——已验证（`daily_casc_off.out`、`daily_casc_all.out`）。
+
+## 4. 核验
+
+### 4.1 树、配置与运行
+
+1. 树：`build_site_tree.sh 03541a48 v260930/sp_v2_dev_wtl`，MAKE_EXIT=0，`run/colm.x` 生成——已验证（`build_20260930_v2.log` 末行）。`CODE_COMMIT.txt` 的 branch 字段由脚本写死为 methane-paper-v2，note 注明 wt-layer 分支；提交与 e979f598 之间只差本次两个文件——已验证（`git diff --stat e979f598 67e055c1 -- . ':!v2'` 为空）。
+2. 配置：`v2_wtl_off`、`k1`、`k2`、`k3`、`all` 五个变体只在 `ch4_parameter.nml` 末尾多一行注释与三键的显式赋值，其余文件与 `v2_p8n` 逐字节同；`v2_wtl_allo` 是 `v2_p8o`（`v2_p8n` 加 FR-LGt `wetland_max_wtd` 0.25）加同样四行；`v2_wtl_offd`、`v2_wtl_alld` 分别只比 `v2_wtl_off`、`v2_wtl_all` 多改 `DEF_HIST_FREQ` 为 DAILY——已验证（`mk_cfg.py`、`mk_cfg_o.py`、`mk_cfg_daily.py` 打印的 diff）。键关 tag 的 `_conf` 与 `v2_p9n` 只差输出路径与这四行——已验证（`diff -r` 两 tag 的 `_conf`）。
+3. 运行：`prep_tag.sh`（spin 5，SITE_PARAMS、SITE_MAIN 取各配置），`run_sites_direct.sh` 于 node111、node112、node114、node110；六个 tag 都为 DONE，键关 2/2、单开与全开各 46/46、`allo` 1/1——已验证（各 tag `_conf/STATUS.txt`、`.complete`）。逐日两 tag（`v2_wtl_offd`、`v2_wtl_alld`）写本文时仍在跑第二年，分析只用已写完的 2017 年（FR-LGt）与 2014 年（CA-SCB）6–8 月——已验证（历史文件的时间维 255、242 条）。
+
+### 4.2 键关逐位
+
+`compare_hist.py`（每塔每个历史文件的每个变量，`np.array_equal`，NaN 视为相等）：FR-LGt 1062 个变量 0 个不同，US-Myb 4779 个变量 0 个不同，结论 IDENTICAL——已验证（`v2/_scratch/wtlayer/compare_off_vs_p9n.out`）。
+
+### 4.3 斑块收支（全开对 `v2_p9n`，全部输出月）
+
+| 塔 | 模式水位 m | P | O | E | 非淹水 E | 非淹水 O/P |
+| --- | --- | --- | --- | --- | --- | --- |
+| FR-LGt | 0.08 | 121.37 → 101.80 | 44.54 → 46.55 | 76.58 → 55.03 | 55.91 → 36.77 | 0.21 → 0.29 |
+| CA-SCB | 0.12 | 62.44 → 49.01 | 23.16 → 23.67 | 38.41 → 24.64 | 28.00 → 17.09 | 0.22 → 0.32 |
+| DE-SfN | 0.08 | 112.77 → 94.88 | 42.94 → 48.47 | 69.46 → 46.08 | 44.73 → 26.00 | 0.20 → 0.34 |
+| FI-Si2 | 0.08 | 59.22 → 48.30 | 24.47 → 26.84 | 34.80 → 21.48 | 22.54 → 11.90 | 0.21 → 0.37 |
+| JP-BBY | 0.07 | 111.37 → 95.75 | 45.25 → 49.40 | 66.11 → 46.23 | 43.51 → 26.98 | 0.24 → 0.36 |
+| US-Los | 0.08 | 94.97 → 80.97 | 33.22 → 36.68 | 61.05 → 43.47 | 45.71 → 30.68 | 0.21 → 0.31 |
+| US-Atq | 0.08 | 27.36 → 25.41 | 11.87 → 11.81 | 16.00 → 14.09 | 6.55 → 5.02 | 0.26 → 0.31 |
+| RU-Ch2 | 0.09 | 47.82 → 43.73 | 19.35 → 18.16 | 28.95 → 26.04 | 16.18 → 13.77 | 0.24 → 0.24 |
+| US-Uaf | 1.39 | 6.69 → 1.88 | 4.34 → 1.32 | 1.57 → 0.29 | 1.55 → 0.28 | 0.65 → 0.70 |
+| BR-Npw | 1.80 | 58.97 → 62.43 | 26.25 → 28.52 | 32.62 → 33.58 | −0.16 → 0.33 | 0.99 → 0.78 |
+| CH-Cha | 2.42 | 1.24 → 2.24 | 0.99 → 0.52 | 0.30 → 1.91 | 0.30 → 1.91 | 0.80 → 0.23 |
+| US-CRT | 3.34 | 0.72 → 0.28 | 0.25 → 0.50 | 0.12 → −0.19 | 0.12 → −0.19 | 0.35 → 1.75 |
+
+——已验证（`v2/_scratch/wtlayer/budget_p9n_all.out`）。O 含大气 CH4 的吸收，旱地塔 O/P 可大于 1。泥炭塔的排放降低全部来自非淹水子柱：产量降（键一）与氧化份额升（键三）各占一部分；US-Uaf 的产量主要来自水位偶尔上升时的含水位层，键一使其降 72 %——推测。理由是其月均水位 1.84 m 而夏季产量出在 0.29–0.83 m 的层（`diag_unsat_p9n.out`）。
+
+### 4.4 计分（score77.py 算法，37 座湿地塔与 5 座旱地塔）
+
+类中位（KGE_ln / β / α / r，`v2_p9n` → 全开，共同计分塔）：bog（6 塔）0.60/0.99/1.15/0.76 → 0.04/0.75/0.65/0.66；fen（7）0.23/1.00/1.19/0.88 → 0.29/0.73/0.81/0.87；marsh（9）0.51/1.07/0.76/0.83 → 0.51/1.07/0.76/0.82；swamp（5）−0.17/1.27/0.71/0.60 → −0.13/1.27/0.60/0.64；湿苔原（9）0.53/1.02/1.55/0.81 → 0.51/0.98/1.45/0.79；永冻（1）−0.10/0.77/2.39/0.37 → −1.20/0.12/0.79/0.48；湿地合计（37）0.47/1.02/1.05/0.80 → 0.41/0.98/0.89/0.77——已验证（`cmp_p9n_v2_wtl_all.out`）。
+
+逐塔（KGE_ln，β）：
+- bog：CA-SCB 0.70 → 0.21（0.88 → 0.53）、DE-SfN −1.09 → −0.61（5.32 → 3.58）、FI-Si2 0.63 → −0.17（0.81 → 0.47）、JP-BBY 0.75 → 0.41（1.04 → 0.73）、NZ-Kop 0.37 → −0.13（1.67 → 1.16）、US-BZB 0.57 → 0.52（0.95 → 0.78）
+- fen：FR-LGt −2.25 → −1.74（13.19 → 9.22）、US-Los −0.16 → 0.29（2.58 → 1.84）、US-BZF 0.58 → 0.61、FI-Sii 0.85 → 0.45（1.00 → 0.73）、SE-Deg 0.77 → 0.52（0.92 → 0.66）、DE-Zrk 0.09 → −0.15、FI-Lom 0.23 → −0.25（0.54 → 0.38）
+- 湿苔原：RU-Ch2 0.53 → 0.61、US-A03 0.64 → 0.51、US-A10 −0.10 → −0.01、US-Atq −0.31 → −0.14（1.91 → 1.66）、US-ICs −0.72 → −0.61、US-Ivo 0.29 → 0.40、US-NGB 0.83 → 0.82，US-Beo、US-Bes 不变；永冻 US-Uaf −0.10 → −1.20（0.77 → 0.12）
+- marsh：US-DPW 0.47 → 0.50、US-LA2 0.56 → 0.67、US-ORv 0.78 → 0.68，其余六塔不变
+- swamp：BR-Npw −0.17 → −0.13、US-NC4 0.20 → 0.26、MY-MLM −1.69 → −1.76，BW-Gum、BW-Nxr 不变
+- 旱地（模式均值，塔上）：AT-Neu 0.04 → −0.17（1.19）、CH-Cha 0.32 → 2.02（11.32）、RU-Fy2 −0.19 → −0.21（10.03）、US-CRT −0.13 → −0.17（9.41）、US-Pfa −0.08 → 0.05（4.06）
+
+——已验证（同上）。单开对照见第 3 节各项检验结果；三键单开的湿地中位 0.46、0.47、0.45——已验证（`cmp_p9n_v2_wtl_k1/k2/k3.out`）。
+
+### 4.5 CA-SCB 与 FR-LGt 的季节
+
+CA-SCB 月气候态（塔上 / `v2_p9n` / 键一 / 键三 / 全开）：7 月 103/113/77/80/56，8 月 116/83/68/76/59，9 月 71/40/25/38/21——已验证（`clim_5towers.out`）。夏末偏低在 `v2_p9n` 已有，三键使之加重，键一贡献大于键三。FR-LGt 月气候态（塔上 / `v2_p9n` / `v2_p9o` / 全开 / 全开加下限 0.25 m）：6 月 25/128/113/73/37，7 月 13/174/100/57/28，8 月 4/147/99/124/8——已验证（`clim_frlgt_floor.out`）。
+
+## 5. 未做事项
+
+1. 未合入 methane-paper-v2、未 push、未改 `v2/迭代账本.md`；未跑 Methane 仓的 CODE 层同步链（`docs/_tools/extract_params.py`、`build_ledger.py`），合入时再跑。
+2. 未跑全球；未跑 wet 与旱地以外的 31 塔。
+3. 配置、脚本、结果文件（`v2/config/v2_wtl_*`、`v2/_scratch/wtlayer/`、本文件、`v2/results/scores77_v2_wtl_*`）只在本 worktree，未提交。

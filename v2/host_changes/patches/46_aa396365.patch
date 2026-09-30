@@ -1,0 +1,118 @@
+From aa3963654f2055e923c3f78f9ac251b44b6a2ad4 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 14:02:19 +0800
+Subject: [PATCH] fix(crop): close the GDD year at a spin-up wrap that missed 1
+ January (Q-48)
+
+gdd020/gdd820/gdd1020 are updated only on the first step of 1 January. A spin-up cycle over single-year or part-year site forcing (JP-Mse 2012, US-HRA and US-HRC Jan-Aug 2017) never passes that step, so they stay at the cold-start 0 and rice matures at the constant term of gddmaturity, 587 GDD: harvest 52-62 days after sowing against 133-140 observed. CropGDDSpinCycleEnd, called at every spin-up wrap, closes the GDD year as the 1 January block does when the cycle did not pass 1 January; cycles that did (every global run, the other 73 towers) are unchanged.
+
+---
+ main/BGC/MOD_BGC_Veg_CNPhenology.F90 | 41 ++++++++++++++++++++++++++--
+ main/CoLM.F90                        |  7 +++++
+ 2 files changed, 46 insertions(+), 2 deletions(-)
+
+diff --git a/main/BGC/MOD_BGC_Veg_CNPhenology.F90 b/main/BGC/MOD_BGC_Veg_CNPhenology.F90
+index 88dd8202..6f61250f 100644
+--- a/main/BGC/MOD_BGC_Veg_CNPhenology.F90
++++ b/main/BGC/MOD_BGC_Veg_CNPhenology.F90
+@@ -140,10 +140,15 @@ MODULE MOD_BGC_Veg_CNPhenology
+    IMPLICIT NONE
+ 
+    PUBLIC CNPhenology
++   PUBLIC CropGDDSpinCycleEnd
+ 
+    integer, parameter :: NOT_Planted   = 999 ! If not planted   yet in year
+    integer, parameter :: NOT_Harvested = 999 ! If not harvested yet in year
+ 
++   real(r8), parameter :: yravg   = 20.0_r8      ! length of years to average for gdd
++   real(r8), parameter :: yravgm1 = yravg-1.0_r8 ! minus 1 of above
++   logical :: gdd_year_closed = .false.          ! Q-48: the 1 January gdd..20 update ran in this spin-up cycle
++
+ CONTAINS
+ 
+    SUBROUTINE CNPhenology(i,ps,pe,nl_soil,idate,dz_soi,deltim,dlat,npcropmin,phase)
+@@ -248,8 +253,6 @@ CONTAINS
+    real(r8),intent(in) :: dlat            ! latitude (degrees)
+ 
+   ! !LOCAL VARIABLES:
+-   real(r8), parameter :: yravg   = 20.0_r8      ! length of years to average for gdd
+-   real(r8), parameter :: yravgm1 = yravg-1.0_r8 ! minus 1 of above
+    integer :: m,ivt
+    logical , parameter :: isconst_baset = .true. ! .true. for constant base temperature
+                                                 ! .false. for latidinal varied base temperature
+@@ -322,6 +325,7 @@ CONTAINS
+       DO m = ps , pe
+          ivt = pftclass(m)
+          IF (idate(2) == 1 .and. idate(3) == deltim)THEN
++            gdd_year_closed = .true.
+             IF(nyrs_crop_active_p(m) == 0) THEN ! YR 1:
+                gdd020_p(m)  = 0._r8                      ! set gdd..20 variables to 0
+                gdd820_p(m)  = 0._r8                      ! and crops will not be planted
+@@ -348,6 +352,39 @@ CONTAINS
+ 
+    END SUBROUTINE CNPhenologyClimate
+ 
++   SUBROUTINE CropGDDSpinCycleEnd ()
++
++! !DESCRIPTION:
++! Q-48: a spin-up cycle over single-year or part-year site forcing that does
++! not pass the first step of 1 January never updates gdd020/gdd820/gdd1020, so
++! they stay at the cold-start 0 and rice matures at the constant term of
++! gddmaturity (587 GDD, harvest 52-62 days after sowing). Such a cycle closes
++! its GDD year at the wrap, as CNPhenologyClimate does on 1 January; a cycle
++! that passed 1 January is left alone. Called at every spin-up wrap.
++
++   integer :: m
++
++      IF (.not. gdd_year_closed .and. allocated(gdd020_p)) THEN
++         DO m = 1, size(gdd020_p)
++            nyrs_crop_active_p(m) = nyrs_crop_active_p(m) + 1
++            IF (nyrs_crop_active_p(m) == 1) THEN
++               gdd020_p(m)  = gdd0_p(m)
++               gdd820_p(m)  = gdd8_p(m)
++               gdd1020_p(m) = gdd10_p(m)
++            ELSE
++               gdd020_p(m)  = (yravgm1* gdd020_p(m)  + gdd0_p(m))  / yravg
++               gdd820_p(m)  = (yravgm1* gdd820_p(m)  + gdd8_p(m))  / yravg
++               gdd1020_p(m) = (yravgm1* gdd1020_p(m) + gdd10_p(m)) / yravg
++            ENDIF
++            gdd0_p (m) = 0._r8
++            gdd8_p (m) = 0._r8
++            gdd10_p(m) = 0._r8
++         ENDDO
++      ENDIF
++      gdd_year_closed = .false.
++
++   END SUBROUTINE CropGDDSpinCycleEnd
++
+ 
+    SUBROUTINE CNEvergreenPhenology (i,ps,pe,deltim,dayspyr)
+ !
+diff --git a/main/CoLM.F90 b/main/CoLM.F90
+index 5162e522..df1ae8cb 100644
+--- a/main/CoLM.F90
++++ b/main/CoLM.F90
+@@ -101,6 +101,9 @@ PROGRAM CoLM
+    USE MOD_Aerosol, only: AerosolDepInit, AerosolDepReadin
+ 
+    USE MOD_ParameterOptimization
++#if (defined BGC) && (defined CROP)
++   USE MOD_BGC_Veg_CNPhenology, only: CropGDDSpinCycleEnd
++#endif
+ #if (defined TRACER) && (defined BGC)
+    USE MOD_Tracer_Reactive_Methane_WetlandVeg, only: wetveg_lai_peak_needed, wetveg_track_lai_peak
+ #endif
+@@ -720,6 +723,10 @@ PROGRAM CoLM
+                   ! run (no-op unless DEF_METHANE%wetland_bgc_sasu); the last
+                   ! cycle runs plain.
+                   IF (p_is_worker) CALL wetland_bgc_sasu_cycle_end (i_spinupcycle + 1 == n_spinupcycle)
++#endif
++#if (defined BGC) && (defined CROP)
++                  ! Q-48: a cycle that did not pass 1 January closes its GDD year here
++                  IF (p_is_worker) CALL CropGDDSpinCycleEnd ()
+ #endif
+                   i_spinupcycle = i_spinupcycle + 1
+                   idate   = sdate
+-- 
+2.53.0
+

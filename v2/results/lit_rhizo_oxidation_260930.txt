@@ -1,0 +1,358 @@
+# lit_rhizo_oxidation_260930：湿地与稻田根际 CH4 氧化份额——全类型文献汇总（L-14）
+
+- **日期**：2026.09.30-06:56
+- **读者**：下一会话
+- **来源**：中控派活（methane-lit-rox，文献线 L-14，只读）；三个只读文献子任务（稻田；bog、fen、苔原与藓；挺水沼泽、沼泽林与方法学）交回后主会话抽核；读码树 `CoLM202X-paper-v2` HEAD 379a4b8f；取数脚本与输出在 `v2/_scratch/rox/`；承接 `diag_marsh_ch4_per_gpp_260930.txt` 第 4 节、`lit_models_wetland_260929.txt` 第 2.6 节、`lit_models_rice_260929.txt` 第 2.5 节、`lit_woody_conduit_260929.txt` 第 3.3 节与账本 D-59、D-62、V-137、V-141、V-159
+- **状态**：五问已答；建议只到取值、依据与线性预期，未改代码与配置、未投作业；第 7 节 DOI 已逐条查 Crossref
+- **失效于**：D-59 的作用对象或 x 的取值改动后，或热带产率（D-61）、沼泽底物（Q-50、Q-64）修正落地后
+
+## 0. 覆盖面
+
+1. 口径记号（全文通用）：
+   - (a) 占潜在排放 O/(O+E)，抑制剂箱法与 N2 暗处理的常见口径；
+   - (b) 占进入植物通道的 CH4，即模式 D-59 的定义（见第 1 节第 1 条）；
+   - (c) 占总产量 O/P，含土–水界面、表层泥炭与藓层氧化；
+   - (d) 氧化发生处：只在根际，还是含泥面、水柱、藓层。
+   - O/E 与 (a) 互换：a = r/(1+r)，r = O/E。
+2. 读码：`grep -n aereoxid|rox_on_rooted_production|rice_rox_only|methane_root_oxid` 于 `main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90`（命中 25 行，逐处读）与 `_Const.F90`（命中 9 行，读 975–1037 定义段）；CTSM `src/biogeochem/ch4Mod.F90`（`aereoxid` 命中 11 行）、`ch4varcon.F90`、`bld/namelist_files/namelist_definition_ctsm.xml`、`namelist_defaults_ctsm.xml`；参数文件 `~/mode/Wetland/v1/CLM_params/clm_params.c170913.nc`、`clm5_params.c171117.nc` 的 `aereoxid`；CTSM 技术手册 `doc/source/tech_note/Methane/CLM50_Tech_Note_Methane.rst`（`grep -n -i oxid|aerench`，40 余处，读 144–212 行）。
+3. 配置与账本：`v2/config/v2_p8a`、`v2_p7rr` 的 `ch4_parameter.nml`（`aereoxid|rox|rice_rox_only`）；账本行首检索 D-59、D-62、V-137、V-141、V-159、C-54、V-114、V-122、Q-50、V-147、Q-61 全行。
+4. 模式结果（本文新算，全部在 `v2/_scratch/rox/`）：`class_medians.out`（`v2_p9a`、`v2_p9s25`、`v2_p9s55`、`v2_p7`、`v2_p7rr` 的类中位）；`combo.out`（按类取不同份额的 37 塔中位估算）；`pathway_shares_v2_p9a.out`（23 座水位塔通道份额，node112）；`pathway_shares_g2_sp_2017.out` 与 `global_eval_g2_sp_2017.out`（全球 `g2_sp` 2017 年，node112）；`field_stats.out`（野外份额的中位与四分位）。
+5. 模式文献（本文读本地全文或文本）：Walter & Heimann 2000、Zhuang 2004、Riley 2011、Meng 2012、Wania 2010、Salmon 2022、Gao 2025、Zhang 2016（LPJ-wsl）、Gedney 2004、Chadburn 2020（NORA PDF）、Zhu 2014、Li 2020 及其补充材料、Ringeval 2010、Spahni 2011、Cao 1995、Huang 1998、van Bodegom 2000 博士论文与 2001。
+6. 实测文献检索（子任务 A 检索词 22 组、每组命中 9–10 条；子任务 B WebSearch 38 次、WebFetch 约 60 次；子任务 C WebSearch 约 30 次、WebFetch 约 55 次；主会话另查 Crossref 约 60 次、OpenAlex 约 15 次）：
+   - 检索词：rhizospheric methane oxidation 加 Typha、Phragmites、Scirpus、Sparganium、Pontederia、Sagittaria、Equisetum、Carex、Eriophorum、Juncus、Sphagnum、rice/Oryza；methyl fluoride、difluoromethane、acetylene inhibition、N2 flush、13CH4 labeling、δ13C/δD fraction oxidized；tree stem/bark methanotroph、swamp forest、mangrove；作者加题名逐篇检索（各子任务覆盖面所列约 110 篇）。
+   - 读到层级：全文约 60 篇（本地 PDF、PMC、Copernicus、OSTI/NSF PAR 接受稿、机构库）；只读摘要约 80 篇（OpenAlex 倒排索引复原或出版社页）；只转引约 15 篇。
+   - 主会话抽核（本文亲读原文句或表）：Ström 2005 p.74；Frenzel & Rudolph 1998 摘要与方法；King 1996 正文 p.4550–4551；Calhoun & King 1997 正文 p.3054 与表 2；Kankaala & Bergström 2004 表 4；Grasset 2026 p.8；Groot 2003 表 2 与 p.370；Zhang 2013（BG）p.3384；van Bodegom 2000 p.24、p.135 与 van Bodegom 2001 p.161、p.170；Le Mer & Roger 2001 p.28；Laanbroek 2010 表 1（PMC）；Krüger 2001、Tyler 1997、Bilek 1999、Moosavi & Crill 1998、Knoblauch 2015 摘要（OpenAlex 复原）。
+   - 🔴 所有联网请求的 URL 与请求头都不含邮箱或个人信息，未用 mailto。
+7. 不可得、不入项：Frenzel 2000 书章（只有预览）、Watson 等 1997（连摘要也未取得）、Chanton & Whiting 1996、Agethen 2018、Whalen & Reeburgh 2000（摘要截断）、Wassmann & Aulakh 2000 与 Conrad 2002 全文、van der Nat & Middelburg 1998 全文（ScienceDirect 403），这些条目只用摘要或转引，逐条已标。
+8. 未看：无。
+9. 存疑（要跑或要实测才能定）：第 6 节各方案的实跑量级，实验见第 6.4 节；木本根际氧化份额，要做木本根际原位实测（第 4.2 节表沼泽林行）。
+
+## 1. 结论
+
+1. 模式口径：现写法（`rox_on_rooted_production` 缺省 `.false.`）在每层 O2/CH4 竞争之后，把"进入通气组织的 CH4"扣掉 x 份记为氧化，所需 O2 不从土层取，同时这些斑块的植物 O2 不再送入土层；所以 x = O_rox/(O_rox + E_plant)，是口径 (b)——已验证（读码 `Physics.F90:3835–3849`、`1502–1504`、`1671–1674`，HEAD 379a4b8f）。D-62 ① 的另一写法把 x × 根密度权重乘在水位下有根层的产量上，同一 x 下整列氧化只有现写法的 0.45–0.6 倍，账本已定不用——已验证（读码 `Physics.F90:2844–2903`；账本 V-137）。
+2. 在植物通道占排放 0.99–1.00 的柱里（`v2_p9a` 的 marsh 类、稻田），x 同时就是全柱 O/P；bog、fen 植物通道只占排放 0.52–0.60，O/P 0.40–0.42 里另有土层氧化——已验证（`v2/_scratch/rox/pathway_shares_v2_p9a.out`；`diag_marsh_ch4_per_gpp_260930.txt` 第 1 节第 5 条）。
+3. 野外原位、按 (a)/(b) 计的份额：挺水植物 8 条中位 0.27（四分位 0.22–0.36，范围 0.16–0.48）；泥炭与苔原莎草 4 条中位 0.10（0–0.18）；两组排序检验 U = 31/32、双侧 p = 0.008；合并 12 条中位 0.21（0.16–0.29）——已验证（`field_stats.out`；逐条出处见第 2 节）。样本少、方法混杂，这组中位只作量级——推测。理由见第 4.1 节。
+4. 同类的温室、水培与整柱实验高得多：0.65–0.90，中位 0.76；Walter & Heimann 2000 取 0.5 所依据的三条（Schipper & Reddy 1996 温室 65 % 与 79 %、Schütz 1989 约 90 %、Gerard & Chanton 1993 的 39–98 %）都来自温室、培养或 O2 不受限的潜在速率——已验证（Walter & Heimann 2000 第 2.5 节 p.750；各文摘要，子任务读；Kankaala & Bergström 2004 讨论写明盆栽"misleadingly high"）。
+5. 季节：份额高的时段是排放低的早季或冬季，排放高峰时份额低——香蒲 12 月 46.5 %、7 月 13.5 %，两月按通量加权 0.15；Carex fen 夏末排放峰值时"almost nondetectable"；阿拉斯加 Carex 样框 8 月中旬后为零——已验证（Lombardi 1997 摘要、Popp 2000 摘要，子任务读；Turner 2020 §3.2，子任务读全文；加权为算术）。模式里常数 x 相当于通量加权季均，应对照通量加权值，它低于算术季均——推测。依据同上。
+6. 方法学：抑制剂之间与抑制剂对暗处理 N2 相差 0–4 个百分点（Lombardi 1997 温室 57.7 % 对 58.5 %；King 1996 C2H2 29 % 对 CH3F 25 %）；长时间 N2 处理刺激产甲烷、份额偏高（稻田 N2 比 CH3F 高 10–190 % 的排放）；同位素法与抑制剂法季节形态一致，但范围更宽，对 α_ox 与 ε_trans 敏感（α_ox 1.038 改 1.025，份额乘约 1.5）；产量减排放的 O/P 比抑制剂法高 2–4 倍（同一 Carex fen：58–92 % 对 < 20 %），离体厌氧培养高估产量是主因——已验证（第 3 节逐条）。与 D-59 同口径的是 (b)（单株箱、植物通道同位素、根下 13CH4 标记），其次是植物通道占主导时的整株抑制剂 (a)，不是培养质量平衡的 (c)——推测。依据第 1 条读码与第 3.3 节换算。
+7. 稻田：抑制剂法季均 32 ± 8 %（汇总 7 篇），按日期 0–52 %；意大利原位 CH2F2 由季初 40 % 降到季末 0；温室根下 13CH4 标记在生长后期 < 7 %；同位素法江苏句容季初 60–100 %、后期 10–30 %，Texas 季末 39–71 %；现值 0.65 来自 (c)：Cao 1995 的 40–90 %（依 Schütz 1989 培养质量平衡）与 Huang 1998 季均排出份额 0.35——已验证（van Bodegom 2000 p.24；Groot 2003 p.370 与表 2；Krüger 2001、Tyler 1997、Bilek 1999 摘要；Zhang 2013 BG p.3384；Cao 1995 式 8；Huang 1998 式 9、式 13）。按 (b) 对齐，稻田季均约 0.30–0.45——推测。依据同上；两派季节形态未统一，见第 2.6 节。
+8. 沼泽林：没有检出任何湿地树种的根际氧化份额实测；只有树皮与树干内氧化（Melaleuca 树干加二氟甲烷后通量升 36.3 %，折 O/(O+E) 0.27；沿树干轴向约 33 %）与土面扩散氧化（52–81 %）——已验证（Jeffrey 2021 两篇、Megonigal & Schlesinger 2002，子任务读）。木本通道的 x 只能当"树内氧化并入 x"的代理，取 0.25–0.35——存疑。要有木本根际实测才能定，本文不能靠读文献解决；见第 4.2 节。
+9. 其他模式：固定份额派 Walter 0.5、TEM 0.40、TRIPLEX-GHG 0.5、ORCHIDEE-PCH4 缺省 0.5（多站优化 0.70、单站 0.003–0.99）、CH4MODwetland 草本 0.5 与高产草本、木本 0.9（按通量标定）；预报派 CLM4Me 全球通量加权约 0.6，Meng 2012 降 R_o,max 对上实测后全球约 0.15（热带 0.11、温带 0.25、高纬 0.23）；JULES-HIMMELI 0.40–0.56（占根际产量）；CTSM 缺省预报，参数文件 `aereoxid` = 0；LPJ-wsl 与 JULES 标准版无显式根际氧化——已验证（第 5 节逐条）。
+10. 一个全局值盖不住挺水与泥炭莎草的差（0.27 对 0.10）；文献支持按植被维度分：挺水 0.25（0.15–0.40）、泥炭莎草与藓地 0.10（0–0.20）、木本 0.30（存疑）——推测。依据第 3 条与第 4 节。
+11. 模式的类响应与文献方向一致、水平整体偏高：37 塔上 0.40 总中位最好（0.44；0.25 与 0.55 都是 0.33）；marsh 在 0.40–0.55 最好，fen 与沼泽林在 0.25 最好，bog 与湿苔原在 0.40 最好；按文献次序而水平各抬约 0.15 的分法（marsh 0.55、fen 与沼泽林 0.25、bog 与湿苔原 0.40）总中位仍为 0.44、β 中位由 1.14 降到 1.05——已验证（`class_medians.out`、`combo.out`；账本 V-141、V-159）。0.40 比野外中位高约一倍，是含补偿的有效值——推测。依据第 3 条、本条前半与第 6.1 节。
+12. 全球：`g2_sp` 2017 年湿地加洪泛 232.6 Tg，高于 GCP 区间上限 203，热带 168.9 对目标 110；湿地斑块与土壤斑块排放 92 % 与 93 % 走植物通道，x 由 0.40 降到 0.21 约使两者乘 1.29——已验证（`global_eval_g2_sp_2017.out`、`pathway_shares_g2_sp_2017.out`；乘数为算术）。
+13. 建议：D-59 湿地暂维持 0.40，在账本标为"含补偿的有效值，文献野外中位 0.21"；现在不降全局值，也不按文献水平分维度；等热带产率与沼泽底物（D-61、Q-50、Q-64）修好后，以挺水 0.25、泥炭莎草 0.10、木本 0.30 为文献先验重扫；稻田 0.65 同理暂留，注明它是 (c) 口径，(b) 对齐值 0.30–0.45——推测。依据第 6 节。
+
+## 2. 问一：各类型的实测
+
+表列：文献｜地点与物种｜方法｜季节｜数值｜口径｜出处｜读到。"子任务读"指子任务读原文、主会话未重读；"本文读"指主会话亲读。
+
+### 2.1 bog（雨养泥炭）
+
+| 文献 | 地点与物种 | 方法 | 季节 | 数值 | 口径 | 出处 | 读到 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Frenzel & Rudolph 1998 | 爱沙尼亚南部 Sapi Bog；E. angustifolium、E. vaginatum，pH 3.0–3.2 | 单分蘖箱内加 2 % CH3F；根与根茎离体好氧培养 | 1994、1995 年 8–9 月 | 加 CH3F 后通量不变，份额约 0；"no CH4 oxidation was associated with Eriophorum" | (b) | 摘要 p.27；Results p.29；表 2 | 全文（本文读摘要与方法段，子任务读全文） |
+| Turner 等 2020（单株） | 阿拉斯加 Bonanza Creek 热融 bog；Carex aquatilis | 单株全株箱 N2 冲洗 | 2015 年 5–9 月 | 占排放 4 ± 2 %（SE，n 21，最高 51 %），折 (a) 0.04；同文表 1 单株行记 0.08 | (b) | §3.3、图 4b、表 1 | 全文（两个子任务分别读，数一致） |
+| Turner 等 2020（样框） | 同上 | 样框 N2 冲洗，按日排放积分 | 108 d | 有植被 0.15–0.18（"产生且被输送"的份额）；只留藓与泥炭 0.37；早季各处理 0.30–0.45 | (a)，(d) 含泥炭与藓层 | §3.2、表 1、§4.3 | 全文（子任务读） |
+| Frenzel & Karofeld 2000 | raised bog 的 hollow（Scheuchzeria、E. vaginatum） | 原位温度产甲烷潜力减排放 | — | hollow 近 99 % | (c)，(d) 含 acrotelm 与藓层 | 摘要 | 只读摘要 |
+| Ström 等 2005 | 瑞典南部 Fjällfotasjön 整柱（E. vaginatum、J. effusus），控温室 | 水位下注 [2-14C] 乙酸，14CO2 占比 | 取柱于 2002-02-26，室内培养 | > 90 %，每种 n 1 | (c)；乙酸直接好氧分解也计入，偏高 | p.74、图 5 | 全文（本文读） |
+
+### 2.2 fen（矿养泥炭）
+
+| 文献 | 地点与物种 | 方法 | 季节 | 数值 | 口径 | 出处 | 读到 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Popp 等 2000 | 艾伯塔中北部 Carex fen | 整株原位 CH3F | 三个生长季 | 季节 < 20 %；早季最高（Turner 2020 转引 20–40 %），夏末排放峰值时近零 | (a) | 摘要；Turner 2020 §4.3 | 只读摘要＋转引 |
+| Popp 等 2000 | 同上 | 室内厌氧产量减原位排放 | 同上 | 58–92 % | (c) | 摘要 | 只读摘要 |
+| Popp 等 1999 | 同上 | δ13C、δD 质量平衡 | 1994–1996 | 0–34 %（根际，上层约 20 cm） | (a)/(b) | 摘要 | 只读摘要 |
+| Ström 等 2005 | 同上整柱，Carex rostrata | 14C-乙酸 | 室内 | 20–40 %，n 1 | (c) | p.74 | 全文（本文读） |
+| Ding、Cai & Tsuruta 2004 | 三江平原 Carex 沼泽 | 箱法抑制 | 夏季早期 | 30–39 %，此后下降 | 原文口径未核 | Turner 2020 §4.3 | 转引 |
+
+### 2.3 苔原湿草甸
+
+| 文献 | 地点与物种 | 方法 | 季节 | 数值 | 口径 | 出处 | 读到 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Moosavi & Crill 1998 | 阿拉斯加北坡三处湿莎草群落 | 箱加 CH3F，抑制前（净）对抑制后（毛） | 1993、1995 | 各地均值 1995 年 13.4–21.7 %，1993 年 2.0–38.0 %；施肥不改份额 | (a)，整箱 | 摘要 | 只读摘要（本文与子任务各自复原） |
+| Schimel 1995 | Toolik 湿草甸（E. angustifolium、C. aquatilis） | 转述 Moosavi & Crill 的 CH3F 结果 | — | 约 25 %（原文写 of production） | 转述 | p.195 | 全文（子任务读） |
+| Nielsen 等 2016 | 西格陵兰泥炭地中宇宙，C. aquatilis、E. angustifolium | 柱底注 13CH4，三周 | — | < 2 % 被氧化，> 98 % 以 CH4 逸出 | (b)(c) 混合 | 摘要 | 只读摘要 |
+| Parmentier 等 2011 | 西伯利亚 Kytalyk 苔原 | 箱式通量加过程模型反演 | 2007 年 7–8 月 | f_ox 0.44（无藓，0–0.8）、0.73（沉水藓，0.4–0.9） | 模型参数，含根际、组织内、植物表面 | §3 | 全文（子任务读） |
+| Preuss 等 2013 | 勒拿河三角洲饱水多边形中心 | δ13C 剖面，实测 α_ox、α_diff | 2009-07-19 | 扩散通道表层 43–50 %（饱和），74–79 %（假设非饱和）；明写植物通道绕过好氧层 | (c)，(d) 不含植物通道 | p.2546、表 4 | 全文（子任务读）；50 % 本文读摘要 |
+| Knoblauch 等 2015 | 西伯利亚多边形池塘 | 通量、剖面、同位素、培养 | 夏季 | 无维管植物处藓层消耗产量 61–99 %；有植物处植物通道占 70–90 %，绕开藓层，氧化份额更低 | (c)，(d) 藓层 | 摘要 | 只读摘要（本文读） |
+
+### 2.4 泥炭藓与藓层（与维管植物根际不同路径）
+
+| 文献 | 内容 | 数值 | 口径 | 读到 |
+| --- | --- | --- | --- | --- |
+| van Winden 等 2012 | 泥炭柱去藓前后通量差，5–25 °C | 5 °C 保留 98 %，25 °C 约 50 % | (a)，扩散通道、藓层 | 全文网页（子任务读） |
+| Raghoebarsing 2005；Larmola 2010；Kip 2010 | 藓共生甲烷氧化菌 | 占藓碳 10–15 %（野外 5–20 %）、10–30 %；9 个泥炭地的藓都能氧化 | 占藓碳，不是氧化份额 | 全文或摘要（子任务读） |
+| Turner 等 2020 | 只留藓与泥炭的样框 | 0.37（占产量） | (a)，藓与泥炭 | 全文（子任务读） |
+
+叠加关系：植物通道绕过藓层（Knoblauch 2015 摘要、Preuss 2013 §4.3），Turner 2020 里植被使泥炭通道份额由 0.37 降到 0.20–0.27，单株通道只有 0.04——已验证（同上各处，子任务读）。所以藓层氧化属模式的扩散通道与土层氧化，不应并进 x——推测。依据同上。
+
+### 2.5 挺水沼泽（含湖滨与浮叶）
+
+| 文献 | 地点与物种 | 方法 | 季节 | 数值 | 口径 | 出处 | 读到 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Lombardi、Epp & Chanton 1997 | 佛罗里达（Meng 2012 表 2 所列）Pontederia、Sagittaria、Typha | CH3F；温室子集另做暗处理 | 季节 | 野外 22.9 ± 17.7 %（SD，n 44）；香蒲 12 月 46.5 ± 13.8 %、7 月 13.5 ± 1.7 %，两月通量加权 0.15；温室 64.9 ± 17.0 % | (a) | 摘要 | 只读摘要（子任务读） |
+| Epp & Chanton 1993 | 温室 Pontederia、Sagittaria；野外含水稻与香蒲 | 植株顶空 CH3F | — | 温室 23–90 %，野外 10–47 % | (a) | 摘要 | 只读摘要 |
+| King 1996 | 缅因 Sparganium eurycarpum | 大箱 3–4 % C2H2 或 CH3F | 1994 年 8–10 月 | 1–58 %，均值 27 %（摘要 27.0 ± 6.0 SD，正文 27.3 ± 5.5 SE）；无一致时间趋势；泥面排放占总排放 4–30 % | (a)，(d) 大箱含泥面 | 摘要 p.4548；正文 p.4550–4551 | 全文（本文读） |
+| Calhoun & King 1997 | 缅因 Pontederia cordata、S. eurycarpum | 原位 C2H2；无土分室水培 | — | 原位 48.3 ± 1.6 % 与 26.2 ± 6.8 %（SE，n 3）；水培有氧 87.6 % 与 62.6 %（正文顺序，摘要把两种对调） | 原位 (a)；水培 (b) | 表 2 p.3057；Results p.3054 | 全文（本文读） |
+| van der Nat & Middelburg 1998 | 室内大型实验湿地，Phragmites、Scirpus lacustris | CH3F，另并行 N2 | 生长季 | 季均 16.1 ± 7.86 % 与 34.7 ± 20.3 %；藨草生长早期 > 55 %，成熟后最低 | (a) | 摘要；Laanbroek 2010 p.146 | 只读摘要＋转引 |
+| Kankaala & Bergström 2004 | 芬兰 Lammi 户外桶，Equisetum fluviatile | 夜间 N2 暗处理 | 2000 年 5–9 月 | 有机泥各月 26.9–51.8 %，按潜在排放加权 0.41；砂底 6–8 月 38.9–41.1 %，9 月 0 | (a)，(d) 含泥水界面 | 表 4 | 全文（本文读表 4） |
+| Grasset 2026 | 瑞典两湖 11 种 | δ13C 加 δ2H 闭合模型 | 6 月末、8 月末、9 月初 | Typha 0–0.25、Phragmites 0–0.43、Eleocharis 0.05–0.36、Nymphaea 0.06–0.34、Nuphar 0–0.81；非对流种与 Schoenoplectus 不超过 0.37 | (b)，可能含植物组织内 | p.8；定义 p.6 | 全文（本文读 p.8） |
+| Schipper & Reddy 1996 | 温室 Sagittaria lancifolia | CH3F；质量平衡 | — | 65 ± 24 %；79 ± 20 %（n 14） | (a)；(c) | 摘要 | 只读摘要 |
+| Gerard & Chanton 1993 | Everglades Typha、Cladium；Sagittaria 沼泽 | 子芯好氧潜力 | — | 潜在氧化/排放 5.6–51 与 1.0–4.0，作者称 O2 不受限的上限 | 潜在速率 | 摘要 | 只读摘要 |
+| Chanton 等 1992；Happell 等 1993 | Peltandra；Everglades Cladium | δ13C | — | 根际无氧化证据；泥炭土泥水界面扩散通量被氧化 40–92 % | (d) 泥面 | 摘要 | 只读摘要 |
+| Roslev & King 1996 | 缅因淡水沼泽 | N2 | 季节 | 泥面潜在扩散通量 15–76 %，全年约 43 %（Laanbroek 表 1 把它列为"植被"，实为泥面） | (d) 泥面 | 摘要 | 只读摘要 |
+
+### 2.6 稻田
+
+| 文献 | 地点与条件 | 方法 | 生育期 | 数值 | 口径 | 读到 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Holzapfel-Pschorn 等 1985、1986 | 意大利 | 产量与排放质量平衡 | — | 最高 80 %；排放 23 %（即 77 %） | (c) | 只读摘要 |
+| Schütz、Seiler & Conrad 1989 | 意大利 1985–1986 | 土样培养产量对原位排放 | 季内 | 产量峰时排放约 6 %；排出份额由季初 0.41–0.55 降到季末 0.03–0.08 | (c) | 摘要；Huang 1998 p.251 转引（本文读 Huang） |
+| Sass 等 1990、1992 | Texas | 土芯培养对排放 | 全季积分；高排放期 | 季积分排放为产量 42 %（即 58 %）；0 到 > 90 %，高排放期 73.1 ± 13.7 % | (c) | 摘要 |
+| Frenzel 等 1992 | 微宇宙 | O2 剖面，空气对 N2 | — | 80–90 % | (c) | 只读摘要 |
+| Gilbert & Frenzel 1995 | 微宇宙 | 空气减 N2 | 全期 | 平均 34 %，季内近恒定 | (a) | 只读摘要 |
+| Denier van der Gon & Neue 1996 | 4 品种 | CH3F | 幼穗分化前 1 周；成熟期 | 阻断后排放 +40 %（折 0.29）；成熟期不显著；N2 同时刺激产甲烷 | (a) | 只读摘要 |
+| Tyler 等 1997 | Texas 两种土 | δ13C、δD；植物输送分馏 12 ± 1 ‰ | 收获前 6 周 | 约 20 % 升到约 60 %；约 98 % 经植物排出 | (b) | 摘要（本文读） |
+| Sigren 等 1996 | Texas 两品种 | 两种方法 | 抽穗前后 | 10–30 % 升到 30–70 % | 未写明 | 摘要 |
+| Bilek 等 1999 | Texas 4 品种 | δ13C 质量平衡 | 季末 | Mars 71 ± 10 %，Lemont 39 ± 10 % | (b) | 摘要（本文读） |
+| Jia 等 2001 | 盆栽 | CH3F | 分蘖；幼穗分化 | 36.3 %；54.7 % | (a) | 只读摘要 |
+| Krüger、Frenzel & Conrad 2001 | 意大利 Vercelli 田间 1998–1999 | 原位 CH2F2 | 季初到季末 | 40 % 降到 0 | (a) | 摘要（本文读） |
+| Eller & Frenzel 2001 | 分室微宇宙 | CH2F2 | 至约 60 dap | 70 % 降到可忽略，同期排放上升 | (a) | 全文（PMC，子任务读）；摘要本文读 |
+| Krüger 等 2002 | 意大利 | 同位素质量平衡与 CH2F2 | 全季 | 两法都显示季初重要、后期下降；季末同位素测到的小幅回升抑制剂分辨不出 | (b)/(a) | 摘要 |
+| Groot 等 2003 | 温室盆栽 IR72 | 根下注 13CH4 | 93–112 d | 6.8 ± 0.3、4.5 ± 0.2、0.02 % | (b)，只算根区 | 表 2 p.367（本文读） |
+| Zhang 等 2013（PLoS） | 江苏句容 | δ13C，α_ox 1.038 | 前后半季 | 前半季 60–90 %，之后约 10–30 % | (b) | 全文（Europe PMC，子任务读） |
+| Zhang 等 2013（BG） | 句容，秸秆还田对照 | δ13C，实测 α_ox 1.025 与 1.033 | 分蘖到成熟 | 分蘖 60–101 %，成熟 −19–45 % | (b) | p.3384、表 7（本文读 p.3384） |
+| Zhang 等 2014 | 持续淹水稻田 | δ13C | 全季 | 根际约 10–60 %，前半季最高；土–水界面 30–60 % | (b)；界面另算 | 只读摘要 |
+| Zhang 等 2016 | 句容田间与盆 | δ13C，实测 α_ox 土 1.021、根 1.013 | D20–D108 | 约 100 % 降到约 30 %；土–水界面全季 > 80 % | (b)；界面另算 | 全文（Europe PMC，子任务读） |
+
+两派季节形态：Texas 组（同位素、N2、培养）与 Schütz 1989（培养）是季末更高；意大利 CH2F2 组、Denier van der Gon & Neue 的 CH3F、Groot 的 13C 标记、句容同位素组是季初高、季末低——已验证（上表各条）。现成的按通量加权季值只有 Sass 1990 的 0.58（c）与 Huang 1998 的季均排出份额 0.35（模型积分）——已验证（Sass 1990 摘要；Huang 1998 式 13 p.252–253，本文读）。
+
+### 2.7 沼泽林与木本湿地
+
+| 文献 | 地点与物种 | 方法 | 数值 | 口径 | 读到 |
+| --- | --- | --- | --- | --- | --- |
+| Jeffrey 等 2021（Nat Commun） | 澳洲 Melaleuca quinquenervia 下部树干，88 株，南半球冬季 | 树干箱加 2 % 二氟甲烷 | 通量平均升 36.3 ± 5.4 %，折 O/(O+E) 0.27 | 树皮与树干内，不是根际 | 全文（子任务读） |
+| Jeffrey 等 2021（New Phytol） | Melaleuca、Casuarina | 沿树高 δ13C | 下部到上部树干间约 33 % 被氧化 | 树干轴向 | 只读摘要 |
+| Megonigal & Schlesinger 2002 | 两处潮汐淡水沼泽林 | CH3F，16 个月 | 土面扩散排放 52 ± 10 % 与 81 ± 9 % | (d) 土面 | 只读摘要 |
+| Ward 等 2020 | 佛州 Big Cypress 的 Taxodium | δ13C 开放与闭合模型 | 水柱与浅层氧化 26 ± 3 %（各点 15–40 %） | (d) | 全文网页（子任务读） |
+| Girkin 等 2020 | 巴拿马泥炭沼泽林，Campnosperma、Raphia | 挡根中宇宙 | 挡根后泥面通量高 92 ± 4 % 与 85 ± 6 % | 不是份额，同时改了根源碳、通道与供氧 | 全文网页（子任务读） |
+| Happell、Chanton & Showers 1994 | 佛州沼泽林 | δ13C、δD 加原位抑制剂 | 只给"输送加氧化"合成分馏系数 | — | 只读摘要 |
+
+木本湿地树种的根际氧化份额与径向泌氧速率，本文与 `lit_woody_conduit_260929.txt` 第 3.3 节都未检出——已验证（子任务 C 检索记录；该笔记第 122 行）。
+
+## 3. 问二：方法学偏差与哪种口径对得上 D-59
+
+### 3.1 各方法之间的系统差（有并行比较的）
+
+1. 抑制剂之间、抑制剂对暗处理：Lombardi 1997 温室子集 CH3F 57.7 ± 15.0 % 对暗处理 58.5 ± 13.9 %（n 11）；King 1996 原位 C2H2 29 % 对 CH3F 25 %；van der Nat 1998 两法"gave the same amount of inhibition"——已验证（Lombardi 摘要，子任务读；King 1996 正文 p.4551，本文读；Laanbroek 2010 p.146 转引）。
+2. 暗处理 N2 偏高：稻田 N2 处理使排放比 CH3F 处理高 10–190 %，作者判为同时刺激了产甲烷——已验证（Denier van der Gon & Neue 1996 摘要，子任务读；Kankaala 2004 讨论转述，子任务读）。
+3. CH3F 也抑制乙酸型产甲烷：1000 ppmv 即使稻田土浆产甲烷降约 75 %；约 1 kPa 抑制乙酸型产甲烷菌生长；二氟甲烷 0.03 kPa 抑制氧化而不影响产甲烷；0.01–1 % CH3F 立即部分抑制总产甲烷、优先抑制乙酸型；甲烷氧化对 CH3F 的敏感度约为产甲烷的 100 倍——已验证（Frenzel & Bosse 1996、Janssen & Frenzel 1997、Miller 1998、Conrad & Klose 1999、Oremland & Culbertson 1992 摘要，子任务读）。短时（十几小时）箱法里这一偏差被认为有限，方向是让份额偏低——推测。依据 Groot 2003 p.358–359、van Bodegom 2000 p.23–24 的讨论，子任务读。
+4. 同位素法对抑制剂法：同一 Carex fen，CH3F < 20 %，同位素 0–34 %，产量减排放 58–92 %；稻田 Bilek 1999 在 65 d 同位素 29–81 %、N2 31–55 %、培养 38–70 %，49 d 依次 13–33 %、3–30 %、4–36 %；Krüger 2002 两法季节形态一致——已验证（Popp 2000、Popp 1999 摘要；Groot 2003 表 1 p.357 转引 Bilek；Krüger 2002 摘要；均子任务读）。归纳：同位素法中值与抑制剂法相近或高 0–10 个百分点，范围宽 2–3 倍；质量平衡 (c) 比二者高 2–4 倍——推测。依据本条数字。
+5. 同位素法的参数敏感性：α_ox 由 1.038 改 1.025，句容分蘖期份额 0.68 → 1.01，成熟期 0.30 → 0.45；ε_trans 在对流种 +1 ‰ 与扩散种 −10.6 ‰ 之间换取，份额可差约 0.58；实测 α_ox（土 1.021、根 1.013）比常用 1.025–1.038 低——已验证（Zhang 2013 BG 表 7，本文读正文 p.3384、子任务读表；Grasset 2026 p.6、p.9，子任务读；Zhang 2016，子任务读）。
+6. 培养质量平衡偏高：离体培养高估产量，从而高估 O/P——已验证（Groot 2003 p.358 "incubation studies overestimate methane oxidation via an overestimation of methane production"，本文读；Popp 2000 摘要，子任务读）。
+7. 13CH4 根下标记（Groot 2003）给出最低值（生长后期 < 7 %），作者认为其余方法"tend to lead to an overestimation"——已验证（Groot 2003 p.355 摘要、表 2、p.360，本文读 p.355 与表 2）。
+8. 综述给的范围都不分方法、多为 (c)：Segers 1998 "1–90%"（表层或根际）；Whalen 2005 产量的 20–40 % 在根际与表层氧化；Le Mer & Roger 2001 稻田 0–97 %、"60 to more than 90 %"；Bridgham 2013 全球湿地氧化汇为总产量的 40–70 %；Conrad 2007 稻田根际 0–94 %（转 Groot 2003）；Chanton 2005 指出植物输送分馏与根际氧化在同位素上难以分开——已验证（Segers p.35、Bridgham p.1331，子任务读全文；Le Mer p.28，本文读；Whalen、Chanton 2005 摘要与 Conrad 2007 p.38，子任务读）。
+
+### 3.2 各方法的分母
+
+- 整株或单株抑制剂箱、N2 冲洗：O = 抑制后通量 − 抑制前通量，常报 (a)；Turner、Jeffrey 报 O/E。箱内罩着泥面或水面时 O 含泥水界面与水柱，属 (d) 混合；单株箱、水培分室才只含植物通道——已验证（King 1996 正文泥面占 4–30 %，本文读；Turner 2020 §2，子任务读）。
+- 同位素质量平衡：分母是参照 δ 所代表的 CH4 池；以通气组织或植物排放为终点时即 (b)——已验证（Grasset 2026 p.6；Zhang 2013 BG 式，子任务读）。
+- 产量减排放、14C-乙酸、13CH4 底部注入：(c) 型；14C-乙酸另含乙酸直接好氧分解——已验证（Ström 2005 p.74，本文读）。
+
+### 3.3 与模式口径对齐
+
+- 模式 x 是 (b)：分母是进入通气组织的 CH4，氧化只作用在植物通道上——已验证（第 1 节第 1 条）。
+- 在植物通道占排放 ≈ 1 的柱（模式 marsh、稻田；野外温带沼泽约 90 %、稻田 89–98 %），整株抑制剂 (a) ≈ x，且此时 x 也是模式全柱 O/P——已验证（`pathway_shares_v2_p9a.out`；Le Mer & Roger 2001 p.28 与 Tyler 1997 摘要，本文读；Jia 2001 摘要，子任务读）。
+- 在 bog、fen（模式植物通道 0.52–0.60），整箱 (a) 同时量到泥炭与藓层氧化，对 x 是上界；单株箱（Turner 0.04）、植物同位素才是 x 的直接对照——推测。依据第 2.4 节叠加关系与本条模式份额。
+- (c) 只在"植物通道占主导、表层氧化小、产量不偏高"三条同时成立时才能对 x；培养法的产量偏高使 (c) 偏大，所以 Cao 1995 与 Huang 1998 的 0.65 是 x 的上界而非估计——推测。依据第 3.1 节第 6 条。
+
+## 4. 问三：对齐后各类取值，一个全局值够不够
+
+### 4.1 按 (a)/(b) 的野外原位值（温室、水培、整柱与培养质量平衡不计）
+
+`v2/_scratch/rox/field_values.csv` 取每篇（或每种）一个季均或战役均值，`use = 1` 的 12 条：挺水 Lombardi 0.229、King 0.27、Calhoun 原位 Pontederia 0.483 与 Sparganium 0.262、van der Nat 芦苇 0.161 与藨草 0.347、Kankaala 0.409、Grasset 挺水代表值 0.20；泥炭莎草 Popp 2000 0.15（取 < 20 % 的上半）、Moosavi 0.18（各地年中位）、Turner 单株 0.04、Frenzel & Rudolph 0——已验证（第 2 节各条）。统计——已验证（`field_stats.out`）：
+
+| 组 | n | 中位 | 四分位 | 范围 |
+| --- | --- | --- | --- | --- |
+| 挺水（marsh） | 8 | 0.27 | 0.22–0.36 | 0.16–0.48 |
+| 泥炭与苔原莎草（bog、fen、湿草甸） | 4 | 0.10 | 0.03–0.16 | 0–0.18 |
+| 合并 | 12 | 0.21 | 0.16–0.29 | 0–0.48 |
+| 对照：温室、水培、整柱 | 4 | 0.76 | — | 0.65–0.90 |
+
+- 挺水与莎草两组排序检验 U = 31（满分 32），双侧精确 p = 0.008——已验证（`field_stats.out`）。样本少、两组方法不同（挺水多为整株 (a)，莎草有两条是单株 (b)），p 值只作参考——推测。理由即此。
+- 按通量加权会更低：香蒲两月加权 0.15（算术均 0.30），Carex fen 排放峰值时近零——已验证（第 1 节第 5 条）。Grasset 代表值 0.20 与 Popp 0.15 是区间取中，带主观性——推测。
+
+### 4.2 各类与模式口径对齐后的建议值
+
+| 类 | 建议 x（b） | 区间 | 依据 | 状态 |
+| --- | --- | --- | --- | --- |
+| 挺水沼泽（marsh） | 0.25 | 0.15–0.40 | 第 4.1 节中位 0.27、通量加权更低；同位素 0–0.43 | 推测 |
+| fen（Carex） | 0.10 | 0–0.20 | CH3F 季节 < 20 %、同位素 0–34 %、单株类比 | 推测 |
+| bog（Eriophorum、Carex 维管植物） | 0.05 | 0–0.15 | Eriophorum 原位约 0；C. aquatilis 单株 0.04；藓层氧化另算 | 推测 |
+| 苔原湿草甸 | 0.15 | 0.05–0.25 | CH3F 整箱 13–22 %（含泥面，偏上界）；13CH4 中宇宙 < 2 % | 推测 |
+| 沼泽林（木本） | 0.30 | 0.25–0.35 | 无根际实测，用树皮与树干氧化 0.27–0.33 代理；要有木本根际原位实测才能定 | 存疑 |
+| 稻田 | 0.35 | 0.25–0.50 | 抑制剂季均 0.32 ± 0.08、按日期 0–0.52；同位素早季高、晚季 0.1–0.7；13CH4 晚季 < 0.07 | 推测 |
+
+### 4.3 全局值还是分维度
+
+1. 一个全局值 0.21 会让挺水偏低约 0.06、泥炭莎草偏高约 0.1；0.40 则比两组都高——推测。依据第 4.1 节表。
+2. 分维度的依据：挺水植物（对流或高孔隙度根系）野外 0.16–0.48，泥炭莎草与 Eriophorum 0–0.18，差别在同类方法里也存在（整株 CH3F：Lombardi 0.23、King 0.27 对 Popp < 0.20、Frenzel & Rudolph 0）——已验证（第 2 节）。按设计文档的维度，它挂在 D3 植被型（`s_emerg`、`s_moss`、`s_forest`），D3 尚未编码——已验证（`design_wetland_class_260930.txt` 第 5.2 节表 D3 行）。
+3. 模式里的类响应方向与文献一致：marsh 偏好较高份额，fen、沼泽林偏好较低；但水平整体高约 0.15（marsh 0.40–0.55 最好、fen 0.25 最好）——已验证（`class_medians.out`：`v2_p7gh` 扫描 marsh 0.43/0.44/0.51，fen 0.22/0.33/0.11，依次 0.40/0.25/0.55；`v2_p9a` 扫描 marsh 0.48/0.39/0.48，fen 0.11/0.26/0.05）。bog 与湿苔原在 0.40 最好或持平，与文献"泥炭莎草最低"不一致——已验证（同文件：bog 0.50/0.46/0.48，湿苔原 0.53/0.43/0.49）。
+4. 按类取值的 37 塔估算：全 0.40 总中位 0.44、β 1.14；文献次序（marsh 0.40、其余 0.25）0.38、β 1.25；抬高后的文献次序（marsh 0.55、fen 与沼泽林 0.25、bog 与湿苔原 0.40）0.44、β 1.05，fen 类 0.11 → 0.26、沼泽林 −0.93 → −0.68、marsh 不变——已验证（`combo.out`，逐塔取对应份额的扫描结果；各塔是独立单柱，组合不引入交互）。所以分维度在站点上不提升总中位，只改善 fen 与沼泽林类中位——推测。依据本条。
+
+## 5. 问四：其他模式的取值
+
+| 模式 | 写法 | 取值与口径 | 出处 | 读到 |
+| --- | --- | --- | --- | --- |
+| CTSM/CLM5 现行 | 二选一：`use_aereoxid_prog = .true.`（缺省）时 O2 经通气组织按扩散送入各层，氧化由双 Michaelis–Menten 与 O2 竞争算；`.false.` 时各层进入通气组织的 CH4 扣 `aereoxid` 份记为氧化，且 `oxaere = 0` | 参数文件 `aereoxid` = 0.0，长名 "Fraction of methane flux entering aerenchyma rhizosphere that will be oxidized rather than emitted"；命名表说明可在 0–1 间调；技术手册甲烷章只在 "CH4 and O2 Source Terms" 节提到 "oxidation at the base of aerenchyma"，不给数值 | `ch4varcon.F90:17`；`ch4Mod.F90:91、1343–1350、3187–3189、3636–3640`；`namelist_definition_ctsm.xml:2740–2745`；`namelist_defaults_ctsm.xml:2588–2589`；两个参数文件；`CLM50_Tech_Note_Methane.rst:204–209` | 读码与读参数文件（本文） |
+| CLM4Me（Riley 2011） | 预报式 | 约 60 % 本应经通气组织逸出的 CH4 在根际被氧化（全球通量加权），空间差异大、对氧化与通气参数敏感；并写"previous models"定为 40 %（Zhuang）与 50 %（Wania） | 图 8 图注 p.1939；第 4 节 p.1945 | 全文（本文读） |
+| CLM4Me 改（Meng 2012） | 预报式，R_o,max 1.25e-5 降到 1.25e-6 mol m-3 s-1，以贴 Alberta（Popp 2000）与 Florida（Lombardi 1997）两站实测 | 全球约 15 %；热带 11 %、温带 25 %、高纬 23 %；口径 = (NoLoss − WithLoss)/NoLoss 的通气组织通量，即 (b) | 第 2.3、2.8 节 p.2797–2799；第 4.2 节 p.2802；第 4.9 节 p.2806–2807 | 全文（本文读） |
+| Walter & Heimann 2000 | 植物通道乘 (1 − P_ox) | 0.5；依据 Schipper & Reddy 1996（65 ± 24、79 ± 20 %）、Schütz 1989（约 90 %）、Gerard & Chanton 1993（39–98 %），"考虑变异大"取 50 % | 第 2.5 节式 16 p.750 | 全文（本文读） |
+| ORCHIDEE-WET（Ringeval 2010） | 沿用 Walter 2001 模型 | 文中未另给 P_ox | 第 2.1 节 | 全文（本文读） |
+| ORCHIDEE-PCH4（Salmon 2022） | f_PMT 乘 (1 − M_rox) | 缺省 0.5；逐站优化 0.003（RU-Che，排放最大）到 0.99（US-Los，排放最小）；排放 < 150 mg CH4 m-2 d-1 的站平均 60 %、其余 22 %；逐站均值 0.44，多站同时优化 0.70（不确定度 0.4） | 式 9；表 3；表 6；第 4.1 节 p.2828–2829 | 全文（本文读） |
+| TEM（Zhuang 2004） | 植物通道固定份额 | 0.40（"less than the 50% oxidized assumed by Walter and Heimann"） | 第 2.1.1 节；附录 C 第 [57] 段 | 全文（本文读） |
+| LPJ-WHyMe（Wania 2010） | 送入的 O2 中 f_oxid 份用于氧化 CH4（O2 份额，不是 CH4 份额） | f_oxid 0.5（敏感性 0.3–0.9，逐站最优 0.5 或 0.9） | 第 2.4 节式 3；表 3、表 4、表 7 | 全文（本文读） |
+| LPJ-wsl（Zhang 2016，承 Hodson 2011） | E = r_CH4:C · f_ecosys · A · Rh，无显式氧化与植物通道 | 不适用，氧化并入 r_CH4:C | 第 2 节式 1 | 全文（本文读） |
+| JULES（Gedney 2004；分层版经 Chadburn 2020） | F = k·f_w·C_s·Q10 函数；分层版每层乘 exp(−τz) 经验地代表氧化，无植物通道 | τ = 6.5 m-1（站点拟合），约 70 % 的产量被氧化（全柱，不分根际） | Gedney 2004 式 1；Chadburn 2020 第 2.2 节式 2、第 3.1 节 p.10、表 A1 | 全文（本文读） |
+| JULES-HIMMELI（Gao 2025） | HIMMELI 预报 O2 与根际氧化 | 根际产量中被氧化的份额：单站优化平均 40 %、多站优化 56 %；FI-LO、SE-DE、CA-WP1 单站 29 %、21 %、18 % | 第 3.3 节 p.10；第 4.1 节 p.13 | 全文（本文读） |
+| TRIPLEX-GHG（Zhu 2014） | 植物通道乘根际氧化因子 f_rhi | 0.5（正文写范围 20–100 %） | 第 2.2.3 节 p.986；表 1 | 全文（本文读） |
+| CH4MODwetland（Li 2020） | 植物通道乘 (1 − P_ox)，P_ox 在 0.1–1 间按站点日通量 RMSE 标定 | 草本 0.5（三江平原）、高产草本 0.9（乌梁素海）、木本 0.9（沙捞越） | 补充材料 S1、表 S2 | 全文（本文读补充材料） |
+| CH4MOD 稻田（Huang 1998） | E/P = 0.55(1 − W/W_max)^β2 | 季均 0.35，即 O/P 约 0.65（全土柱） | 式 9 p.251；式 13 p.252–253 | 全文（本文读） |
+| Cao 1995 稻田 | 氧化 = 产量 × (0.40 + 0.50 RDM/RDM_max) | O/P 由 0.40 升到 0.90，依 Schütz、Seiler & Conrad 1989（秧苗期 40–50 %、成熟期 95 %） | 式 8 p.189 | 全文（本文读） |
+
+小结：固定份额派与预报派都落在 0.4–0.6，只有贴实测调过的 Meng 2012 降到 0.15——已验证（上表）。固定份额派的出处都回到 Walter & Heimann 2000 的三条温室或潜在速率依据，或按排放量标定——已验证（上表 Walter、TEM、TRIPLEX、CH4MODwetland、ORCHIDEE-PCH4 行）。
+
+## 6. 问五：建议与预期
+
+### 6.1 为什么现在不按文献降
+
+1. 模式在 37 座湿地塔上以 0.40 最好，0.25 与 0.55 总中位都降到 0.33——已验证（账本 V-159；`class_medians.out`）。
+2. 模式排放已偏高的地方正是降 x 会继续抬的地方：marsh 类 β 1.43（`v2_p9a`），全球湿地加洪泛 232.6 Tg、热带 168.9 Tg 高于 GCP 目标——已验证（`class_medians.out`；`global_eval_g2_sp_2017.out`）。账本 Q-50 已把 marsh 偏高归到底物一侧（呼吸为塔上 1.50–2.58 倍）——已验证（账本 Q-50 行）。
+3. 所以 0.40 在替产量或底物偏高做补偿；先修产量再动 x，否则两处误差会一起挪——推测。依据第 1–2 条。
+
+### 6.2 各方案的预期（线性，按 E_plant ∝ 1 − x）
+
+站点列与全球列分开标状态；"算术"指按 E_plant ∝ 1 − x 与第 1 节第 12 条的植物通道份额线性换算。
+
+| 方案 | 站点预期 | 站点状态 | 站点证据 | 全球预期 | 全球状态 | 全球证据 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 维持 0.40（推荐，暂定） | 不变：37 塔中位 0.44、β 1.14 | 已验证 | `combo.out` | 不变：湿地加洪泛 232.6 Tg（g2_sp 2017） | 已验证 | `global_eval_g2_sp_2017.out` |
+| 全局降到 0.25 | 37 塔 0.33、β 1.31；marsh β 1.43 → 1.79，bog 1.07 → 1.23，fen 0.93 → 1.06（类中位 0.11 → 0.26），湿苔原 0.96 → 1.15，沼泽林 0.80 → 0.97 | 已验证 | 账本 V-159；`class_medians.out` | 植物通道排放乘 1.25，湿地加洪泛约 232.6 → 286 Tg | 推测 | 算术 |
+| 全局降到文献中位 0.21 | 比 0.25 再抬约 5 %，总中位预计不高于 0.33 | 推测 | 由 0.25 档线性外推 | 乘约 1.29，约 300 Tg | 推测 | 算术 |
+| 按文献水平分维度（挺水 0.25、泥炭莎草 0.10、木本 0.30） | marsh 同 0.25 档；bog、fen、湿苔原植物通道乘 1.5，按植物占排放 0.52–0.8 折 β 乘 1.26–1.4；沼泽林乘约 1.14（现偏低 0.80，受益） | 推测 | 算术；植物占排放取 `pathway_shares_v2_p9a.out`，湿苔原由 V-159 反推约 0.8 | 北方泥炭类约乘 1.3、热带挺水与木本约乘 1.15–1.25 | 推测 | 算术 |
+| 文献次序、水平抬高（marsh 0.55、fen 与沼泽林 0.25、bog 与湿苔原 0.40） | 37 塔 0.44、β 1.05；fen 0.11 → 0.26、沼泽林 −0.93 → −0.68 | 已验证 | `combo.out` 逐塔组合 | 视全球 marsh 与木本份额，预计变化小于 ±5 % | 推测 | 未算分类面积 |
+| 稻田 0.65 → 0.35 | 植物通道乘 1.86，稻田塔 β 中位 1.13 → 约 2，PH-RiF、JP-Mse 已偏高 2–3 倍 | 推测 | 算术；稻田塔 β 取 `scores77_v2_p9a.csv` | 全球稻田 12.6 Tg 约乘 1.8 | 推测 | 算术；`global_eval_g2_sp_2017.out` |
+
+### 6.3 建议
+
+1. D-59 湿地维持 0.40，账本登记为"含补偿的有效值"，同时写明文献野外中位 0.21（四分位 0.16–0.29）、挺水 0.27、泥炭莎草 0.10——推测。依据第 6.1 节与第 4 节。
+2. 现在不按维度分值："文献次序、水平抬高"一档总中位不升，只改善 fen 与沼泽林两类，且 bog、湿苔原留在 0.40 与文献次序矛盾；"按文献水平分维度"一档在产量未修前会把北方泥炭抬 1.3 倍左右——推测。依据第 6.2 节表。
+3. 等 D-61（热带产率）与 Q-50、Q-64（沼泽底物与盖度）落地后，以挺水 0.25、泥炭莎草 0.10、木本 0.30 为文献先验，在 D3 植被维度上重扫；若那时单值仍在 0.3 以上最好，再交用户定是否分维度——推测。依据 D-59 原文"拟合不出单值再交用户定"，账本 D-59 行。
+4. 稻田 0.65 暂留：稻田塔 β 中位 1.13 已对上，降 x 会把塔推高；但它是 (c) 口径的上界，(b) 对齐值 0.30–0.45；全球稻田偏低的原因在全球配置缺站点稻田键、面积与雨养积水（`diag_rice_global_260930.txt` 第 1 节），不应靠 x 解决——推测。依据第 6.2 节表与该诊断第 1 节。
+5. 木本通道：D-59 现在对木本通道同样乘 0.40，文献只有树皮与树干氧化 0.27–0.33 可作代理，维持即可，不单设——推测。依据第 2.7 节。
+
+### 6.4 待实跑的检验（存疑项的实验）
+
+1. 产量修正之后的份额重扫：在 D-61、Q-50 落地的站点基线上，37 塔子集跑 x = 0.25、0.40 两档，并跑"按文献水平分维度"一档，比总中位与各类 β。
+2. 全球量级：`g2_sp` 上湿地 x 改 0.25 续跑一年，与同年比湿地加洪泛总量与热带带值，核对第 6.2 节"全局降到 0.25"一行的 1.23 倍线性估算。
+
+## 7. 著录（2026-09-30 逐条查 Crossref；作者只列姓，题名、刊名、卷期、页或文章号、年按注册库原样，年取 Crossref issued）
+
+实测：
+- Banker 等 5 人 (1995) Methane sources and sinks in paddy rice soils: relationship to emissions. Agriculture, Ecosystems & Environment 53(3), 243–251. doi:10.1016/0167-8809(94)00578-3（本文只经 Groot 2003 表 1 转引）
+- Bilek, Tyler, Sass, Fisher (1999) Differences in CH4 oxidation and pathways of production between rice cultivars deduced from measurements of CH4 flux and δ13C of CH4 and CO2. Global Biogeochemical Cycles 13(4), 1029–1044. doi:10.1029/1999GB900040
+- Calhoun, King (1997) Regulation of root-associated methanotrophy by oxygen availability in the rhizosphere of two aquatic macrophytes. Applied and Environmental Microbiology 63(8), 3051–3058. doi:10.1128/aem.63.8.3051-3058.1997
+- Chanton, Whiting, Showers, Crill (1992) Methane flux from Peltandra virginica: stable isotope tracing and chamber effects. Global Biogeochemical Cycles 6(1), 15–31. doi:10.1029/91GB02969
+- Chanton 等 5 人 (1997) Methane emission from rice: Stable isotopes, diurnal variations, and CO2 exchange. Global Biogeochemical Cycles 11(1), 15–27. doi:10.1029/96GB03761
+- Denier van der Gon, Neue (1996) Oxidation of methane in the rhizosphere of rice plants. Biology and Fertility of Soils 22(4), 359–366. doi:10.1007/BF00334584
+- Ding, Cai, Tsuruta (2004) Summertime variation of methane oxidation in the rhizosphere of a Carex dominated freshwater marsh. Atmospheric Environment 38(25), 4165–4173. doi:10.1016/j.atmosenv.2004.04.022（本文只经 Turner 2020 转引）
+- Eller, Frenzel (2001) Changes in Activity and Community Structure of Methane-Oxidizing Bacteria over the Growth Period of Rice. Applied and Environmental Microbiology 67(6), 2395–2403. doi:10.1128/aem.67.6.2395-2403.2001
+- Epp, Chanton (1993) Rhizospheric methane oxidation determined via the methyl fluoride inhibition technique. Journal of Geophysical Research: Atmospheres 98(D10), 18413–18422. doi:10.1029/93JD01667
+- Frenzel, Karofeld (2000) CH4 emission from a hollow-ridge complex in a raised bog: The role of CH4 production and oxidation. Biogeochemistry 51(1), 91–112. doi:10.1023/A:1006351118347
+- Frenzel, Rudolph (1998) Methane emission from a wetland plant: the role of CH4 oxidation in Eriophorum. Plant and Soil 202(1), 27–32. doi:10.1023/A:1004348929219
+- Frenzel 等 3 人 (1992) Oxygen profiles and methane turnover in a flooded rice microcosm. Biology and Fertility of Soils 14(2), 84–89. doi:10.1007/BF00336255
+- Gerard, Chanton (1993) Quantification of methane oxidation in the rhizosphere of emergent aquatic macrophytes: defining upper limits. Biogeochemistry 23(2), 79–97. doi:10.1007/BF00000444
+- Gilbert, Frenzel (1995) Methanotrophic bacteria in the rhizosphere of rice microcosms and their effect on porewater methane concentration and methane emission. Biology and Fertility of Soils 20(2), 93–100. doi:10.1007/BF00336586
+- Girkin, Vane, Turner, Ostle, Sjögersten (2020) Root oxygen mitigates methane fluxes in tropical peatlands. Environmental Research Letters 15(6), 064013. doi:10.1088/1748-9326/ab8495
+- Grasset (2026) Methane rhizospheric oxidation and its ecosystem significance across different aquatic plant species. Biogeochemistry 169(5), 57. doi:10.1007/s10533-026-01374-4
+- Groot, van Bodegom, Harren, Meijer (2003) Quantification of methane oxidation in the rice rhizosphere using 13C-labelled methane. Biogeochemistry 64(3), 355–372. doi:10.1023/A:1024921714852
+- Happell, Chanton, Showers (1994) The influence of methane oxidation on the stable isotopic composition of methane emitted from Florida swamp forests. Geochimica et Cosmochimica Acta 58(20), 4377–4388. doi:10.1016/0016-7037(94)90341-7
+- Happell, Chanton, Whiting, Showers (1993) Stable isotopes as tracers of methane dynamics in Everglades marshes with and without active populations of methane oxidizing bacteria. Journal of Geophysical Research: Atmospheres 98(D8), 14771–14782. doi:10.1029/93JD00765
+- Holzapfel-Pschorn, Conrad, Seiler (1985) Production, oxidation and emission of methane in rice paddies. FEMS Microbiology Letters 31(6), 343–351. doi:10.1111/j.1574-6968.1985.tb01170.x
+- Holzapfel-Pschorn, Conrad, Seiler (1986) Effects of vegetation on the emission of methane from submerged paddy soil. Plant and Soil 92(2), 223–233. doi:10.1007/BF02372636
+- Jeffrey 等 9 人 (2021) Bark-dwelling methanotrophic bacteria decrease methane emissions from trees. Nature Communications 12(1), 2127. doi:10.1038/s41467-021-22333-7
+- Jeffrey 等 8 人 (2021) Isotopic evidence for axial tree stem methane oxidation within subtropical lowland forests. New Phytologist 230(6), 2200–2212. doi:10.1111/nph.17343
+- Jia 等 4 人 (2001) Effect of rice plants on CH4 production, transport, oxidation and emission in rice paddy soil. Plant and Soil 230(2), 211–221. doi:10.1023/A:1010366631538
+- Kankaala, Bergström (2004) Emission and oxidation of methane in Equisetum fluviatile stands growing on organic sediment and sand bottoms. Biogeochemistry 67(1), 21–37. doi:10.1023/B:BIOG.0000015277.17288.7a
+- King (1996) In Situ Analyses of Methane Oxidation Associated with the Roots and Rhizomes of a Bur Reed, Sparganium eurycarpum, in a Maine Wetland. Applied and Environmental Microbiology 62(12), 4548–4555. doi:10.1128/aem.62.12.4548-4555.1996
+- Kip 等 9 人 (2010) Global prevalence of methane oxidation by symbiotic bacteria in peat-moss ecosystems. Nature Geoscience 3(9), 617–621. doi:10.1038/ngeo939
+- Knoblauch 等 5 人 (2015) Regulation of methane production, oxidation, and emission by vascular plants and bryophytes in ponds of the northeast Siberian polygonal tundra. Journal of Geophysical Research: Biogeosciences 120(12), 2525–2541. doi:10.1002/2015JG003053
+- Krüger, Frenzel, Conrad (2001) Microbial processes influencing methane emission from rice fields. Global Change Biology 7(1), 49–63. doi:10.1046/j.1365-2486.2001.00395.x
+- Krüger 等 4 人 (2002) Seasonal variation in pathways of CH4 production and in CH4 oxidation in rice fields determined by stable carbon isotopes and specific inhibitors. Global Change Biology 8(3), 265–280. doi:10.1046/j.1365-2486.2002.00476.x
+- Larmola 等 8 人 (2010) The role of Sphagnum mosses in the methane cycling of a boreal mire. Ecology 91(8), 2356–2365. doi:10.1890/09-1343.1
+- Lombardi, Epp, Chanton (1997) Investigation of the methyl fluoride technique for determining rhizospheric methane oxidation. Biogeochemistry 36(2), 153–172. doi:10.1023/A:1005750201264
+- Megonigal, Schlesinger (2002) Methane-limited methanotrophy in tidal freshwater swamps. Global Biogeochemical Cycles 16(4)（文章号 Crossref 未列）. doi:10.1029/2001GB001594
+- Moosavi, Crill (1998) CH4 oxidation by tundra wetlands as measured by a selective inhibitor technique. Journal of Geophysical Research: Atmospheres 103(D22), 29093–29106. doi:10.1029/97JD03519
+- Nielsen 等 5 人 (2016) Linking rhizospheric CH4 oxidation and net CH4 emissions in an arctic wetland based on 13CH4 labeling of mesocosms. Plant and Soil 412(1–2), 201–213. doi:10.1007/s11104-016-3061-4
+- Parmentier 等 7 人 (2011) The role of endophytic methane-oxidizing bacteria in submerged Sphagnum in determining methane emissions of Northeastern Siberian tundra. Biogeosciences 8(5), 1267–1278. doi:10.5194/bg-8-1267-2011
+- Popp, Chanton, Whiting, Grant (1999) Methane stable isotope distribution at a Carex dominated fen in north central Alberta. Global Biogeochemical Cycles 13(4), 1063–1077. doi:10.1029/1999GB900060
+- Popp, Chanton, Whiting, Grant (2000) Evaluation of methane oxidation in therhizosphere of a Carex dominated fen in northcentral Alberta, Canada（题名照 Crossref 原样，"therhizosphere"为登记原文）. Biogeochemistry 51(3), 259–281. doi:10.1023/A:1006452609284
+- Preuss 等 4 人 (2013) Improved quantification of microbial CH4 oxidation efficiency in arctic wetland soils using carbon isotope fractionation. Biogeosciences 10(4), 2539–2552. doi:10.5194/bg-10-2539-2013
+- Raghoebarsing 等 13 人 (2005) Methanotrophic symbionts provide carbon for photosynthesis in peat bogs. Nature 436(7054), 1153–1156. doi:10.1038/nature03802
+- Roslev, King (1996) Regulation of methane oxidation in a freshwater wetland by water table changes and anoxia. FEMS Microbiology Ecology 19(2), 105–115. doi:10.1111/j.1574-6941.1996.tb00203.x
+- Sass 等 4 人 (1990) Methane production and emission in a Texas rice field. Global Biogeochemical Cycles 4(1), 47–68. doi:10.1029/GB004i001p00047
+- Sass 等 5 人 (1992) Methane emission from rice fields: The effect of floodwater management. Global Biogeochemical Cycles 6(3), 249–262. doi:10.1029/92GB01674
+- Schimel (1995) Plant transport and methane production as controls on methane flux from arctic wet meadow tundra. Biogeochemistry 28(3), 183–200. doi:10.1007/BF02186458
+- Schipper, Reddy (1996) Determination of Methane Oxidation in the Rhizosphere of Sagittaria lancifolia Using Methyl Fluoride. Soil Science Society of America Journal 60(2), 611–616. doi:10.2136/sssaj1996.03615995006000020039x
+- Schütz, Seiler, Conrad (1989) Processes involved in formation and emission of methane in rice paddies. Biogeochemistry 7(1)（页码 Crossref 未列）. doi:10.1007/BF00000896
+- Sigren 等 4 人 (1996) Comparison of soil acetate concentrations and methane production, transport, and emission in two rice cultivars. Global Biogeochemical Cycles 11(1), 1–14. doi:10.1029/96GB03040
+- Ström, Mastepanov, Christensen (2005) Species-specific Effects of Vascular Plants on Carbon Turnover and Methane Emissions from Wetlands. Biogeochemistry 75(1), 65–82. doi:10.1007/s10533-004-6124-1
+- Turner 等 7 人 (2020) Getting to the Root of Plant-Mediated Methane Emissions and Oxidation in a Thermokarst Bog. Journal of Geophysical Research: Biogeosciences 125(11), e2020JG005825. doi:10.1029/2020JG005825
+- Tyler, Bilek, Sass, Fisher (1997) Methane oxidation and pathways of production in a Texas paddy field deduced from measurements of flux, δ13C, and δD of CH4. Global Biogeochemical Cycles 11(3), 323–348. doi:10.1029/97GB01624
+- van der Nat, Middelburg (1998) Seasonal variation in methane oxidation by the rhizosphere of Phragmites australis and Scirpus lacustris. Aquatic Botany 61(2), 95–110. doi:10.1016/S0304-3770(98)00072-2
+- van Winden 等 5 人 (2012) Temperature-Induced Increase in Methane Release from Peat Bogs: A Mesocosm Experiment. PLoS ONE 7(6), e39614. doi:10.1371/journal.pone.0039614
+- Ward 等 6 人 (2020) Pathways for Methane Emissions and Oxidation that Influence the Net Carbon Balance of a Subtropical Cypress Swamp. Frontiers in Earth Science 8, 573357. doi:10.3389/feart.2020.573357
+- Zhang 等 6 人 (2013) Methanogenic Pathway and Fraction of CH4 Oxidized in Paddy Fields: Seasonal Variation and Effect of Water Management in Winter Fallow Season. PLoS ONE 8(9), e73982. doi:10.1371/journal.pone.0073982
+- Zhang 等 6 人 (2013) Pathway of CH4 production, fraction of CH4 oxidized, and 13C isotope fractionation in a straw-incorporated rice field. Biogeosciences 10(5), 3375–3389. doi:10.5194/bg-10-3375-2013
+- Zhang 等 6 人 (2014) Fraction of CH4 oxidized in paddy field measured by stable carbon isotopes. Plant and Soil 389(1–2), 349–359. doi:10.1007/s11104-014-2365-5
+- Zhang 等 5 人 (2016) Carbon isotope fractionation reveals distinct process of CH4 emission from different compartments of paddy ecosystem. Scientific Reports 6(1), 27065. doi:10.1038/srep27065
+
+方法学与综述：
+- Bridgham 等 4 人 (2013) Methane emissions from wetlands: biogeochemical, microbial, and modeling perspectives from local to global scales. Global Change Biology 19(5), 1325–1346. doi:10.1111/gcb.12131
+- Chanton (2005) The effect of gas transport on the isotope signature of methane in wetlands. Organic Geochemistry 36(5), 753–768. doi:10.1016/j.orggeochem.2004.10.007
+- Conrad (2007) Microbial Ecology of Methanogens and Methanotrophs. Advances in Agronomy 96, 1–63. doi:10.1016/S0065-2113(07)96005-8
+- Conrad, Klose (1999) How specific is the inhibition by methyl fluoride of acetoclastic methanogenesis in anoxic rice field soil? FEMS Microbiology Ecology 30(1), 47–56. doi:10.1111/j.1574-6941.1999.tb00634.x
+- Frenzel, Bosse (1996) Methyl fluoride, an inhibitor of methane oxidation and methane production. FEMS Microbiology Ecology 21(1), 25–36. doi:10.1111/j.1574-6941.1996.tb00330.x（Crossref 另登记 10.1016/0168-6496(96)00040-2，只列 Frenzel 一人）
+- Janssen, Frenzel (1997) Inhibition of methanogenesis by methyl fluoride: studies of pure and defined mixed cultures of anaerobic bacteria and archaea. Applied and Environmental Microbiology 63(11), 4552–4557. doi:10.1128/aem.63.11.4552-4557.1997
+- Laanbroek (2010) Methane emission from natural wetlands: interplay between emergent macrophytes and soil microbial processes. A mini-review. Annals of Botany 105(1), 141–153. doi:10.1093/aob/mcp201
+- Le Mer, Roger (2001) Production, oxidation, emission and consumption of methane by soils: A review. European Journal of Soil Biology 37(1), 25–50. doi:10.1016/S1164-5563(01)01067-6
+- Miller 等 3 人 (1998) Difluoromethane, a New and Improved Inhibitor of Methanotrophy. Applied and Environmental Microbiology 64(11), 4357–4362. doi:10.1128/aem.64.11.4357-4362.1998
+- Oremland, Culbertson (1992) Evaluation of Methyl Fluoride and Dimethyl Ether as Inhibitors of Aerobic Methane Oxidation. Applied and Environmental Microbiology 58(9), 2983–2992. doi:10.1128/aem.58.9.2983-2992.1992
+- Segers (1998) Methane production and methane consumption: a review of processes underlying wetland methane fluxes. Biogeochemistry 41(1), 23–51. doi:10.1023/A:1005929032764
+- van Bodegom（Dissertation，Wageningen University and Research；Crossref 未列年份，论文 2000 年通过）Methane emissions from rice paddies : experiments and modelling. doi:10.18174/197265
+- Van Bodegom, Goudriaan, Leffelaar (2001) A mechanistic model on methane oxidation in a rice rhizosphere. Biogeochemistry 55(2), 145–177. doi:10.1023/A:1010640515283
+- Whalen (2005) Biogeochemistry of Methane Exchange between Natural Wetlands and the Atmosphere. Environmental Engineering Science 22(1), 73–94. doi:10.1089/ees.2005.22.73
+
+模式：
+- Cao, Dent, Heal (1995) Modeling methane emissions from rice paddies. Global Biogeochemical Cycles 9(2), 183–195. doi:10.1029/94GB03231
+- Chadburn 等 25 人 (2020) Modeled Microbial Dynamics Explain the Apparent Temperature Sensitivity of Wetland Methane Emissions. Global Biogeochemical Cycles 34(11), e2020GB006678. doi:10.1029/2020GB006678
+- Gao 等 18 人 (2025) Assessing modelled methane emissions over northern wetlands by the JULES-HIMMELI model. Science of The Total Environment 980, 179526. doi:10.1016/j.scitotenv.2025.179526
+- Gedney, Cox, Huntingford (2004) Climate feedback from wetland methane emissions. Geophysical Research Letters 31(20), 2004GL020919. doi:10.1029/2004GL020919
+- Hodson, Poulter, Zimmermann, Prigent, Kaplan (2011) The El Niño-Southern Oscillation and wetland methane interannual variability. Geophysical Research Letters 38(8)（文章号 Crossref 未列）. doi:10.1029/2011GL046861
+- Huang, Sass, Fisher (1998) A semi-empirical model of methane emission from flooded rice paddy soils. Global Change Biology 4(3), 247–268. doi:10.1046/j.1365-2486.1998.00129.x
+- Li 等 11 人 (2020) Evaluation of CH4MODwetland and Terrestrial Ecosystem Model (TEM) used to estimate global CH4 emissions from natural wetlands. Geoscientific Model Development 13(8), 3769–3788. doi:10.5194/gmd-13-3769-2020
+- Meng 等 10 人 (2012) Sensitivity of wetland methane emissions to model assumptions: application and model testing against site observations. Biogeosciences 9(7), 2793–2819. doi:10.5194/bg-9-2793-2012
+- Riley 等 8 人 (2011) Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM. Biogeosciences 8(7), 1925–1953. doi:10.5194/bg-8-1925-2011
+- Ringeval 等 7 人 (2010) An attempt to quantify the impact of changes in wetland extent on methane emissions on the seasonal and interannual time scales. Global Biogeochemical Cycles 24(2), 2008GB003354. doi:10.1029/2008GB003354
+- Salmon 等 31 人 (2022) Assessing methane emissions for northern peatlands in ORCHIDEE-PEAT revision 7020. Geoscientific Model Development 15(7), 2813–2838. doi:10.5194/gmd-15-2813-2022
+- Walter, Heimann, Matthews (2001) Modeling modern methane emissions from natural wetlands: 1. Model description and results. Journal of Geophysical Research: Atmospheres 106(D24), 34189–34206. doi:10.1029/2001JD900165
+- Walter, Heimann (2000) A process-based, climate-sensitive model to derive methane emissions from natural wetlands: Application to five wetland sites, sensitivity to model parameters, and climate. Global Biogeochemical Cycles 14(3), 745–765. doi:10.1029/1999GB001204
+- Wania, Ross, Prentice (2010) Implementation and evaluation of a new methane model within a dynamic global vegetation model: LPJ-WHyMe v1.3.1. Geoscientific Model Development 3(2), 565–584. doi:10.5194/gmd-3-565-2010
+- Zhang, Zimmermann, Kaplan, Poulter (2016) Modeling spatiotemporal dynamics of global wetlands: comprehensive evaluation of a new sub-grid TOPMODEL parameterization and uncertainties. Biogeosciences 13(5), 1387–1408. doi:10.5194/bg-13-1387-2016
+- Zhu 等 10 人 (2014) Modelling methane emissions from natural wetlands by development and application of the TRIPLEX-GHG model. Geoscientific Model Development 7(3), 981–999. doi:10.5194/gmd-7-981-2014
+- Zhuang 等 8 人 (2004) Methane fluxes between terrestrial ecosystems and the atmosphere at northern high latitudes during the past century: A retrospective analysis with a process-based biogeochemistry model. Global Biogeochemical Cycles 18(3), 2004GB002239. doi:10.1029/2004GB002239
+
+无 DOI：
+- CTSM 技术手册甲烷章（CLM5.0 Technical Note, Methane Model），本地 `~/mode/Wetland/CTSM/doc/source/tech_note/Methane/CLM50_Tech_Note_Methane.rst`；线上 https://escomp.github.io/ctsm-docs/

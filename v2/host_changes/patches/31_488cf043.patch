@@ -1,0 +1,99 @@
+From 488cf0433cf59acb0b7070669535208fa28fecf6 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Mon, 28 Sep 2026 11:59:33 +0800
+Subject: [PATCH] fix(crop): no leaf area on a crop pft between harvest and
+ sowing (Q-33)
+
+DEF_CROP_FALLOW_NO_LAI (default off): with satellite LAI a crop pft that is
+not live keeps photosynthesising on the MODIS LAI of the fallow field and
+the allocation sends all of it to leaf carbon, which the next harvest dumps
+into the litter (rice towers: 300 to 600 gC m-2 of leaf carbon while
+fallow). The switch sets the LAI of such a pft to zero for albedo and
+photosynthesis and sums the patch LAI again.
+
+---
+ main/CoLMMAIN.F90      | 22 ++++++++++++++++++++++
+ share/MOD_Namelist.F90 |  6 ++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/main/CoLMMAIN.F90 b/main/CoLMMAIN.F90
+index a7e85661..8ef1028e 100644
+--- a/main/CoLMMAIN.F90
++++ b/main/CoLMMAIN.F90
+@@ -168,6 +168,11 @@ SUBROUTINE CoLMMAIN ( &
+ #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
+    USE MOD_LandPFT, only: patch_pft_s, patch_pft_e
+    USE MOD_Vars_PFTimeInvariants, only: pftfrac
++#ifdef CROP
++   USE MOD_Vars_PFTimeInvariants, only: pftclass
++   USE MOD_BGC_Vars_PFTimeVariables, only: croplive_p
++   USE MOD_Namelist, only: DEF_CROP_FALLOW_NO_LAI
++#endif
+    USE MOD_Vars_PFTimeVariables, only: tlai_p, lai_p, tsai_p, sai_p, sigf_p
+ #endif
+    USE MOD_RainSnowTemp, only: rain_snow_temp
+@@ -680,6 +685,8 @@ SUBROUTINE CoLMMAIN ( &
+    real(r8) :: a, aa, gwat
+    real(r8) :: wextra, t_rain, t_snow
+    integer ps, pe, pc
++   integer :: mpft             ! pft index for the crop fallow LAI (Q-33)
++   logical :: fallow_zeroed
+ 
+ #ifdef TRACER
+    ! Tracer local variables
+@@ -2146,6 +2153,21 @@ SUBROUTINE CoLMMAIN ( &
+                   lai_p(ps:pe) = tlai_p(ps:pe)*sigf_p(ps:pe)
+                   lai = sum(lai_p(ps:pe)*pftfrac(ps:pe))
+                ENDIF
++#ifdef CROP
++               ! Q-33 (paper V2): no leaf area on a crop pft between harvest
++               ! and sowing; the patch LAI is summed again only if one changed
++               IF (DEF_CROP_FALLOW_NO_LAI) THEN
++                  fallow_zeroed = .false.
++                  DO mpft = ps, pe
++                     IF (pftclass(mpft) >= npcropmin .and. (.not. croplive_p(mpft)) &
++                         .and. lai_p(mpft) > 0._r8) THEN
++                        lai_p(mpft) = 0._r8
++                        fallow_zeroed = .true.
++                     ENDIF
++                  ENDDO
++                  IF (fallow_zeroed) lai = sum(lai_p(ps:pe)*pftfrac(ps:pe))
++               ENDIF
++#endif
+             ENDIF
+             sai_p(ps:pe) = tsai_p(ps:pe) * sigf_p(ps:pe)
+             sai = sum(sai_p(ps:pe)*pftfrac(ps:pe))
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 642e3042..dcfb0793 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -432,6 +432,10 @@ MODULE MOD_Namelist
+    ! rice_double on a lat/lon grid); irrigated rice where the share is at least
+    ! 0.5 is sown again on the second rice date of the crop calendar
+    character(len=256) :: DEF_RICE_DOUBLE_SEASON_FILE = 'null'
++   ! Q-33 (paper V2): a crop pft outside its growing season (not croplive)
++   ! gets no leaf area; with satellite LAI the fallow field otherwise
++   ! photosynthesises on the MODIS LAI and all of it goes to leaf carbon
++   logical :: DEF_CROP_FALLOW_NO_LAI = .false.
+    ! C-37 (paper V2): share of the net assimilate (available C less growth
+    ! respiration) of live rice (PFT 61, 62) its roots exude; it enters the
+    ! metabolic litter along the fine-root profile. 0 is off.
+@@ -1201,6 +1205,7 @@ CONTAINS
+       DEF_IRRIGATION_ALLOCATION,              & !add by Hongbin Liang @ sysu
+       DEF_PADDY_RICE_BUND,                    & !C-32 (paper V2)
+       DEF_RICE_DOUBLE_SEASON_FILE,            & !C-45 (paper V2)
++      DEF_CROP_FALLOW_NO_LAI,                 & !Q-33 (paper V2)
+       DEF_RICE_ROOT_EXUDATE,                  & !C-37 (paper V2)
+       DEF_USE_NOSTRESSNITROGEN,               & !add by Hongbin Liang @ sysu
+       DEF_RSTFAC,                             & !add by Hongbin Liang @ sysu
+@@ -1855,6 +1860,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_IRRIGATION_ALLOCATION              ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_PADDY_RICE_BUND                    ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RICE_DOUBLE_SEASON_FILE            ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_CROP_FALLOW_NO_LAI                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RICE_ROOT_EXUDATE                  ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_NOSTRESSNITROGEN               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RSTFAC                             ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

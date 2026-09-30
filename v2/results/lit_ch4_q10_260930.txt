@@ -1,0 +1,267 @@
+# lit_ch4_q10_260930：产甲烷与厌氧分解的温度敏感性（文献 L-19）
+
+- **日期**：2026.09.30-08:06
+- **读者**：下一会话
+- **来源**：只读文献子任务 methane-lit-q10（中控派 L-19；未改码、未改配置、未投作业）；承接 `v2/results/diag_marsh_ch4_per_gpp_260930.txt` 第 1 节第 9 条、`v2/results/lit_fresh_carbon_260930.txt` 第 1 节第 7 条与第 5.4 节、`v2/results/lit_models_wetland_260929.txt` 第 2.3 节、账本 Q-44、Q-64、Q-73、D-31、V-92–V-96、V-103、V-106、V-119、C-27、C-51、C-53、C-63；读码对工作树 HEAD `c7d4faa9`（与 `a4780e52` 在 main、share、mkinidata 无差异）；离线估算脚本 `v2/_scratch/q10/q10_calc.py`（读 `v2/_scratch/marsh_q64/month_decomp_v2_p9f.out`、`v2/results/month_decomp_v2_oo4.txt`、`month_decomp_v2_qp.txt`），输出 `v2/_scratch/q10/q10_calc.out`；网上取得的 PDF 抽成 `v2/_scratch/q10/knox2021.txt`、`treat2015.txt`；著录全部重打 Crossref，请求不带任何个人信息
+- **状态**：四问已答；Inglett 2012、Sjögersten 2018、van Hulzen 1999、Chen 2021、Liu 2025、Li 2024 只读到摘要或检索页摘要片段（表中逐条标出）；改法效应只到离线月气候态重标，未实跑
+- **失效于**：站点基线的 `q10methane`、`q10methane_base`、C-27/C-51/C-53 三键或 `q10lake` 改动后，或 C-63 活性模块重标后
+
+口径：
+- 等效 Q10：一段 [T1, T2] 上 (r(T2)/r(T1))^(10/(T2−T1))。Arrhenius 与 Q10 互换按 10–20 °C 段：Q10 1.33 ≈ 0.20 eV，1.5 ≈ 0.29 eV，2.0 ≈ 0.49 eV，2.7 ≈ 0.71 eV，4.1 ≈ 1.01 eV，0.96 eV ≈ 3.83（`q10_calc.out` Part 1）。
+- 三种时间尺度分开说：内禀（温度阶跃、底物与菌量来不及变，短培养）、季节表观（站内月或日通量对土温拟合，含底物、菌量、电子受体、传输随季节的共变）、跨站（年均通量沿地理温度梯度）。
+- 塔上与模式表观 Q10 一律沿用 `v2/scripts/month_decomp.py` 的口径：月气候态、13 cm 土温高于 1 °C 的月份、ln 通量对温度线性拟合（塔上用塔测 TS_1，缺测月用模式土温）。
+- 模式的"甲烷侧"指 `q10methane` 这一项，"总响应"指宿主分解 Q10 × 甲烷侧。
+
+## 0. 覆盖面
+
+1. 读码（工作树 `CoLM202X-paper-v2`）：`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90` grep `q10|t_fact|t_base|fliq|0.5_r8`（产量 2270–2690 行全读，氧化 2944–3021、湖泊 2403–2456 行）；`MOD_Tracer_Reactive_Methane_Const.F90` grep `q10|f_methane|mino2lim|methanogen_`（145–368、1181、1698–1930 行）；`main/BGC/MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90` 全文（139 行）；`main/BGC/` grep `t_scalar|Q10`（命中 4 个文件，只有 DecompCascadeBGC 与 CNMResp 用到，后者是维持呼吸）；`mkinidata/MOD_Initialize.F90:695–696`；`MOD_Tracer_Reactive_BgcShim.F90:80–134、158、205`（o_scalar）；`MOD_Tracer_Reactive_Methane_BgcLink.F90:335–476`（somhr、lithr 的来源）。配置：`v2/config/*/ch4_parameter.nml` grep `q10|methanogen_activity|use_biome_f`（177 份，`q10methane = 1.33` 121 份、`2.0` 56 份；基线 `v2_p8f`、`v2_p8lg` 为 1.33、295 K）。
+2. CTSM 对照：`/share/home/dq076/mode/Wetland/CTSM/src/biogeochem/ch4Mod.F90` grep `q10ch4|f_ch4|t_fact_ch4`（读 2560–2618 行）；`src/soilbiogeochem/SoilBiogeochemDecompCascadeBGCMod.F90:790–806`；技术手册 `doc/source/tech_note/Methane/CLM50_Tech_Note_Methane.rst` grep `Q10|temperature`（读 40–70、80–92 行）、`Decomposition/CLM50_Tech_Note_Decomposition.rst:165–192`；参数文件 `v1/CLM_params/clm_params.c170913.nc`、`clm5_params.c171117.nc` 全部含 q10 的变量。
+3. 本地全文（`data/_tmp/分析_260925_模拟年份/txt/`）：Riley 2011 grep `Q10|22 ◦C`（命中 20 处，读 218–290、990–1012、1198–1226、1418–1440 行）；Yvon-Durocher 2014 grep `eV|across sites`（全文 627 行，读 30–45、118–142、195–215、250–258 行）；Segers 1998（读 198–230、276–315 行）；Dunfield 1993（读 1–30、40–52、116–135、168–215 行）；Turetsky 2014（读 484–570 行）；Knox 2019（读 575–665 行）；Chang 2020（读 1–40、125–165、250–262 行）；Gedney 2004、2019，Ringeval 2010、2011，Salmon 2022，Khvorostyanov 2008 part 1，Zhuang 2004，Bloom 2017，Zhang 2016，Hodson 2011，Sitch 2003 各 grep `q10|Lloyd|temperature dependen|arrhenius` 后读命中段；McNicol 2020 接受稿（`data/_tmp/分析_260925_站点测量高度/text/US-Myb/2019_McNicol.txt`）grep `Q10|exp|°C`（读 108–122、745–747、945–975、1236–1255、1355–1372 行）。
+4. 网络（WebSearch 10 次；WebFetch 取全文 3 篇：Chang 2021 经 PMC、Knox 2021 与 Treat 2015 取 PDF 后本地 pdftotext；Fey & Conrad 2000 经 PMC 取原句；OpenAlex、Semantic Scholar、Europe PMC 各试若干次，Inglett 2012、van Hulzen 1999、Sjögersten 2018、Chen 2021 摘要字段为空或 403，只得检索页摘要片段；Crossref 6 次请求共 33 个 DOI）。
+5. 已有笔记（只取结论不重读原文，引用处标"转引"）：`lit_models_wetland_260929.txt` 第 2.3 节（Walter、VISIT、CLASSIC、WETMETH、Kettunen、JULES-microbe 的温度写法）；`diag_marsh_260929.txt` 第 82 行、`diag_swamp_260929.txt` 第 14 行（塔上表观 Q10）。
+6. 离线估算：`q10_calc.py` 三部分——分段等效 Q10；按候选温度因子重标 `v2_p9f` 六座沼泽塔与 `v2_oo4` 十一座泥沼塔的逐月模式排放，并以真实跑 `v2_qp`（q10methane 2.0）校验；理想化正弦土温下北方、温带、亚热带、热带的年量与振幅。
+7. 读不到而不入表：Khalil 1998（稻田表观 Q10 1.5–3，只在 Gedney 2004 第 [4] 段转引）；Christensen 2003 只转引 Gedney 2004 的"Q10 ≈ 5"一句，原文未读。
+8. 未看：无。
+9. 存疑（要跑才能定）：第 5 节各候选的实跑效果（离线重标假定排放与产量同比例变，泥沼塔上已知会高估年量降幅 0.02–0.08，第 5.3 节）；模式是否产生塔上那样的正滞回（要日或周输出对温度分段拟合）。
+
+## 1. 结论
+
+1. 模式甲烷产量对温度的总响应 = 宿主分解 Q10 1.5（25 °C 基准）× 甲烷侧 `q10methane` 1.33（295 K 基准），0–30 °C 每 5 °C 段的等效 Q10 恒为 2.00（≈ 0.49 eV）；甲烷侧单独 1.33（≈ 0.20 eV）——已验证（读码 `MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90:69–73`、`mkinidata/MOD_Initialize.F90:695`、`MOD_Tracer_Reactive_Methane_Physics.F90:2351、2553、2563`；配置 `v2_p8f/ch4_parameter.nml:91–92`；`q10_calc.out` Part 1）。
+2. 这一组合与 CTSM 逐项相同（q10_hr 1.5、q10ch4 1.33、q10ch4base 295 K），而 CLM4Me 原文与现行技术手册写的是 Q10 = 2（敏感性 1.5–4）、基准 22 °C，且原文说该 2 "slightly higher than the CLM4 soil decomposition Q10 of 1.5"——已验证（`clm5_params.c171117.nc`；`ch4Mod.F90:2574`；Riley 2011 p.1929、表 1 p.1930、p.1939；`CLM50_Tech_Note_Methane.rst:58、87`）。1.33 × 1.5 ≈ 2.0，参数文件的 1.33 是把 CLM4Me 的总 Q10 2 拆到宿主 1.5 之上——推测（算术吻合，无文字出处）。
+3. 模式偏弱，且偏弱在甲烷侧：生态系统季节尺度 CH4 排放 0.96 eV（0.86–1.07），同一批站 CH4:CO2 比值本身随季节温度 0.71 eV（0.46–0.97，38 站中 35 站为正），模式 CH4:HR 比值只有 0.20 eV，等效 q10methane 应在 1.9–3.9（中值 2.7）而非 1.33——已验证（Yvon-Durocher 2014 摘要 p.488、表 1 p.489、p.490 正文；换算见 `q10_calc.out` Part 1）。独立旁证：Segers 1998 合并 1046 个培养样本产甲烷 Q10 4.1 ± 0.4，而厌氧 CO2 产生与厌氧碳矿化只有 1.5 与 0.9–1.8，折成甲烷侧也是约 2.7——已验证（Segers 1998 p.28、表 2 p.29），比值法——推测。
+4. 塔上表观 Q10 的缺口按类型不同：泥沼 11 塔塔上中位 2.70（1.39–7.69）对模式 1.96（1.68–2.30），其中 bog 5 塔 2.26 对 2.15 基本吻合、fen 6 塔 3.47 对 1.93 明显偏弱；沼泽 6 塔 3.80（3.01–6.20）对 2.76（2.25–3.04），缺口集中在 US-Myb 6.20 对 2.78、US-WPT 5.35 对 2.49、US-Sne 3.84 对 2.25，US-Tw4 已吻合（3.01 对 3.04），US-Tw1、US-Tw5 缺口小（3.50、3.76 对 2.74、2.82）且 US-Tw1、US-Tw4 月气候态振幅比已近 1（0.97、1.10）——已验证（`q10_calc.out` Part 2；站类取 `scores77_v2_p9f.txt`）。
+5. 内禀（短培养）Q10 与模式 2.0 同量级：Mayberry 5–35 °C 培养 2.1–2.3、意大利稻田 10–37 °C 稳态 1.8–2.8（61 kJ mol−1）、亚热带湿地 1.4–3.6、泛北极厌氧培养中位 1.16–1.18；而泥炭 10–25 °C 5.3–16、巴拿马热带泥炭 6.8、纯培养 1.10 eV、群落 0.93 eV 更高——已验证（McNicol 2020 表 3；Fey & Conrad 2000 Results；Treat 2015 p.6、p.10；Dunfield 1993 表 2；Yvon-Durocher 2014 p.488）；Inglett 2012、Sjögersten 2018——只读摘要。培养法本身就能让同一泥炭推出 1.2–3.5——只读摘要（Li 2024）。
+6. 表观放大有三类来源，文献能分开：温度本身（上一条）；底物随季节（Mayberry 塔上 exp(0.18T) 即 Q10 ≈ 6.0，老碳 4.5、新鲜碳 7.4，作者归因于随 GPP 近线性增加的碳供给，短培养只有 2.2）；电子受体耗尽与菌量滞后（长培养 Q10 随温度依赖的受体还原滞后而抬高；站上 CH4 滞后土温 5 ± 15 d、气温 8 ± 16 d、GPP 约 13 ± 23 d；75–77 % 站年同温下季后排放更高）——已验证（McNicol 2020 表 3、第 552–558 行；Segers 1998 p.28；Knox 2021 摘要 p.3582、p.3597–3598；Chang 2021 Results）；van Hulzen 1999——只读摘要。
+7. 纠正派活书的一处说法：Chang 2021 的"后段敏感性更大"指同一气温下季后排放更高（正滞回），拟合的表观活化能反而是前段高、后段低；忽略滞回会使前段高估 28 ± 46 %、后段低估 9 ± 35 %——已验证（Chang 2021 摘要与 "Divergent temperature responses among sites and years" 节原句）。纯温度函数（无论 Q10 多大）只会让排放峰与土温峰同相，给不出正滞回与 5–13 d 的滞后——推测（依据本条与第 6 条）。
+8. 其他模式：CTSM 总 2.0；LPJ-wsl 只经 Rh 的 Lloyd–Taylor，等效 Q10 由 0–5 °C 的 3.7 降到 25–30 °C 的 1.8；JULES Q10(T) = 3.7^(273.15/T)，3.6 → 2.9（2019 版 3.0/3.7/4.7 三档）；ORCHIDEE-WET 以站点年均土温为基准 Q10 3（敏感性 5.5），ORCHIDEE-PCH4 与异养呼吸同一温度函数；TEM 湿地 PQ10 3.5–4.5、基准 3–10 °C；WetCHARTs 在异养呼吸之上乘 q10^(T/10)，q10 = 1、2、3——已验证（出处见第 4 节）。本模式的 2.0 处在这些模式的下沿，与 LPJ 系在 15–25 °C 段相当——已验证（`q10_calc.out` Part 1）。
+9. 改法：固定 295 K 基准而提高 q10methane 会把季节斜率搬到跨站上——离线看泥沼年量 × 0.66（2.0）或 × 0.50（2.7）、热带 × 1.24 或 × 1.45，与 V-92 的冷站量级下降、Riley 2011 的"高纬减半、热带升"同向——已验证（`q10_calc.out`；账本 V-92；Riley 2011 p.1940），这与 Yvon-Durocher 的"站内季节依赖不适用于跨站"相抵——已验证（p.490）。首选仍是现成三键的"季节强、跨站弱"结构（q10methane 2.0、未冻期局地基准、权重 0.5–0.6、q10lake 单设）：离线泥沼表观 1.96 → 2.95（塔上 2.70）、振幅比 0.65 → 0.98、年量 × 0.98，沼泽 2.76 → 4.15（塔上 3.80）、年量 × 1.03，热带 × 1.00–1.03——已验证（`q10_calc.out` H 行）；实跑的 V-103 只小幅加分、fen 反降，说明温度结构治不完季节太平，余下要靠底物与菌量动态——推测（依据账本 V-103、V-106 与第 6、7 条）。
+10. Arrhenius 0.96 eV（或比值 0.71 eV）与 q10methane 2.7 在 0–30 °C 分段差不到 10 %，只在低温段略陡，单独改函数形式不值得改码；"只在低温段加强"证据不一（稻田 2.8 → 1.8、LPJ 3.7 → 1.8 支持，Turetsky 只有 rich fen 支持、泛北极冷土培养反而最低），离线北方年量 × 0.76、热带不变，不宜单独用——推测（依据第 3、5 节与 `q10_calc.out` G 行）。
+
+## 2. 问一：模式甲烷产量的温度响应
+
+### 2.1 式子与参数
+
+逐层产量（湿地与土壤斑块，水位以下；水位以上只有开缺氧微区时才产）：
+
+```text
+P_j = f_adj,j × (somhr + lithr) × partition_j / dz_j
+f_adj,j = min( f_methane × q10methane^((T_j − T_b)/10) × fliq_j × f_pH × f_sal × f_NO3 × f_redox , 0.5 )
+somhr + lithr = Σ_j Σ_k decomp_hr_vr(j,k)·dz_j，其中每个碳库的速率
+k = k_ref × t_scalar × w_scalar × depth_scalar × o_scalar
+t_scalar = Q10_HR^((T − 298.15)/10) × norm            （T ≥ 273.15 K）
+         = Q10_HR^(−2.5) × froz_q10^((T − 273.15)/10) × norm   （T < 273.15 K，两段在 0 °C 连续）
+norm = (catanf(15)/catanf(30)) / Q10_HR^(−1)           （常数，把 15 °C 的速率锚到 CENTURY）
+```
+
+| 项 | 值 | 位置 | 出处 |
+| --- | --- | --- | --- |
+| Q10_HR（宿主分解） | 1.5，基准 25 °C | `mkinidata/MOD_Initialize.F90:695`；`MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90:69–73` | 同 CTSM q10_hr 1.5（`clm5_params.c171117.nc`；`SoilBiogeochemDecompCascadeBGCMod.F90:795、804`，注释"Replaced the Lloyd and Taylor function with a Q10 formula, with Q10 = 1.5"） |
+| froz_q10 | 1.5 | `MOD_Initialize.F90:696`；`DecompCascadeBGC.F90:72` | 同 CTSM |
+| norm | 常数 | `DecompCascadeBGC.F90:55、112–115` | CENTURY catanf |
+| o_scalar（湿地融化层） | mino2lim 0.2，不随温度 | `MOD_Tracer_Reactive_BgcShim.F90:113–126` | CTSM r_oxygen 最小值 0.2（`CLM50_Tech_Note_Decomposition.rst:194`） |
+| f_methane | 0.2（`use_biome_f_methane = .false.`） | `Const.F90:146`；`Physics.F90:2561–2564` | Riley 2011 表 1 |
+| q10methane | 代码缺省 2.0，基线配置 1.33 | `Const.F90:145`；`v2_p8f/ch4_parameter.nml:91` | CLM 参数文件 q10ch4 1.33（账本 D-31） |
+| T_b | 295 K（21.85 °C） | `Const.F90:306`；`Physics.F90:2351`；`ch4_parameter.nml:92` | CLM q10ch4base 295；CLM4Me T_B 22 °C |
+| 局地基准（C-27/C-51/C-53） | 缺省关、权重 1 | `Const.F90:315、325、333`；`Physics.F90:2352–2358`（只对 patchtype 2） | 账本 C-27、C-51、C-53 |
+| fliq | 液态水份额，0 °C 以上为 1 | `Physics.F90:2573–2574` | — |
+| 上限 | f_adj ≤ 0.5 | `Physics.F90:2642` | 2CH2O → CH4 + CO2 |
+| 产甲烷菌活性（C-63） | 缺省关 | `Const.F90:362–368`；`Physics.F90:2381–2400` | Chadburn 2020 |
+| 湖泊 | q10lake 缺省 −1 时取 1.5 × q10methane、基准 298 K；活性库路径取 lake_theta 1.02^(T−20) | `Physics.F90:2403–2404、2442–2449`；`Const.F90:334、338、1181` | CTSM `ch4Mod.F90:2464` |
+| 氧化 | q10_methane_oxid 1.9，基准 12 °C | `Physics.F90:2957、3017` | Riley 2011 表 1；Segers 1998 合并 1.9 ± 0.4 |
+
+- 注意：`Const.F90:145` 的注释写 "(params:2.0)"，与 CLM 两份参数文件的 q10ch4 1.33 不符；站点基线由 nml 设 1.33，不受影响——已验证（读码；ncdump 两份参数文件）。
+- 0.5 上限在 0–30 °C 不起作用：1.33 时 30 °C 的 f_adj 为 0.2 × 1.262 = 0.25；若 q10methane 取 2.7，约 31 °C 以上触顶，取 2.0 约 35 °C 以上触顶——已验证（算术）。
+
+### 2.2 等效 Q10（0–30 °C，按 5 °C 分段）
+
+```text
+函数                                      0–5   5–10  10–15  15–20  20–25  25–30   r(0)/r(22)  r(30)/r(22)
+本模式：HR 1.5 × q10methane 1.33          1.99  2.00  1.99   2.00   2.00   2.00    0.221       1.756
+  其中宿主 HR（Q10 1.5，25 °C）           1.50  1.50  1.50   1.50   1.50   1.50    0.412       1.392
+  其中甲烷侧（1.33，295 K）               1.33  1.33  1.33   1.33   1.33   1.33    0.536       1.262
+HR 1.5 × q10methane 2.0（V-92）           3.00  3.00  3.00   3.00   3.00   3.00    0.091       2.448
+HR 1.5 × q10methane 2.7                   4.05  4.05  4.05   4.05   4.05   4.05    0.047       3.127
+HR 1.5 × 比值 Arrhenius 0.71 eV           4.44  4.27  4.12   3.98   3.85   3.73    0.044       2.949
+Arrhenius 0.96 eV（生态系统季节）         4.33  4.11  3.92   3.74   3.58   3.43    0.049       2.760
+Arrhenius 0.65 eV（呼吸）                 2.70  2.61  2.52   2.44   2.37   2.30    0.129       1.989
+```
+
+- 上表——已验证（`q10_calc.out` Part 1）。纯 Q10 形式在各段等值；本模式在 0–30 °C 的总响应就是一个常数 2.0。
+
+### 2.3 三种时间尺度上模式的有效温度响应
+
+1. 内禀（碳库不变）：2.0（0.49 eV），第 2.2 节——已验证（读码与算术）。
+2. 季节表观（含模式自己的凋落物输入季节性与碳库变化）：泥沼 12 塔（`v2_oo4`）模式 HR 1.62–2.02、产量 P 2.07–2.64、排放 E 1.68–2.29、氧化 O 2.57–4.19；沼泽 6 塔（`v2_p9f`）HR 1.60–2.17、P 2.22–3.01、E 2.24–3.04——已验证（`month_decomp_v2_oo4.txt`、`month_decomp_v2_p9f.out` 各塔 "apparent Q10" 行）。泥沼 E 的表观 Q10 低于 P，是因为氧化随 CH4 浓度一起涨（氧化内禀 Q10 只有 1.9），夏季氧化份额 5 月约 45 %、7 月约 54 %——已验证（账本 Q-44）。
+3. 跨站（sasu spin-up 后碳库平衡）：年分解由输入定，宿主 1.5 不再体现在年量上，剩下甲烷侧 1.33（0.20 eV）——推测。理由：`diag_marsh_ch4_per_gpp_260930.txt` 第 3.3 节已按这一口径把 P 的土温效应分成上下界。
+
+### 2.4 与 CLM4Me、CTSM 的对照
+
+- CLM4Me：P = R_H f_CH4 f_T f_pH f_pE S，R_H "corrected for its soil temperature (T_s) dependence"，f_T 为 Q10 因子、T_B = 22 °C，冰点及以下 f_T = 0；表 1 产量 Q10 基线 2、敏感性 1.5–4——已验证（Riley 2011 p.1929 式 2、表 1 p.1930）。原文另说基线"assumed that methanogenesis was primarily substrate-limited with a default methane production Q10 of 2, slightly higher than the CLM4 soil decomposition Q10 of 1.5"，Q10 取 4 时 21 世纪高纬通量增约 50 %——已验证（p.1939）。
+- CTSM：`t_fact_ch4 = q10ch4**((t_soisno − q10ch4base)/10)` 直接乘在已含 Q10 1.5 的 (somhr + lithr) 上，并未先除去 HR 的温度依赖；垂直分辨时冰点以下照常随 HR 产——已验证（`ch4Mod.F90:2574–2576`；`SoilBiogeochemDecompCascadeBGCMod.F90:804–806`；`lit_models_wetland_260929.txt` 第 2.3 节第 1 条转引 `ch4Mod.F90:2545–2547` 注释）。技术手册仍写 Q10 2（1.5–4）与 22 °C——已验证（`CLM50_Tech_Note_Methane.rst:58、87`）。
+- 本模式与 CTSM 的唯一差别是冰点附近乘 fliq（`Physics.F90:2573–2574`，可用 `prod_fliq_off` 关）；0–30 °C 两者逐项相同——已验证（读码）。
+
+## 3. 问二：文献实测
+
+### 3.1 表：按类型的内禀与表观 Q10
+
+| 类型 | 尺度 | Q10 或 Ea | 温度段或口径 | 出处 | 读到哪层 |
+| --- | --- | --- | --- | --- | --- |
+| bog | 内禀 | 16（Sphagnum 洼地，哈德逊湾低地）；6.3（安大略 bog） | 10–25 °C 泥浆培养 | Dunfield 1993 表 2 p.323、方法 p.322 | 全文 |
+| bog | 内禀 | 2–28（贫营养泥炭） | 各文单因子培养 | Segers 1998 表 2 p.29 | 全文 |
+| bog | 表观 | 深层土温 15.8 ± 3.0；表层土温 2.6 ± 0.2 | 箱式瞬时通量对土温，>20 cm 与 0–5 cm | Turetsky 2014 表 2 p.2189 | 全文 |
+| bog | 表观 | 塔上 5 塔中位 2.26（1.39–2.84）；模式 2.15 | 13 cm 月气候态 | `q10_calc.out` Part 2（`v2_oo4`） | 本项目 |
+| fen | 内禀 | 6.0（莎草 fen，哈德逊湾低地）；5.3（安大略 fen） | 10–25 °C | Dunfield 1993 表 2 p.323 | 全文 |
+| fen | 内禀 | 1.5–6.4（富营养泥炭） | 各文 | Segers 1998 表 2 p.29 | 全文 |
+| fen | 表观 | poor fen 深层 4.1 ± 0.2、表层 1.7；rich fen 深层 3.2 ± 0.4、表层 2.0；rich fen 0–10 °C 14.2 ± 4.8、10–20 °C 0.7 ± 0.25，其他类型两段无差别 | 箱式 | Turetsky 2014 表 2 与正文 p.2189 | 全文 |
+| fen | 表观 | 塔上 6 塔中位 3.47（1.67–7.69；FI-Sii 3.45、SE-Deg 3.49、FI-Lom 4.08、US-Los 7.69）；模式 1.93 | 13 cm 月气候态 | `q10_calc.out` Part 2 | 本项目 |
+| 泥炭（合计） | 内禀 | 全部样本合并 4.1 ± 0.4；单因子实验 1.5–28；厌氧 CO2 产生 1.5；厌氧水解 1.9；乙酸生成 1.7–3.6；产甲烷菌纯培养最高 12 | 1046 个培养样本回归 | Segers 1998 p.28、表 2 p.29 | 全文 |
+| 泥炭（合计） | 表观 | 12 座泥沼塔中位 2.83（1.38–13.7）；模式 E 1.93、HR 1.83、P 2.20、O 3.09 | 13 cm | 账本 Q-44 | 本项目 |
+| 苔原与冻土区 | 内禀 | 中位 1.18（全数据回归）；多温度研究 0.96–3.10，中位 1.16；厌氧 CO2 1.41（0.67–4.10，中位 1.39） | 厌氧培养最大产率 | Treat 2015 早期在线版 p.6、p.10 | 全文 |
+| 苔原与冻土区 | 内禀 | 1.2–3.5，随培养温度、时长、保存时长与采样时间而变（Stordalen 模式复现培养流程） | 模式推演 | Li 2024 | 只读摘要 |
+| 苔原与冻土区 | 表观 | 北方多站土温解释 84 % 方差，Q10 ≈ 5 | 站间与季节 | Christensen 2003，转引 Gedney 2004 第 [4] 段 | 转引 |
+| 苔原与冻土区 | 表观 | Stordalen bog、fen 自动箱观测同温下季后排放更高；ecosys 模拟中 fen 的滞回比 bog 与 Utqiaġvik 多边形更大，归因于底物可得性与产甲烷菌量；作者称静态温度关系"mechanistically flawed" | 自动箱日通量对表层土温（观测）、0–20 cm 土温（模拟） | Chang 2020 摘要、图 1 图注、第 3.1 节 | 全文 |
+| 挺水沼泽（淡水） | 内禀 | 2.3（植被区泥炭）、2.1（开阔水沉积物）；氧化 2.3 | 5、15、25、35 °C，3 d | McNicol 2020 表 3、摘要 | 接受稿全文 |
+| 挺水沼泽（淡水） | 表观 | 生态系统 exp(0.18T) ≈ Q10 6.0；老碳 exp(0.15T) ≈ 4.5；新鲜碳 exp(0.20T) ≈ 7.4；作者注明季节拟合"do not reflect intrinsic temperature sensitivities" | Mayberry 月通量按 14C 分源 | McNicol 2020 表 3、第 419–428、552–558 行 | 接受稿全文 |
+| 挺水沼泽（淡水） | 表观 | 塔上 6 塔中位 3.80（US-Myb 6.20、US-WPT 5.35、US-Sne 3.84、US-Tw5 3.76、US-Tw1 3.50、US-Tw4 3.01）；模式 2.76（2.25–3.04）；另 US-DPW 4.41、US-ORv 1.99 | 13 cm | `q10_calc.out` Part 2；`diag_marsh_260929.txt` 第 82 行 | 本项目 |
+| 亚热带湿地（Everglades 等） | 内禀 | CH4 1.4–3.6；厌氧 CO2 1.3–2.5；好氧 CO2 1.4–2.1；随温度 CH4 占气态碳份额升高 | 培养，按植被来源 | Inglett 2012 | 检索页摘要片段 |
+| swamp | 内禀 | 桤木 swamp 3.8–5.0 | 各文 | Dunfield 1993 表 2 所列文献 | 全文（二手表） |
+| swamp | 表观 | 深层 8.8 ± 1.4、表层 5.2 ± 0.8；表层按区：亚热带 0.9、温带 7.7、北方 51.5 | 箱式 | Turetsky 2014 表 2、p.2189 正文 | 全文 |
+| swamp | 表观 | US-NC4 塔上 5.4、模式 2.3 | 13 cm | `diag_swamp_260929.txt` 第 14 行 | 本项目，转引 |
+| 稻田 | 内禀 | 2.1–16（稻田土）；全部厌氧碳矿化 0.9–1.8 | 各文 | Segers 1998 表 2 p.29 | 全文 |
+| 稻田 | 内禀 | 稳态 61 ± 1 kJ mol−1，原文折 Q10 2.8（10–20 °C）、1.8（27–37 °C）；按 61 kJ mol−1 自算为 2.42、2.20 | 意大利稻田泥浆，10–37 °C，60–90 d 达稳态 | Fey & Conrad 2000 Results、Discussion | 全文原句（PMC） |
+| 稻田 | 内禀 | 年均温低的稻田土产甲烷 Q10 更高 | 培养 | Liu 2025 | 只读摘要（无数值） |
+| 稻田 | 表观 | 1.5–3（分离了温度的方法） | 中国稻田 | Khalil 1998，转引 Gedney 2004 第 [4] 段 | 转引 |
+| 热带泥炭 | 内禀 | 厌氧产甲烷 6.8；CO2 产生 < 2；中湿条件 CH4 消耗 2.7 | 巴拿马三种林型泥炭 | Sjögersten 2018 | 检索页摘要片段 |
+| 热带 | 表观 | 温度季节变幅小的湿地（热带、亚热带季节性湿地）季节尺度主导因子是水位，不是温度 | 23 座塔小波分解 | Knox 2021 摘要 p.3582 | 全文 |
+| 热带 | 表观 | ORCHIDEE-WET 对巴拿马站优化出 Q10 1.2（Abisko 2.6、Michigan 3.2） | 站点标定 | Ringeval 2010 表 1 | 全文 |
+| 跨类型 | 内禀 | 产甲烷菌纯培养 1.10 eV（0.93–1.27）；沉积物群落 0.93 eV（0.82–1.03） | Boltzmann–Arrhenius 混合效应 | Yvon-Durocher 2014 p.488、表 1 p.489 | 全文 |
+| 跨类型 | 表观 | 生态系统季节 0.96 eV（0.86–1.07），湿地、稻田、水体三类不可区分；呼吸约 0.65、光合约 0.3 eV；CH4:CO2 比值 0.71 eV（0.46–0.97），38 站中 35 站为正；站内季节依赖"does not apply across sites"，跨站响应一贯更弱；固定温度下天然湿地排放随站点均温升高而降 | 季节 | Yvon-Durocher 2014 摘要 p.488、p.489、p.490、p.491 | 全文 |
+| 跨类型 | 表观 | 年 CH4:ER 0.4–7.9 %（中位 2.8 %），沿年均温梯度显著升高 | 跨站年量 | Knox 2019 图 6d 与正文 | 全文 |
+| 跨类型 | 表观 | 207 站年、48 座湿地与稻田塔；75–77 % 站年正滞回；忽略滞回前段高估 28 ± 46 %、后段低估 9 ± 35 %；表观活化能前段高、后段低；GPP 对气温的滞回正负各半（48 %、52 %） | 无冻期日通量对气温 | Chang 2021 摘要、Results 两节 | 全文（PMC） |
+| 跨类型 | 表观 | 季节尺度 CH4 滞后水位 17 ± 11 d、气温 8 ± 16 d、土温 5 ± 15 d、GPP 约 13 ± 23 d；水位季节变幅小的站温度是主导因子 | 23 座淡水湿地塔 | Knox 2021 摘要 p.3582、p.3597–3598 | 全文 |
+| 跨类型 | 表观 | 水位越高 CH4 的温度依赖越强，水位对 CO2 的温度依赖无影响 | 全球数据库 | Chen 2021 | 检索页摘要片段 |
+| 氧化（对照） | 内禀 | 1.4–2.1（Ea 20–80 kJ mol−1）；合并约 1.9 ± 0.4 | 0–25 °C | Dunfield 1993 p.321 摘要、表 2；Segers 1998 | 全文 |
+
+- 表中"本项目"行——已验证（所列文件）；"全文"行——已验证（所列页、表、行）；"只读摘要""检索页摘要片段""转引"行按各自层级，未读原文。
+
+### 3.2 表观放大的三个来源
+
+1. 温度本身：短培养（3 d）与纯培养给出的是 Q10 2–4.5 量级——Mayberry 2.1–2.3、稻田 1.8–2.8、纯培养 1.10 eV、群落 0.93 eV——已验证（第 3.1 节）。McNicol 明说培养值"more accurate (~2.2) because the short (~3 days) incubation time largely mitigates reference rate changes associated with shifts in C pools"——已验证（接受稿第 556–558 行）。泥炭 10–25 °C 的 5.3–16 与热带泥炭 6.8 高于此，Dunfield 的 0–10 °C 段产甲烷"negligible"——已验证（Dunfield 1993 摘要 p.321），Sjögersten——只读摘要。
+2. 底物随季节：Mayberry 季节拟合比培养高一个量级，作者归因于随 GPP 近线性增加的碳供给改变了参考速率；新鲜碳（7.4）比老碳（4.5）更陡——已验证（McNicol 2020 表 3、第 552–556 行）。Chang 2020、2021 用 ecosys 与 FLUXNET-CH4 把正滞回归因于季后底物与产甲烷菌生物量更高——已验证（Chang 2020 摘要；Chang 2021 Results 原句 "higher substrate availability increases methanogen biomass and CH4 production and emission later in the frost-free season"）。
+3. 电子受体与菌群滞后：Segers 认为高 Q10 可来自"increasing temperature increases rates of electron acceptor reduction, which results in lower electron acceptor concentrations which has an additional positive effect on methane production"，底层各过程 Q10 约 1–4——已验证（Segers 1998 p.28）；van Hulzen 1999 把 1.3–28 的离散归因于受体还原滞后随温度变化、各底层过程 Q10 约 2——只读摘要。站上 CH4 滞后土温与 GPP 数日到两周——已验证（Knox 2021 p.3597–3598）；跨站弱于站内、固定温度下排放随站点均温降，指向驯化或其他随温度变的生物因子——已验证（Yvon-Durocher 2014 p.490–491）。
+4. 由此：塔上季节表观（0.96 eV、Mayberry 6.0）里，温度本身约占一半（按 ln：Mayberry ln 2.2 / ln 6.0 = 0.44；0.49 / 0.96 eV = 0.51），其余是底物与滞后——推测（依据第 1–3 条的比值，单站与汇总各一例）。
+
+### 3.3 与模式对照：偏弱多少
+
+- 内禀：模式总 2.0 落在短培养区间（1.2–3.6）中部，低于纯培养与群落 0.93–1.10 eV（10–20 °C 约 3.6–4.5）与 Segers 合并 4.1——已验证（第 2.2、3.1 节）。
+- 甲烷侧比值：0.20 eV 对 CH4:CO2 季节 0.71 eV（0.46–0.97），活化能差 0.5 eV，折 q10methane 1.33 对 2.7（1.9–3.9）——已验证（Yvon-Durocher 2014 p.490；换算）。这里的 CO2 是生态系统呼吸而非模式 HR，且比值含传输与氧化——推测。
+- 季节表观（排放）：泥沼中位 1.96 对 2.70（ln 比 0.67），fen 1.93 对 3.47（0.53），沼泽 2.76 对 3.80（0.76），Mayberry 2.78 对 6.20（0.56）——已验证（`q10_calc.out`）。即在季节尺度上，模式排放的温度敏感性约为塔上的 53–76 %（以 ln Q10 计），bog 与 US-Tw4 除外——已验证（同上，算术）。
+- 模式里弥补不了这一缺口的原因是结构性的：宿主 Q10 1.5 是有氧分解的值，甲烷侧 1.33 是 CLM 为凑总 2 的拆分，季节表观里的底物与菌量滞后在模式中只剩凋落物输入季节性一项（HR 表观 1.6–2.2）——推测（依据第 1 节第 2 条与第 2.3 节）。
+
+## 4. 问三：其他模式的取值
+
+| 模式 | 温度写法 | 参数 | 作用对象 | 等效 Q10（0–5 / 10–15 / 25–30 °C） | 出处 |
+| --- | --- | --- | --- | --- | --- |
+| CLM4Me（Riley 2011） | f_T = Q10^((T − T_B)/10)，R_H 先扣其温度依赖；T ≤ 0 °C 时 f_T = 0 | Q10 2（1.5–4），T_B 22 °C | 产量 | 2 / 2 / 2 | Riley 2011 p.1929、表 1 p.1930 |
+| CLM4.5、CLM5、CTSM | q10ch4^((T − q10ch4base)/10) 乘在含 Q10 1.5 的 HR 上 | q10ch4 1.33，基准 295 K；q10_hr 1.5；froz_q10 1.5；氧化 1.9 | 产量 | 2.0 / 2.0 / 2.0 | `clm5_params.c171117.nc`；`ch4Mod.F90:2574`；`SoilBiogeochemDecompCascadeBGCMod.F90:804` |
+| 本模式 | 同 CTSM，另乘 fliq；可选局地基准与驯化权重 | 1.33、295 K；宿主 1.5 | 产量 | 2.0 / 2.0 / 2.0 | 第 2 节 |
+| LPJ-wsl | E = r_CH4:C · f_ecosys · A · Rh，温度只经 Rh 的改进 Arrhenius（Lloyd–Taylor）g(T) = exp[308.56 (1/56.02 − 1/(T + 46.02))] | 无单列产甲烷 Q10 | 分解 | 3.72 / 2.47 / 1.77 | Zhang 2016 式 1；Hodson 2011 第 [6] 段；Sitch 2003 式 23 p.169、p.172 |
+| LPJ-WHyMe | 同 LPJ 家族，经分解的 Lloyd–Taylor | — | 分解 | 同上 | Wania 2010 式 1（转引 `lit_models_wetland_260929.txt` 第 2.3 节第 4 条） |
+| JULES | F ∝ Q10(T)^((T − T0)/10)，Q10(T) = Q10(T0)^(T0/T)，T0 = 273.15 K，土壤碳底物 | Q10(T0) 3.7（2004 标定）；2019 版 3.0 / 3.7 / 4.7 对应 Turetsky 的 poor fen、rich fen、bog，并注明 0.96 eV 约合 Q10To 4.5（3.8–5.3）；NPP 底物 1.3–2.3 | 产量（即排放） | 3.7 档：3.61 / 3.31 / 2.94；3.0 档 2.94 / 2.73 / 2.48；4.7 档 4.57 / 4.12 / 3.59 | Gedney 2004 式 1–2、表 1、第 [12] 段；Gedney 2019 p.3–4；NPP 档转引 `lit_models_wetland_260929.txt` 第 2.3 节第 3 条 |
+| ORCHIDEE-WET | f(T) · Q10^((T − T_mean)/10)，T_mean 为站点年均土温，f 在负温为 0 | Q10 3，敏感性 5.5；站点优化 1.2（巴拿马）、2.6（Abisko）、3.2（Michigan） | 产量 | 3 / 3 / 3（相对站点均温） | Ringeval 2011 式 12 p.2141；Ringeval 2010 表 1、第 [7] 段 |
+| ORCHIDEE-PCH4（ORCHIDEE-PEAT r7020） | 产甲烷速率与异养呼吸同一温度与湿度函数 | — | 产量 | 同宿主 HR | Salmon 2022 式 3 p.2816；Khvorostyanov 2008 式 4–6 |
+| TEM（Zhuang 2004） | PQ10^((T − TPR)/10)，底物由 NPP 定 | 湿地 PQ10 3.5（高山苔原）、4.0（湿苔原）、4.5（北方 fen）；高地 3.5–7.5；TPR 3–10 °C；氧化 OQ10 0.8–3.5 | 产量 | 3.5–4.5 各段相同 | Zhuang 2004 表 1、式 A1 |
+| WetCHARTs | F = s A R q10^(T/10)，T 为地表皮温，R 为各模式异养呼吸 | q10 = 1、2、3 三成员 | CH4:C 比 | 总 = 所取 HR 的 Q10 × 1、2、3 | Bloom 2017 式 1 p.2142、表 1 p.2143 |
+| Walter–Heimann | Q10^((T − T_mean)/10) | 6（1.7–16） | 产量 | 6 | 转引 `lit_models_wetland_260929.txt` 第 2.3 节第 2 条（Walter & Heimann 2000 p.748） |
+| JULES-microbe（本模式 C-63） | 水解 Q1 2.8、产甲烷菌 Q2 4.3，另有 5 年驯化 | — | 菌量动态 | — | 账本 C-63；Chadburn 2020 表 A1 |
+
+- LPJ 与 JULES 两行的分段值——已验证（`q10_calc.out` Part 1 按原式计算）。其余数值——已验证（所列出处，转引行按转引）。
+- 共性：只有 CLM 系（含本模式）把甲烷侧的额外温度因子压到 1.33；以站点均温为基准的一派（Walter、ORCHIDEE-WET、TEM 的 TPR）用 3–6 的季节 Q10 而不把它施加到跨站上——已验证（本表）。
+
+## 5. 问四：建议
+
+### 5.1 判断
+
+1. 偏弱：季节尺度偏弱，量级约为塔上 ln Q10 的 53–76 %；甲烷侧比值偏弱最明显（0.20 对 0.71 eV）——已验证（第 3.3 节）。
+2. 但不宜只加温度：Mayberry 的内禀值与模式相同，季节放大的大头来自底物；纯温度函数给不出正滞回与数日到两周的滞后——推测（第 3.2 节、第 1 节第 7 条）。
+3. 跨站不宜跟着加：季节 0.96 eV 不适用于跨站，而模式跨站只剩 1.33（0.20 eV）这一项，年 CH4:ER 沿年均温升高是有的，但弱于季节——已验证（Yvon-Durocher 2014 p.490；Knox 2019 图 6d），"模式跨站只剩 1.33"——推测（第 2.3 节第 3 条）。
+
+### 5.2 候选（按把握排序）
+
+| 候选 | 做法 | 依据 | 季节振幅 | 年总量 | 北方 / 热带 |
+| --- | --- | --- | --- | --- | --- |
+| ① 季节强、跨站弱（现成三键，不改码） | q10methane 2.0；`q10methane_local_base`、`q10methane_base_unfrozen` 开；`q10methane_base_weight` 0.5–0.6（跨站 Q10 = 2.0^(1−w) ≈ 1.33–1.41）；`q10lake` 单设 2.0 | Yvon-Durocher 季节 0.96 eV、跨站弱、截距随站点均温降；Segers 4.1 / 1.5；以站点均温为基准的 Walter、ORCHIDEE-WET、TEM | 泥沼表观 1.96 → 2.95（塔上 2.70），振幅比 0.65 → 0.98；沼泽 2.76 → 4.15（塔上 3.80），0.46 → 0.68 | 泥沼 × 0.98（0.90–1.09），沼泽 × 1.03（1.02–1.13）；凸性使季节大的站略升 | 北方 × 0.99，热带 × 1.03；实跑 V-106 全球 150.1 → 160.7 Tg yr−1，俄罗斯 +1.1、加拿大 +0.5、东南亚 +1.7 |
+| ② 沼泽振幅仍不够时的敏感性 | 同 ①，q10methane 2.7、权重 0.71（跨站仍 1.33） | 比值 0.71 eV 与 Segers 折算都指向 2.7 | 沼泽 5.60，振幅比 0.95；泥沼 3.98 过冲（振幅比 1.39） | 泥沼 × 1.09，沼泽 × 1.16（US-WPT × 1.40） | 北方升（凸性），热带不变 |
+| ③ 改函数形式为 Arrhenius | 比值 0.71 eV 或总 0.96 eV（需除去宿主 1.5），配 ① 的基准 | Yvon-Durocher | 与同档 Q10 差 < 10 %，低温段略陡 | 同档 Q10 | 同档 Q10 |
+| ④ 只在低温段加强 | 15 °C 以下 q10methane 2.7、以上仍 1.33（改码） | Fey & Conrad 2.8 → 1.8；LPJ、JULES 形式随温度递减；Turetsky 只 rich fen；Treat 冷土反而最低 | 泥沼 1.96 → 3.84，振幅比 0.95；沼泽 4.09 | 泥沼 × 0.76（0.62–0.88），沼泽 × 0.93 | 北方降、热带不变；fen 类 β 已低（FI-Lom 0.52），不宜单用 |
+| ⑤ 固定基准提高 q10methane（已否决 V-92、V-94） | 2.0 或 2.7，基准 295 K | CLM4Me 敏感性 | 泥沼 2.95 / 3.98 | 泥沼 × 0.66 / 0.50，沼泽 × 0.81 / 0.70 | 北方降，热带 × 1.24 / × 1.45；与 Riley 2011 p.1940 同向 |
+| ⑥ 非温度途径 | 新鲜碳改 1–4 周周转库；C-63 活性模块重标 | McNicol、Chang 2020/2021、Knox 2021 | 能给正滞回与滞后 | 取决于底物量 | — |
+
+- 各格离线数——已验证（`q10_calc.out` Part 2 中位与 Part 3；V-106 取账本该行）。"不改码"——已验证（`Const.F90:315、325、333`；`Physics.F90:2352–2358`）。其余判断——推测。
+- 依据的边界：①的权重 0.5–0.6 是按"保留当前跨站 1.33"反算的，不是文献直接给的数——推测。
+
+### 5.3 离线估算表（`q10_calc.out`）
+
+做法：模式月排放 × f_新(T)/f_现(T)，T 取模式 13 cm 月均土温，局地基准取土温高于 0 °C 月份的均值；排放与产量同比例变（沼泽 O/P 恒约 40 %，近似好；泥沼有氧化非线性）。
+
+```text
+候选                          泥沼 11 塔（v2_oo4）            沼泽 6 塔（v2_p9f）             理想化年量（北方 fen / 温带 / 亚热带 / 热带）
+                              表观Q10  年量比  振幅比           表观Q10  年量比  振幅比
+塔上                          2.70（1.39–7.69）               3.80（3.01–6.20）
+A 现状 1.33@295K              1.96     1.00    0.65             2.76     1.00    0.46            1.00 / 1.00 / 1.00 / 1.00
+B 2.0@295K（V-92）            2.95     0.66    0.73             4.15     0.81    0.51            0.63 / 0.87 / 1.06 / 1.24
+C 2.7@295K                    3.98     0.50    0.76             5.60     0.70    0.53            0.45 / 0.81 / 1.13 / 1.45
+D 比值 0.71 eV@295K           4.09     0.51    0.78             5.62     0.71    0.54            0.46 / 0.81 / 1.11 / 1.40
+E 2.7 局地基准 w 0.71         3.98     1.09    1.39             5.60     1.16    0.95            1.15 / 1.22 / 1.11 / 1.00
+F 2.7 局地基准 w 0.5          3.98     0.89    1.16             5.60     0.99    0.80            0.87 / 1.08 / 1.12 / 1.12
+H 2.0 局地基准 w 0.5（V-103） 2.95     0.98    0.98             4.15     1.03    0.68            0.99 / 1.07 / 1.06 / 1.03
+G 15 °C 以下 2.7              3.84     0.76    0.95             4.09     0.93    0.54            0.74 / 0.94 / 1.00 / 1.00
+```
+
+- 上表——已验证（`q10_calc.out` Part 2 "median over sites" 行与 Part 3）。振幅比为模式与塔上月气候态标准差之比（塔上有值的月份），不是计分口径的 α。理想化：月土温 = 均值 − 振幅 cos，北方 fen 5 ± 9、温带 16 ± 7、亚热带 22 ± 5、热带 27 ± 1 °C，HR ∝ 1.9^(T/10)，0 °C 以下不产。
+- 校验：B 的离线年量比 0.57–0.73，对真实跑 `v2_qp` 为 0.60–0.81，离线把降幅高估 0.02–0.08；V-92 实跑 12 塔排放表观 Q10 中位 2.87，离线 2.95——已验证（`q10_calc.out` "Check" 段；账本 V-92）。
+- 分塔：US-Myb 7 月/1 月比现状 3.26、B 5.22、C/E 7.37、塔上 9.07；US-Tw1、US-Tw4 现状已与塔上相当（3.26、3.69 对 3.94、3.79），B 以上都过冲到 5.1–8.4——已验证（`q10_calc.out` Part 2 各塔行）。即任何全局温度改法都会让 Twitchell 老塘振幅越界——推测。
+
+### 5.4 落地前要一并处理的
+
+1. 湖泊联动：`q10lake` 缺省 −1 时湖泊 Q10 = 1.5 × q10methane，V-92 把湖塔 DE-Dgw 排放压到 0；改 q10methane 时须单设 `q10lake`——已验证（`Physics.F90:2403–2404`；账本 V-92、C-53）。
+2. 稻田不走局地基准：C-27 只作用于 patchtype 2（`Physics.F90:2352`），稻田按固定 295 K 吃新 Q10，V-106 稻田 9.2 → 11.8 Tg yr−1——已验证（读码；账本 V-106）。稻田内禀 1.8–2.8（10–37 °C）、田间 1.5–3（转引），总 3.0 在上沿——已验证（第 3.1 节），是否对稻田保留 1.33 或也用局地基准需另议（后者要改码）——推测。
+3. 上限：q10methane 2.7 时 f_adj 约 31 °C 以上触 0.5 上限，热带暖土增幅会被截——已验证（算术，`Physics.F90:2642`）。
+4. 苔原：V-95、V-96 显示局地基准下苔原过冲，C-51（未冻期均温）减半但仍高约一倍，账本判为温度以外的苔原问题——已验证（账本 V-95、V-96）。
+5. 评判口径：①在 O-5 基线上实跑（V-103）只加 0.03（48 塔 0.08 → 0.11），fen 0.11 → −0.05；重跑时应直接看各类表观 Q10、振幅比与滞回，而不只看 KGE_ln——推测（依据本表与账本 V-103）。
+
+## 6. 著录（Crossref 逐条核对，请求不带任何个人信息）
+
+- Bloom, 2017｜A global wetland methane emissions and uncertainty dataset for atmospheric chemical transport models (WetCHARTs version 1.0)｜Geoscientific Model Development 10(6): 2141-2156｜10.5194/gmd-10-2141-2017｜已核（Crossref）
+- Chadburn, 2020｜Modeled Microbial Dynamics Explain the Apparent Temperature Sensitivity of Wetland Methane Emissions｜Global Biogeochemical Cycles 34(11): e2020GB006678｜10.1029/2020GB006678｜已核（Crossref）
+- Chang, 2020｜Hysteretic temperature sensitivity of wetland CH4 fluxes explained by substrate availability and microbial activity｜Biogeosciences 17(22): 5849-5860｜10.5194/bg-17-5849-2020｜已核（Crossref）
+- Chang, 2021｜Substantial hysteresis in emergent temperature sensitivity of global wetland CH4 emissions｜Nature Communications 12(1): 2266｜10.1038/s41467-021-22452-1｜已核（Crossref）
+- Chen, 2021｜Differences in the temperature dependence of wetland CO2 and CH4 emissions vary with water table depth｜Nature Climate Change 11(9): 766-771｜10.1038/s41558-021-01108-4｜已核（Crossref）
+- Christensen, 2003｜Factors controlling large scale variations in methane emissions from wetlands｜Geophysical Research Letters 30(7): 2002GL016848｜10.1029/2002GL016848｜已核（Crossref；本文只转引）
+- Dunfield, 1993｜Methane production and consumption in temperate and subarctic peat soils: Response to temperature and pH｜Soil Biology and Biochemistry 25(3): 321-326｜10.1016/0038-0717(93)90130-4｜已核（Crossref）
+- Fey, 2000｜Effect of Temperature on Carbon and Electron Flow and on the Archaeal Community in Methanogenic Rice Field Soil｜Applied and Environmental Microbiology 66(11): 4790-4797｜10.1128/AEM.66.11.4790-4797.2000｜已核（Crossref）
+- Gedney, 2004｜Climate feedback from wetland methane emissions｜Geophysical Research Letters 31(20): 2004GL020919｜10.1029/2004GL020919｜已核（Crossref；原文页眉印 L20503）
+- Gedney, 2019｜Significant feedbacks of wetland methane release on climate change and the causes of their uncertainty｜Environmental Research Letters 14(8): 084027｜10.1088/1748-9326/ab2726｜已核（Crossref）
+- Hodson, 2011｜The El Niño-Southern Oscillation and wetland methane interannual variability｜Geophysical Research Letters 38(8)（Crossref 无页码；原文页眉印 L08810）｜10.1029/2011GL046861｜已核（Crossref）
+- Inglett, 2012｜Temperature sensitivity of greenhouse gas production in wetland soils of different vegetation｜Biogeochemistry 108(1-3): 77-90｜10.1007/s10533-011-9573-3｜已核（Crossref；在线 2011）
+- Knox, 2019｜FLUXNET-CH4 Synthesis Activity: Objectives, Observations, and Future Directions｜Bulletin of the American Meteorological Society 100(12): 2607-2632｜10.1175/BAMS-D-18-0268.1｜已核（Crossref）
+- Knox, 2021｜Identifying dominant environmental predictors of freshwater wetland methane fluxes across diurnal to seasonal time scales｜Global Change Biology 27(15): 3582-3604｜10.1111/gcb.15661｜已核（Crossref）
+- Li, 2024｜Soil incubation methods lead to large differences in inferred methane production temperature sensitivity｜Environmental Research Letters 19(4): 044069｜10.1088/1748-9326/ad3565｜已核（Crossref）
+- Liu, 2025｜Temperature Increase in Paddy Soils Remodels the Relationship Between the Anaerobic Food Web and the Q10 of CH4 Production｜Molecular Ecology 34(22): e70156｜10.1111/mec.70156｜已核（Crossref）
+- McNicol, 2020｜Where old meets new: An ecosystem study of methanogenesis in a reflooded agricultural peatland｜Global Change Biology 26(2): 772-785｜10.1111/gcb.14916｜已核（Crossref；issued 2019，卷期 2020；数值读接受稿 LLNL-JRNL-789121）
+- Riley, 2011｜Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM｜Biogeosciences 8(7): 1925-1953｜10.5194/bg-8-1925-2011｜已核（Crossref）
+- Ringeval, 2010｜An attempt to quantify the impact of changes in wetland extent on methane emissions on the seasonal and interannual time scales｜Global Biogeochemical Cycles 24(2): 2008GB003354｜10.1029/2008GB003354｜已核（Crossref；原文页眉印 GB2003）
+- Ringeval, 2011｜Climate-CH4 feedback from wetlands and its interaction with the climate-CO2 feedback｜Biogeosciences 8(8): 2137-2157｜10.5194/bg-8-2137-2011｜已核（Crossref）
+- Salmon, 2022｜Assessing methane emissions for northern peatlands in ORCHIDEE-PEAT revision 7020｜Geoscientific Model Development 15(7): 2813-2838｜10.5194/gmd-15-2813-2022｜已核（Crossref）
+- Segers, 1998｜Methane production and methane consumption: a review of processes underlying wetland methane fluxes｜Biogeochemistry 41(1): 23-51｜10.1023/A:1005929032764｜已核（Crossref）
+- Sitch, 2003｜Evaluation of ecosystem dynamics, plant geography and terrestrial carbon cycling in the LPJ dynamic global vegetation model｜Global Change Biology 9(2): 161-185｜10.1046/j.1365-2486.2003.00569.x｜已核（Crossref）
+- Sjögersten, 2018｜Temperature response of ex-situ greenhouse gas emissions from tropical peatlands: Interactions between forest type and peat moisture conditions｜Geoderma 324: 47-55｜10.1016/j.geoderma.2018.02.029｜已核（Crossref）
+- Treat, 2015｜A pan-Arctic synthesis of CH4 and CO2 production from anoxic soil incubations｜Global Change Biology 21(7): 2787-2803｜10.1111/gcb.12875｜已核（Crossref；页码按早期在线版）
+- Turetsky, 2014｜A synthesis of methane emissions from 71 northern, temperate, and subtropical wetlands｜Global Change Biology 20(7): 2183-2197｜10.1111/gcb.12580｜已核（Crossref）
+- van Hulzen, 1999｜Temperature effects on soil methane production: an explanation for observed variability｜Soil Biology and Biochemistry 31(14): 1919-1929｜10.1016/S0038-0717(99)00109-1｜已核（Crossref）
+- Walter, 2000｜A process-based, climate-sensitive model to derive methane emissions from natural wetlands: Application to five wetland sites, sensitivity to model parameters, and climate｜Global Biogeochemical Cycles 14(3): 745-765｜10.1029/1999GB001204｜已核（Crossref；本文只转引）
+- Wania, 2010｜Implementation and evaluation of a new methane model within a dynamic global vegetation model: LPJ-WHyMe v1.3.1｜Geoscientific Model Development 3(2): 565-584｜10.5194/gmd-3-565-2010｜已核（Crossref；本文只转引）
+- Yvon-Durocher, 2014｜Methane fluxes show consistent temperature dependence across microbial to ecosystem scales｜Nature 507(7493): 488-491｜10.1038/nature13164｜已核（Crossref）
+- Zhang, 2016｜Modeling spatiotemporal dynamics of global wetlands: comprehensive evaluation of a new sub-grid TOPMODEL parameterization and uncertainties｜Biogeosciences 13(5): 1387-1408｜10.5194/bg-13-1387-2016｜已核（Crossref）
+- Zhuang, 2004｜Methane fluxes between terrestrial ecosystems and the atmosphere at northern high latitudes during the past century: A retrospective analysis with a process-based biogeochemistry model｜Global Biogeochemical Cycles 18(3): 2004GB002239｜10.1029/2004GB002239｜已核（Crossref；原文页眉印 GB3010）
+- Khvorostyanov, 2008｜Vulnerability of permafrost carbon to global warming. Part I: model description and role of heat generated by organic matter decomposition｜Tellus B: Chemical and Physical Meteorology 60(2): 250（Crossref 只给首页）｜10.1111/j.1600-0889.2007.00333.x｜已核（Crossref）

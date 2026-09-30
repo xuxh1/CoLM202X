@@ -1,0 +1,107 @@
+From 98891b86c8a66e0fe6705fcb6e3fe4254c2af3d0 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Fri, 25 Sep 2026 08:24:39 +0800
+Subject: [PATCH] feat(methane): wetland-tile vegetation from its GLWD make-up
+ instead of the five-zone proxy (C-13)
+
+Ledger C-13 (paper V2), switch wetland_veg_glwd, off by default. The
+five-zone climate proxy gave every tropical peat-rich wetland papyrus
+aerenchyma (porosity 0.5, 8 mm, 3 gC tillers, NPP 600) although 80% of
+GLWD tropical wetland is forested peat, and switched aerenchyma off above
+50N once the peat carbon profile lowered topsoil organic matter.
+
+With the switch on, a new module reads the forested share and class areas
+of the tile per grid cell (v2/scripts/glwd_class_2deg.py) and, per wetland
+patch: NPP is the tile's assimilation times wetland_npp_frac, split by a
+forest-weighted belowground share (wetland_bg_frac_forest 0.15 for
+forested wetland); roots follow the land class's profile; aerenchyma uses
+the CLM4Me grass defaults with the forested share at nongrassporosratio;
+and after each LAI read the non-forested share keeps its remote-sensing
+LAI only up to the measured peak (open peatland 0.6, marsh 3).
+
+---
+ Makefile      | 12 ++++++++----
+ main/CoLM.F90 |  9 +++++++++
+ 2 files changed, 17 insertions(+), 4 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index a2d94efc..31da9d97 100644
+--- a/Makefile
++++ b/Makefile
+@@ -183,7 +183,7 @@ TRACER_ISOTOPE_MAIN_OBJS = \
+ 
+ ifeq (${METHANE_ENABLED},YES)
+ TRACER_REACTIVE_METHANE_OBJ_SUFFIXES = \
+-				 GIEMS pH VegOverride State Microbes \
++				 GIEMS pH VegOverride WetlandVeg State Microbes \
+ 				 BgcLink AccFlux Physics Driver Hist Impl
+ 
+ TRACER_REACTIVE_METHANE_OBJS = \
+@@ -833,7 +833,10 @@ MOD_Vars_TimeVariables.o: MOD_Tracer_Rest.o MOD_Tracer_RiverLake.o
+ MOD_Vars_1DAccFluxes.o: MOD_Tracer_LandPhase.o
+ MOD_Tracer_Hist.o: MOD_Tracer_Lifecycle.o MOD_HistGridded.o MOD_HistSingle.o MOD_HistVector.o
+ MOD_Tracer_Reactive_BgcShim.o: MOD_BGC_Soil_BiogeochemCompetition.o MOD_BGC_Soil_BiogeochemDecomp.o \
+-	MOD_BGC_Soil_BiogeochemDecompCascadeBGC.o MOD_BGC_Soil_BiogeochemPotential.o
++	MOD_BGC_Soil_BiogeochemDecompCascadeBGC.o MOD_BGC_Soil_BiogeochemPotential.o \
++	MOD_Tracer_Reactive_Methane_WetlandVeg.o
++MOD_Tracer_Reactive_Methane_WetlandVeg.o: MOD_Tracer_Reactive_Methane_Const.o \
++	MOD_Tracer_Reactive_Methane_VegOverride.o MOD_Vars_TimeVariables.o MOD_Vars_TimeInvariants.o
+ MOD_Tracer_Reactive_Methane_State.o: MOD_Tracer_Reactive_Methane_Const.o
+ MOD_Tracer_Reactive_Methane_Microbes.o: MOD_Tracer_Reactive_Methane_Const.o \
+ 	MOD_Tracer_Reactive_Methane_State.o
+@@ -849,7 +852,8 @@ MOD_Tracer_Reactive_Methane_Physics.o: MOD_Tracer_Reactive_Methane_BgcLink.o \
+ 	MOD_Tracer_Reactive_Methane_State.o MOD_Tracer_Reactive_Methane_VegOverride.o
+ MOD_Tracer_Reactive_Methane_Driver.o: MOD_Tracer_Reactive_Methane_Microbes.o \
+ 	MOD_Tracer_Reactive_Methane_Physics.o MOD_Tracer_Reactive_Methane_State.o \
+-	MOD_Tracer_Reactive_Methane_BgcLink.o MOD_Tracer_Reactive_Methane_VegOverride.o
++	MOD_Tracer_Reactive_Methane_BgcLink.o MOD_Tracer_Reactive_Methane_VegOverride.o \
++	MOD_Tracer_Reactive_Methane_WetlandVeg.o
+ MOD_Tracer_Reactive_Methane_Hist.o: MOD_Tracer_Hist.o MOD_Tracer_Reactive_Methane_AccFlux.o \
+ 	MOD_Tracer_Reactive_Methane_BgcLink.o MOD_Tracer_Reactive_Methane_Registry.o MOD_HistGridded.o
+ MOD_Tracer_Reactive_Methane_Impl.o: MOD_Tracer_Reactive_BgcShim.o MOD_Tracer_Reactive_Methane_Driver.o \
+@@ -859,7 +863,7 @@ MOD_Tracer_Reactive_Methane.o: MOD_Tracer_Reactive_Methane_AccFlux.o \
+ 	MOD_Tracer_Reactive_Methane_GIEMS.o MOD_Tracer_Reactive_Methane_Hist.o \
+ 	MOD_Tracer_Reactive_Methane_Impl.o MOD_Tracer_Reactive_Methane_Microbes.o \
+ 	MOD_Tracer_Reactive_Methane_pH.o MOD_Tracer_Reactive_Methane_State.o \
+-	MOD_Tracer_Reactive_Methane_VegOverride.o MOD_Tracer_Lifecycle.o
++	MOD_Tracer_Reactive_Methane_VegOverride.o MOD_Tracer_Reactive_Methane_WetlandVeg.o MOD_Tracer_Lifecycle.o
+ MOD_Tracer_SpecialPatches.o: MOD_Tracer_Hist.o
+ MOD_Hist.o: MOD_Tracer_Hist.o
+ CoLMDRIVER.o: MOD_Tracer_LandPhase.o
+diff --git a/main/CoLM.F90 b/main/CoLM.F90
+index f3a79223..c02b40f3 100644
+--- a/main/CoLM.F90
++++ b/main/CoLM.F90
+@@ -110,6 +110,9 @@ PROGRAM CoLM
+    USE MOD_Tracer_Forcing, only: tracer_forcing_init, read_tracer_forcing, &
+                                  tracer_forcing_reset, tracer_forcing_final
+ #endif
++#if (defined TRACER) && (defined BGC)
++   USE MOD_Tracer_Reactive_Methane_WetlandVeg, only: wetveg_cap_lai
++#endif
+ 
+ #ifdef DataAssimilation
+    USE MOD_DA_Main
+@@ -601,6 +604,9 @@ PROGRAM CoLM
+          IF (DEF_LAI_MONTHLY) THEN
+             IF (month /= month_p) THEN
+                CALL LAI_readin (lai_year, month, dir_landdata)
++#if (defined TRACER) && (defined BGC)
++               CALL wetveg_cap_lai ()   ! C-13: no-op unless DEF_METHANE%wetland_veg_glwd
++#endif
+ #ifdef URBAN_MODEL
+                CALL UrbanLAI_readin(lai_year, month, dir_landdata)
+ #endif
+@@ -610,6 +616,9 @@ PROGRAM CoLM
+             Julian_8day = int(calendarday(jdate)-1)/8*8 + 1
+             IF (Julian_8day /= Julian_8day_p) THEN
+                CALL LAI_readin (jdate(1), Julian_8day, dir_landdata)
++#if (defined TRACER) && (defined BGC)
++               CALL wetveg_cap_lai ()   ! C-13: no-op unless DEF_METHANE%wetland_veg_glwd
++#endif
+             ENDIF
+          ENDIF
+ #endif
+-- 
+2.53.0
+

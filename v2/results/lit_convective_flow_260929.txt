@@ -1,0 +1,224 @@
+# lit_convective_flow_260929：挺水与浮叶植物的加压对流通气对甲烷排放与根际供氧的作用、模式实现与候选
+
+- **日期**：2026.09.29-12:45
+- **读者**：下一会话
+- **来源**：文献线只读调研（中控派活：加压对流通气的定量作用与模式实现）；承接 `v2/results/lit_models_wetland_260929.txt`（该文未涉对流通气，第 2.7 节第 2 条只列扩散型植物通道）、`v2/候选池.tsv` 第 4、28 条、`v2/迭代账本.md` V-112；读码对 `CoLM202X-paper-v2` commit `728dbfd7`
+- **状态**：第 0 至 5 节成文；第 5 节 69 个 DOI 于 2026-09-29 逐条查过 Crossref；第 4 节两个候选只到依据、式子与预期，未动代码与配置
+
+## 0. 覆盖面
+
+1. 检索词、渠道与命中：
+   - 本地模式与综述文本（`data/_tmp/分析_260925_模拟年份/txt/{models,reviews,observations}`，203 份）：`convective (flow|through|gas|ventilation)|pressuri[sz]ed (flow|ventilation|gas)|humidity-induced|thermal transpiration|Knudsen` 命中 16 份，逐份读了上下文；另按 `plant.?mediated|aerench|plant transport` 读了 CLM4Me、LPJ-WHyMe、DLEM、TEM、PEATLAND-VU、Peatland-VU v3、Tang 2010、ecosys、Arah and Stephen、Segers and Leffelaar、HIMMELI、ISBA、ELM-Wet 的植物通道式——已验证（grep 与逐份读）。
+   - 本地性状库：`docs/refs/sites/_traits`（119 份）与 `docs/refs/WFT`（142 份）抽文本后 grep `convective|pressuri[sz]|humidity-induced|throughflow|through-flow|thermal transpiration|thermo-osmo`，命中超过 2 行的 44 份（两库多为同一篇的重复件）；Bendix 1994 两份同一扫描件无文字层，按图读第 75–84 页——已验证（`cmp` 同文件、Read 读图）。
+   - 9 座 marsh 塔的站点文献 `docs/refs/sites/<塔>/`（63 份）抽文本 grep 同上词，命中 19 份，读了 Villa 2020、Chu 2014、Tang 2025、Morin 2014、Poindexter 2016、Valach 2021 的相关节——已验证（grep 与逐份读）。
+   - 网络：Crossref（书目检索、DOI 著录）、OpenAlex（开放获取位置、摘要）、Semantic Scholar（摘要）、Springer 文章页（摘要）、Europe PMC（全文 XML）、Nature、NASA NTRS、Copernicus、Tellus、OSTI、NSF PAR（下载全文）；WebSearch 9 次。全部匿名请求，请求头只带通用 User-Agent，URL 与参数不含任何个人信息。
+   - 本模式读码：`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90`（SiteOxAere、methane_tran 根际氧化段）、`_Const.F90`、`_WetlandVeg.F90`、`_VegOverride.F90`；配置 `v2/config/v2_oo5`；结果 `v2/results/scores77_v2_oo5*.txt`、`pathway_shares_v2_k4lrxmnqw_sasu5.log`。
+2. 读到全文（或全文中与本题相关的节）的篇目：Brix et al. 1996；Bendix et al. 1994（第 75–84 页，扫描件读图）；Kim et al. 1998；Whiting and Chanton 1996（NASA NTRS 预印本，页码为预印本页）；van den Berg et al. 2020；van den Berg et al. 2016（摘要、第 6108、6112 页）；Yavitt and Knapp 1995（第 521–522 页）；Yavitt and Knapp 1998（第 495–497 页）；Villa et al. 2020；Chu et al. 2014（第 722、734–735 页）；Tang et al. 2025（摘要、第 11–12 页）；Valach et al. 2021（表 1）；Sorrell and Hawes 2010；Colmer 2003；Milberg et al. 2017（全文 XML，表 4）；Schimel 1995（第 197 页）；Knox et al. 2019（第 2618 页）；Morin et al. 2014（第 2189 页）；Poindexter et al. 2016（摘要）；Buchel and Grosse 1990（首页）；Mitsch et al. 2012（第 240 页）。模式：Riley et al. 2011；Wania et al. 2010；Xu et al. 2016；Tian et al. 2010；Zhuang et al. 2004；van Huissteden et al. 2006；Tang et al. 2010；Arah and Stephen 1998；Segers and Leffelaar 2001；Grant 1998；Morin et al. 2022（OSTI 接受稿）；Yazbeck et al. 2025；Lippmann et al. 2026 预印本；Morel et al. 2019；Raivonen et al. 2017；Wang et al. 2019（NSF PAR 接受稿）；CTSM `ch4Mod.F90`。
+3. 只读摘要：Brix et al. 1992；Kim et al. 1999；Arkebauer et al. 2001；Armstrong et al. 1992；Dacey 1980、1981；Konnerup et al. 2011；Sorrell and Brix 2003；Afreen et al. 2007；Sorrell et al. 1997；Sorrell and Tanner 2000；van der Nat et al. 1998；van der Nat and Middelburg 1998、2000；Gerard and Chanton 1993；Brix et al. 2001；Sebacher et al. 1985；Hwang and Morris 1991；Knox et al. 2021；Vroom et al. 2022；Seyfried et al. 2026；Villa et al. 2019；Armstrong and Armstrong 2005（摘要不全）。
+4. 只读题名或转引（原文未读到，不当全文用）：Chanton et al. 1993（经 Whiting and Chanton 1996 预印本第 2、10 页）；Grünfeld and Brix 1999（经 van den Berg 2020 第 2、7 页）；Tornberg et al. 1994（经 Chu 2014 第 735 页）；Grosse 1996 两篇、Armstrong et al. 1996、Beckett et al. 2001 两篇、Sorrell and Boon 1994、Dacey and Klug 1979（题名，Crossref 著录）；Käki et al. 2001、Juutinen et al. 2004、Günther et al. 2014、Minke et al. 2014、Ding et al. 2004（经 Milberg 2017 表 4）。
+5. 读不到全文与已试路径：Wiley `pdfdirect` 与 `onlinelibrary` 页（Kim 1999、Armstrong 1992、Grant and Roulet 2002）在 mgt01 与 WebFetch 均 403；ScienceDirect（Chanton 1993、Brix 2001、Grünfeld and Brix 1999、Tornberg 1994、Grosse 1996、Armstrong 1996、Beckett 2001、Käki 2001、Vroom 2022）403，Vroom 2022 的 pure.au.dk 文件 403；Brix 1992 的 figshare 直链被 AWS WAF 质询（返回 202 空体，去代理重试同），WebFetch 跟到的 S3 签名 10 s 过期；OpenAlex、Semantic Scholar 对 Elsevier 条目不返回摘要。
+6. 未看：无。
+7. 存疑（需实验）：第 4.5 节三条——候选甲在 marsh 塔月尺度的净效应；V-112 的 marsh 退化来自 O₂ 路径还是 CH₄ 路径；日内峰时是否因缺植物体内储气而偏晚。
+8. 检索为零的：在大尺度陆面或全球甲烷模式（CLM4Me/CTSM、ELM、LPJ-WHyMe、DLEM、TEM、ORCHIDEE、JSBACH、JULES/HIMMELI、ISBA、PEATLAND-VU、ecosys）中显式实现加压对流通气的，零——已验证（第 3 节逐一读式，加 WebSearch 5 次）。
+
+## 1. 实测：流量、日变化、季节、对 CH₄ 的放大与对根际 O₂ 的作用
+
+### 1.1 机制与驱动式
+
+1. 两种加压机制：湿度诱导 ΔP_w = P_wi − P_wa（叶内饱和水汽压减大气水汽压），热蒸腾 ΔP_t = P_a[(T_i/T_a)^0.5 − 1]，二者相加为 ΔP_pot；需要孔径在 Knudsen 区（小于约 0.1 µm）的多孔隔层——已验证（Bendix 1994 p.78–79 式 1–3，读图；Colmer 2003 p.34–35 附录 1）。
+2. 香蒲以湿度诱导为主，热蒸腾对总压差无显著贡献；芦苇塔上热蒸腾压差也远小于水汽压差——已验证（Bendix 1994 p.82；Kim 1998 p.28034）。
+3. 流量与静压呈线性：宽叶香蒲 F = 0.021 ΔP_s − 0.04，窄叶香蒲 F = 0.007 ΔP_s + 0.16（F 为 cm³ min⁻¹，ΔP_s 为 Pa，r² 0.97、0.95）；静压与 ΔP_pot 之比（加压效率）0.10–0.28，单位叶面积对流效率 E_s = 1.36–5.50 × 10⁻⁶ cm³ min⁻¹ cm⁻² Pa⁻¹——已验证（Bendix 1994 p.82 图 2 与表 1、p.84 表 2，读图）。
+4. 通路：绿色活茎（入流）把空气压入根状茎，老茎、枯茎（出流）排出富含 CO₂ 与 CH₄ 的气体；芦苇床枯茎与活茎约 3:1，约 40 % 的枯茎基部被愈伤组织堵死——已验证（Brix 1996 p.155–156）。
+5. 风致文丘里吸流只在芦苇证实：风吹过高枯茎 ΔP = −½ρV²，5–6 m s⁻¹ 风下 0.8 mL min⁻¹；塔上夜间风速 3–6 m s⁻¹ 时 CH₄ 通量比 1–3 m s⁻¹ 时高 32–92 %——已验证（Colmer 2003 p.20–21 表 2、p.34；Kim 1998 p.28037）。
+6. 气孔与水汽压差：芦苇与东方香蒲的压力与流量随水汽压差变化比随气孔导度更显著，光强降到 10 µmol m⁻² s⁻¹ 以下流量仍维持，干旱气候夜间可能也有对流——已验证（Sorrell and Brix 2003，只读摘要）。
+
+### 1.2 流量
+
+1. 14 种挺水植物中 8 种静压 200–1300 Pa，4 种小于 100 Pa，2 种不加压；单茎对流 0.2 到大于 10 cm³ min⁻¹——已验证（Brix 1992，只读摘要）。
+2. 芦苇：炎热午后单茎 2.2–4.8 mL min⁻¹（静压约 575 Pa，27 °C、RH 约 50 %、PAR 约 1000 µmol m⁻² s⁻¹）；林分总气体交换 8.7–10.6 L m⁻² h⁻¹，其中入流 O₂ 1.8–2.2 L m⁻² h⁻¹——已验证（Brix 1996 p.155 表 1、p.158 表 3）。英国夏季午后（RH 约 45 %）静压 780 Pa、流量 9.6 mL min⁻¹，日落（RH 约 92 %）100 Pa、0.3 mL min⁻¹——已验证（Colmer 2003 p.21 表 2）。枯活茎比由 1:12 变 1:25 时每根高茎流入根状茎的流量由约 2.8 升到 6.5 cm³ min⁻¹——已验证（Afreen 2007，只读摘要）。塔上活茎日间静压最高 1650 Pa，夜间接近大气压——已验证（Arkebauer 2001，只读摘要）。
+3. 香蒲：宽叶香蒲最高静压 350 Pa、流量 8 cm³ min⁻¹，窄叶香蒲 570 Pa、3.5 cm³ min⁻¹（切断根状茎测）——已验证（Bendix 1994 p.75、p.80）。东方香蒲与 Eleocharis sphacelata 在水汽压差 1.3–1.5 kPa 下单茎 5.4–5.6 cm³ min⁻¹，按入流茎叶面积 4.1–4.6 cm³ m⁻² s⁻¹——已验证（Sorrell and Hawes 2010 p.168 表 2）。
+4. 睡莲类：黄睡莲叶柄内气流速度达 50 cm min⁻¹，每片新叶每天吸入数升空气——已验证（Dacey 1980，只读摘要）；午后动压 175–260 Pa、流量 40–56 mL min⁻¹——已验证（Colmer 2003 p.21 表 2，转引 Dacey 1981）。
+5. 热带：湄公河三角洲 20 种湿地植物中 9 种静压大于 50 Pa、8 种流量大于 1 mL min⁻¹——已验证（Konnerup 2011，只读摘要）。
+6. 按叶面积换到地面：Bendix 的 E_s 乘 ΔP_pot 1500 Pa 得每平方米叶面 1.3–5.0 L h⁻¹，绿叶 LAI 2–3 时约 3–15 L m⁻² h⁻¹，与 Brix 1996 芦苇林分 8.7–10.6 同量级——推测。理由：算术；Bendix 为切断根状茎的单株，无根状茎阻力，是上限。
+
+### 1.3 日变化
+
+1. 压力与流量日出后迅速上升、傍晚达峰、日落归零，最高出现在气温最高、湿度最低时——已验证（Brix 1996 p.153，图 1）。
+2. 塔上 CH₄：芦苇沼泽日间 2–5 倍于夜间，65 天平均日间 25、夜间 8 mg CH₄ m⁻² h⁻¹，峰在上午到正午；日间变化与 PAR、冠层内外温差、冠层导度相关（整季 r² 0.45、0.23、0.06），与水汽压差、风速不显著——已验证（Kim 1998 p.28029 摘要、p.28036 表 1）。德国芦苇泥沼八月正午 15.7 对夜间 1.41 mg CH₄ m⁻² h⁻¹（11 倍），与总辐射相关最高，日变化只在有绿色芦苇的五至十月出现——已验证（van den Berg 2016 p.6107 摘要、p.6112）。
+3. 香蒲：佛罗里达 T. domingensis 与 T. latifolia 在清晨出现高达前后 4 倍的峰——已验证（转引：Whiting and Chanton 1996 预印本 p.2 引 Chanton 1993）；弗吉尼亚 T. latifolia 上午 10–11 时峰高出两侧 50 % 以上，同期茎基空腔 CH₄ 由 6175 降到 255 ppmv，下午通量与夜间相当；扩散型的 Peltandra virginica 则随气温在午后缓升——已验证（Whiting and Chanton 1996 预印本 p.6–7、p.11）。T. latifolia 叶片夜间积 CH₄ 到 10000 µL L⁻¹，对流开始后叶面排放由小于 0.1 升到大于 2.0 µmol m⁻² s⁻¹，植株像电容器——已验证（Yavitt and Knapp 1998 p.495）。北美九处 T. latifolia 叶面排放平均 0.22 µmol m⁻² s⁻¹（折地面 940 mg CH₄ m⁻² d⁻¹），正午最高——已验证（Yavitt and Knapp 1995 p.521）。
+4. 反例与限定：OWC（US-OWC）窄叶香蒲、美洲莲、睡莲的叶面通量在上午、正午、午后三个时段中位数无显著差异——已验证（Villa 2020 p.1640）；OWC 香蒲期（2015–2016）塔上日内有清晨峰、水汽压差对通量为负效应（路径系数 −0.12），转为浮叶植物期（2020–2022）清晨峰消失、水汽压差转为正效应（0.18）——已验证（Tang 2025 p.1 摘要、p.12）。瑞典两湖芦苇与 Carex rostrata 每 2 小时一测，均无一致日变化，两种单位面积排放相近；该文表 4 汇总的芦苇日变化多为日夜差约 2 倍，Carex 多无明显日变化（C. lasiocarpa 至多 1.5 倍）——已验证（Milberg 2017 摘要、表 4）。
+5. 跨站：FLUXNET-CH4 中日尺度变差占比以淡水沼泽最大，作者归于芦苇、香蒲一类有对流的植被；泥沼、莎草沼、湿苔原以小时尺度噪声为主——已验证（Knox 2019 p.2618）。23 站小波分析中日尺度通量与潜热、水汽压差同步，作者认为提示加压通气——已验证（Knox 2021，只读摘要）。
+6. WPT（US-WPT）：半小时通量在生长盛期随气温与水汽压差变化，作者归因于香蒲与睡莲的加压通气；非生长季以扩散与冒泡为主、受摩擦风速控制——已验证（Chu 2014 p.722 摘要、p.734–735）。
+7. 另一种"对流"不要混淆：Twitchell（US-Tw1）夜间水体降温引起的水柱热对流搬运溶解 CH₄，占全年排放 32 %——已验证（Poindexter 2016 p.6276 摘要）。
+
+### 1.4 季节
+
+1. 芦苇：出水前日内恒定；出水后日出后缓升、傍晚达峰；分蘖后变为上午到中午峰、夜到日 2–4 倍，作者判为由分子扩散转为对流；衰老后对流作用变小；四至十月积分约 64 g CH₄ m⁻²，全年估约 80——已验证（Kim 1999，只读摘要）。塔上最高压力出现在生物量与叶面积最大的盛季（920 g m⁻²、2.8），且需辐射大于 500 W m⁻²、气温高于 20 °C、RH 低于 60 %——已验证（Arkebauer 2001，只读摘要）。
+2. 冬季枯茎开裂，不能靠湿度加压，植物内气体交换以分子扩散为主；文丘里吸流可能存在但未量化——已验证（Brix 1996 p.160）。
+3. 香蒲单位叶面积 CH₄ 导度六月 3.8 × 10⁻⁴、八月 7.6 × 10⁻³ m d⁻¹，作者归于叶片长高后加压能力增强——已验证（Villa 2020 p.1643）。
+4. 季节尺度的主控仍是土温：WPT 日到年尺度通量由土温解释 R² 0.86，半小时到周尺度才由传输控制——已验证（Chu 2014 p.722 摘要、p.734）；Kim 1998 夜间通量对 0–0.25 m 泥温的表观活化能 88 kJ mol⁻¹（r² 0.93），日间 70（0.79），且两条曲线的差随温度增大——已验证（Kim 1998 p.28036–28037）。
+
+### 1.5 对 CH₄ 排放的放大倍数
+
+1. 塔上扣除法：以夜间（低风）通量对泥温的关系外推日间扩散量，对流约占日间排放 60 %（34–74 %）——已验证（Kim 1998 p.28038）。即日间为纯扩散的 2.5 倍（1.5–3.8）；按日间 10 h、夜间 10 h、过渡 4 h 取两者中值粗算，全天为纯扩散的约 1.8 倍（1.35–2.3）——推测。理由：由上一条比例与 p.28029 的日夜均值算术得出。
+2. 剪茎实验（德国芦苇泥沼，六月生长期，水位高于地表 0.55 m）：完整芦苇、剪茎（去对流）、剪茎加封（去全部植物通道）的扩散加植物通量 517、217、279 mg CH₄ m⁻² d⁻¹，冒泡 10、71、126；总量完整比剪茎高 45 %、比剪封高 23 %（即 1.8 倍、1.3 倍）；通量对箱温的斜率完整约为两处理的 2 倍；冒泡占总量由 2 % 升到 24 %、37 %——已验证（van den Berg 2020 p.6 表 2、p.7 与图 5）。摘要写"2.3 倍"，与正文 45 % 的降幅（合 1.8 倍）不一致，517/217 = 2.4 是扩散加植物通量之比——已验证（同文 p.1 摘要对 p.7，算术）。作者结论：绕过氧化层的效应远大于植物送 O₂ 对氧化与产量的抑制——已验证（同文 p.8）。
+3. 芦苇林分经植物净排 CH₄ 10–270 mL m⁻² d⁻¹（约 7–180 mg CH₄ m⁻² d⁻¹），入流茎几乎不含 CH₄、出流茎 0.23 %；植被区沉积物气泡 CH₄ 58 %、无植被区 75 %——已验证（Brix 1996 p.155 表 2、p.158 表 4、p.161 表 5；mL 到 mg 按 20 °C、1 atm 换算为算术）。
+4. 放大有上限：香蒲下午通量与夜间相当，作者认为清晨排空后的限速在根与孔隙水之间的进入环节——已验证（Whiting and Chanton 1996 预印本 p.11）；Eriophorum 的限速同在根到通气组织的进入，Carex aquatilis 则在叶与气孔——已验证（Schimel 1995 p.197）。
+5. 反向或不显著：芦苇幼苗使淹水有机土排放降 34 %（O₂ 送入抑产促氧化）——已验证（转引：van den Berg 2020 p.2、p.7 引 Grünfeld and Brix 1999）；瑞典湖岸芦苇与 C. rostrata 单位面积排放相近——已验证（Milberg 2017 摘要）；多数综述认为土壤碳、温度、养分、水深常比植物种更主导——已验证（Vroom 2022，只读摘要）。OWC 由香蒲转为浮叶植物后生长季排放降 60 %，归因于水位升高与植物导度下降——已验证（Tang 2025 p.1 摘要）。
+6. 小结：生长盛季对流使芦苇、香蒲群落的 CH₄ 排放在日间放大约 1.5–4 倍、日总量约 1.3–2 倍，主要通过把冒泡与经氧化层的扩散改走植物通道；冬季与出水前为零；莎草与泥炭藓群落无此项——推测。理由：综合第 1–5 条，量级取 Kim 1998 与 van den Berg 2020 两个独立估计的重叠段。
+
+### 1.6 对根际 O₂ 与根际氧化的作用
+
+1. 入流 O₂ 大部原路排出：芦苇床入流 O₂ 1.8–2.2 L m⁻² h⁻¹，其中 5–20 % 被植物与根际呼吸消耗（Lake Oje 为 2.38 入、1.75 出，约 26 %）——已验证（Brix 1996 p.155、p.158）。
+2. 对流把根状茎 O₂ 由约 9 % 抬到约 20 %，使 113 mm 不定根近根尖的径向泄氧约增 4 倍；但 O₂ 在根内与进入根际仍靠扩散——已验证（Colmer 2003 p.21，转引 Armstrong 1992）。低至 0.7–1.4 × 10⁻⁸ m³ s⁻¹ 的对流即可把根状茎 O₂ 抬到大气的 90 %，根与根际得 O₂ 远多于纯扩散——已验证（Armstrong 1992，只读摘要）。
+3. 根际氧化潜力：Everglades 的 T. domingensis 与 Cladium 区潜在氧化与排放之比 5.6–51，氧化活性集中在细根，根状茎与茎几乎为零；作者注明是 O₂ 不受限的上限——已验证（Gerard and Chanton 1993，只读摘要）。
+4. 对流种不一定更氧化：人工湿地中扩散型的 Scirpus lacustris 使产甲烷降一半（5.6–13 对 16.7–17.6 mmol m⁻² d⁻¹），归因于根泄氧经铁循环；对流型芦苇系统产甲烷占有机碳矿化约 80 %，与无植物对照相当——已验证（van der Nat and Middelburg 1998，只读摘要）。
+5. 植物通道仍受根际氧化：芦苇的植物排放大多绕过泥水界面的氧化层，但仍可能在根际被氧化——已验证（Kim 1998 p.28035）；不同种根际氧化差别大，Juncus effusus、Eriophorum vaginatum 可达 100 %，Carex rostrata 20–40 %——已验证（转引：Wania 2010 p.571 引 Ström et al. 2005）。
+6. 小结：对流主要增加根状茎与根基部的 O₂，送入沉积物的净 O₂ 只占入流的一小部分，且受根内扩散与根部屏障限制；田间净效应是 CH₄ 排放增加——推测。理由：第 1、2 条的比例与 1.5 节第 2 条的田间结果同向；第 4 条说明根际氧化强弱由根的泄氧特性而非有无对流决定。
+
+## 2. 哪些物种有、哪些没有，对应湿地类型
+
+1. 有对流（有直接测定）：芦苇 Phragmites australis（Brix 1996；Arkebauer 2001；Afreen 2007）、宽叶与窄叶香蒲（Bendix 1994）、T. domingensis（Chanton 1993，经 Whiting 预印本 p.10）、东方香蒲与 Eleocharis sphacelata（Sorrell and Hawes 2010 表 2）、黄睡莲 Nuphar lutea（Dacey 1980、1981）；Kim 1998 所列还有 Menyanthes trifoliata、Nelumbo nucifera、Nymphaea odorata、Nymphoides peltatum、Spartina alterniflora、Victoria amazonica、Alnus glutinosa——已验证（各篇摘要或全文；Kim 1998 p.28029）。互花米草有湿度加压——已验证（Hwang and Morris 1991，只读摘要）。
+2. 弱对流："低流量"类静压小于 200 Pa、单茎小于 1 cm³ min⁻¹：Schoenoplectus tabernaemontani（53 Pa、0.64）、Baumea 两种——已验证（Sorrell and Hawes 2010 p.168 表 2）。
+3. 无对流或以扩散为主：Scirpus（Schoenoplectus）acutus 生长季测不到加压——已验证（Arkebauer 2001，只读摘要）；S. lacustris 全天扩散，芦苇日间对流、夜间扩散——已验证（van der Nat 1998，只读摘要）；Eleocharis acuta、Apodasmia similis 测不到——已验证（Sorrell and Hawes 2010 p.168）；Carex rostrata、水稻、Peltandra virginica 为扩散型——已验证（van den Berg 2020 p.1；Whiting and Chanton 1996 预印本 p.3）；Carex aquatilis 受叶与气孔限制、Eriophorum 受根进入限制——已验证（Schimel 1995 p.197）；莎草 Carex 与水稻由浓度梯度驱动——已验证（Yavitt and Knapp 1998 p.495）。泥炭藓无维管与通气组织，不存在此过程——推测。理由：植物学常识，未另查文献。
+4. 树木存争议：Alnus glutinosa 被报告有皮孔下细孔隔层的热渗透加压——已验证（Buchel and Grosse 1990 首页摘要）；后有工作认为给淹水根供氧的是茎的光合而非加压通气——已验证（Armstrong and Armstrong 2005 题名与摘要前半）。树的 CH₄ 外排以蒸腾带走溶解 CH₄ 为主——已验证（Vroom 2022，只读摘要）。
+5. 对应湿地类型：marsh（温带淡水沼泽，深水挺水与浮叶植物）是对流种的主场；fen 以莎草、羊胡子草为主基本无对流，但芦苇泥沼例外（德国 Federsee、荷兰 Weerribben）；bog 以泥炭藓、羊胡子草、灌木为主无对流；swamp（有林）不按对流处理；盐沼 Spartina 有湿度加压、日间峰可能来自加压流——推测。理由：由第 1–4 条的物种归类与各类湿地的优势种推出；盐沼一句依据 Seyfried 2026 摘要的作者推断。
+6. 本项目 9 座 marsh 塔的物种：US-Tw1 香蒲 69 %、S. acutus 31 %；US-Tw5 香蒲 59 %、S. acutus 11 %；US-Myb 香蒲 55 %、S. acutus 28 %；US-Tw4 香蒲 95 %、S. acutus 5 %；US-Sne 香蒲与 S. acutus，份额未给——已验证（Valach 2021 表 1）。US-WPT 窄叶香蒲与睡莲，塔足迹 72–77 % 落在睡莲区——已验证（Chu 2014 p.722、p.735）。US-OWC 窄叶香蒲、美洲莲、香睡莲——已验证（Villa 2020 p.1636）。US-ORv 以香蒲为主，另有 Sparganium、S. tabernaemontani——已验证（Mitsch 2012 p.240，读本地 `docs/refs/sites/US-ORv/2012_Mitsch.pdf`）。US-DPW 为季节淹水的洼地沼泽，优势种在本地两篇与检索中未查到——已验证（grep 本地两篇、WebSearch 1 次）。按第 2、3 条，三角洲五塔的对流种份额约为香蒲份额（0.55–0.95），WPT 与 OWC 接近 1——推测。理由：S. acutus 按无对流计，睡莲与美洲莲按有对流计。
+
+## 3. 模式实现
+
+1. CLM4Me：植物通道只写扩散，明言"pressure-driven flow can also occur, but we did not include that mechanism"，气孔控制也未含——已验证（Riley 2011 p.1931）；讨论中列为模式缺项，称各种主动通气过程"are daunting to consider including in global models"，简化表示是今后方向——已验证（同文 p.1945）。同文"把气体扩散系数乘 10 以模拟对流"的敏感性针对土壤汇（汇由 31 升到 80 Tg CH₄ yr⁻¹），与植物通道无关——已验证（同文 p.1937）。现行 CTSM 只在土壤气相、液相扩散缩放系数的注释里写"convection would allow this to be > 1"——已验证（读码 CTSM `src/biogeochem/ch4Mod.F90:104–105`）。
+2. LPJ-WHyMe："Gases transported through aerenchyma either follow a concentration gradient or are actively pumped upwards. Here, we consider only the passive flux"——已验证（Wania 2010 p.571）。
+3. 综述：植物通道包括扩散与平流，但"most models do not simulate advective transport"——已验证（Xu 2016 p.3738、p.3743）。
+4. DLEM：F_P = V_plant,trans × ([CH₄] − [CH₄]_max) × min(GPP/GPP_max, 1)，V_plant,trans = 0.68 m d⁻¹、GPP_max = 5 g C m⁻² d⁻¹，木本置零——已验证（Tian 2010 p.2677 式 8–9）。GPP 因子让通道随植物活动变，是离对流最近的现成写法，但原文未称其代表对流——已验证（同页）。Villa 2020 在 OWC 实测的香蒲导度 2.7 × 10⁻³ m d⁻¹（按叶面积）远低于 0.68——已验证（Villa 2020 p.1643）。
+5. TEM：R_P = K_P T_RVEG f_ROOT(z) f_GROW(t) C_M，K_P = 0.01 h⁻¹——已验证（Zhuang 2004 15 of 23 式 C4）。PEATLAND-VU：Q_pl = −c_p·V·f_root(z)·f_grow(t)·C_CH₄，经植物时氧化份额 P_ox——已验证（van Huissteden 2006 式 12–13）。Peatland-VU v3 虽设香蒲功能型，植物通道仍为 −c_P·v_P·LAI(t)·f(z)·C_CH₄、c_P = 0.24——已验证（Lippmann 2026 预印本 p.4、p.53 式 B40–B41）；作者注意到 Weerribben 恢复泥沼半小时数据有很强的日变化——已验证（同文 p.28）。
+6. Tang 2010 三模式：R_i = λ_r L_v D_i,a f(t)(y_i,a − y_i,atm)，λ_r = 3.0 × 10⁻⁴，扩散型——已验证（Tang 2010 p.3834 式 C2）。HIMMELI：根端截面密度下的管内扩散（式 18），引言提到芦苇等有加压穿流但未纳入——已验证（Raivonen 2017 p.4666、p.4672）。ISBA：仿 CLM4Me 的扩散式——已验证（Morel 2019 p.304 式 29）。CLM-Microbe（Wang 2019）只改产消过程，传输沿用 CLM4.5 框架——推测。理由：接受稿第 181–189 行只述产消改动，未另写传输。
+7. 站点机理模式：Arah and Stephen 1998 明写"takes no account of ebullition or convective flow"——已验证（p.3258）；其敏感性发现根端面积超过很低阈值后再增加反而使净排放下降，因为根通道对根区氧化的促进大于对逃逸的促进——已验证（p.3262）。Segers and Leffelaar 2001 为单根扩散模型，讨论中说长根状茎在不利于加压通气的天气下可能限制传输、可解释日变化，非根状茎根"no convection occurs"——已验证（p.3522–3523）。
+8. ecosys：CH₄ 在土壤与根的液相、气相中作"convective–dispersive"输运（随水的平流），未见植物加压穿流——已验证（Grant 1998 p.888）。其在 OWC 的应用把香蒲按莎草功能型参数化，根孔隙度 0.49 作为拟合参数调以配塔上 CO₂、CH₄，通气组织兼作 O₂ 入土与温室气体外排的通道——已验证（Morin 2022 OSTI 接受稿第 213–225、316–330 行与附表）。
+9. ELM-Wet：提高通气组织导度时总排放不变，冒泡大量改走植物通道；同时 O₂ 导度同涨，促氧化并经异养呼吸促产，二者抵消——已验证（Yazbeck 2025 p.19 of 26）。这是扩散型写法下 CH₄ 与 O₂ 同涨的直接后果——推测。理由：CLM 类式中二者共用同一截面与路径长。
+10. 植物尺度的对流模型存在但未进入生态系统模式：湿度诱导对流的机理与数学模型（Armstrong 1996，题名）、芦苇林分压力流分析与芦苇 CH₄ 传输模型（Beckett 2001 两篇，题名）、Eleocharis sphacelata 的对流与扩散阻力模型（Sorrell 1997，只读摘要：茎对流阻力 38 MPa s m⁻³ m⁻¹ 茎长，3 µL s⁻¹ 茎⁻¹ 的对流即可满足水下组织全部需氧）——已验证（Crossref 题名；Sorrell 1997 摘要）。
+11. 经验式：芦苇塔上以总辐射一、二次差分项回归 CH₄（ΔCH₄ = β₁ΔRg + β₂ΔRg²，R² 0.79）——已验证（van den Berg 2016 p.6112 式 2）；Kim 1998 以 PAR 与冠层温差线性回归——已验证（p.28036 表 1）。
+12. 小结：没有找到任何陆面或甲烷过程模式显式实现加压对流通气；最简可实现式只能从第 1 节的实测比值与 Bendix 的驱动式拼出，见第 4 节——推测。理由：第 1–11 条逐一核过，检索为零见第 0 节第 8 条。
+
+## 4. 对本模式的含义
+
+### 4.1 本模式现状（读码与已有结果）
+
+1. 植物通道是 CLM4Me 扩散式：分蘖量 m_tiller = anpp × nppratio × lai，截面 area_tiller = scale × n_tiller × poros × πr²，CH₄ 导度 aerecond = 1/(aere_ch4_resis + grnd_ch4_resis) 再乘 fliq，O₂ 用同一截面与路径长——已验证（读码 `Physics.F90:3023`、`3029`、`3032–3042`、`3049–3052`，commit `728dbfd7`）。
+2. 非饱和子柱孔隙乘 unsat_aere_ratio（默认 1/6），同时作用于 CH₄ 与 O₂——已验证（读码 `Physics.F90:2869`，经 poros_tiller_real 进 `3029`）。
+3. 现行配置 `use_aereoxid_prog = .true.`（O₂ 经通气组织按扩散送入各层）、`aereoxid = 0`；候选 4 的 `wetland_aereoxid` 默认 −1（关），开时湿地斑块改为按进入通气组织的 CH₄ 固定份额在根际氧化——已验证（读 `v2/config/v2_oo5/ch4_parameter.nml`；`Const.F90:868`；`Physics.F90:3573–3574`）。
+4. 甲烷子程序现有输入含 forc_t、forc_pbot、风速 forc_us/forc_vs、lai、etr，无大气湿度与辐射——已验证（读码 `Physics.F90:97–100`）。时间步 1800 s，站点历史为月输出——已验证（读 `v2_oo5/template.nml`）。
+5. marsh 塔的站点键：9 座塔 `wetland_lai_cap_site` 均为 3.0、有林份额 0；全球由 GLWD 类 17、19、27 定沼泽份额，但只用于 LAI 上限，逐斑块未存沼泽份额——已验证（读 `v2_oo5/SITE_PARAMS.csv`；`WetlandVeg.F90:17`、`77–78`、`128–138`）。
+6. V-112（非饱和比 1/6 → 0.6）对 8 座计分 marsh 塔：US-Myb KGE 0.38 → 0.08（β 1.78 → 0.75，α 1.07 → 0.50，r 0.79 → 0.47），US-Tw1 0.57 → 0.25（α 0.97 → 0.62，r 0.64 → 0.43），US-Tw5 0.63 → −0.25（β 0.88 → 0.54），US-WPT 0.35 → −0.36（β 0.76 → 0.53），US-Sne 0.51 → 0.78；基线 β 大于 1 的有 US-Myb、US-Sne、US-Tw1、US-Tw4、US-DPW、US-ORv（1.21–5.68），小于 1 的只有 US-Tw5 0.88、US-WPT 0.76——已验证（读 `v2/results/scores77_v2_oo5.txt` 与 `scores77_v2_oo5ua.txt`）。
+7. 通道份额（2026-09-26 的旧配置）：marsh 塔植物通道占排放 0.70–0.98，氧化占产量 0.28–0.39——已验证（读 `v2/results/pathway_shares_v2_k4lrxmnqw_sasu5.log`）。
+
+### 4.2 候选甲：对流种的 CH₄ 通气组织导度按生长期与水汽压差放大，O₂ 不随之放大
+
+1. 作用对象：只作用于有对流种的份额 s_conv。站点取新键 `DEF_METHANE%wetland_convective_share_site`（SITE_PARAMS 列）：US-Tw1 0.69、US-Tw4 0.95、US-Tw5 0.59、US-Myb 0.55、US-WPT 与 US-OWC 1.0、US-ORv 与 US-Sne 取香蒲份额待查、US-DPW 0；其余塔与所有 bog、fen、苔原、稻田、湖泊为 0。全球取沼泽类（GLWD 17、19、27）份额乘一个常数 c_conv，需在 WetlandVeg 里新存逐斑块沼泽份额——推测。理由：份额按第 2 节第 6 条换算，S. acutus 计 0；全球常数无数据约束。
+2. 式子（在 SiteOxAere 算出 aerecond 之后、算 aere(j) 之前，即 `Physics.F90:3040` 与 `3042` 之间）：
+   aerecond ← aerecond × [1 + (M − 1) · s_conv · φ_g · φ_v]
+   - φ_g = min(1, LAI / LAI_peak)：只在有绿叶时起作用，LAI_peak 取当年遥感 LAI 峰（`wetveg_laipeak` 已有，`WetlandVeg.F90:41`）——推测。理由：出水前、衰老后与冬季枯茎无对流（Kim 1999；van den Berg 2016 p.6112；Brix 1996 p.160），取相对 LAI 是把这一条写成连续量的最简做法。
+   - φ_v = min(1, D / D_ref)，D 为气温下饱和水汽压减大气水汽压，D_ref = 1.5 kPa；需把 forc_q（或相对湿度）接进 methane() 与 SiteOxAere，只看月尺度时可取 φ_v ≡ 1 的日均版——推测。理由：湿度诱导压差 ΔP_w 约等于叶内外水汽压差、流量与压差线性（Bendix 1994 p.79、p.82）；D_ref 取 Sorrell and Hawes 2010 测高流量组时的 1.3–1.5 kPa，Brix 1996 表 1 条件（27 °C、RH 50 %）合约 1.8 kPa（算术）。
+   - O₂ 的 aere_o2_resis、oxaere（`Physics.F90:3049–3052`）不乘此因子——推测。理由见本节第 4 条。
+3. 参数：日内版 M = 2.5（1.5–3.8），取 Kim 1998 对流占日间 60 %（34–74 %）；日均版 M = 1.8（1.3–2.3），取 van den Berg 2020 总量 1.8 倍与 Kim 1998 日总量粗算 1.8 倍——已验证（出处见 1.5 节第 1、2 条；换算为算术）。D_ref 见上。新键 `DEF_METHANE%convective_aere_max`（M，默认 1.0 即关）、`DEF_METHANE%convective_vpd_ref`（默认 1500 Pa）。
+4. O₂ 不放大的依据：入流 O₂ 只有 5–26 % 在地下被用掉（Brix 1996 p.155、p.158）；根内与入根际仍靠扩散（Colmer 2003 p.21）；田间净效应为排放增加（van den Berg 2020 p.8）。反向证据是对流使近根尖泄氧约增 4 倍（Colmer 2003 p.21 转引 Armstrong 1992），所以 O₂ 固定不放大是一个取舍，不是定论——推测。理由：上述证据方向不一，按田间净效应取舍。
+5. 预期（marsh 塔）：
+   - 日内：日间通量随 D 抬升、傍晚回落，夜间回到扩散值；实测香蒲的清晨峰来自夜间体内积气的排空（Yavitt and Knapp 1998 p.495；Whiting and Chanton 1996 预印本 p.7），本式无体内储气，峰会落在午后 D 最大时，比香蒲实测晚、与芦苇（Kim 1998 上午到正午；van den Berg 2016 10–13 时）较近——推测。理由：由式子形状与实测峰时对照推出。
+   - 季节（月）：六至九月植物通道加大、经氧化层的扩散与冒泡减少，夏季排放与振幅 α 升，冬季不变，相位 r 变化小；增量上限约为植物通道所带 CH₄ 中被氧化的部分，按旧配置氧化占产量 0.28–0.39 计，月通量至多升约 40–60 %——推测。理由：由 4.1 第 7 条的份额算术得出，实际会小于上限。
+   - 按塔：β 已大于 1 的 US-Myb、US-Sne、US-Tw1、US-Tw4、US-DPW、US-ORv 会更偏高；β 小于 1、α 偏小的 US-WPT（0.76、0.56）与 US-Tw5（0.88、0.73）方向对——推测。理由：对照 4.1 第 6 条的基线分数。
+6. 风险：模式三角洲塔 LAI 偏低，US-Tw1 实测植物面积指数 6.1 对模式 2.01，US-Myb 5.8 对 2.80——已验证（读 `v2/迭代账本.md` 第 472 行）。φ_g 用相对 LAI 可避开绝对值偏差，但对流容量本随叶鞘面积增加（Afreen 2007）；月输出看不到日内形状，要判日内需对 2–3 座塔开半小时输出（投递成本由用户定）——推测。
+
+### 4.3 候选乙（诊断开关）：非饱和通气组织比分开作用于 CH₄ 与 O₂
+
+1. 目的：判断 V-112 中 marsh 塔 β、α、r 同降，是否来自 O₂ 经通气组织多送入后的氧化增加。依据：扩散式中 CH₄ 与 O₂ 同截面同路径（4.1 第 1、2 条）；Arah and Stephen 1998 p.3262 与 ELM-Wet（Yazbeck 2025 p.19）都得出加大植物通道后 O₂ 促氧化抵消逃逸——已验证（出处同上）。
+2. 改法：新键 `DEF_METHANE%unsat_aere_ratio_o2`（默认 −1 即沿用 unsat_aere_ratio）；非饱和子柱在 SiteOxAere 里为 O₂ 另算一份截面（现为 CH₄ 与 O₂ 共用 `Physics.F90:3029` 的 area_tiller），算 aere_o2_resis 时用它，CH₄ 仍用 unsat_aere_ratio。测法：CH₄ 0.6、O₂ 1/6 与 V-112（二者都 0.6）对比，子集 wet——推测。理由：改法由 4.1 第 1、2 条的代码结构推出，未改码试过。
+3. 预期：若 marsh 的退化主要来自 O₂，乙下 marsh 塔 β、α 不降或回升，而 bog、fen 的增益保留——推测。理由：由 Arah and Stephen 与 ELM-Wet 的机制推出，需跑定。
+
+### 4.4 与现有两个候选的关系
+
+1. 与候选 28（非饱和通气组织比）：28 改的是几何孔隙，CH₄ 与 O₂ 同涨，依据是湿地种非淹水下的孔隙度；V-112 中 bog 类中位 0.08 → 0.39、FI-Sii 0.11 → 0.64、SE-Deg 0.43 → 0.78，marsh 类中位 0.51 → 0.25——已验证（读 `v2/迭代账本.md` V-112 行）。甲只改 CH₄ 导度、只作用于对流种份额，对 bog、fen 为零，不会动 28 在泥炭上的增益——推测。理由：由两式的作用对象推出。二者在 marsh 塔方向相反（28 使 β、α 降，甲使其升），同开时部分抵消，但机理不互为替代：28 解决"非饱和子柱是否打旱地折扣"，甲解决"对流种在生长季多排的那部分"——推测。
+2. 与候选 4（根际氧化定额 wetland_aereoxid）：4 开时湿地斑块不再由通气组织送 O₂，改为进入通气组织的 CH₄ 按固定份额 r 在根际氧化（`Physics.F90:3573–3574`），这已经把植物通道上 CH₄ 与 O₂ 解耦；在 4 之上开甲，甲多送出的 CH₄ 净增为 (1 − r)(M − 1) 倍，r 越大甲越弱——推测。理由：由两段代码的先后顺序推出。乙是 4 关着时的诊断替身，4 定下来后乙不再需要——推测。
+3. 建议顺序：先定 4（O₂ 在湿地植物通道上怎么处理），再在 4 的开或关之下跑 28（候选池第 28 条已写"需与候选 4 开关各跑一次"），最后在二者定案的底子上以日均版甲试 US-WPT、US-Tw5，并对 1–2 座塔开半小时输出看日内——推测。理由：甲的增量与 O₂ 处理方式强耦合，先定 O₂ 才能读出甲自身的作用。
+4. r 的取值与对流种：芦苇床入流 O₂ 只有 5–26 % 在地下被用掉（Brix 1996），香蒲、Cladium 区根际氧化潜力是排放的 5.6–51 倍但为 O₂ 不受限的上限（Gerard and Chanton 1993），所以对流种的 r 在文献上下限都宽，不宜为对流种单设更高的 r——推测。理由：两类证据一个是 O₂ 供给端、一个是潜力上限，都不直接给原位 r。
+
+### 4.5 存疑（要跑才能定）
+
+1. 甲在 marsh 塔月尺度的净效应（β、α 升多少）：日均版 M = 1.8、s_conv 按第 2 节，子集 marsh，与底子逐塔比四数——存疑。
+2. V-112 的 marsh 退化来自 O₂ 路径还是 CH₄ 路径：乙的对照实验——存疑。
+3. 日内峰时：甲日内版在 US-WPT、US-Tw1 半小时输出与塔上日变化比；若峰晚于实测，缺的是植物体内夜间储气（Yavitt and Knapp 1998 的"电容"），需另加体内储库才能复现清晨峰——存疑。
+
+## 5. 文献清单
+
+字段由脚本取自 Crossref（2026-09-29 查询，`/works/<doi>`，匿名请求），格式：第一作者，年｜题名｜刊 卷(期): 页或文章号｜DOI。69 条全部查到，无 DataCite 条目；预印本按 Crossref 原样注明。
+
+- Afreen et al., 2007｜Pressure gradients along whole culms and leaf sheaths, and other aspects of humidity-induced gas transport in Phragmites australis｜Journal of Experimental Botany 58(7): 1651-1662｜10.1093/jxb/erm017
+- Arah and Stephen, 1998｜A model of the processes leading to methane emission from peatland｜Atmospheric Environment 32(19): 3257-3264｜10.1016/S1352-2310(98)00052-1
+- Arkebauer et al., 2001｜Field measurements of internal pressurization in Phragmites australis (Poaceae) and implications for regulation of methane emissions in a midlatitude prairie wetland｜American Journal of Botany 88(4): 653-658｜10.2307/2657065
+- Armstrong et al., 1992｜Phragmites australis: Venturi- and humidity-induced pressure flows enhance rhizome aeration and rhizosphere oxidation｜New Phytologist 120(2): 197-207｜10.1111/j.1469-8137.1992.tb05655.x
+- Armstrong et al., 1996｜Pressurised ventilation in emergent macrophytes: the mechanism and mathematical modelling of humidity-induced convection｜Aquatic Botany 54(2-3): 121-135｜10.1016/0304-3770(96)01040-6
+- Armstrong and Armstrong, 2005｜Stem Photosynthesis not Pressurized Ventilation is Responsible for Light-enhanced Oxygen Supply to Submerged Roots of Alder (Alnus glutinosa)｜Annals of Botany 96(4): 591-612｜10.1093/aob/mci213
+- Beckett et al., 2001a｜A modelling approach to the analysis of pressure-flow in Phragmites stands｜Aquatic Botany 69(2-4): 269-291｜10.1016/S0304-3770(01)00143-7
+- Beckett et al., 2001b｜Mathematical modelling of methane transport by Phragmites: the potential for diffusion within the roots and rhizosphere｜Aquatic Botany 69(2-4): 293-312｜10.1016/S0304-3770(01)00144-9
+- Bendix et al., 1994｜Internal gas transport in Typha latifolia L. and Typha angustifolia L. 1. Humidity-induced pressurization and convective throughflow｜Aquatic Botany 49(2-3): 75-89｜10.1016/0304-3770(94)90030-2
+- Brix et al., 1992｜Internal pressurization and convective gas flow in some emergent freshwater macrophytes｜Limnology and Oceanography 37(7): 1420-1433｜10.4319/lo.1992.37.7.1420
+- Brix et al., 1996｜Gas fluxes achieved by in situ convective flow in Phragmites australis｜Aquatic Botany 54(2-3): 151-163｜10.1016/0304-3770(96)01042-X
+- Brix et al., 2001｜Are Phragmites-dominated wetlands a net source or net sink of greenhouse gases?｜Aquatic Botany 69(2-4): 313-324｜10.1016/S0304-3770(01)00145-0
+- Buchel and Grosse, 1990｜Localization of the porous partition responsible for pressurized gas transport in Alnus glutinosa (L.) Gaertn.｜Tree Physiology 6(3): 247-256｜10.1093/treephys/6.3.247
+- Chanton et al., 1993｜Contrasting rates and diurnal patterns of methane emission from emergent aquatic macrophytes｜Aquatic Botany 46(2): 111-128｜10.1016/0304-3770(93)90040-4
+- Chu et al., 2014｜Net ecosystem methane and carbon dioxide exchanges in a Lake Erie coastal marsh and a nearby cropland｜Journal of Geophysical Research: Biogeosciences 119(5): 722-740｜10.1002/2013JG002520
+- Colmer, 2003｜Long-distance transport of gases in plants: a perspective on internal aeration and radial oxygen loss from roots｜Plant, Cell & Environment 26(1): 17-36｜10.1046/j.1365-3040.2003.00846.x
+- Dacey, 1980｜Internal Winds in Water Lilies: An Adaptation for Life in Anaerobic Sediments｜Science 210(4473): 1017-1019｜10.1126/science.210.4473.1017
+- Dacey, 1981｜Pressurized Ventilation in the Yellow Waterlily｜Ecology 62(5): 1137-1147｜10.2307/1937277
+- Dacey and Klug, 1979｜Methane Efflux from Lake Sediments Through Water Lilies｜Science 203(4386): 1253-1255｜10.1126/science.203.4386.1253
+- Gerard and Chanton, 1993｜Quantification of methane oxidation in the rhizosphere of emergent aquatic macrophytes: defining upper limits｜Biogeochemistry 23(2): 79-97｜10.1007/BF00000444
+- Grant, 1998｜Simulation of methanogenesis in the mathematical model ecosys｜Soil Biology and Biochemistry 30(7): 883-896｜10.1016/S0038-0717(97)00218-6
+- Große, 1996｜The mechanism of thermal transpiration (= thermal osmosis)｜Aquatic Botany 54(2-3): 101-110｜10.1016/0304-3770(96)01038-8
+- Grosse et al., 1996｜A history of pressurised gas-flow studies in plants｜Aquatic Botany 54(2-3): 87-100｜10.1016/0304-3770(96)01037-6
+- Grünfeld and Brix, 1999｜Methanogenesis and methane emissions: effects of water table, substrate type and presence of Phragmites australis｜Aquatic Botany 64(1): 63-75｜10.1016/S0304-3770(99)00010-8
+- Hwang and Morris, 1991｜Evidence for Hygrometric Pressurization in the Internal Gas Space of Spartina alterniflora｜Plant Physiology 96(1): 166-171｜10.1104/pp.96.1.166
+- Kim et al., 1998｜Diel variation in methane emission from a midlatitude prairie wetland: Significance of convective throughflow in Phragmites australis｜Journal of Geophysical Research: Atmospheres 103(D21): 28029-28039｜10.1029/98JD02441
+- Kim et al., 1999｜Seasonal variation in methane emission from a temperate Phragmites-dominated marsh: effect of growth stage and plant-mediated transport｜Global Change Biology 5(4): 433-440｜10.1046/j.1365-2486.1999.00237.x
+- Knox et al., 2019｜FLUXNET-CH4 Synthesis Activity: Objectives, Observations, and Future Directions｜Bulletin of the American Meteorological Society 100(12): 2607-2632｜10.1175/BAMS-D-18-0268.1
+- Knox et al., 2021｜Identifying dominant environmental predictors of freshwater wetland methane fluxes across diurnal to seasonal time scales｜Global Change Biology 27(15): 3582-3604｜10.1111/gcb.15661
+- Konnerup et al., 2011｜Do tropical wetland plants possess convective gas flow mechanisms?｜New Phytologist 190(2): 379-386｜10.1111/j.1469-8137.2010.03585.x
+- Lippmann et al., 2026｜Aerobic and anaerobic contributions to carbon dioxide and methane emissions in a 1D peatland model: Peatland-VU v3.0｜EGUsphere 预印本（Crossref 无卷页）｜10.5194/egusphere-2026-2450
+- Milberg et al., 2017｜Temporal variations in methane emissions from emergent aquatic macrophytes in two boreonemoral lakes｜AoB PLANTS 9(4): plx029（Crossref 无页码）｜10.1093/aobpla/plx029
+- Mitsch et al., 2012｜Creating Wetlands: Primary Succession, Water Quality Changes, and Self-Design over 15 Years｜BioScience 62(3): 237-250｜10.1525/bio.2012.62.3.5
+- Morel et al., 2019｜A New Process-Based Soil Methane Scheme: Evaluation Over Arctic Field Sites With the ISBA Land Surface Model｜Journal of Advances in Modeling Earth Systems 11(1): 293-326｜10.1029/2018MS001329
+- Morin et al., 2014｜Environmental drivers of methane fluxes from an urban temperate wetland park｜Journal of Geophysical Research: Biogeosciences 119(11): 2188-2208｜10.1002/2014JG002750
+- Morin et al., 2022｜Water level changes in Lake Erie drive 21st century CO2 and CH4 fluxes from a coastal temperate wetland｜Science of The Total Environment 821: 153087｜10.1016/j.scitotenv.2022.153087（读的是 OSTI 接受稿 purl 1900226，题名与正式版不同）
+- Poindexter et al., 2016｜The contribution of an overlooked transport process to a wetland's methane emissions｜Geophysical Research Letters 43(12): 6276-6284｜10.1002/2016GL068782
+- Raivonen et al., 2017｜HIMMELI v1.0: HelsinkI Model of MEthane buiLd-up and emIssion for peatlands｜Geoscientific Model Development 10(12): 4665-4691｜10.5194/gmd-10-4665-2017
+- Riley et al., 2011｜Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM｜Biogeosciences 8(7): 1925-1953｜10.5194/bg-8-1925-2011
+- Schimel, 1995｜Plant transport and methane production as controls on methane flux from arctic wet meadow tundra｜Biogeochemistry 28(3): 183-200｜10.1007/BF02186458
+- Sebacher et al., 1985｜Methane Emissions to the Atmosphere Through Aquatic Plants｜Journal of Environmental Quality 14(1): 40-46｜10.2134/jeq1985.00472425001400010008x
+- Segers and Leffelaar, 2001｜Modeling methane fluxes in wetlands with gas-transporting plants: 1. Single-root scale｜Journal of Geophysical Research: Atmospheres 106(D4): 3511-3528｜10.1029/2000JD900484
+- Seyfried et al., 2026｜Different Mechanisms Underlie Plant-Mediated Methane Transport in a Tidal Salt Marsh Versus an Impounded Brackish Wetland｜Journal of Geophysical Research: Biogeosciences 131(3): e2025JG008987｜10.1029/2025JG008987
+- Sorrell and Boon, 1994｜Convective gas flow in Eleocharis sphacelata R. Br.: methane transport and release from wetlands｜Aquatic Botany 47(3-4): 197-212｜10.1016/0304-3770(94)90053-1
+- Sorrell and Brix, 2003｜Effects of water vapour pressure deficit and stomatal conductance on photosynthesis, internal pressurization and convective flow in three emergent wetland plants｜Plant and Soil 253(1): 71-79｜10.1023/A:1024517510541
+- Sorrell and Hawes, 2010｜Convective gas flow development and the maximum depths achieved by helophyte vegetation in lakes｜Annals of Botany 105(1): 165-174｜10.1093/aob/mcp138
+- Sorrell and Tanner, 2000｜Convective gas flow and internal aeration in Eleocharis sphacelata in relation to water depth｜Journal of Ecology 88(5): 778-789｜10.1046/j.1365-2745.2000.00493.x
+- Sorrell et al., 1997｜Eleocharis sphacelata: internal gas transport pathways and modelling of aeration by pressurized flow and diffusion｜New Phytologist 136(3): 433-442｜10.1046/j.1469-8137.1997.00769.x
+- Tang et al., 2010｜Quantifying wetland methane emissions with process-based models of different complexities｜Biogeosciences 7(11): 3817-3837｜10.5194/bg-7-3817-2010
+- Tang et al., 2025｜Rising Water Levels and Vegetation Shifts Drive Substantial Reductions in Methane Emissions and Carbon Dioxide Uptake in a Great Lakes Coastal Freshwater Wetland｜Global Change Biology 31(2): e70053｜10.1111/gcb.70053
+- Tian et al., 2010｜Spatial and temporal patterns of CH4 and N2O fluxes in terrestrial ecosystems of North America during 1979–2008: application of a global biogeochemistry model｜Biogeosciences 7(9): 2673-2694｜10.5194/bg-7-2673-2010
+- Tornberg et al., 1994｜Internal gas transport in Typha latifolia L. and Typha angustifolia L. 2. Convective throughflow pathways and ecological significance｜Aquatic Botany 49(2-3): 91-105｜10.1016/0304-3770(94)90031-0（Crossref 作者名拼作 Tornberg，原文署名 Tornbjerg）
+- Valach et al., 2021｜Productive wetlands restored for carbon sequestration quickly become net CO2 sinks with site-level factors driving uptake variability｜PLOS ONE 16(3): e0248398｜10.1371/journal.pone.0248398
+- van den Berg et al., 2016｜The role of Phragmites in the CH4 and CO2 fluxes in a minerotrophic peatland in southwest Germany｜Biogeosciences 13(21): 6107-6119｜10.5194/bg-13-6107-2016
+- van den Berg et al., 2020｜Contribution of plant-induced pressurized flow to CH4 emission from a Phragmites fen｜Scientific Reports 10(1): 12304｜10.1038/s41598-020-69034-7
+- van der Nat et al., 1998｜Diel methane emission patterns from Scirpus lacustris and Phragmites australis｜Biogeochemistry 41(1): 1-22｜10.1023/A:1005933100905
+- van der Nat and Middelburg, 1998｜Effects of two common macrophytes on methane dynamics in freshwater sediments｜Biogeochemistry 43(1): 79-104｜10.1023/A:1006076527187
+- van der Nat and Middelburg, 2000｜Methane emission from tidal freshwater marshes｜Biogeochemistry 49(2): 103-121｜10.1023/A:1006333225100
+- van Huissteden et al., 2006｜Modelling the effect of water-table management on CO2 and CH4 fluxes from peat soils｜Netherlands Journal of Geosciences - Geologie en Mijnbouw 85(1): 3-18｜10.1017/S0016774600021399
+- Villa et al., 2020｜Plant-mediated methane transport in emergent and floating-leaved species of a temperate freshwater mineral-soil wetland｜Limnology and Oceanography 65(7): 1635-1650｜10.1002/lno.11467
+- Vroom et al., 2022｜Physiological processes affecting methane transport by wetland vegetation – A review｜Aquatic Botany 182: 103547｜10.1016/j.aquabot.2022.103547
+- Wang et al., 2019｜Mechanistic Modeling of Microtopographic Impacts on CO2 and CH4 Fluxes in an Alaskan Tundra Ecosystem Using the CLM-Microbe Model｜Journal of Advances in Modeling Earth Systems 11(12): 4288-4304｜10.1029/2019MS001771
+- Wania et al., 2010｜Implementation and evaluation of a new methane model within a dynamic global vegetation model: LPJ-WHyMe v1.3.1｜Geoscientific Model Development 3(2): 565-584｜10.5194/gmd-3-565-2010
+- Whiting and Chanton, 1996｜Control of the diurnal pattern of methane emission from emergent aquatic macrophytes by gas transport mechanisms｜Aquatic Botany 54(2-3): 237-253｜10.1016/0304-3770(96)01048-0（读的是 NASA NTRS 19970037549 预印本，页码为预印本页）
+- Xu et al., 2016｜Reviews and syntheses: Four decades of modeling methane cycling in terrestrial ecosystems｜Biogeosciences 13(12): 3735-3755｜10.5194/bg-13-3735-2016
+- Yavitt and Knapp, 1995｜Methane emission to the atmosphere through emergent cattail (Typha latifolia L.) plants｜Tellus B: Chemical and Physical Meteorology 47(5): 521（Crossref 只给首页；PDF 页眉 521–534）｜10.3402/tellusb.v47i5.16065
+- Yavitt and Knapp, 1998｜Aspects of methane flow from sediment through emergent cattail (Typha latifolia) plants｜New Phytologist 139(3): 495-503｜10.1046/j.1469-8137.1998.00210.x
+- Yazbeck et al., 2025｜ELM-Wet: Inclusion of a Wet-Landunit With Sub-Grid Representation of Eco-Hydrological Patches and Hydrological Forcing Improves Methane Emission Estimations in the E3SM Land Model (ELM)｜Journal of Advances in Modeling Earth Systems 17(2): e2024MS004396｜10.1029/2024MS004396
+- Zhuang et al., 2004｜Methane fluxes between terrestrial ecosystems and the atmosphere at northern high latitudes during the past century: A retrospective analysis with a process-based biogeochemistry model｜Global Biogeochemical Cycles 18(3): 2004GB002239（引用号 GB3010）｜10.1029/2004GB002239
+
+无 DOI：CTSM 源码 `src/biogeochem/ch4Mod.F90`（本地 ctsm5.4.047 工作树，`/share/home/dq076/mode/Wetland/CTSM`）。Villa et al. 2019（10.1029/2019JG005167）只读摘要、正文未引。

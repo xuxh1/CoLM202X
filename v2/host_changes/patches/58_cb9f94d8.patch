@@ -1,0 +1,226 @@
+From cb9f94d802a578fa5efb0827e3ad9465a891b524 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Wed, 30 Sep 2026 04:13:47 +0800
+Subject: [PATCH] feat(crop): sow the second rice season after the first-season
+ harvest (C-95)
+
+C-45 sows the second season of double-cropped irrigated rice on the
+calendar date pdrice2 and skips it when the first season is still
+growing on that date. In the 2-degree global run g2_o6 only 33-35 % of
+the irrigated rice flagged as double-cropped got a second harvest, and
+1 % in China, because:
+- pdrice2 falls inside the model's first season: for 39 % of the flagged
+  irrigated area it is less than 150 d after the first-season date;
+- pdrice2 is an areal mean of day-of-year values: for 29 % of the flagged
+  area the 0.5-degree dates straddle the year end and average to a
+  mid-year date (the PH-RiF cell: 319-349 and 15-21 average to 206, 16 d
+  after the first-season date 189);
+- in China the calendar's second date lies in February-April, before the
+  first-season date (55 % of the flagged Chinese area), so the second
+  crop is sown in winter and cut on the first-season date before grain
+  fill, with the paddy bunded from sowing.
+
+New host key DEF_RICE_SECOND_SOW_DAYS (default -1, off). When set, the
+second season is sown that many days (land preparation) after the
+harvest of a first season, if the heat left before the first-season
+date comes round again reaches the maturity requirement of the crop just
+harvested. The heat is summed above the crop base temperature, as
+gddplant is, over a sinusoidal annual cycle of 2 m air temperature
+through annavg_tref and the warm-half-year mean from gdd020, so no new
+state or restart field is needed. A crop not sown on the first-season
+date is the second season and is still cut on that date if standing.
+With the key set, the pre-season flooding of candidate 25 counts only
+the first-season date.
+
+With the key negative the C-45 branches run exactly as before and the
+model is bit-for-bit unchanged.
+
+---
+ main/BGC/MOD_BGC_Veg_CNPhenology.F90 | 75 ++++++++++++++++++++++++++--
+ main/MOD_Irrigation.F90              | 10 ++--
+ share/MOD_Namelist.F90               |  8 +++
+ 3 files changed, 87 insertions(+), 6 deletions(-)
+
+diff --git a/main/BGC/MOD_BGC_Veg_CNPhenology.F90 b/main/BGC/MOD_BGC_Veg_CNPhenology.F90
+index 6f61250f..118c1af8 100644
+--- a/main/BGC/MOD_BGC_Veg_CNPhenology.F90
++++ b/main/BGC/MOD_BGC_Veg_CNPhenology.F90
+@@ -133,7 +133,7 @@ MODULE MOD_BGC_Veg_CNPhenology
+ 
+    USE MOD_TimeManager
+    USE MOD_Precision
+-   USE MOD_Namelist, only: DEF_USE_FERT, DEF_RICE_GRNFILL, DEF_PADDY_DRAIN_DAYS
++   USE MOD_Namelist, only: DEF_USE_FERT, DEF_RICE_GRNFILL, DEF_PADDY_DRAIN_DAYS, DEF_RICE_SECOND_SOW_DAYS
+    USE MOD_BGC_Daylength, only: daylength
+    USE MOD_SPMD_Task
+ 
+@@ -1095,8 +1095,14 @@ CONTAINS
+                ! C-45 (paper V2): double-cropped irrigated rice is sown again
+                ! on the second rice date once the first season is harvested;
+                ! a first season still growing on that date skips it
++               ! C-95 (paper V2): with DEF_RICE_SECOND_SOW_DAYS, the second
++               ! season follows the first-season harvest instead (RiceSecondSow)
+                IF ((.not. sow_now) .and. ivt == nirrig_rice .and. rice_double_p(m) >= 0.5_r8) THEN
+-                  IF (pdrice2(i) > 0._r8 .and. pdrice2(i) /= spval) sow_now = jday == int(pdrice2(i))
++                  IF (DEF_RICE_SECOND_SOW_DAYS >= 0._r8) THEN
++                     sow_now = RiceSecondSow(m, ivt, jday, h, dayspyr)
++                  ELSE IF (pdrice2(i) > 0._r8 .and. pdrice2(i) /= spval) THEN
++                     sow_now = jday == int(pdrice2(i))
++                  ENDIF
+                ENDIF
+                IF (sow_now) THEN
+                   cumvd_p(m)       = 0._r8
+@@ -1183,11 +1189,16 @@ CONTAINS
+               ! C-45: a second-season rice crop still standing on the sowing
+               ! date of the first season is harvested then, so the first
+               ! season is never skipped (it is sown on the next time step)
++              ! C-95: the second season is then any crop not sown on the
++              ! first-season date
+                end_second = .false.
+                IF (ivt == nirrig_rice .and. rice_double_p(m) >= 0.5_r8) THEN
+-                  IF (pdrice2(i) > 0._r8 .and. pdrice2(i) /= spval) &
++                  IF (DEF_RICE_SECOND_SOW_DAYS >= 0._r8) THEN
++                     end_second = idop_p(m) /= int(plantdate_p(m)) .and. jday == int(plantdate_p(m))
++                  ELSE IF (pdrice2(i) > 0._r8 .and. pdrice2(i) /= spval) THEN
+                      end_second = idop_p(m) == int(pdrice2(i)) .and. jday == int(plantdate_p(m)) &
+                         .and. int(pdrice2(i)) /= int(plantdate_p(m))
++                  ENDIF
+                ENDIF
+ 
+               ! enter phase 2 onset for one time step:
+@@ -1300,6 +1311,64 @@ CONTAINS
+       ENDDO ! prognostic crops loop
+ 
+    END SUBROUTINE CropPhenology
++
++   logical FUNCTION RiceSecondSow (m, ivt, jday, h, dayspyr)
++
++! !DESCRIPTION:
++! C-95 (paper V2): second season of double-cropped irrigated rice. It is sown
++! DEF_RICE_SECOND_SOW_DAYS days after the harvest of a first season (a crop
++! sown on the calendar date plantdate), if the heat left before plantdate
++! comes round again reaches the maturity requirement of the crop just
++! harvested. The heat is projected from a sinusoidal annual cycle of 2 m air
++! temperature through the annual mean (annavg_tref) and the mean of the half
++! year the gdd0 sum covers (gdd020 over April-September, October-March south
++! of the equator), warmest mid-way through that half year, and summed above
++! the base temperature of the crop as gddplant is.
++
++   integer , intent(in) :: m       ! pft index
++   integer , intent(in) :: ivt     ! pft type
++   integer , intent(in) :: jday    ! day of the year
++   integer , intent(in) :: h       ! hemisphere indicator: 1 north, 2 south
++   real(r8), intent(in) :: dayspyr ! days per year
++
++   real(r8), parameter :: pi = 3.14159265358979323846_r8
++   integer  :: dsh, ndays, k
++   real(r8) :: tann, amp, heat
++
++      RiceSecondSow = .false.
++
++      ! the last crop was a first season, and it has been harvested
++      IF (plantdate_p(m) <= 0._r8 .or. idop_p(m) /= int(plantdate_p(m))) RETURN
++      IF (harvdate_p(m) < 1._r8 .or. harvdate_p(m) >= NOT_Harvested) RETURN
++
++      ! sowing day: DEF_RICE_SECOND_SOW_DAYS days after that harvest
++      IF (jday >= int(harvdate_p(m))) THEN
++         dsh = jday - int(harvdate_p(m))
++      ELSE
++         dsh = int(dayspyr) + jday - int(harvdate_p(m))
++      ENDIF
++      IF (dsh /= nint(DEF_RICE_SECOND_SOW_DAYS)) RETURN
++
++      ! days left before the first season is sown again
++      ndays = modulo(int(plantdate_p(m)) - jday, int(dayspyr))
++      IF (ndays <= 0) RETURN
++      IF (gdd020_p(m) <= 0._r8 .or. gdd020_p(m) == spval .or. &
++          annavg_tref_p(m) == spval .or. gddmaturity_p(m) == spval) RETURN
++
++      ! mean over the half year is tann + 2 amp / pi
++      tann = annavg_tref_p(m) - 273.15_r8
++      amp  = (gdd020_p(m) / (0.5_r8 * dayspyr) - tann) * pi / 2._r8
++      IF (h == 2) amp = -amp
++
++      heat = 0._r8
++      DO k = 0, ndays - 1
++         heat = heat + max(0._r8, tann + amp * cos(2._r8 * pi * real(jday + k - 182, r8) / dayspyr) &
++                                  - baset(ivt))
++      ENDDO
++
++      RiceSecondSow = heat >= gddmaturity_p(m)
++
++   END FUNCTION RiceSecondSow
+ #endif
+ 
+  !---------------------------------------------------------
+diff --git a/main/MOD_Irrigation.F90 b/main/MOD_Irrigation.F90
+index 4a4e7c5f..42a6837a 100644
+--- a/main/MOD_Irrigation.F90
++++ b/main/MOD_Irrigation.F90
+@@ -7,7 +7,7 @@ MODULE MOD_Irrigation
+    USE MOD_Precision
+    USE MOD_TimeManager
+    USE MOD_Namelist, only: DEF_simulation_time, DEF_IRRIGATION_ALLOCATION, DEF_USE_VariablySaturatedFlow, &
+-       DEF_PADDY_RICE_BUND, DEF_PADDY_DRAIN_DAYS, DEF_PADDY_FALLOW_FLOOD
++       DEF_PADDY_RICE_BUND, DEF_PADDY_DRAIN_DAYS, DEF_PADDY_FALLOW_FLOOD, DEF_RICE_SECOND_SOW_DAYS
+    USE MOD_Const_Physical, only: tfrz, denice, denh2o
+    USE MOD_Const_PFT, only: irrig_crop
+    USE MOD_LandPFT, only : patch_pft_s, patch_pft_e
+@@ -372,7 +372,10 @@ CONTAINS
+       !   irrigation (C-32b) as in the growing season, so pre-season flooding
+       !   puts water on the field through the irrigation supply. Called at the
+       !   start of the time step, before the hydrology, from dates and restart
+-      !   state only, so a restart gives the same flag.
++      !   state only, so a restart gives the same flag. With C-95
++      !   (DEF_RICE_SECOND_SOW_DAYS) the second season has no fixed date and
++      !   follows the harvest after a land-preparation interval, so only the
++      !   first-season date counts.
+       integer, intent(in) :: i
+       integer, intent(in) :: idate(3)
+ 
+@@ -399,7 +402,8 @@ CONTAINS
+          days_to_sow = -1
+          IF (plantdate_p(m) > 0._r8 .and. plantdate_p(m) /= spval) &
+             days_to_sow = modulo(int(plantdate_p(m)) - idate(2), ndays)
+-         IF (rice_double_p(m) >= 0.5_r8 .and. pdrice2(i) > 0._r8 .and. pdrice2(i) /= spval) THEN
++         IF (rice_double_p(m) >= 0.5_r8 .and. pdrice2(i) > 0._r8 .and. pdrice2(i) /= spval &
++             .and. DEF_RICE_SECOND_SOW_DAYS < 0._r8) THEN
+             IF (days_to_sow < 0) THEN
+                days_to_sow = modulo(int(pdrice2(i)) - idate(2), ndays)
+             ELSE
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 155419fb..784f42ee 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -544,6 +544,12 @@ MODULE MOD_Namelist
+    ! rice_double on a lat/lon grid); irrigated rice where the share is at least
+    ! 0.5 is sown again on the second rice date of the crop calendar
+    character(len=256) :: DEF_RICE_DOUBLE_SEASON_FILE = 'null'
++   ! C-95 (paper V2): with C-45, the second season of double-cropped irrigated
++   ! rice is sown this many days (land preparation) after the first-season
++   ! harvest instead of on the second rice date, if the heat left before the
++   ! first-season sowing date comes round again reaches the maturity
++   ! requirement of the crop; negative keeps the second rice date of C-45
++   real(r8) :: DEF_RICE_SECOND_SOW_DAYS = -1._r8
+    ! Q-33 (paper V2): a crop pft outside its growing season (not croplive)
+    ! gets no leaf area; with satellite LAI the fallow field otherwise
+    ! photosynthesises on the MODIS LAI and all of it goes to leaf carbon
+@@ -1336,6 +1342,7 @@ CONTAINS
+       DEF_IRRIGATION_ALLOCATION,              & !add by Hongbin Liang @ sysu
+       DEF_PADDY_RICE_BUND,                    & !C-32 (paper V2)
+       DEF_RICE_DOUBLE_SEASON_FILE,            & !C-45 (paper V2)
++      DEF_RICE_SECOND_SOW_DAYS,               & !C-95 (paper V2)
+       DEF_CROP_FALLOW_NO_LAI,                 & !Q-33 (paper V2)
+       DEF_RICE_GRNFILL,                       & !Q-33 (paper V2)
+       DEF_PADDY_DRAIN_DAYS,                   & !C-47 (paper V2)
+@@ -2012,6 +2019,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_IRRIGATION_ALLOCATION              ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_PADDY_RICE_BUND                    ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RICE_DOUBLE_SEASON_FILE            ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_RICE_SECOND_SOW_DAYS               ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_CROP_FALLOW_NO_LAI                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RICE_GRNFILL                       ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_PADDY_DRAIN_DAYS                   ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

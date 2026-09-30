@@ -1,0 +1,334 @@
+# lit_lake_substrate_260929：湖泊甲烷底物供给的约束——文献与数据调研
+
+- **日期**：2026.09.29-13:50
+- **读者**：下一会话
+- **来源**：文献线只读调研，为模式候选 22（湖泊活性底物库由沉降通量补给、稳态产量受供给限制；即 `v2/results/lit_models_lake_260929.txt` 第 5 节 K-4）找输入与参数；承接 lit_models_lake_260929（模式结构不重复）；两个只读子任务分读数据集与量级文献，主会话读模式原文与 ALBM 源码、抽核子任务原句、算供给上限、对全部 DOI 重查 Crossref / DataCite
+- **状态**：第 0 至 5 节成文；第 5 节 DOI 于 2026-09-29 逐条查过注册库；第 4 节只到方案与离线估算，未动代码与配置
+
+单位：碳通量 g C m⁻² yr⁻¹（按湖面积）；CH₄ 通量 g CH₄ m⁻² yr⁻¹；CH₄-C 换 CH₄ 乘 16/12。"全文"指读了原文并给页码、式号或表号；"只读摘要"指只读到摘要；"转引"指数值取自另一篇的转述。名称提醒：FLaMe 是 Maisonnier et al. 2025 的过程模式；Johnson et al. 2022 是经验上推，不叫 FLaMe（第 3.7 节）——已验证（读两篇全文题名与方法节）。CoLM 行号按树 CoLM202X-paper-v2（HEAD 84020b62）工作副本。
+
+## 0. 覆盖面
+
+1. 检索词：lake organic carbon burial / burial efficiency / sediment trap gross sedimentation / sediment mineralization temperature / methanogenesis fraction of anaerobic mineralization / CH4:CO2 production ratio anoxic incubation / global primary production of lakes / global lake chlorophyll / trophic state global inland waters Forel-Ule / global lake total phosphorus / Lakes Climate Change Initiative / Lake Water Quality Copernicus / HydroLAKES、LakeATLAS、GLCP、Lake-TopoCat、GLORICH 题名；以及任务书点名的各篇题名。
+2. 渠道：OpenAlex、DataCite、Europe PMC、Zenodo、CLMS 产品 API、CEDA 目录与 THREDDS 头、PANGAEA、KNB 元数据、出版社与机构库开放全文（子任务匿名取，未带邮箱）；Crossref / DataCite 著录与 ALBM 的 GitHub 原文件由 WebFetch 匿名取；本地已有全文用 Read 与脚本检索。
+3. 读到全文：FLaMe（Maisonnier 2025）及补充材料；Tan 2024（ALBM）；Tan 2017 存本；Zhuang 2023；Tan 2015（bLake4Me）；Stepanenko 2016（LAKE 2.0）；Li 2026 预印本（LAKE2.6）；Johnson 2022；DelSontro 2018（PMC 版）；Mendonça 2017 及补充 PDF 与 Supplementary Data 1；Anderson 2020（Europe PMC）；Heathcote 2015 及补充；Sobek 2009；Sobek 2011；Gudasz 2010 接受稿及补充；Chmiel 2016；Grasset 2018；Clayer 2020；Santoso 2017 接受稿；Schmid 2017；Durisch-Kaiser 2011；Tranvik 2009；Hanson 2011；Maavara 2017；Grey 2016 与 Schenk 2021（只为转引）；Filazzola 2020；Carrea 2023；Lehner 2022；Meyer 2020；Kraemer 2022；Wang 2018 接受稿；Wang 2021；Beaulieu 2019 及 Supplementary Data 1；Toming 2020。数据说明：CGLS LWQ 两版产品手册与 4k 湖清单、HydroLAKES 技术文档 v1.0、Lakes_cci v3.0 README 与 v2.1/v3.0 文件头、GLORICH 文件说明、Lake-TopoCat 产品说明、KNB 元数据。
+4. 只读摘要或落地页：Lewis 2011；den Heyer & Kalff 1998；Kuivila 1988；Rudd & Hamilton 1978；Kelly & Chynoweth 1981；Capone & Kiene 1988；Kastowski 2011；Alin & Johnson 2007；Clow 2015；Ferland 2012；Ferland 2014；Downing 2008；Bastviken 2008；Sayers 2015；Odermatt 2018；Hou 2022（另读其 Source Data）；Dean & Gorham 1998（只得摘要首句）。
+5. 读码：ALBM 公开库 github.com/tanzeli1982/ALBM 提交 217af35d 的 `carbon_cycle_mod.f90`、`diagenesis_mod.f90`、`bg_const_mod.f90`、`phy_const_mod.f90` 相关行；CoLM `MOD_Tracer_Reactive_Methane_Physics.F90` 湖泊产量与碳库段、`mksrfdata/Aggregation_LakeSoilC.F90` 头部、g2_fi 的 `bld/run/ch4_parameter.nml` 湖泊键。
+6. 读不到与已试路径：Bastviken 2009 / 2022 百科章（闭源，只经 Grey 2016、Schenk 2021、FLaMe 转引）；Liikanen 2002（摘要被隐去）；Pace & Prairie 2005 书章（只经 Tranvik 2009 转引）；Wiley / AGU 老文全文（403，只读摘要）；Lewis 2011 全文（T&F 403）；Anderson 2020 补充表 S2（science.org 403，PMC 补充被脚本校验挡住）；Sayers 2015 全文与数据（T&F 403，未见公开数据）；GLOBOCARB 文件清单（Mendeley 页面由脚本渲染）；Wang 2021 FUI 文件（figshare 挑战页）；Lakes_cci 许可条款 PDF；GLCP 的 EDI 元数据（403）。这些来源的数值未采用，或按"只读摘要""转引"标出。
+7. 未看：无。存疑（要跑实验或拿到原文才能定）：第 4.1 节供给上限对本模式的实际削减量（要跑候选 22）；Sobek 2009 两条 OET 回归式的负号（转文本丢号，按正文 "strongly negatively related" 判）；FLaMe k_bur = k20/2 的出处（见第 2.3 节第 6 条）；ALBM 公开代码的池名与论文活性 / 惰性库的对应（见第 3.3 节）。
+
+## 1. 数据
+
+### 1.1 (a) 沉积物有机碳埋藏与沉降
+
+没有一份公开的全球格点或逐湖（覆盖全部湖）埋藏图；能拿到的是站点表与回归式——已验证（子任务读 Mendonça、Anderson、Heathcote 的 Data availability 与补充材料）。
+
+| 数据 | 覆盖 | 形式 | 年份 | 许可 | 地址 | 变量 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Mendonça 2017 Supplementary Data 1 | 全球 403 湖库（402 行湖、73 行库，共 475 条），90% 在北美欧洲 | 逐站点表 xlsx 113 KB；另两条回归式 | 近约 150 年（²¹⁰Pb、¹³⁷Cs） | 论文 CC BY 4.0，数据单独许可未见 | 10.1038/s41467-017-01789-6 的 Supplementary Data 1 | `Ocb_model_input`（聚焦校正全湖埋藏，g C m⁻² yr⁻¹）、`lake_area`、`%cropland`、`sl_avg`、`temp_annual_average`、`runoff` 等 |
+| Anderson 2020 GLOBOCARB | 516 湖（落地页写 517） | 按生物群系逐十年汇总；是否含逐湖值未读到 | 1900 至今逐十年 | CC BY 4.0（DataCite：embargo 至 2020-12-19） | 10.17632/34hsd2jygc.1（Mendeley） | 文件字段未读到 |
+| Heathcote 2015 | 北美北方森林 101 湖 | 补充表只有湖名与经纬度，无逐湖埋藏值 | 1900 前至今 | 论文 CC BY 4.0 | 10.1038/ncomms10016 | — |
+| Kastowski 2011、Clow 2015、Alin & Johnson 2007、Dean & Gorham 1998 | 欧洲 228 湖、美国本土、全球大湖、全球 | 只见摘要中的区域总量；无独立数据集 | — | — | 见第 5 节 | — |
+| 中国湖泊埋藏库（2026） | 中国五大湖区 | xlsx 1.7 MB | — | CC0 | 10.5061/dryad.stqjq2chs | 含自生有机碳埋藏 |
+
+1. Mendonça 回归式（SI p.6 Supplementary Table 1）："Model 1: Log OC burial = 1.307 + 0.105*Cr ‐ 0.330*Sl ‐ 0.142*Ar + 0.134*Ru + 0.027*Tp ± 0.310 [‐ if lake, + if reservoir]; n=362, R2adj=0.51"；"Model 2: Log OC burial = 1.040 + 0.065*Cr ‐ 0.307*Sl ‐ 0.124*Ar + 0.146*Ru + 0.069*Tp ± 0.275"；Cr = log 耕地比例（%），Sl = log 流域平均坡度（°），Ar = log 湖面积（km²），Ru = log 径流（mm yr⁻¹），Tp = 年均气温（°C）——已验证（主会话读 SI 第 6 页）。
+2. 用法约束：Model 2 只用于年均气温 < 15 °C 的 COSCAT，> 15 °C 用分面积档中位数；"No model of acceptable predictive power could be fitted to lakes and reservoirs in >15 °C COSCATs, probably because of the scarcity of data in the tropics (n = 34)"——已验证（主会话读 p.3）。
+3. 回归只到 60°N（HydroBASINS 覆盖范围），生产力未进模型："some system-specific variables, such as productivity ... cannot be used for upscaling to COSCATs at present"——已验证（子任务读 Methods）。
+4. Anderson 回归："Log 10 OC burial = MAT × 0.03 + P application × 0.017 + N application × 0.005 + 0.905"，三变量共解释 44% 方差，施肥取 SEDAC 0.5° 格点——已验证（主会话抽核 Europe PMC 全文 Model selection 段）。
+5. 预测因子在 LakeATLAS 里都有对应列（耕地 L08、坡度 P02、径流 H02、气温 C03），但数据源与 Mendonça 原回归（GLC2000、SRTM 250 m）不同，系数能否直接搬用要回代站点表检验——推测。理由：同名变量不同源，未做回代。
+
+### 1.2 (b) 初级生产与叶绿素
+
+| 数据 | 覆盖 | 分辨率或按湖 | 年份 | 许可 | 地址 | 变量 |
+| --- | --- | --- | --- | --- | --- | --- |
+| ESA Lakes_cci v2.1 / v3.0（Carrea 2023） | 2024 个湖库 | 1/120° 日文件，21600 × 43200；每湖 `CCI_lakeid` | 叶绿素 2002-04 起，至 2022（v2.1）/2023（v3.0） | 论文写 CC BY 4.0；CEDA 指向专门条款 PDF（未读） | 10.5285/7fc9df8070d34cacab8092e45ef276f1（v2.1，824 GB，11 057 文件） | v2.1 `chla_mean`（mg.m-3）、`chla_uncertainty`、`turbidity_mean`；v3.0 `chla`、`tsm`、`KdPAR` |
+| CGLS LWQ 300 m（v1 MERIS 2002–2012；v1 OLCI 2016–2024；v2 2024 起） | 4 264 个水体，2 166 023 km²（含里海 379 446 km²），中位 77 km² | 300 m（另有 1 km 版），10 日合成，netCDF | 2002–2012、2016 至今 | "full, open and free access"，须注明来源 | 10.2909/b93df0ed-c128-4984-ab1d-6f8f49b7ee68；10.2909/b8e48c8d-f44e-40eb-9583-4a3254c2bbb3 | v1 `trophic_state_index`、`turbidity_mean`；v2 增 `chla_mean`、`tsm_mean`（示范模式） |
+| Filazzola 2020 | 11 959 湖、72 国（KNB 摘要写 9 625 湖） | 按湖离散调查，匹配 HydroLAKES | 1933–2019 | CC0 | 10.5063/F1RV0M1S（KNB） | `ChlaValues`（KNB 写 `ChlValues`）、`TP`（49%）、`TN`（17%）、`Secchi`、`UniqueLakeName` |
+| Sayers 2015 | 80 012 湖（MERIS 300 m，2011 生长季） | 按湖；数据未见公开 | 2011 | — | 10.1080/01431161.2015.1029099 | 中位 13.3 mg m⁻³ |
+| Beaulieu 2019 Supplementary Data 1 | 全球"湖面积档 × 叶绿素档"联合分布（由 Sayers 导出），非空间 | 9 个面积档 × 20 个 5 µg L⁻¹ 叶绿素档 | — | 论文 CC BY | 10.1038/s41467-019-09100-5 | `Current chla (ug L-1)`、`Current TP (ug L-1)`、`Cumulative Lake Area (km2)` |
+| Kraemer 2022 | 344 个大湖 | 欧洲 1 km、其余 4 km | 1997–2020 | 只发代码（Zenodo 10.5281/zenodo.5026693，CC BY） | 10.1371/journal.pwat.0000051 | 无逐湖值 |
+| Diversity II（Odermatt 2018） | 340 湖 | 月、年、9 年均值 | 2002–2012 | CC BY 3.0 | 10.1594/PANGAEA.871462 | 叶绿素等 |
+| Hou 2022 Source Data | 248 243 个淡水湖汇总 | 1° GeoTIFF（格点原点不在整度） | 1982–2019 | 未见 | 10.1038/s41561-021-00887-x | `1980s_2010s_BO.tif`（藻华发生率 %） |
+| HydroLAKES v1.0 | 1 427 688 个 ≥ 10 ha 湖库，2.67 百万 km² | 多边形（shp 820 MB） | 静态 | CC BY 4.0 | 10.1038/ncomms13603 | `Hylak_id`、`Lake_area`、`Depth_avg`、`Res_time`、`Wshd_area` 等；无叶绿素与营养 |
+| LakeATLAS v1.0 | HydroLAKES 全部湖，56 变量、281 属性 | 按湖（湖内、出口、缓冲区、上游） | 静态 | CC BY 4.0 或 ODbL 1.0 | 10.6084/m9.figshare.19312001（3.2 GB） | 耕地、坡度、径流、气温、土壤有机碳、侵蚀；无叶绿素与营养 |
+| GLCP（Meyer 2020） | HydroLAKES 1.42 百万湖 | 按湖逐年 | 1995–2015 | 未见 | EDI 10.6073/pasta/834e2d4e8ee7eb2fa9a5a5b32d759683 | 面积、气温、降水、人口；无水质 |
+| Lake-TopoCat（Sikder 2023） | HydroLAKES 与 SWOT PLD | 按湖排水拓扑与汇水单元 | 静态 | CC BY 4.0 | 10.5281/zenodo.7916729 | 无叶绿素与营养 |
+
+1. 覆盖范围、变量名与许可均来自落地页、DataCite 元数据或产品手册原文——已验证（子任务读；主会话抽核 LWQ 手册 `trophic_state_index` 段、Lakes_cci v2.1 文件头 `chla_mean`、Filazzola "11,959 lakes"、Lakes_cci v2.1 与 LakeATLAS 与 Wang FUI 的 DataCite 记录）。
+2. 全球湖泊生产力图：未找到可下载的全球湖泊初级生产格点图——已验证（子任务 OpenAlex 检索）。Toming 2020 原句 "nutrient data is currently not available at the global scale"——已验证（子任务读 Discussion）。
+
+### 1.3 (c) 营养状态分级
+
+1. Zhuang 2023 的做法："For northern temperate lakes, the trophic status was determined by a combination of the Lake Water Quality (LWQ) data set that includes a trophic state index, chlorophyll concentrations (Filazzola et al., 2020), and the Global River Chemistry Database (GLORICH ...) that includes total nitrogen and phosphorus concentrations. Chlorophyll and solute concentrations were converted into trophic state indices based on the OECD (OECD, 1992) classification scheme. Lakes not included in these data sets were classified as oligotrophic."——已验证（读全文 p.4）。只用于北温带湖；热带按"浅暖水（30°N–30°S、均深 < 10 m）与其他"，泛北极按冻土、叶多马、热融——已验证（子任务读 p.3–4）。
+2. Zhuang 2023 参考文献表里没有 Copernicus / CGLS 条目，文中的 LWQ 与 CGLS LWQ 的 `trophic_state_index` 吻合——推测。理由：参考文献表检索 "Copernicus" 零命中，而 Filazzola 库本身不含 TSI。所列 OECD 1992 是毒理外推手册而非营养分级文献，实际阈值文中未给——存疑。
+3. CGLS LWQ 的 TSI："The TSI has a value of 0, 10, 20, ... 100 corresponding to the classes given in Carlson (1977), where 0-40 are oligotrophic, 40-60 mesotrophic, 60-80 eutrophic, and 80-100 hypereutrophic"；TSI 与叶绿素上限对照 0→0.04、30→0.94、40→2.6、50→6.4、60→20、70→56、80→154、100→1183 µg L⁻¹——已验证（主会话抽核产品手册 v1 表 1 与波段表）。
+4. Wang 2018（RSE 217）：2 058 个 > 25 km² 水体，2012 年夏季 MODIS Forel-Ule 指数；FUI < 7 寡、7–10 中、≥ 10 富，总体精度 80%；按面积寡营养 30.1%、富营养 30.5%——已验证（子任务读作者接受稿）。逐湖结果未见公开下载——已验证（同上）。
+5. Wang 2021（Sci Data 8:26）：1 049 个 > 25 km² 大湖 2000–2018 月、年 FUI，figshare 10.6084/m9.figshare.13014299，4.19 MB，CC BY 4.0；字段 `Lake_id, Lake_name, Lon, Lat, Lake_area, ...`——已验证（DataCite 记录；子任务读 Data Records）。
+6. GLORICH（PANGAEA 10.1594/PANGAEA.902360）：河流站点 TN、TP（µmol L⁻¹），150.5 MB，CC BY-NC-SA 4.0，非商业限制——已验证（DataCite 记录）。用河站给湖定营养级的匹配规则 Zhuang 2023 未写——存疑。
+7. 全球逐湖 TP 估算产品：未检得——已验证（子任务 OpenAlex 五组检索）。FLaMe 的湖泊 TP 是把 GlobalNEWS 负荷沿 HydroSHEDS 路由到 HydroLAKES 出口、再除以流量得到，只做了欧洲——已验证（读 FLaMe p.1792）。
+
+### 1.4 对 2° 模式最实用的三个
+
+1. Mendonça 回归 + LakeATLAS 预测因子：唯一能给每个 HydroLAKES 湖一个埋藏率的路子，全球覆盖（60°N 以北与 > 15 °C 区只能用分档中位）——推测。理由见第 1.1 节第 5 条。
+2. CGLS LWQ `trophic_state_index`：4 264 个湖直接给 Carlson 营养级，按面积约覆盖 HydroLAKES 总面积的八成，下载量小于 Lakes_cci；用来给埋藏效率分档（第 2.3 节）——推测。理由：覆盖比例只做了两个总面积相除，未逐湖匹配。
+3. Lakes_cci `chla_mean`：2 024 个湖有 `CCI_lakeid` 可对到 HydroLAKES，可做逐湖叶绿素气候态；代价是 0.8–1.2 TB 下载，适合第二步——推测。
+
+## 2. 量级
+
+第 2 节数值口径各异，用前先看第 2.5 节的口径说明。表中"派生"指子任务由原表相除或统计（脚本在 scratchpad `lit_lakesub/magB/derived.py`、`mendonca_stats.py`）。
+
+### 2.1 沉降（到达湖底的有机碳）
+
+1. 捕集器通量在浅湖被再悬浮抬高，Kinneret 校正幅度 80% 与 40%："This correction reduces OC deposition rates by 80 and 40% at sites KI-LA and KI-C, respectively"——已验证（子任务读 Sobek 2011 p.360）。
+2. 寒带腐殖小湖 Gäddtjärn：44（按沉积厚度加权 28）——已验证（子任务读 Chmiel 2016 p.1819）。瑞典三个寒带腐殖小湖（埋藏 + 矿化口径）29–81——已验证（派生，Sobek 2009 表 1）。
+3. 中至富营养亚热带深湖 Kinneret（初级生产约 600）：捕集器校正后 113–132，不受再悬浮影响的中心站约 173，表水层向下输出 156–240；到达湖底约占初级生产 19–22%，埋藏约 4–9%——已验证（子任务读 Sobek 2011 p.356、表 3 p.361；Schmid 2017 p.2687–2688；比例为派生）。
+4. 新西兰 11 湖（成岩模型反演，口径低于捕集器）：寡营养中位 9.8（5.0–16.1）、中营养 16.5（3.7–33.8）、富营养 23.5（18.1–27.8）；原句 "meso- to eutrophic lakes having higher deposition fluxes than the oligotrophic lakes"——已验证（子任务读 Santoso 2017 接受稿第 212–215 行与表 4，分组中位为派生）。
+5. 深湖沉降途中矿化：贝加尔 1400 m 站约 30%——已验证（子任务读 Sobek 2009 p.2250，转引 Müller 2005）。
+6. 生产力越高，下沉通量占初级生产的比例略低——已验证（只读摘要，Baines & Pace 1994，经子任务）。湖内滞留有机碳中沉降部分 "may range from 13–44% ... or even as high as 50% in small humic lakes"——已验证（子任务读 Hanson 2011 p.7）。
+7. 按营养状态的沉降，全球统一的实测分档表未找到；上面只有新西兰模型反演一组分档——已验证（子任务检索）。
+
+### 2.2 埋藏
+
+| 条件 | 典型值 | 区间 | 出处 |
+| --- | --- | --- | --- |
+| 全球天然湖（聚焦校正，n = 344） | 中位 31.8 | 四分位 14.5–59.0 | Mendonça 数据派生 |
+| 全球天然湖上推面积均值（四情景） | 22 | 14–37 | Mendonça 表 1 p.4 |
+| \|lat\| < 23.3°（n = 18） | 29.6 | 15.2–44.7 | Mendonça 数据派生 |
+| 23.3–40°（n = 15） | 17.6 | 8.6–56.5 | 同上 |
+| 40–55°（n = 256） | 34.0 | 18.2–62.0 | 同上 |
+| 55–66.3°（n = 48） | 27.9 | 14.4–46.5 | 同上 |
+| > 66.3°（n = 7） | 2.1 | 2.0–2.7 | 同上 |
+| 湖面积 < 0.1 / 0.1–1 / 1–10 / 10–100 / > 100 km² | 25.5 / 40.2 / 33.8 / 23.5 / 15.3 | — | 同上 |
+| 北美北方森林 101 湖，1950 年至今 | 15.0 ± 0.8 | 1900 前 9.5 | Heathcote 2015 p.2、表 1 |
+| 1900 前寒带到亚热带 | 10–15 | 北极 3，热带 30 | Anderson 2020 结果节 |
+| 集约农业区（富营养） | 中位 46–88 | 人为富营养 50–150 | Anderson 2020；Heathcote 2015 p.2 转引 |
+| 苔原湖 | 3.1 | — | Anderson 2020 |
+| 全新世长期 | 4–5 | 4.5–14 | Anderson 2020；Ferland 2012 摘要；Tranvik 2009 p.2302 |
+
+1. 表中数值——已验证（子任务读原文或由 Supplementary Data 1 统计；主会话抽核 Mendonça 表 1、Heathcote "13.9±0.6"、Anderson 回归段与 "~10 to 15 ... 3 to 30" 原句）。
+2. 埋藏随年均气温升到约 8 °C 后持平："Contemporary organic-C burial rates increase latitudinally with increasing MAT to ~8°C before reaching a plateau"——已验证（主会话读 Anderson 2020 结果节）。Mendonça 按流域气温分档：< 0 °C 3.0、0–5 °C 21.3、5–10 °C 48.6、≥ 15 °C 37.7——已验证（派生）。
+3. 数据集没有湖深列，按湖深分档做不了；"Small and deep lakes act as more efficient C sinks than large and flat lakes"——已验证（只读摘要，Ferland 2014）。
+4. Mendonça 站点 90% 在北美欧洲，热带只有 18 个天然湖——已验证（子任务读 p.2 与派生计数）。热带与 60°N 以北的分档中位只能作量级——推测。
+5. 农业富营养小水库埋藏 148–17 000，不宜外推到天然湖——已验证（只读摘要，Downing 2008）；外推判断——推测。
+
+### 2.3 埋藏效率与可降解份额（1 − 埋藏效率）
+
+1. 11 湖 27 个沉积点：埋藏效率 3–93%，均值与中位 48%；外源为主均值 67%，自生为主均值 22%；原句 "Average OC burial efficiency was high (mean 48%)" 与 "average OC BE was 22%"——已验证（主会话抽核 Sobek 2009 p.2243、p.2248）。
+2. 控制因子：氧暴露时间（负相关）与沉积速率（正相关）；底层水温在 3–10 °C 段与矿化正相关、因而与埋藏效率负相关；"Eutrophication increases the input of autochthonous OC to the sediment, which is to a far greater extent mineralized than buried in the sediments."——已验证（子任务读 Sobek 2009 p.2248、p.2251）。
+3. 全球汇编：沉积物矿化是长期净累积的 2.8 倍（中位 3.8 倍），"the estimated burial efficiency of about 20 %"——已验证（主会话抽核 Gudasz 2010 接受稿 p.5）。
+4. 全湖尺度：Gäddtjärn 11–25%；Kinneret 10–41%；魁北克寒带湖 5–62%（随湖形）——已验证（子任务读 Chmiel 2016 p.1814、p.1819；Sobek 2011 p.355；Ferland 2014 只读摘要）。
+5. 新鲜有机质厌氧培养约 130 天的可降解池：浮游植物 0.59、陆源叶片 0.26，降解常数 0.034 与 0.016 d⁻¹——已验证（子任务读 Grasset 2018 表 2）。
+6. FLaMe 取 k_bur = k20/2，隐含埋藏效率 1/3，作者称 "This ratio is likely an upper bound"；所引 Mendonça 的 n = 230 对应的是"埋藏 / CO₂ 排放"约 20%，不是埋藏 / 矿化——已验证（主会话读 FLaMe p.1786；子任务读 Mendonça p.5）。1/2 如何得出原文未写——存疑。
+7. 由上：可降解份额（沉降中在沉积物表层矿化的部分）自生碳为主时约 0.6–0.9，外源为主时约 0.3，全体中位约 0.5——推测。理由：取 1 − 埋藏效率，埋藏效率用第 1 至 4 条。
+
+### 2.4 沉积物矿化
+
+1. 27 个沉积点：5.3–196，"median 40, mean 58"——已验证（主会话抽核 Sobek 2009 p.2247）。
+2. Kinneret 各站 79–179；坦噶尼喀（永久缺氧深湖）约 10–20；Gäddtjärn 全湖约 15——已验证（子任务读 Sobek 2011 表 3；Durisch-Kaiser 2011 p.9；Chmiel 2016 p.1819）。
+3. 温度依赖：瑞典 8 湖 r² = 0.61，Q₁₀ 约 2.2–2.3；Gäddtjärn 温度式折 Q₁₀ 约 2.1——已验证（子任务读 Gudasz 2010 p.4–5 与图 1、Chmiel 2016 p.1819；Q₁₀ 为换算）。
+4. 沿岸沉积物矿化平均是深水区的 3 倍，水深解释 60% 变异；深湖与富营养湖中沉积物占全湖呼吸的比例更小——已验证（只读摘要，den Heyer & Kalff 1998）。
+
+### 2.5 CH₄ 占沉积物有机碳矿化的份额
+
+口径：① 厌氧矿化中的 CH₄ 碳份额；② 全部（有氧 + 厌氧）矿化中的份额；③ 逸出沉积物的扩散 CH₄（已被表层氧化削减）；④ 占有机碳输入的份额。CoLM 的 `f_methane` 乘在湖泊全部分解上（Physics:2301–2305），属口径②——已验证（读码）。
+
+1. 综述（转引 Bastviken 2009）：② 20–56% "of whole lake C mineralization"；① 30–80% "of the anaerobic mineralization in waters and sediments"——已验证（主会话抽核 Schenk 2021 p.1、Grey 2016 p.2 的转引原句）。
+2. FLaMe：f_mm = 1/4（1/6–1/2），②；"fmm specifies the fraction of mineralization that channels to the methanogenesis pathway, which is adjusted to produce the observational patterns of CH4 emissions"；敏感性第一——已验证（读 FLaMe 表 1 p.1783、p.1786、p.1791）。FLaMe 称依据 Hanson 2014 与 Bastviken 2022 的汇编，而 Hanson 2014 摘要只讲外源有机碳收支、未提产甲烷份额——存疑，要读 Hanson 2014 全文。
+3. 化学计量上限："Between 10% and 40% of this carbon is permanently buried in the sediment ..., and in the absence of additional sources of electron donors (such as H2), a maximum of half of the remainder can be converted to CH4 by methanogenesis."——已验证（子任务读 Schmid 2017 p.2688）。
+4. 新鲜有机质厌氧培养（20–22 °C）①：CH₄ /（CH₄ + CO₂）= 0.32–0.39——已验证（子任务读 Grasset 2018 结果节，比例为派生）。
+5. Lake Washington ②：向上 CH₄ 通量约占沉积物分解有机碳的 20%，约 2% 初级生产以 CH₄ 返回——已验证（只读摘要，Kuivila 1988）。
+6. 坦噶尼喀：稳态 0.5 mol CH₄ m⁻² yr⁻¹（6 g C），占同文矿化 10–20 g C 的 30–60%，模型假设厌氧产物 CH₄ 与 CO₂ 各半——已验证（子任务读 Durisch-Kaiser 2011 p.9；比例为派生）。
+7. ④：缺氧分层湖 CH₄ 释放占有机输入 47 ± 9%（理论最大 40 ± 8%）；富营养盾地湖 Lake 227 全年总碳输入的 55% 以 CH₄ 再生——已验证（只读摘要，Kelly & Chynoweth 1981、Rudd & Hamilton 1978）。
+8. ③：上覆水有氧的沉积物 CH₄ 占矿化均值 2.3%、中位 0.02%（n = 180）；寒带腐殖小湖 9 °C 缺氧培养 CH₄ 只占 6%——已验证（主会话抽核 Gudasz 2010 补充第 3 节；子任务读 Chmiel 2016 p.1819）。
+9. bLake4Me 设定：叶多马碳三分之一可活化、其中一半成 CH₄；浅层矿质土碳 50 年内 22% 可分解、其中 23.1–33.3% 成 CH₄——已验证（读 Tan 2015 p.465）。ALBM 产比 λ_CO2:CH4 惰性 2、活性 8、老碳 8，即 CH₄ 占厌氧产物 33%、11%、11%——已验证（读 Tan 2024 p.4；换算为算术）。
+10. 淡水沉积物 "methanogenesis is responsible for the bulk of terminal metabolism under anoxic conditions"——已验证（只读摘要，Capone & Kiene 1988）。魁北克两寒带湖孔隙水模型：发酵加产甲烷占总有机质降解的 54%（常年有氧）与 100%（季节缺氧）——已验证（子任务读 Clayer 2020 p.4581）；折成 CH₄ 碳约 27–50%——推测，按 CH₄ 与 DIC 各半粗算。
+11. 取值建议：配本模式口径② 取 0.25（1/6–1/2）；若只对缺氧层用口径①，取 0.35（0.3–0.5）——推测。理由：第 1、2、4、5 条的交集。
+
+### 2.6 全球总量
+
+1. 湖泊初级生产：现状总 1.3、净 1.0 Pg C yr⁻¹；单位面积净初级生产现状 260、背景 160 g C m⁻² yr⁻¹——已验证（只读摘要，Lewis 2011；主会话抽核摘要文本）。Pace & Prairie 估总初级生产 0.65 Pg C yr⁻¹、作者判为低估——已验证（子任务读 Tranvik 2009 p.2299，转引）。
+2. 天然湖埋藏：0.09（四情景 0.04–0.18）Pg C yr⁻¹——已验证（主会话读 Mendonça 表 1）；0.12（95% CI 0.09–0.16），1900 年约 0.05——已验证（子任务读 Anderson 2020 结果节）。
+3. 全球湖泊沉积物矿化总量未见发表值；按 Gudasz 比值乘天然湖埋藏约 0.25–0.46 Pg C yr⁻¹——推测。理由：比值来自北方湖为主的汇编，长期累积与现代埋藏口径不同。
+
+## 3. 模式做法
+
+### 3.1 总表
+
+| 模式 | 底物库 | 由沉降补给 | 速率与参数 | 出处 |
+| --- | --- | --- | --- | --- |
+| FLaMe v1.0 | 一库：湖内自生有机碳（整湖体积积分） | 是，补给 = 湖内初级生产 F_PP | k20 0.008 d⁻¹（0.003–0.015）、θ 1.02、k_bur = k20/2、f_mm 1/4 | Maisonnier 2025 式 2–10，表 1 |
+| ALBM（Tan 2024） | 活性、惰性两库，热融湖加老碳 | 是（论文）：活性 = 浮游藻碎屑 + 陆源 10%；惰性 = 陆源颗粒碳 | V_CH4 活性 0.02–0.1、惰性 0.002–0.02 yr⁻¹；V_CO2 活性 0.18–3.65、惰性 0.007–0.18 yr⁻¹ | Tan 2024 p.4、p.8–9 |
+| ALBM 全球版（Zhuang 2023） | 一库：上 0.3 m 沉积碳 × α_labile | 否，库恒定 | R_c 1.342×10⁻¹⁰–1.342×10⁻⁹ s⁻¹；α_labile 15/20/22/45% | Zhuang 2023 p.2–3 |
+| bLake4Me | 新碳、老碳两库 | 否，库大小由湖形与流域土壤碳给定 | P = R_c C PQ10^((T−Tpr)/10) | Tan 2015 式 11–12 |
+| LAKE 2.0 / 2.6 | 无显式碳库 | 否，P0 标定或随气温回归 | P0 1–5×10⁻⁸ mol m⁻³ s⁻¹、αnew 3（1–11）m⁻¹ | Stepanenko 2016 式 12；Li 2026 |
+| CoLM V2（现状） | 整柱土壤有机碳 | 否，全球 `replenishlakec = .true.` | lake_decomp_fact 9×10⁻¹¹ s⁻¹、Q10、f_methane 0.2 | 第 3.8 节 |
+
+### 3.2 FLaMe（Maisonnier 2025）
+
+1. 库方程：∂C_OC,auto/∂t = F_PP − F_Min − F_Bur（式 2）；F_PP = B P_Chl,max M(T_mean) [TP]/(K_s,P + [TP]) V_phot（式 3）；F_Min = k20 θ^(T_mean − 20) C_OC,auto（式 7）；F_Bur = k_bur C_OC,auto（式 8）；产甲烷 F̃_Met(z) = f_mm (M_CH4/M_C) F_Min V_s(z)/V_s,tot（式 10）——已验证（读 p.1785–1786）。
+2. 只算自生碳："consider the autochthonous primary production as the only labile OC source in this first model version; the allochthonous OC contribution will be added in the future upgrade"——已验证（读 p.1785）。
+3. 产率随沉积深度 exp(−α z_s)，α = α_min + β F_PP V_w/V_phot（式 11–12），理由 "the shape of this curve typically depends on the flux of labile carbon settling on the lake bottom, and thus, lake trophic status"——已验证（读 p.1787）。
+4. 稳态推论：C* = F_PP/(k_min + k_bur)，20 °C 时 F_Min = 2/3 F_PP，产甲烷碳 = 1/4 × 2/3 = F_PP/6，与温度无关——推测。理由：按式 2、7、8、10 令 ∂C/∂t = 0 的算术；k_bur 不随温度，低温时埋藏份额升高。
+5. 理想湖输出：深寡营养冷湖 F_PP 约 13、F_Min 8；浅富营养湖 F_PP 490、F_Min 为其 62%——已验证（读补充材料 S3.1，行 109–122）。中营养基准湖年均产 CH₄ 0.037、排放 0.019 g m⁻² d⁻¹（约 13.5 与 6.9 g m⁻² yr⁻¹）；TP 由 8 到 80 µg L⁻¹ 平均产量 0.003 → 0.089 g m⁻² d⁻¹；冷到暖气候 0.0094 → 0.059 g m⁻² d⁻¹——已验证（读补充材料 S4.1–S4.3，行 212–248）。
+6. 输入：TP 由 GlobalNEWS 负荷沿 HydroSHEDS 路由到 HydroLAKES 出口、再除以出流得到；欧洲 108 407 个 0.1–1000 km² 湖按 2.5° 格 × 4 个面积档聚成 953 个代表湖——已验证（读 p.1792）。模拟 F_PP 按 Wetzel 分档（寡 5–10、中 10–30、富 > 30 µg P L⁻¹）落在经验区间内——已验证（读 p.1797）。
+
+### 3.3 ALBM（Tan 2024、Tan 2017 与公开代码）
+
+1. 论文："the revised ALBM treats the sediment OC pools in a more dynamic way by linking their evolution with catchment OC loading and in‐lake primary production"；惰性库 "mainly formed by the deposition of terrigenous OC that is related to loading of suspended sediment"；活性库 "mainly formed by the deposition of phytoplankton detritus"，另加 "the labile fraction of terrigenous OC which is assumed to be 10% (Brett et al., 2017)"——已验证（读 p.4）。
+2. 产量式 P_CH4 = V_CH4 f(Rx) f(sal) PQ10^((T_s − T_pr)/10) [OC]（式 1），各库各自 V_CH4 与 PQ10（表 2：活性 PQ10 1.0–3.6、惰性 1.7–16）——已验证（读 p.4、p.9）。
+3. 全球配置的负荷："the loading of SRP is estimated based on the observed annual mean SRP and lake WRT, and the loading of terrigenous OC is estimated based on the simulated loading of suspended sediment from a soil erosion model"——已验证（读 p.8）。
+4. 活性库的行为："Because active sediment OC is quickly mineralized in surface sediment where bubbles are difficult to form, the simulated CH4 ebullition is not sensitive to the related parameters of active sediment OC"；并承认可能低估深层活性碳（无物理与生物扰动混合）——已验证（读 p.10）。冒泡最敏感的是惰性库 V_CH4、PQ10 与 αH——已验证（同页）。
+5. 纬度归因："strong CH4 emissions from eutrophic lakes where CH4 production can be fueled by high rates of carbon deposition from in‐lake primary production"——已验证（读 p.19）。
+6. 碎屑来源（Tan 2017）：∂[POC]/∂t = V_settl ∂[POC]/∂z + GPP + POC_s + POC_in − POC_out − L_POC（式 3），GPP = V_m0 f(PAR) f(T) f(SRP) Chl a（式 5）；下沉途中不降解——已验证（读存本 p.4 式 3、式 5，p.6）。
+7. 公开代码（提交 217af35d）：每小时把沉积通量加到表层沉积：`Cpas = 0.98*m_burialAlCarb`、`Cact = 0.02*m_burialAlCarb + m_burialAtCarb`，其中外源项来自 DOC 絮凝与冰封截留，自生项为浮游藻非呼吸损失——已验证（读码 `carbon_cycle_mod.f90:242–248`、`:284–308`）。代码的外源活性比例 2% 与论文的 10% 不同——已验证（同上与论文 p.4）。
+8. 公开代码另有一项恒定补给：`pas2actC = 4d-3*carb0*fshape*fsoc*1d9/MasC/SECOND_OF_YEAR`，carb0 = 8.9386 kg C m⁻²，即每年补 0.4% × 8.94 kg C m⁻² ≈ 36 g C m⁻² yr⁻¹ × (√A/D)^−0.555 × 流域土壤碳比，按 exp(−dampen z) 分到各层，并在惰性库更新中扣除分解量——已验证（读码 `diagenesis_mod.f90:389–390`、`:476–478`；`phy_const_mod.f90` 的 MasC = 12、SECOND_OF_YEAR = 3.1536d+7；36 为算术）。初值惰性库取 5% × 8.94 kg C m⁻² × 同样两因子——已验证（读码 `diagenesis_mod.f90:381–389`）。
+9. 代码里 `actC` 库的更新对非叶多马湖直接返回（`diagenesis_mod.f90:420`），而自生碎屑又加进 `actC`；代码池名与论文活性 / 惰性库如何对应、非叶多马湖的活性库是否被消耗未能确认——存疑。要读 `UpdateActCarbonPool` 的全部调用链与版本说明才能定。
+
+### 3.4 ALBM 全球版（Zhuang 2023）
+
+1. P = R_c C_labile PQ10^((T_s − T_p0)/10)，C_labile 为上 0.3 m 沉积碳 = C_pool α_labile，"The carbon pool is considered constant over the simulation period"——已验证（读 p.2 式 1）。
+2. α_labile：泛北极冻土湖 20%、寡中营养与浅暖水 15%、富营养 22%、超富营养 45%；R_c 1.342×10⁻¹⁰–1.342×10⁻⁹ s⁻¹（0.0042–0.042 yr⁻¹）、PQ10 1.7–16（先验）——已验证（读 p.3 表 1；年率为换算）。C_pool 取 GSOCmap 土壤有机碳——已验证（读 p.4）。
+3. 作者自认："Classifying all lakes without water quality information as oligotrophic is likely to underestimate emissions"——已验证（读 p.10）。公开数据只有 0.5° 通量（PURR 10.4231/JZ10-FH54，CC0，10 MB），描述未提逐湖营养级——已验证（DataCite 记录）。
+4. 与候选 22 的区别：营养状态只改库大小比例，不给通量；库不耗减，稳态产量仍只由温度与静态库决定——推测。理由：式 1 与"库恒定"原句。
+
+### 3.5 bLake4Me（Tan 2015）
+
+P = R_c C_labile PQ10^((T − T_pr)/10)（式 11），新碳库总量 = a_erode × 8.94 kg C m⁻² × (√A/D)^−0.555 × f_pos(h) × SOM/SOM_ref（式 12），随沉积深度按 αH 指数递减；"Because the 14C-enriched carbon is deposited continuously at the water-sediment interface, its pool size was deemed to decrease exponentially"，库大小给定、不随产量扣减——已验证（读 p.464–465）。
+
+### 3.6 LAKE 2.0 与 LAKE2.6
+
+1. P_CH4,s = P0 exp(−αnew z_s) H(T − T_mp) q10^(T/10)/(1 + α_O2 C_O2,s)，"P0 is a calibrated constant reflecting the amount and quality of organic material in sediments with respect to CH4 production"——已验证（读 Stepanenko 2016 p.1982 式 12）。
+2. LAKE2.6 把 P0 回归到无冰期均气温："the relationship of P3 suggests that lakes in colder climates tend to provide more labile carbon for CH4 production than warmer lakes"；并自认 "without considering the quantity of substrates from biological activity and organic carbon inputs, which are closely related to the trophic state of lakes"——已验证（读 Li 2026 预印本行 524–535、561–575）。
+
+### 3.7 经验上推：用了哪些预测因子
+
+1. Johnson 2022（41.6 ± 18.3 Tg）：湖面积与分布、生态气候湖型（冻土与地下冰、土壤碳、MERRA-2 年均土温）、卫星冰期、日变化与温度订正；未用生产力——已验证（读 p.1 摘要、p.3 表 1、p.7–8）。≥ 5 000 km² 湖取同区小湖的 10%——已验证（前轮读 p.9）。
+2. DelSontro 2018：总 CH₄ 与冒泡最优模型只保留叶绿素；叶绿素分布取 Sayers 2015，"The data divide the world's lakes into productivity bins of 5 μg L−1 width"——已验证（读 PMC 全文"Productivity-driven aquatic CH4 emissions"与方法节）。其补充文件在 figshare 10.6084/m9.figshare.5220001（CC BY 4.0，2.1 MB）——已验证（DataCite 记录）。Johnson 2022 也注明 DelSontro 2018 "used spatial patterns in chlorophyll-a (Chl-a, a proxy for primary productivity) as a driver"——已验证（读 Johnson p.2）。
+3. 这类叶绿素上推式与候选 22 用同一驱动（生产力），用作评估对象时部分同源——推测。理由：第 2 条与账本 Q-36 同一问题。
+
+### 3.8 CoLM V2 现状
+
+1. 产量 = lake_decomp_fact × cnscalefactor × lake_soilc(j) × dz(j) × Q10lake^((T − 298)/10) × 冻结斜坡，CH₄ 份额 min(f_methane, 0.5)，非 CH₄ 部分在 C-33 开时按 1:1 耗 O₂——已验证（读码 Physics:2266–2267、2286–2296、2301–2305、2315）。
+2. 碳库扣减只在 `replenishlakec = .false.` 时发生（Physics:1778–1792）；g2_fi 设 `replenishlakec = .true.`、`lake_decomp_fact = 9.e-11`、`f_methane = 0.2`——已验证（读 g2_fi `bld/run/ch4_parameter.nml:93、266–267`）。
+3. 9×10⁻¹¹ s⁻¹ 即 25 °C 时 0.0028 yr⁻¹，落在 ALBM 惰性库 V_CH4 先验 0.002–0.02 yr⁻¹ 内；问题不在速率而在库：整柱土壤碳各纬带 85–104 kg C m⁻² 且不耗减——已验证（换算为算术；库量读 lit_models_lake_260929 第 4.1 节表）。
+4. 由 g2_fi 2018 产量反推的沉积矿化 M_mod = P × 12/16 / 0.2：全球 129、> 60°N 62、45–60°N 84、23.5–45°N 76、热带 337、23.5°S 以南 132 g C m⁻² yr⁻¹——已验证（`supply_limit.py` 由 depthbins 表算）。热带 337 高于全部实测沉积矿化（最高 Kinneret 179，Sobek 2009 最大 196）——已验证（与第 2.4 节比对）。
+
+## 4. 对本模式的含义
+
+### 4.1 供给上限对全球湖泊产量的约束
+
+算法：P_supply = B × (1 − BE)/BE × f × 16/12；B 取 Mendonça 天然湖纬度分档中位（四分位），BE = 1/3，f = 0.25；面积与模式产量取 g2_fi 2018 各纬带（湖面积加权）。脚本 scratchpad `lit_lakesub/supply_limit.py`，数值按脚本输出。
+
+| 纬带 | 湖面积 Mkm² | 模式产量 | 模式隐含 M | 埋藏 B 取值 | 供给 M | 供给产量（B 四分位） | 模式 / 供给 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| > 60°N | 0.496 | 16.6 | 62 | 10（2–28） | 20 | 6.7（1.3–18.6） | 2.5 |
+| 45–60°N | 0.753 | 22.5 | 84 | 34（15–62） | 68 | 22.7（10.0–41.3） | 1.0 |
+| 23.5–45°N | 0.531 | 20.3 | 76 | 17.6（8.6–56.5） | 35 | 11.7（5.7–37.7） | 1.7 |
+| 热带 | 0.450 | 89.8 | 337 | 29.6（15.2–44.7） | 59 | 19.7（10.1–29.8） | 4.6 |
+| 23.5°S 以南 | 0.078 | 35.1 | 132 | 17.6（8.6–56.5） | 35 | 11.7（5.7–37.7） | 3.0 |
+| 全球 | 2.308 | 79.1 Tg | 129 | — | — | 36.4 Tg（16.2–76.7） | 2.2 |
+
+1. 表中数值——已验证（`supply_limit.py` 输出）。> 60°N 的 B 中值 10 是 > 66.3° 的 2.1 与 55–66.3° 的 27.9 之间取的混合值——推测。理由：模式该纬带面积分布未按 66.3° 拆开。
+2. 单因子敏感性（全球，其余取中值）：BE = 0.2 → 72.8 Tg，BE = 0.48 → 19.7 Tg；f = 1/6 → 24.3 Tg，f = 1/2 → 72.8 Tg；所有因子同取端值 5.4–307 Tg——已验证（脚本输出）。
+3. 独立口径：直接用实测沉积矿化中位 40 → 30.8 Tg（f 1/6–1/2 为 20.5–61.5）；由湖泊净初级生产 260 × 到达湖底 0.2 × (1 − 自生埋藏效率 0.22) → 31.2 Tg（低高端 7.3–54.0）；按 Lake Washington "约 2% 初级生产以 CH₄ 返回" → 16.0 Tg——已验证（脚本输出）。
+4. 结论一：三条口径的中值都落在 30–36 Tg CH₄ yr⁻¹（按模式 2.31 Mkm² 湖面积计的沉积产量），约为模式 79 Tg 的 0.4 倍——推测。理由：第 2、3 条的中值；BE 与 f 各自带来约 2 倍不确定。
+5. 结论二：约束集中在热带：模式热带产量 89.8 需要全部热带湖沉积矿化 269（f = 0.25）或 135（f = 0.5）g C m⁻² yr⁻¹，只有中富营养湖 Kinneret 型（79–179）够得着，而坦噶尼喀型深湖只有 10–20；只有 B 取上四分位且 BE = 0.2、f = 0.5 同时成立时供给才能撑住——推测。理由：脚本热带行与第 2.4 节实测。45–60°N 在中值下模式与供给持平，北方偏高要靠 K-1（冒泡溶解）与 K-5（冰泡）处理，不靠候选 22——推测。
+6. 结论三：排放 ≤ 产量；若进入水体后约一半被氧化（FLaMe 中营养基准湖排放 / 产量 = 0.019/0.037 = 0.51，补充 S4.1；深处产 CH₄ 51–80% 在水柱被氧化，Bastviken 2008 摘要），供给限制下的湖泊排放约 15–20 Tg，与 Zhuang 2023（24.0，含水库 2.1）和 LAKE2.6（17.7–20.1）同量级、低于 Johnson 2022（41.6，面积 2.81 Mkm²）——推测。理由：乘法估算，未跑模式；三者湖面积口径不同。
+7. 口径风险：Mendonça 站点偏小湖与北美欧洲农业区（40–55° 档 n = 256，中位 34 高于未扰动北方湖的 15），直接用其纬度中位会高估 45–60°N 的供给——推测。理由：Heathcote 未扰动北方湖 15.0 与 Anderson 农业区 46–88 的对比。
+
+### 4.2 可实现方案（候选 22，默认关）
+
+1. 物理依据：稳态下沉积物年产甲烷量 = 可降解碳年补给 × CH₄ 份额，温度只改库大小与季节时机；现行整柱土壤碳不耗减，产量只随温度走，热带与北方差别全来自 Q10——推测。理由：第 3.2 节第 4 条的稳态算术与第 3.8 节。
+2. 状态量与方程（每湖斑块一库）：dC_act/dt = S − k(T) C_act；k(T) = k20 θ^(T−20)（或 Q10 形式）；产甲烷 = f × k(T) C_act，其余按现有 CO₂ 路径（C-33 开时耗 O₂）；C_act 按 exp(−z/e) 分到沉积层（与 C-40 `lake_prod_efold` 同一分布，e 取 FLaMe α 10–70 m⁻¹ 对应的 1.4–10 cm）；不设埋藏项，因为 S 定义为已扣埋藏的可降解补给（S = F_dep × (1 − BE) = M）。稳态 C* = S/k(T)，年产量 = f × S，与温度无关——推测。理由：比 FLaMe 少一个参数（k_bur），且 k_bur 出处存疑（第 2.3 节第 6 条）。
+3. 现行整柱土壤碳路径：开关打开时停用；以后若要保留慢库，按 ALBM 惰性库处理（V_CH4 0.002–0.02 yr⁻¹），而现行 lake_decomp_fact 已在此范围，只需把库改成有限且耗减——推测。理由：第 3.8 节第 3 条。本候选不含慢库。
+4. 补给 S 的来源，分三档（都做成 rawdata 格点 `lake_cdep(lon, lat)`，g C m⁻² yr⁻¹，由 mksrfdata 按湖面积聚合到湖斑块，路径仿 `Aggregation_LakeSoilC.F90` 读 `lake_soilc(soil, lon, lat)` 的做法）：
+   - 第一档（不需新数据，先验证机理）：纬带常数，取第 4.1 节供给 M 中值，45–60°N 改用未扰动北方湖（B 15，M 30）——推测。
+   - 第二档（推荐）：对 HydroLAKES 每个湖用 Mendonça Model 1 / 2（预测因子取 LakeATLAS）算 B，> 15 °C 用分面积档中位；BE 按 CGLS LWQ 营养级分档（寡 0.5、中 0.33、富与超富 0.2，无覆盖取 0.33）；湖面积加权到 2° 格——推测。理由：第 1.4 节第 1、2 条；BE 分档取 Sobek 2009 外源 0.67 / 全体 0.48 / 自生 0.22 与 Gudasz 约 0.2 的折中。
+   - 第三档：Lakes_cci 叶绿素气候态 → 初级生产 → 到达湖底 20%（Kinneret 19–22%）→ × (1 − 0.22)；下载量 TB 级，留作后续——推测。
+   - CoLM 湖斑块里没有 HydroLAKES 湖（< 10 ha 或河道水体）的格点用第一档的纬带常数——推测。
+5. 参数与文献值：f 取现有 `f_methane`（0.2，口径②；文献 0.25，1/6–1/2）；k20 = 0.008 d⁻¹、θ = 1.02（FLaMe）或沿用 `q10lake`（沉积矿化实测 Q₁₀ 2.1–2.3）；到 20 °C 时间常数约 125 d，4 °C 约 170 d，自旋数年即达稳态——已验证（参数出处见第 2.4、2.5、3.2 节；时间常数为算术）。
+6. 新键（默认关，不预留别的开关）：`lake_active_pool`（logical，.false.）；`lake_cdep_default`（g C m⁻² yr⁻¹，文件缺时用，≤ 0 表示无补给）；`lake_k20`（d⁻¹）、`lake_theta`；重启字段 `lake_cact`；湖泊碳收支诊断加补给项 S——推测。理由：最少改动集。
+7. 季节：S 先取年均常数；冰期补给可设为 0 并把年量压到无冰期（FLaMe 按月 F_PP），作为第二步——推测。
+8. 测法：站点 DE-Dgw（湖深改 9.5 m）看季节与量级；全球与 g2_fi 同年对照，报 lake_regions 18 区单位面积与热带 / 北方比；期望热带单位面积由约 100 降到约 20–40 g CH₄ m⁻² yr⁻¹，45–60°N 变化小——推测。理由：第 4.1 节表。
+9. 风险：热带只有 18 个埋藏站、60°N 以北回归不可用；Mendonça 回归不含生产力（第 1.1 节第 3 条），富营养靠 BE 分档间接体现；活性碳集中在表层会让产物更多走扩散进水体，冒泡随之下降，要与 K-1、K-2（水体氧化）一起看（ALBM："active sediment OC is quickly mineralized in surface sediment where bubbles are difficult to form"，Tan 2024 p.10）——已验证（引文）；联用后的净效应——存疑，要跑实验定。
+
+### 4.3 与已有改动的关系
+
+1. C-40（产量按 e 折深度分布）给出候选 22 的垂向分布，可直接复用；C-57（沉积物需氧量）与 C-33 决定非 CH₄ 部分耗氧；C-61（冰下气泡库）与候选 22 正交——推测。理由：各改动作用于不同项（分布、O₂、冰期输运 vs 源强）。
+2. lit_models_lake_260929 的 K-4 与本候选相同；本文第 4.2 节把"补给通量怎么定"具体化为三档数据并去掉埋藏项——推测。
+
+## 5. 著录（2026-09-29 由 DOI 查 Crossref / DataCite）
+
+格式：作者（注册库顺序，超过 4 位写首位 et al.），年：题名. 刊名 卷(期), 页或文章号. DOI。
+
+论文：
+
+- Anderson, N. J., Heathcote, A. J., Engstrom, D. R., Globocarb data contributors, 2020: Anthropogenic alteration of nutrient supply increases the global freshwater carbon sink. Science Advances 6(16), eaaw2145. doi:10.1126/sciadv.aaw2145
+- Alin, S. R., Johnson, T. C., 2007: Carbon cycling in large lakes of the world: A synthesis of production, burial, and lake‐atmosphere exchange estimates. Global Biogeochemical Cycles 21(3), 2006GB002881. doi:10.1029/2006GB002881
+- Bastviken, D., Cole, J. J., Pace, M. L., Van de Bogert, M. C., 2008: Fates of methane from different lake habitats: Connecting whole-lake budgets and CH₄ emissions. Journal of Geophysical Research: Biogeosciences 113(G2), 2007JG000608. doi:10.1029/2007jg000608
+- Beaulieu, J. J., DelSontro, T., Downing, J. A., 2019: Eutrophication will increase methane emissions from lakes and impoundments during the 21st century. Nature Communications 10(1), 1375. doi:10.1038/s41467-019-09100-5
+- Capone, D. G., Kiene, R. P., 1988: Comparison of microbial dynamics in marine and freshwater sediments: Contrasts in anaerobic carbon catabolism. Limnology and Oceanography 33(4_part_2), 725–749. doi:10.4319/lo.1988.33.4_part_2.0725
+- Carrea, L. et al., 2023: Satellite-derived multivariate world-wide lake physical variable timeseries for climate studies. Scientific Data 10(1), 30. doi:10.1038/s41597-022-01889-z
+- Chmiel, H. E. et al., 2016: The role of sediments in the carbon budget of a small boreal lake. Limnology and Oceanography 61(5), 1814–1825. doi:10.1002/lno.10336
+- Clayer, F., Gélinas, Y., Tessier, A., Gobeil, C., 2020: Mineralization of organic matter in boreal lake sediments: rates, pathways, and nature of the fermenting substrates. Biogeosciences 17(18), 4571–4589. doi:10.5194/bg-17-4571-2020
+- Clow, D. W. et al., 2015: Organic Carbon Burial in Lakes and Reservoirs of the Conterminous United States. Environmental Science & Technology 49(13), 7614–7622. doi:10.1021/acs.est.5b00373
+- Dean, W. E., Gorham, E., 1998: Magnitude and significance of carbon burial in lakes, reservoirs, and peatlands. Geology 26(6), 535. doi:10.1130/0091-7613(1998)026<0535:MASOCB>2.3.CO;2
+- DelSontro, T., Beaulieu, J. J., Downing, J. A., 2018: Greenhouse gas emissions from lakes and impoundments: Upscaling in the face of global change. Limnology and Oceanography Letters 3(3), 64–75. doi:10.1002/lol2.10073
+- den Heyer, C., Kalff, J., 1998: Organic matter mineralization rates in sediments: A within‐ and among‐lake study. Limnology and Oceanography 43(4), 695–705. doi:10.4319/lo.1998.43.4.0695
+- Downing, J. A. et al., 2008: Sediment organic carbon burial in agriculturally eutrophic impoundments over the last century. Global Biogeochemical Cycles 22(1), 2006GB002854. doi:10.1029/2006GB002854
+- Durisch-Kaiser, E. et al., 2011: What prevents outgassing of methane to the atmosphere in Lake Tanganyika? Journal of Geophysical Research 116(G2), G02022. doi:10.1029/2010jg001323
+- Ferland, M.-E., del Giorgio, P. A., Teodoru, C. R., Prairie, Y. T., 2012: Long‐term C accumulation and total C stocks in boreal lakes in northern Québec. Global Biogeochemical Cycles 26(4), 2011GB004241. doi:10.1029/2011GB004241
+- Ferland, M.-E., Prairie, Y. T., Teodoru, C., del Giorgio, P. A., 2014: Linking organic carbon sedimentation, burial efficiency, and long‐term accumulation in boreal lakes. Journal of Geophysical Research: Biogeosciences 119(5), 836–847. doi:10.1002/2013JG002345
+- Filazzola, A. et al., 2020: A database of chlorophyll and water chemistry in freshwater lakes. Scientific Data 7(1), 310. doi:10.1038/s41597-020-00648-2
+- Grasset, C. et al., 2018: Large but variable methane production in anoxic freshwater sediment upon addition of allochthonous and autochthonous organic matter. Limnology and Oceanography 63(4), 1488–1501. doi:10.1002/lno.10786
+- Grey, J., 2016: The Incredible Lightness of Being Methane-Fuelled: Stable Isotopes Reveal Alternative Energy Pathways in Aquatic Ecosystems and Beyond. Frontiers in Ecology and Evolution 4, 00008. doi:10.3389/fevo.2016.00008
+- Gudasz, C. et al., 2010: Temperature-controlled organic carbon mineralization in lake sediments. Nature 466(7305), 478–481. doi:10.1038/nature09186
+- Hanson, P. C. et al., 2011: Fate of Allochthonous Dissolved Organic Carbon in Lakes: A Quantitative Approach. PLoS ONE 6(7), e21884. doi:10.1371/journal.pone.0021884
+- Hanson, P. C. et al., 2014: Quantifying lake allochthonous organic carbon budgets using a simple equilibrium model. Limnology and Oceanography 59(1), 167–181. doi:10.4319/lo.2014.59.1.0167
+- Hartmann, J., Lauerwald, R., Moosdorf, N., 2014: A Brief Overview of the GLObal RIver CHemistry Database, GLORICH. Procedia Earth and Planetary Science 10, 23–27. doi:10.1016/j.proeps.2014.08.005
+- Heathcote, A. J. et al., 2015: Large increases in carbon burial in northern lakes during the Anthropocene. Nature Communications 6(1), 10016. doi:10.1038/ncomms10016
+- Hou, X. et al., 2022: Global mapping reveals increase in lacustrine algal blooms over the past decade. Nature Geoscience 15(2), 130–134. doi:10.1038/s41561-021-00887-x
+- Johnson, M. S. et al., 2022: Methane Emission From Global Lakes: New Spatiotemporal Data and Observation-Driven Modeling of Methane Dynamics Indicates Lower Emissions. Journal of Geophysical Research: Biogeosciences 127(7), e2022JG006793. doi:10.1029/2022jg006793
+- Kastowski, M., Hinderer, M., Vecsei, A., 2011: Long-term carbon burial in European lakes: Analysis and estimate. Global Biogeochemical Cycles 25(3)（Crossref 未给文章号）. doi:10.1029/2010GB003874
+- Kelly, C. A., Chynoweth, D. P., 1981: The contributions of temperature and of the input of organic matter in controlling rates of sediment methanogenesis. Limnology and Oceanography 26(5), 891–897. doi:10.4319/lo.1981.26.5.0891
+- Kraemer, B. M. et al., 2022: Worldwide moderate-resolution mapping of lake surface chl-a reveals variable responses to global change (1997–2020). PLOS Water 1(10), e0000051. doi:10.1371/journal.pwat.0000051
+- Kuivila, K. M. et al., 1988: Methane cycling in the sediments of Lake Washington. Limnology and Oceanography 33(4), 571–581. doi:10.4319/lo.1988.33.4.0571
+- Lehner, B., Messager, M. L., Korver, M. C., Linke, S., 2022: Global hydro-environmental lake characteristics at high spatial resolution. Scientific Data 9(1), 351. doi:10.1038/s41597-022-01425-z
+- Lewis, W., 2011: Global primary production of lakes: 19th Baldi Memorial Lecture. Inland Waters 1(1), 1–28. doi:10.5268/IW-1.1.384
+- Li, X., Peng, S., Stepanenko, V. M., Liu, L., Zhu, D., 2026: Towards a process-based estimation of global lake methane emissions using LAKE2.6（EGUsphere 预印本，Crossref 无卷页）. doi:10.5194/egusphere-2026-2349
+- Maisonnier, M. et al., 2025: A new biogeochemical modelling framework (FLaMe-v1.0) for lake methane emissions on the regional scale: development and application to the European domain. Earth System Dynamics 16(5), 1779–1808. doi:10.5194/esd-16-1779-2025
+- Mendonça, R. et al., 2017: Organic carbon burial in global lakes and reservoirs. Nature Communications 8(1), 1694. doi:10.1038/s41467-017-01789-6
+- Messager, M. L. et al., 2016: Estimating the volume and age of water stored in global lakes using a geo-statistical approach. Nature Communications 7(1), 13603. doi:10.1038/ncomms13603
+- Meyer, M. F. et al., 2020: The global lake area, climate, and population dataset. Scientific Data 7(1), 174. doi:10.1038/s41597-020-0517-4
+- Odermatt, D., Danne, O., Philipson, P., Brockmann, C., 2018: Diversity II water quality parameters from ENVISAT (2002–2012): a new global information source for lakes. Earth System Science Data 10(3), 1527–1549. doi:10.5194/essd-10-1527-2018
+- Rudd, J. W. M., Hamilton, R. D., 1978: Methane cycling in a eutrophic shield lake and its effects on whole lake metabolism. Limnology and Oceanography 23(2), 337–348. doi:10.4319/lo.1978.23.2.0337
+- Santoso, A. B., Hamilton, D. P., Hendy, C. H., Schipper, L. A., 2017: Carbon dioxide emissions and sediment organic carbon burials across a gradient of trophic state in eleven New Zealand lakes. Hydrobiologia 795(1), 341–354. doi:10.1007/s10750-017-3158-7
+- Sayers, M. J. et al., 2015: A new method to generate a high-resolution global distribution map of lake chlorophyll. International Journal of Remote Sensing 36(7), 1942–1964. doi:10.1080/01431161.2015.1029099
+- Schenk, J. et al., 2021: Methane in Lakes: Variability in Stable Carbon Isotopic Composition and the Potential Importance of Groundwater Input. Frontiers in Earth Science 9, 722215. doi:10.3389/feart.2021.722215
+- Schmid, M., Ostrovsky, I., McGinnis, D. F., 2017: Role of gas ebullition in the methane budget of a deep subtropical lake: What can we learn from process-based modeling? Limnology and Oceanography 62(6), 2674–2698. doi:10.1002/lno.10598
+- Sikder, M. S. et al., 2023: Lake-TopoCat: a global lake drainage topology and catchment database. Earth System Science Data 15(8), 3483–3511. doi:10.5194/essd-15-3483-2023
+- Sobek, S. et al., 2009: Organic carbon burial efficiency in lake sediments controlled by oxygen exposure time and sediment source. Limnology and Oceanography 54(6), 2243–2254. doi:10.4319/lo.2009.54.6.2243
+- Sobek, S., Zurbrügg, R., Ostrovsky, I., 2011: The burial efficiency of organic carbon in the sediments of Lake Kinneret. Aquatic Sciences 73(3), 355–364. doi:10.1007/s00027-011-0183-x
+- Stepanenko, V. et al., 2016: LAKE 2.0: a model for temperature, methane, carbon dioxide and oxygen dynamics in lakes. Geoscientific Model Development 9(5), 1977–2006. doi:10.5194/gmd-9-1977-2016
+- Tan, Z., Zhuang, Q., Walter Anthony, K., 2015: Modeling methane emissions from arctic lakes: Model development and site‐level study. Journal of Advances in Modeling Earth Systems 7(2), 459–483. doi:10.1002/2014ms000344
+- Tan, Z. et al., 2017: Modeling CO₂ emissions from Arctic lakes: Model development and site-level study. Journal of Advances in Modeling Earth Systems 9(5), 2190–2213. doi:10.1002/2017ms001028
+- Tan, Z. et al., 2024: A Lake Biogeochemistry Model for Global Methane Emissions: Model Development, Site-Level Validation, and Global Applicability. Journal of Advances in Modeling Earth Systems 16(10), e2024MS004275. doi:10.1029/2024ms004275
+- Tranvik, L. J. et al., 2009: Lakes and reservoirs as regulators of carbon cycling and climate. Limnology and Oceanography 54(6part2), 2298–2314. doi:10.4319/lo.2009.54.6_part_2.2298
+- Wang, S. et al., 2018: Trophic state assessment of global inland waters using a MODIS-derived Forel-Ule index. Remote Sensing of Environment 217, 444–460. doi:10.1016/j.rse.2018.08.026
+- Wang, S. et al., 2021: A dataset of remote-sensed Forel-Ule Index for global inland waters during 2000–2018. Scientific Data 8(1), 26. doi:10.1038/s41597-021-00807-z
+- Zhuang, Q. et al., 2023: Current and Future Global Lake Methane Emissions: A Process-Based Modeling Analysis. Journal of Geophysical Research: Biogeosciences 128(3), e2022JG007137. doi:10.1029/2022jg007137
+
+数据集（DataCite）：
+
+- Heathcote, A., 2020: GLOBOCARB OC Burial Rates. Mendeley. doi:10.17632/34hsd2jygc.1
+- Filazzola, A. et al., 2020: A global database of chlorophyll and water chemistry in freshwater lakes. KNB Data Repository. doi:10.5063/F1RV0M1S
+- Carrea, L. et al., 2024: ESA Lakes Climate Change Initiative (Lakes_cci): Lake products, Version 2.1. NERC EDS Centre for Environmental Data Analysis. doi:10.5285/7fc9df8070d34cacab8092e45ef276f1
+- Copernicus Land Monitoring Service, 2012: Lake Water Quality 2002-2012 (raster 300 m), global, 10-daily - version 1. doi:10.2909/b93df0ed-c128-4984-ab1d-6f8f49b7ee68
+- Copernicus Land Monitoring Service, 2018: Lake Water Quality 2016-2024 (raster 300 m), global, 10-daily - version 1. doi:10.2909/b8e48c8d-f44e-40eb-9583-4a3254c2bbb3
+- Lehner, B., Messager, M., Korver, M., Linke, S., 2022: LakeATLAS version 1.0. figshare. doi:10.6084/m9.figshare.19312001
+- Wang, S. et al., 2020: A dataset of remote-sensed Forel-Ule Index for global inland waters during 2000–2018. figshare. doi:10.6084/m9.figshare.13014299
+- Hartmann, J., Lauerwald, R., Moosdorf, N., 2019: GLORICH - Global river chemistry database. PANGAEA. doi:10.1594/PANGAEA.902360
+- Guo, M. et al., 2021: Current and projected global lake methane emissions by mechanistic modeling. Purdue University Research Repository. doi:10.4231/JZ10-FH54
+- Downing, J., Beaulieu, J., DelSontro, T., 2018: DelSontro, Beaulieu & Downing- files for SI- Greenhouse gas emissions from lakes and impoundments: upscaling in the face of global change. figshare. doi:10.6084/m9.figshare.5220001
+
+以上 64 条（论文 54、数据集 10）题名、作者、刊名、卷、期、页或文章号、年逐条由 WebFetch 取 api.crossref.org 或 api.datacite.org 得到，与正文所引年份一致——已验证（2026-09-29 匿名查询）。表中只列 DOI、未进正文引用的数据集（中国湖泊埋藏库 10.5061/dryad.stqjq2chs、Lake-TopoCat 数据 10.5281/zenodo.7916729、GLCP 10.6073/pasta/834e2d4e8ee7eb2fa9a5a5b32d759683、Diversity II 10.1594/PANGAEA.871462、Kraemer 代码 10.5281/zenodo.5026693）著录未核。只作转引、未查注册库的：Bastviken 2009 与 2022 百科章、Pace & Prairie 2005、Müller 2005、Ostrovsky & Yacobi 2010、Eckert & Conrad 2007、Brett 2017、Baines & Pace 1994、Wetzel 2001。

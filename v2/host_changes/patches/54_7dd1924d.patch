@@ -1,0 +1,37 @@
+From 7dd1924df81d46461d1e2c420c4d14da989a39f4 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Wed, 30 Sep 2026 00:04:47 +0800
+Subject: [PATCH] feat(thermal): pond litter resistance on temperate marsh
+ wetlands only
+
+The litter floor of DEF_WETLAND_POND_LITTER_RSS rests on measurements under an emergent Typha marsh (Goulden et al. 2007); with the methane module it now applies only where the wetland tile is of the temperate marsh class, so the summer ponds of tundra and boreal peatlands keep the surface resistance of the rss scheme. Key off: unchanged.
+
+---
+ main/MOD_Thermal.F90 | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/main/MOD_Thermal.F90 b/main/MOD_Thermal.F90
+index f33a6472..46e0f656 100644
+--- a/main/MOD_Thermal.F90
++++ b/main/MOD_Thermal.F90
+@@ -142,7 +142,7 @@ CONTAINS
+    USE MOD_Vars_TimeVariables, only: wdsrf, fveg
+ #ifdef TRACER
+    USE MOD_Vars_TimeVariables, only: zwt
+-   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_moss_rss
++   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_moss_rss, wetland_is_temperate_marsh
+ #endif
+ 
+    IMPLICIT NONE
+@@ -658,6 +658,8 @@ ENDIF
+          IF ((patchtype==2) .and. (wdsrf(ipatch) > 1.)) &
+             rss_min = max(DEF_WETLAND_POND_LITTER_RSS, 0.)
+ #ifdef TRACER
++         ! the litter mat of emergent marshes, the temperate marsh class only
++         IF (.not. wetland_is_temperate_marsh(ipatch)) rss_min = 0.
+          ! moss and peat surface of a dynamic wetland tile (C-26)
+          IF (DEF_USE_Dynamic_Wetland .and. (patchtype==2)) &
+             rss_min = max(rss_min, wetland_moss_rss(ipatch, zwt(ipatch), wdsrf(ipatch)))
+-- 
+2.53.0
+

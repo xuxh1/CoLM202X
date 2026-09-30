@@ -1,0 +1,112 @@
+# PFT 模式禾草判定与根系分布修正（I-27）
+
+- **日期**：2026.09.30-06:31
+- **读者**：下一会话
+- **来源**：中控派活 methane-grassfix 与续派三项；承接 `v2/results/lit_nafrica_floodplain_260930.txt` 第 5 节 C 与账本 Q-69；代码在分支 `grass-share`（worktree `<worktree>`）
+- **状态**：三个代码提交在 grass-share、未合回；全球编译过；两键关时两塔逐位不变；全球离线估算已做；键开未跑模式
+- **失效于**：I-27 合回 methane-paper-v2 或被弃用
+
+## 0. 覆盖面
+
+- 检索词与命中（基于 `30f8de7a`，`git grep`）：`methane_patch_is_nongrass` 在 main、mksrfdata、mkinidata、share 共 6 处，全在 `MOD_Tracer_Reactive_Methane_Physics.F90`（定义 1、调用 2，其余为函数体）；`nongrassporosratio` 在 main 共 9 处；`patchclass` 在 `main/TRACER` 共 87 处，Physics 15 处中做判定的只有上述 2 处调用，其余为 LULCC 重映射、根系分布取值（`Impl.F90:97`、`181`，`WetlandVeg.F90:451`）与参数传递；甲烷模块里 `rootfr` 的消费点为 `methane_aere`（`Physics.F90:3300`、`3317`）、`methane_root_oxid`（`:2891-2897`）与 BgcLink 的 crootfr 缺省（`BgcLink.F90:416-420`）。
+- 读过：`mksrfdata/MOD_LandPatch.F90`、`MOD_LandCrop.F90`、`MOD_LandPFT.F90`、`MOD_SingleSrfdata.F90`（地类与 PFT 部分）、`MOD_SrfdataDiag.F90`（fraction 统计）、`Aggregation_PercentagesPFT.F90`、`mkinidata/MOD_Initialize.F90`、`MOD_PercentagesPFTReadin.F90`、`main/MOD_Vars_TimeInvariants.F90`（PFT 模块）、`main/MOD_Const_PFT.F90`（PFT 编号、d50_p、beta_p、rootfr_p）、`main/MOD_Const_LC.F90`（类根系）、`main/MOD_Thermal.F90`（宿主按 PFT 取根）、`main/MOD_Vars_Global.F90`，TRACER 的 Physics、Driver、Impl、BgcLink、VegOverride、WetlandVeg、Const；CLM 对照 `~/mode/Wetland/CTSM/src/biogeochem/ch4Mod.F90`。
+- 未看：无。
+- 存疑：两键开后全球净排放的变化，要跑全球筛选才能定（第 4.3、4.4 节）。
+
+## 1. 结论
+
+1. 全球 PFT 模式下自然土壤斑块的 `patchclass` 恒为 1：PFT 模式把所有 patchtype 0 地类并成 1（`mksrfdata/MOD_LandPatch.F90:166-177`），带 CROP 时再切出 CROPLAND（12）斑块（`MOD_LandCrop.F90:95`），`patchclass = landpatch%settyp`（`mkinidata/MOD_Initialize.F90:311`）——已验证（读码）。单点取塔的 IGBP 类（`MOD_SingleSrfdata.F90:1368`），BR-Npw 为 2、BW-Nxr 为 10——已验证（读码与 `v2/config/v2_p8f/SITE_MAIN.csv`）。IGBP、USGS 构建不定义 BGC（`include/define.h:74-76`），甲烷模块不编译——已验证（读码）。
+2. 消费点一，通气组织孔隙度：非禾草取 `poros_tiller × nongrassporosratio`（g2_bf 0.3 × 1/3 = 0.1），禾草取 0.3（基线 `Physics.F90:3099-3103`），全球每个自然土壤斑块取 0.1——已验证（读码）。消费点二，C-87：`woody_conduit_area >= 0` 时土壤斑块非禾草即饱和子柱木本份额取 1（基线 `Physics.F90:1355-1363`）；g2_bf 未开 C-87，只在 C-87 筛选（g2_wc5）生效——已验证（读码与 g2_bf nml）。
+3. 同一病根的第三处：甲烷的根系分布取 `rootfr_lc(:,patchclass)`（基线 `Impl.F90:181`），全球每个自然土壤斑块用 IGBP 1 类（常绿针叶林，d50 15 cm、β −1.623）；它只进通气组织各层导度与根际氧化的分层权重，产甲烷的深度分布按异养呼吸剖面（`Physics.F90:2531-2537`），根呼吸按 BGC 的 PFT 根剖面 crootfr（`BgcLink.F90:409-420`），都不受它影响——已验证（读码）。宿主的根系吸水按 PFT 取 `rootfr_p(:,pftclass)`（`MOD_Thermal.F90:990-1002`）——已验证（读码）。
+4. 提交（分支 grass-share，只动 main/TRACER，无宿主改动）：`1238a667` 新键 `DEF_METHANE%pft_grass_share`；`0cbfc932` 把 C-87 木本份额改为只计乔木；`35f78611` 新键 `DEF_METHANE%pft_root_profile`。两键都是逻辑型，缺省 .false.——已验证（`git log`、`git show --stat`）。
+5. `pft_grass_share` 开时：孔隙度 = 0.3 × (g + (1 − g)/3)，g 为禾草（PFT 12–14）与作物（≥ 15）占有植被 PFT 的份额（分母不含裸土）；C-87 木本份额 = 乔木（PFT 1–8）占整个斑块（分母含裸土）；C-87 生效的子柱里分蘖取禾草孔隙度，同湿地斑块——已验证（读码，`Physics.F90:1362-1369`、`3106-3119`、`4953-4991`）。
+6. `pft_root_profile` 开时：有 PFT 的斑块根系分布 = 有植被 PFT 按 pftfrac 加权的宿主 `rootfr_p` 平均（`Impl.F90:173-174`、`195-234`）；湿地、湖等无 PFT 斑块与全裸斑块照旧——已验证（读码）。
+7. 两键都在单点构建里关掉（`#ifndef SinglePoint`），单点照旧——已验证（读码）。
+8. 键关逐位不变：BR-Npw、BW-Nxr 在基线树与两个修改树上，主段与 spin-up 段逐变量比对，差异变量数全为 0（BR-Npw 主段 2124 个、其余各 531 个）——已验证（`v2/_scratch/grass/bitwise_260930.log`）。
+9. 全球编译（GRIDBASED、LULC_IGBP_PFT、BGC、CROP、MPI，ifx 栈）通过，改动文件无新增警告——已验证（worktree 根下 `build_grass_check.log`，`EXIT=0`）。
+10. 全球禾草份额 g（g2_bf 自然土壤斑块 114.4 Mkm2）：面积加权 0.49、淹水加权 0.44；北非 0.72 与 0.54，赤道非洲 0.43 与 0.60，南美三区 0.31 与 0.27，巴西淹水加权 0.15——已验证（`v2/_scratch/grass/grass_share_global_2018.log`）。孔隙度由 0.100 升到淹水加权 0.189（全球），北非 0.207、赤道非洲 0.220、南美 0.154、巴西 0.130——已验证（同上 log）。
+11. 自然斑块土壤通气组织通道 2018 年 29.8 Tg，按截面线性放大的上界 +25.5 Tg；净排放变化远小于此，符号不定——推测。理由：V-53 把有林份额孔隙度降到原来的 1/5 时站点中位不变，本模式排放受产量限制，通道截面主要改变去向，送氧增加根际氧化。
+12. C-87 木本份额（只计乔木）从 1 降到淹水加权：全球 0.28、北非 0.09、苏德框 0.13、赤道非洲 0.17、巴西 0.65——已验证（同上 log，"tree" 列）。g2_wc5 北非 +12 Tg 的木本通道增量按此约缩到十分之一左右——推测。理由：增量与饱和子柱木本份额近似成正比，未计分蘖部分回到禾草孔隙度的增量。
+13. 根系分布键：淹水加权的根系平均深度由 26.7 cm 变为全球 28.4、北非 31.1、巴西 29.7、苏德 33.6、60° N 以北 23.4 cm；按产甲烷量加权的根密度（决定通气组织在产甲烷层的导度）变为原来的全球 1.20、北非 1.14、巴西 0.96、苏德 0.95、60° N 以北 1.30 倍（逐格 10、90 分位全球 0.93、1.57）——已验证（`v2/_scratch/grass/root_profile_global_2018.log`）。产甲烷深度本身不变——已验证（读码，第 3 条）。
+
+## 2. 读码
+
+### 2.1 patchclass 在各模式下的取值
+
+- 全球 PFT 或 PC（`DEF_USE_PFT` 且非 `DEF_SOLO_PFT`，或 `DEF_FAST_PC`）：patchtypes 为 0 的像元地类都改成 1（`MOD_LandPatch.F90:166-181`），每格一个自然土壤斑块；带 CROP 时 `landcrop_build` 按 PCT_CROP 切出 CROPLAND 并按 CFT 再分（`MOD_LandCrop.F90:78-111`），自然部分仍为 1——已验证（读码）。
+- 初始化：`patchclass = landpatch%settyp`，`patchtype = patchtypes(patchclass)`（`MOD_Initialize.F90:311-317`）——已验证（读码）。
+- 单点：`landpatch%settyp = SITE_landtype`（`MOD_SingleSrfdata.F90:1368`、`2771`），读自站点文件或 nml（`:300-313`）；单点 PFT 另从站点文件或 500 m MODIS 读入（`:388-420`）——已验证（读码）。
+- IGBP、USGS：非 PFT、非 PC 时 undef BGC（`include/define.h:74-76`），甲烷模块整体在 `#if (defined TRACER) && (defined BGC)` 下——已验证（读码）。
+
+### 2.2 三个消费点（基线 `30f8de7a`）
+
+- `methane_patch_is_nongrass`（`Physics.F90:4902-4920`）：非 USGS 分支为 1–9 或 14，全球 PFT 模式自然斑块为 1，返回真——已验证（读码）。
+- 孔隙度（`Physics.F90:3099-3117`）：非禾草 `poros_tiller × nongrassporosratio`，经 `get_aere_poros` 让湿地斑块覆盖（`VegOverride.F90:65-72`、`WetlandVeg.F90:497-509`），未饱和乘 `unsat_aere_ratio` 并以 `porosmin × unsat_aere_ratio` 为下限，饱和以 `porosmin` 为下限；g2_bf 取 0.3、1/3、1/6、0.05，下限不触发——已验证（读码与 g2_bf nml 第 218-221 行）。孔隙度只进通气组织截面 `area_tiller`（`Physics.F90:3262-3281`）——已验证（读码）。
+- C-87（`Physics.F90:1349-1363`）：湿地斑块取 GLWD 有林份额，土壤斑块非稻田且非禾草时饱和子柱取 1；截面 A = (1 − w) A_tiller + w A_w（`:3276-3281`）——已验证（读码）。
+- 根系分布（`Impl.F90:181` 传 `rootfr_lc(:,patchclass)`，`Driver.F90:355-361` 对 patchtype 0 原样用）：进 `methane_aere` 各层阻抗（`Physics.F90:3300`、`3317`，导度 ∝ 截面 × rootfr_j / z_j）与 `methane_root_oxid` 权重（`:2891-2897`）；BgcLink 只在 PFT 根剖面缺失时拿它补 crootfr（`BgcLink.F90:416-420`）——已验证（读码）。
+- CLM 对照：CLM4Me 按 PFT 逐个判，禾草 12–14 与作物取 0.3，其余 0.3 × `nongrassporosratio`，裸土不走通气组织（`ch4Mod.F90:2968-2981`）——已验证（读码）。
+
+### 2.3 PFT 构成与 PFT 根系
+
+- `patch_pft_s/e`（`mksrfdata/MOD_LandPFT.F90:37`，运行时 `map_patch_to_pft`，`:266-330`），非土壤斑块为 −1；`pftclass`、`pftfrac`（`main/MOD_Vars_TimeInvariants.F90:22-23`），`pftfrac` 为斑块内份额，和为 1（`mkinidata/MOD_PercentagesPFTReadin.F90:47-83`）——已验证（读码）。
+- PFT 编号：0 裸土、1–8 乔木、9–11 灌木、12–14 草、15 起作物（`main/MOD_Const_PFT.F90:26-41`）；带 CROP 时自然斑块 PFT 为 0–14（`MOD_Vars_Global.F90:42-46`）——已验证（读码）。
+- `rootfr_p(1:nl_soil, 0:N_PFT+N_CFT-1)` 由 `Init_PFT_Const` 按 Schenk and Jackson 的 d50_p、beta_p 算（`MOD_Const_PFT.F90:621-640`、`1744-1790`），`CoLM.F90:264` 每次运行都调用——已验证（读码）。
+
+## 3. 改法
+
+- `1238a667 fix(methane): pft_grass_share takes grass and woody shares from the PFT cover`：`Const.F90` 加键 `pft_grass_share`（`:1292-1310`），`Physics.F90` 加函数 `methane_patch_pft_shares`（`:4953-4991`），在孔隙度（`:3106-3119`）与 C-87（`:1362-1369`）两处先问它，找不到 PFT 构成才用类判定。
+- `0cbfc932 fix(methane): pft_grass_share gives the woody conduit to the tree cover only`：C-87 木本份额只计乔木（PFT 1–8），分母仍含裸土；孔隙度的 g 仍以乔灌为非禾草。理由：木本通道的依据是淹水乔木的树干排放（Pangala et al. 2017），灌木树干未测。
+- `35f78611 feat(methane): pft_root_profile weights the host PFT root profiles`：`Const.F90` 加键 `pft_root_profile`（`:1311-1321`）；`Impl.F90` 在土壤步把类根系复制进局部数组 `rootfr_m`，键开时调 `methane_pft_root_profile` 换成有植被 PFT 按 pftfrac 加权的 `rootfr_p` 平均（`:136`、`173-174`、`185`、`195-234`）；湖步不动。
+- 分母：孔隙度是植株组织的性质，截面已按斑块 NPP、LAI 缩放，裸土不长分蘖，g 的分母不含裸土；木本通道 A_w 是林下单位地面的截面，w 的分母含裸土；根系分布只在有根处有意义，权重只取有植被 PFT。
+- 耕地斑块（patchclass 12）与稻田：`pft_grass_share` 开时 g = 1、w = 0，同原判定；作物 PFT 的 `rootfr_p`（d50 22、β −1.796）与 IGBP 12 类相同，`pft_root_profile` 开时根系不变——已验证（读码，`MOD_Const_PFT.F90:621-640`、`MOD_Const_LC.F90:579-587`）。
+- 两键的 namelist 按整个派生类型读入、每个进程都读，不需另加广播（`Const.F90:1338`）——已验证（读码）。
+
+## 4. 验证
+
+### 4.1 编译
+
+- 全球构建：worktree 本身（GRIDBASED、LULC_IGBP_PFT、BGC、CROP、MPI），`cmake_build.sh --target colm.x`，`35f78611` 上 `EXIT=0`，改动文件无警告——已验证（`<worktree>/build_grass_check.log`，脚本 `v2/_scratch/grass/build_tree.py`）。
+- 单点树：`cases/paper_v2/v260930/sp_v2_dev_grass_base`（`30f8de7a`）、`sp_v2_dev_grass`（`1238a667`）、`sp_v2_dev_grass2`（`35f78611`），均 `MAKE_EXIT=0`——已验证（`build_site_tree.sh` 输出）。
+
+### 4.2 键关逐位
+
+- 配置：`v2/config/v2_grass_off` = `v2_p8f` 加 `pft_grass_share = .false.`；`v2/config/v2_grass_off2` 再加 `pft_root_profile = .false.`；与基线 tag 的 namelist 除路径外只差这些行——已验证（`diff -r` 各 tag 的 `_conf`）。
+- 运行：`v2_grass_base`（基线树，v2_p8f）、`v2_grass_off`、`v2_grass_off2`，BR-Npw、BW-Nxr，spin-up 5，node111 直跑（node114 负载 51，高于 40 的门槛），三 tag 均 OK=2。
+- 结果：四组比对（两个修改 tag × 主段、spin-up 段）全部 `0 differ`、`IDENTICAL`——已验证（`v2/_scratch/grass/bitwise_260930.log`，脚本 `bitwise_check.py` 调 `v2/scripts/compare_hist.py`）。
+
+### 4.3 禾草份额与孔隙度（离线，g2_bf 2018）
+
+脚本 `v2/_scratch/grass/grass_share_global.py`，输出 `grass_share_global_2018.log`。`pftfrac_elm` 是各 PFT 在该格自然土壤斑块内的份额（`MOD_SrfdataDiag.F90:222-262`），5557 格和为 1——已验证（log 首行）。
+
+| 区域 | 自然斑块 Mkm2 | 年均淹水 Mkm2 | g 面积加权 | g 淹水加权 | 孔隙度（键开） | 乔木份额 w | 乔灌份额 | 通气组织 Tg | 线性上界 Tg |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 60–90° N | 12.38 | 0.084 | 0.56 | 0.50 | 0.200 | 0.24 | 0.48 | 0.43 | +0.36 |
+| 30–60° N | 37.40 | 0.232 | 0.51 | 0.46 | 0.192 | 0.31 | 0.46 | 4.51 | +3.83 |
+| 0–30° N | 32.22 | 0.323 | 0.54 | 0.51 | 0.202 | 0.18 | 0.46 | 13.57 | +12.49 |
+| 0–30° S | 27.71 | 0.274 | 0.39 | 0.31 | 0.162 | 0.40 | 0.65 | 9.29 | +6.58 |
+| 30–90° S | 4.70 | 0.051 | 0.45 | 0.56 | 0.212 | 0.17 | 0.41 | 1.97 | +2.26 |
+| 北非 | 13.63 | 0.174 | 0.72 | 0.54 | 0.207 | 0.09 | 0.43 | 6.60 | +6.35 |
+| 赤道非洲 | 7.73 | 0.080 | 0.43 | 0.60 | 0.220 | 0.17 | 0.37 | 3.64 | +4.09 |
+| 南美三区 | 16.52 | 0.202 | 0.31 | 0.27 | 0.154 | 0.50 | 0.72 | 5.87 | +4.45 |
+| 其中巴西 | 7.62 | 0.107 | 0.28 | 0.15 | 0.130 | 0.65 | 0.84 | 1.85 | +1.15 |
+| 苏德框 28–34° E、4–10° N | 0.43 | 0.101 | 0.37 | 0.39 | 0.177 | 0.13 | 0.60 | 4.66 | +3.68 |
+| 全球 | 114.41 | 0.963 | 0.49 | 0.44 | 0.189 | 0.28 | 0.51 | 29.77 | +25.52 |
+
+- 键关时孔隙度处处 0.100，C-87 木本份额处处 1；`0cbfc932` 起键开的木本份额取"乔木份额 w"列。通气组织与线性上界只算自然斑块份额（土壤瓦片通量乘自然斑块占土壤瓦片的面积比）。
+- 线性上界把每格通气组织通量乘（孔隙度比 − 1），是截面阻抗主导时的上界；净排放变化要跑全球筛选（键开，其余同 g2_bf）才能定——存疑。
+
+### 4.4 根系分布（离线，g2_bf 2018 洪泛格）
+
+脚本 `v2/_scratch/grass/root_profile_global.py`，输出 `root_profile_global_2018.log`。洪泛格为年内土壤瓦片淹水份额最大值 ≥ 1e-4 的 4239 格，按年均淹水自然斑块面积加权；根系按 `MOD_Const_LC`、`MOD_Const_PFT` 的 Schenk and Jackson 参数与 `MOD_Vars_Global` 层深重算；产甲烷剖面取格点汇总的饱和子柱各层产量（含湿地瓦片）。
+
+| 区域 | 淹水 Mkm2 | 根平均深度 cm 键关 | 键开 | 上 9.1 cm 根份额 键关 | 键开 | 产甲烷加权根密度 m-1 键关 | 键开 | 比 | 逐格 p10 | p90 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 全球 | 0.963 | 26.7 | 28.4 | 0.31 | 0.35 | 2.84 | 3.40 | 1.20 | 0.93 | 1.57 |
+| 北非 | 0.174 | 26.7 | 31.1 | 0.31 | 0.33 | 2.82 | 3.21 | 1.14 | 0.94 | 1.70 |
+| 巴西 | 0.107 | 26.7 | 29.7 | 0.31 | 0.29 | 2.83 | 2.71 | 0.96 | 0.91 | 1.00 |
+| 赤道非洲 | 0.080 | 26.7 | 29.2 | 0.31 | 0.36 | 2.83 | 3.44 | 1.21 | 0.92 | 1.52 |
+| 苏德框 | 0.101 | 26.7 | 33.6 | 0.31 | 0.28 | 2.78 | 2.65 | 0.95 | 0.90 | 0.98 |
+| 60–90° N | 0.084 | 26.7 | 23.4 | 0.31 | 0.41 | 2.90 | 3.76 | 1.30 | 1.21 | 1.46 |
+
+- IGBP 1 类根系平均深度 26.7 cm；C3 草 20.3、C4 草 31.6、C3 极地草 11.3 cm——已验证（log 表头）。
+- 产甲烷加权根密度的比即通气组织在产甲烷层的导度倍数（同一截面下）；对净排放的影响同第 4.3 节，受产量限制、主要改去向——推测。理由同第 1 节第 11 条。

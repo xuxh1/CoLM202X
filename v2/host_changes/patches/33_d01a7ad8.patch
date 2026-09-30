@@ -1,0 +1,208 @@
+From d01a7ad82043cfee8459032ec7740388f11539a5 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Mon, 28 Sep 2026 14:04:09 +0800
+Subject: [PATCH] feat(rice): drain paddies a set number of days before the
+ projected harvest (C-47)
+
+DEF_PADDY_DRAIN_DAYS (default -1 keeps C-32e, drained from grain fill):
+bunds and irrigation of a paddy stop once the days left to the earlier of
+maturity, projected at the season's mean heat-unit rate, and the maximum
+season length fall to the set value. With the rice grain fill moved to
+hui 0.40 (Q-33) the grain-fill anchor drained the fields in early July,
+a month before the towers' peak; farmers drain two to three weeks before
+harvest.
+
+---
+ main/BGC/MOD_BGC_Vars_PFTimeVariables.F90 |  3 +++
+ main/BGC/MOD_BGC_Veg_CNPhenology.F90      | 17 +++++++++++++++--
+ main/MOD_Irrigation.F90                   | 11 +++++++----
+ main/MOD_SoilSnowHydrology.F90            | 15 +++++++++++----
+ share/MOD_Namelist.F90                    |  6 ++++++
+ 5 files changed, 42 insertions(+), 10 deletions(-)
+
+diff --git a/main/BGC/MOD_BGC_Vars_PFTimeVariables.F90 b/main/BGC/MOD_BGC_Vars_PFTimeVariables.F90
+index eb1841a0..70ad93d0 100644
+--- a/main/BGC/MOD_BGC_Vars_PFTimeVariables.F90
++++ b/main/BGC/MOD_BGC_Vars_PFTimeVariables.F90
+@@ -165,6 +165,7 @@ MODULE MOD_BGC_Vars_PFTimeVariables
+    real(r8),allocatable :: latbaset_p                (:)     ! latitude vary base temperature for gddplant (degree C)
+    real(r8),allocatable :: plantdate_p               (:)     ! planting date (input)
+    real(r8),allocatable :: rice_double_p             (:)     ! C-45: share of double-cropped irrigated rice (input, not in restart)
++   logical ,allocatable :: paddy_predrain_p          (:)     ! C-47: paddy in its pre-harvest drain window (set by CropPhenology, not in restart)
+ #endif
+ ! --------------------- END CROP variables -------------------------
+ 
+@@ -561,6 +562,7 @@ CONTAINS
+             allocate (latbaset_p               (numpft)); latbaset_p               (:) = spval
+             allocate (plantdate_p              (numpft)); plantdate_p              (:) = spval
+             allocate (rice_double_p            (numpft)); rice_double_p            (:) = 0._r8
++            allocate (paddy_predrain_p         (numpft)); paddy_predrain_p         (:) = .false.
+ #endif
+ 
+ ! SASU variables
+@@ -2097,6 +2099,7 @@ CONTAINS
+             deallocate (latbaset_p               )
+             deallocate (plantdate_p              )
+             deallocate (rice_double_p            )
++            deallocate (paddy_predrain_p         )
+ #endif
+ 
+ ! SASU variables
+diff --git a/main/BGC/MOD_BGC_Veg_CNPhenology.F90 b/main/BGC/MOD_BGC_Veg_CNPhenology.F90
+index d1b73d55..67054c7d 100644
+--- a/main/BGC/MOD_BGC_Veg_CNPhenology.F90
++++ b/main/BGC/MOD_BGC_Veg_CNPhenology.F90
+@@ -81,7 +81,7 @@ MODULE MOD_BGC_Veg_CNPhenology
+        hui_p             , peaklai_p           , &
+        tref_min_p        , tref_max_p          , tref_min_inst_p     , tref_max_inst_p  , &
+        manunitro_p       , fertnitro_p         , plantdate_p         , fert_p           , &! input from files
+-       rice_double_p     , &
++       rice_double_p     , paddy_predrain_p    , &
+ #endif
+ 
+        leaf_prof_p        , froot_prof_p        , &
+@@ -133,7 +133,7 @@ MODULE MOD_BGC_Veg_CNPhenology
+ 
+    USE MOD_TimeManager
+    USE MOD_Precision
+-   USE MOD_Namelist, only: DEF_USE_FERT, DEF_RICE_GRNFILL
++   USE MOD_Namelist, only: DEF_USE_FERT, DEF_RICE_GRNFILL, DEF_PADDY_DRAIN_DAYS
+    USE MOD_BGC_Daylength, only: daylength
+    USE MOD_SPMD_Task
+ 
+@@ -1027,6 +1027,7 @@ CONTAINS
+    integer ivt
+    logical :: sow_now, end_second
+    real(r8) :: gf      ! grain-fill threshold of this crop (Q-33: rice may take DEF_RICE_GRNFILL)
++   real(r8) :: days_left ! C-47: projected days to harvest
+ 
+     !------------------------------------------------------------------------
+ 
+@@ -1122,6 +1123,17 @@ CONTAINS
+                   idpp = int(dayspyr) + jday - idop_p(m)
+                ENDIF
+ 
++              ! C-47: the pre-harvest drain window of a paddy, from the days
++              ! left to the earlier of maturity (at the season's mean heat-unit
++              ! rate so far) and the maximum season length
++               paddy_predrain_p(m) = .false.
++               IF (DEF_PADDY_DRAIN_DAYS >= 0._r8 .and. (ivt == nrice .or. ivt == nirrig_rice)) THEN
++                  days_left = real(mxmat(ivt) - idpp, r8)
++                  IF (hui_p(m) > 0.05_r8 .and. idpp > 0) &
++                     days_left = min(days_left, real(idpp, r8) * (1._r8 - hui_p(m)) / hui_p(m))
++                  paddy_predrain_p(m) = days_left <= DEF_PADDY_DRAIN_DAYS
++               ENDIF
++
+               ! onset_counter initialized to zero when .not. croplive
+               ! offset_counter relevant only at time step of harvest
+ 
+@@ -1226,6 +1238,7 @@ CONTAINS
+                ENDIF
+ 
+             ELSE   ! crop not live
++               paddy_predrain_p(m) = .false.
+               ! next 2 lines conserve mass IF leaf*_xfer > 0 due to interpinic.
+               ! We subtract from any existing value in crop_seedc_to_leaf /
+               ! crop_seedn_to_leaf in the unlikely event that we enter this block of
+diff --git a/main/MOD_Irrigation.F90 b/main/MOD_Irrigation.F90
+index 70f3a583..33f848e6 100644
+--- a/main/MOD_Irrigation.F90
++++ b/main/MOD_Irrigation.F90
+@@ -7,7 +7,7 @@ MODULE MOD_Irrigation
+    USE MOD_Precision
+    USE MOD_TimeManager
+    USE MOD_Namelist, only: DEF_simulation_time, DEF_IRRIGATION_ALLOCATION, DEF_USE_VariablySaturatedFlow, &
+-       DEF_PADDY_RICE_BUND
++       DEF_PADDY_RICE_BUND, DEF_PADDY_DRAIN_DAYS
+    USE MOD_Const_Physical, only: tfrz, denice, denh2o
+    USE MOD_Const_PFT, only: irrig_crop
+    USE MOD_LandPFT, only : patch_pft_s, patch_pft_e
+@@ -27,7 +27,7 @@ MODULE MOD_Irrigation
+        waterstorage, deficit_irrig, actual_irrig, irrig_gw_alloc, irrig_sw_alloc, zwt_stand, wdsrf
+    USE MOD_Vars_PFTimeInvariants, only: pftclass
+    USE MOD_Vars_PFTimeVariables, only: irrig_method_p
+-   USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p
++   USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p, paddy_predrain_p
+    USE MOD_Vars_1DForcing, only: forc_t, forc_frl, forc_psrf, forc_us, forc_vs
+    USE MOD_Vars_1DFluxes, only: sabg, sabvsun, sabvsha, olrg, fgrnd
+    USE MOD_Hydro_SoilFunction, only: soil_vliq_from_psi
+@@ -332,8 +332,11 @@ CONTAINS
+          ivt = pftclass(m)
+          IF ((ivt >= npcropmin) .and. (irrig_crop(ivt)) .and. &
+             (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m)<irrig_max_cphase) .and. &
+-            ! C-32e: paddies are not irrigated from the start of grain fill
+-            .not. (DEF_PADDY_RICE_BUND .and. irrig_method_p(m) == irrig_method_paddy .and. cphase_p(m) >= 3._r8)) THEN
++            ! C-32e: paddies are not irrigated from the start of grain fill;
++            ! C-47: or, with DEF_PADDY_DRAIN_DAYS set, in the pre-harvest drain window
++            .not. (DEF_PADDY_RICE_BUND .and. irrig_method_p(m) == irrig_method_paddy .and. &
++                   ((DEF_PADDY_DRAIN_DAYS <  0._r8 .and. cphase_p(m) >= 3._r8) .or. &
++                    (DEF_PADDY_DRAIN_DAYS >= 0._r8 .and. paddy_predrain_p(m))))) THEN
+             IF (DEF_simulation_time%greenwich) THEN
+                 CALL gmt2local(idate, dlon, ldate)
+                 seconds_since_irrig_start_time = ldate(3) - irrig_start_time + deltim
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index 1b48898e..b0ccb264 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -2789,16 +2789,23 @@ ENDIF
+    ! DEF_PADDY_RICE_BUND comes from the module header
+    USE MOD_Vars_Global, only: irrig_method_paddy, irrig_min_cphase, irrig_max_cphase
+    USE MOD_Vars_PFTimeVariables, only: irrig_method_p
+-   USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p
++   USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p, paddy_predrain_p
++   USE MOD_Namelist, only: DEF_PADDY_DRAIN_DAYS
+ 
+    IMPLICIT NONE
+    integer, intent(in) :: m
+ 
+       paddy_bunded = (irrig_method_p(m) == irrig_method_paddy)
+       IF (paddy_bunded .and. DEF_PADDY_RICE_BUND) THEN
+-         ! C-32e: the field is drained from the start of grain fill (cphase 3),
+-         ! so it dries in the last two to three weeks before harvest
+-         paddy_bunded = (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m) < 3._r8)
++         IF (DEF_PADDY_DRAIN_DAYS >= 0._r8) THEN
++            ! C-47: drained DEF_PADDY_DRAIN_DAYS before the projected harvest
++            paddy_bunded = (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m) < irrig_max_cphase) &
++                           .and. (.not. paddy_predrain_p(m))
++         ELSE
++            ! C-32e: the field is drained from the start of grain fill (cphase 3),
++            ! so it dries in the last two to three weeks before harvest
++            paddy_bunded = (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m) < 3._r8)
++         ENDIF
+       ENDIF
+ 
+    END FUNCTION paddy_bunded
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index efff32e6..6b675a55 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -439,6 +439,10 @@ MODULE MOD_Namelist
+    ! Q-33 (paper V2): heat-unit index at which rice starts grain fill
+    ! (CLM5 0.40); negative keeps the compiled GPAM value 0.68
+    real(r8) :: DEF_RICE_GRNFILL = -1._r8
++   ! C-47 (paper V2): a paddy is drained this many days before its projected
++   ! harvest (the earlier of maturity at the season's mean heat-unit rate and
++   ! the maximum season length); negative keeps C-32e, drained from grain fill
++   real(r8) :: DEF_PADDY_DRAIN_DAYS = -1._r8
+    ! C-37 (paper V2): share of the net assimilate (available C less growth
+    ! respiration) of live rice (PFT 61, 62) its roots exude; it enters the
+    ! metabolic litter along the fine-root profile. 0 is off.
+@@ -1210,6 +1214,7 @@ CONTAINS
+       DEF_RICE_DOUBLE_SEASON_FILE,            & !C-45 (paper V2)
+       DEF_CROP_FALLOW_NO_LAI,                 & !Q-33 (paper V2)
+       DEF_RICE_GRNFILL,                       & !Q-33 (paper V2)
++      DEF_PADDY_DRAIN_DAYS,                   & !C-47 (paper V2)
+       DEF_RICE_ROOT_EXUDATE,                  & !C-37 (paper V2)
+       DEF_USE_NOSTRESSNITROGEN,               & !add by Hongbin Liang @ sysu
+       DEF_RSTFAC,                             & !add by Hongbin Liang @ sysu
+@@ -1866,6 +1871,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_RICE_DOUBLE_SEASON_FILE            ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_CROP_FALLOW_NO_LAI                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RICE_GRNFILL                       ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_PADDY_DRAIN_DAYS                   ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RICE_ROOT_EXUDATE                  ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_NOSTRESSNITROGEN               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RSTFAC                             ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

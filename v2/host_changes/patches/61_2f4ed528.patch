@@ -1,0 +1,87 @@
+From 2f4ed528c39333c2b8f4fe191a437f589da92409 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Wed, 30 Sep 2026 06:53:52 +0800
+Subject: [PATCH] feat(hydrology): flood re-infiltration takes an upper bound
+ on the flooded fraction (I-28)
+
+MOD_FloodInfiltration gets fld_cap_p, the largest flooded fraction a patch
+may see. When it is allocated, publish_flood_to_soil and
+publish_flood_to_soil_fix bound fld_frc_p by it; the flood depth over the
+flooded part is kept, and the shares by which the routing takes back the
+re-infiltrated water do not depend on it, so the water balance still
+closes. The host never allocates it: the methane module fills it from the
+GLWD floodplain classes (DEF_METHANE%floodplain_glwd_cap_file), so without
+that key this commit changes nothing. Routing storage, discharge and the
+floodplain evaporation (DEF_FLOODPLAIN_EVAP) are left alone.
+
+---
+ main/HYDRO/MOD_Grid_RiverLakeFlow.F90 | 15 +++++++++++++--
+ main/MOD_FloodInfiltration.F90        |  5 +++++
+ 2 files changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/main/HYDRO/MOD_Grid_RiverLakeFlow.F90 b/main/HYDRO/MOD_Grid_RiverLakeFlow.F90
+index cfe3652d..9bc07fae 100644
+--- a/main/HYDRO/MOD_Grid_RiverLakeFlow.F90
++++ b/main/HYDRO/MOD_Grid_RiverLakeFlow.F90
+@@ -2039,7 +2039,7 @@ CONTAINS
+                                         push_ucat2inpm, remap_patch2inpm
+    USE MOD_WorkerPushData, only: worker_push_data, worker_remap_data_grid2pset
+    USE MOD_LandPatch, only: numpatch
+-   USE MOD_FloodInfiltration, only: flood_infil_alloc, fld_frc_p, fld_dph_p
++   USE MOD_FloodInfiltration, only: flood_infil_alloc, fld_frc_p, fld_dph_p, fld_cap_p
+    IMPLICIT NONE
+    real(r8), intent(in) :: total_floodarea_in(:)
+    real(r8), intent(in) :: total_flooddepth_in(:)
+@@ -2069,6 +2069,11 @@ CONTAINS
+          fld_frc_p(i) = frc_p(i)
+          fld_dph_p(i) = 0._r8
+          IF (frc_p(i) > 0._r8) fld_dph_p(i) = max(0._r8, wat_p(i)) / frc_p(i) * 1.e3_r8   ! [mm]
++         ! I-28: the soil floods only up to the bound the land sets; the depth
++         ! over the flooded part stays, the rest of the water stays routed
++         IF (allocated(fld_cap_p)) THEN
++            IF (i <= size(fld_cap_p)) fld_frc_p(i) = min(fld_frc_p(i), fld_cap_p(i))
++         ENDIF
+       ENDDO
+       deallocate (frc_uc, wat_uc, frc_gd, wat_gd, frc_p, wat_p)
+ 
+@@ -2093,7 +2098,7 @@ CONTAINS
+                                  worker_remap_data_pset2grid
+    USE MOD_LandPatch, only: numpatch
+    USE MOD_Vars_TimeInvariants, only: patchtype
+-   USE MOD_FloodInfiltration, only: flood_infil_alloc, fld_frc_p, fld_dph_p
++   USE MOD_FloodInfiltration, only: flood_infil_alloc, fld_frc_p, fld_dph_p, fld_cap_p
+    IMPLICIT NONE
+    real(r8), intent(in) :: total_floodarea_in(:)
+    real(r8), intent(in) :: total_flooddepth_in(:)
+@@ -2191,6 +2196,12 @@ CONTAINS
+          fld_frc_p(i) = frc_p(i)
+          fld_dph_p(i) = 0._r8
+          IF (frc_p(i) > 0._r8) fld_dph_p(i) = max(0._r8, wat_p(i)) / frc_p(i) * 1.e3_r8   ! [mm]
++         ! I-28: bounded as in publish_flood_to_soil; the shares of the water
++         ! offered below do not depend on it, so the routing still takes back
++         ! exactly what the soil re-infiltrates
++         IF (allocated(fld_cap_p)) THEN
++            IF (i <= size(fld_cap_p)) fld_frc_p(i) = min(fld_frc_p(i), fld_cap_p(i))
++         ENDIF
+       ENDDO
+ 
+       ! the water offered per cell and unit catchment, and per patch its cell
+diff --git a/main/MOD_FloodInfiltration.F90 b/main/MOD_FloodInfiltration.F90
+index 432c85ff..427b88c7 100644
+--- a/main/MOD_FloodInfiltration.F90
++++ b/main/MOD_FloodInfiltration.F90
+@@ -15,6 +15,11 @@ MODULE MOD_FloodInfiltration
+    real(r8), allocatable :: fld_frc_p    (:)  ! flooded fraction of the patch [-]
+    real(r8), allocatable :: fld_dph_p    (:)  ! flood water depth over the flooded part [mm]
+    real(r8), allocatable :: fld_qinfl_p  (:)  ! patch-mean re-infiltration of this step [mm/s]
++   ! I-28 (paper V2): largest flooded fraction of the patch the land may see,
++   ! filled by the methane module from the GLWD floodplain classes of its
++   ! cell; the routing bounds fld_frc_p by it where it publishes the flood.
++   ! Not allocated: no bound.
++   real(r8), allocatable :: fld_cap_p    (:)  ! upper bound of fld_frc_p [-]
+ 
+ CONTAINS
+ 
+-- 
+2.53.0
+

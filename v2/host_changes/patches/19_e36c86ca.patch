@@ -1,0 +1,142 @@
+From e36c86ca95340458e7aa92dd09378495546520cb Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Sun, 27 Sep 2026 20:28:56 +0800
+Subject: [PATCH] feat(rice): paddy water from the host: irrigation, bunded
+ rainfed rice, host-flooded CH4 column (C-32)
+
+---
+ main/MOD_Irrigation.F90        |  8 +++++++-
+ main/MOD_SoilSnowHydrology.F90 | 33 +++++++++++++++++++++++++++++----
+ share/MOD_Namelist.F90         |  8 ++++++++
+ 3 files changed, 44 insertions(+), 5 deletions(-)
+
+diff --git a/main/MOD_Irrigation.F90 b/main/MOD_Irrigation.F90
+index d5ce3284..77852b5f 100644
+--- a/main/MOD_Irrigation.F90
++++ b/main/MOD_Irrigation.F90
+@@ -6,7 +6,8 @@ MODULE MOD_Irrigation
+ !      This MODULE has all irrigation related subroutines for irrigated crop at either IGBP/USGS or PFT Land type classification and even in the C and N cycle.
+    USE MOD_Precision
+    USE MOD_TimeManager
+-   USE MOD_Namelist, only: DEF_simulation_time, DEF_IRRIGATION_ALLOCATION, DEF_USE_VariablySaturatedFlow
++   USE MOD_Namelist, only: DEF_simulation_time, DEF_IRRIGATION_ALLOCATION, DEF_USE_VariablySaturatedFlow, &
++       DEF_PADDY_RICE_BUND
+    USE MOD_Const_Physical, only: tfrz, denice, denh2o
+    USE MOD_Const_PFT, only: irrig_crop
+    USE MOD_LandPFT, only : patch_pft_s, patch_pft_e
+@@ -297,6 +298,11 @@ CONTAINS
+          IF ((ivt == 62) .and. (irrig_method_p(m) == irrig_method_flood)) THEN
+             irrig_method_p(m) = irrig_method_paddy
+          ENDIF
++         ! C-32: rainfed lowland rice is bunded too; irrig_crop(61) is false, so
++         ! the paddy method gives it the bunds but no irrigation water.
++         IF (DEF_PADDY_RICE_BUND .and. (ivt == 61) .and. (irrig_method_p(m) == irrig_method_flood)) THEN
++            irrig_method_p(m) = irrig_method_paddy
++         ENDIF
+       ENDDO
+ 
+       DO m = ps, pe
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index f53709b2..a40ded79 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -364,7 +364,7 @@ IF(patchtype<=1)THEN   ! soil ground only
+             ps = patch_pft_s(ipatch)
+             pe = patch_pft_e(ipatch)
+             DO m = ps, pe
+-               IF(irrig_method_p(m) == irrig_method_paddy)THEN
++               IF(paddy_bunded(m))THEN
+                   wdsrf = rsur*deltim
+                   rsur = 0.
+                   IF(wdsrf.gt.pondmxc)THEN
+@@ -1029,7 +1029,7 @@ IF((patchtype<=1) .or. is_dry_lake &
+             ps = patch_pft_s(ipatch)
+             pe = patch_pft_e(ipatch)
+             DO m = ps, pe
+-               IF(irrig_method_p(m).eq.irrig_method_paddy)THEN
++               IF(paddy_bunded(m))THEN
+                   rsur = 0
+                ENDIF
+             ENDDO
+@@ -1282,11 +1282,11 @@ ENDIF
+          ps = patch_pft_s(ipatch)
+          pe = patch_pft_e(ipatch)
+          DO m = ps, pe
+-            IF(irrig_method_p(m).eq.irrig_method_paddy .AND. wdsrf.gt.pondmxc)THEN
++            IF(paddy_bunded(m) .AND. wdsrf.gt.pondmxc)THEN
+                rsur = rsur + (wdsrf - pondmxc)/deltim
+                rsur_ie = rsur_ie + (wdsrf - pondmxc) / deltim
+                wdsrf = pondmxc
+-            ELSEIF(irrig_method_p(m).ne.irrig_method_paddy .AND. wdsrf.gt.pondmx)THEN
++            ELSEIF(.not. paddy_bunded(m) .AND. wdsrf.gt.pondmx)THEN
+                rsur = rsur + (wdsrf - pondmx) / deltim
+                rsur_ie = rsur_ie + (wdsrf - pondmx) / deltim
+                wdsrf = pondmx
+@@ -2751,6 +2751,31 @@ ENDIF
+ 
+    END SUBROUTINE groundwater
+ 
++#ifdef CROP
++   !-----------------------------------------------------------------------
++   ! A paddy holds surface water behind its bunds (no surface runoff, ponding
++   ! up to pondmxc). Upstream: every pft with the paddy method, all year.
++   ! C-32 (DEF_PADDY_RICE_BUND): only from planting to harvest, the season
++   ! the irrigation module waters (irrig_min_cphase <= cphase < irrig_max_cphase);
++   ! after harvest the field drains like any other soil column.
++   !-----------------------------------------------------------------------
++   logical FUNCTION paddy_bunded(m)
++
++   USE MOD_Namelist, only: DEF_PADDY_RICE_BUND
++   USE MOD_Vars_Global, only: irrig_method_paddy, irrig_min_cphase, irrig_max_cphase
++   USE MOD_Vars_PFTimeVariables, only: irrig_method_p
++   USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p
++
++   IMPLICIT NONE
++   integer, intent(in) :: m
++
++      paddy_bunded = (irrig_method_p(m) == irrig_method_paddy)
++      IF (paddy_bunded .and. DEF_PADDY_RICE_BUND) THEN
++         paddy_bunded = (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m) < irrig_max_cphase)
++      ENDIF
++
++   END FUNCTION paddy_bunded
++#endif
+ 
+ END MODULE MOD_SoilSnowHydrology
+ ! ---------- EOP ------------
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 4ab0d941..b2aa3f07 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -416,6 +416,12 @@ MODULE MOD_Namelist
+ 
+    logical :: DEF_USE_IRRIGATION        = .false. ! use irrigation
+    integer :: DEF_IRRIGATION_ALLOCATION = 1       ! irrigation allocated method
++   ! C-32 (paper V2): bunded paddies. .true. gives rainfed rice (PFT 61) the
++   ! bunds of the flood-managed rice (surface water held up to pondmxc, no
++   ! surface runoff) without irrigation, and holds water behind the bunds of
++   ! any paddy only from planting to harvest (cphase 1-4). Needs
++   ! DEF_USE_IRRIGATION (the paddy method is set in MOD_Irrigation).
++   logical :: DEF_PADDY_RICE_BUND       = .false.
+ 
+    logical :: DEF_USE_NOSTRESSNITROGEN  = .false. ! photosynthesis stress option
+    integer :: DEF_RSTFAC                = 1       ! root resistance factors option
+@@ -1179,6 +1185,7 @@ CONTAINS
+       DEF_USE_LAIFEEDBACK,                    & !add by Xingjie Lu, use for updating LAI with leaf carbon
+       DEF_USE_IRRIGATION,                     & !add by Hongbin Liang @ sysu
+       DEF_IRRIGATION_ALLOCATION,              & !add by Hongbin Liang @ sysu
++      DEF_PADDY_RICE_BUND,                    & !C-32 (paper V2)
+       DEF_USE_NOSTRESSNITROGEN,               & !add by Hongbin Liang @ sysu
+       DEF_RSTFAC,                             & !add by Hongbin Liang @ sysu
+       DEF_LC_YEAR,                            &
+@@ -1828,6 +1835,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_USE_IRRIGATION                     ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_IRRIGATION_ALLOCATION              ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_PADDY_RICE_BUND                    ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_NOSTRESSNITROGEN               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RSTFAC                             ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+ 
+-- 
+2.53.0
+

@@ -1,0 +1,344 @@
+# lit_ph_response_260929：产甲烷的 pH 响应——Dunfield 式有多可信、酸性泥炭端怎么取、模式该怎么用
+
+- **日期**：2026.09.29-14:26
+- **读者**：下一会话
+- **来源**：文献线只读调研（中控派活），承接 `v2/results/lit_tropical_mech_260929.txt`、`v2/results/diag_swamp_260929.txt` 第 4 节、`v2/results/lit_bog_fen_wtd_260929.txt` 第 2 节，稻田 pH 承接 `v2/results/lit_models_rice_260929.txt` 第 2.10、5.1 节；读码取本树 8adc1243 与 `~/mode/Wetland/CTSM`（7409d321）；自算脚本与输出在 scratchpad `lit_ph/`（下称 scratchpad）
+- **状态**：第 0 至 9 节成文；推荐与候选式只到依据、式子、参数与预期方向，未动代码与配置；全球量级待 V-116
+- **失效于**：V-116（全球关 pH 因子）出结果后，第 7.4 节的方向估计以实跑为准
+
+口径约定：
+- D(pH) 指本模式现用的 pH 因子，即 10^(−0.2235 pH² + 2.7727 pH − 8.6) 除以其在 pH 6.2 的值、再夹到 [0, 1]（`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90:2435–2436`）。常用值：D(2.5) 0.0009、D(2.9) 0.0036、D(3.4) 0.0175、D(3.5) 0.023、D(3.8) 0.051、D(4.0) 0.082、D(4.3) 0.155、D(4.5) 0.225、D(5.0) 0.475、D(5.5) 0.776、D(6.2) 1、D(7.0) 0.72、D(7.8) 0.27——已验证（scratchpad `ph_calc.out`）。
+- "急性响应"指把泥浆人为调到某个 pH 后几天到几周内的产率变化；"原生"指不调 pH、样品在自身 pH 下的产率。
+- "效率"指 CH4/(CO2 + CH4) 的产量比。本模式 P = HR × f × f_pH，HR 不随 pH 变，所以与 f × f_pH 对应的实测量是效率，不是总产率——推测。理由：酸性下 CO2 产量也降（Ye 2012 p.40–41），总产率的 pH 响应里有一部分属于分解，本模式的 HR 不含这一项，若把总产率响应整个放进 f_pH，会与 HR 的实测标定重复。
+- "全文"指读了原文并给页码、表号或图号；"摘要"指只读到摘要；"转引"指取自另一篇或兄弟报告；"数据"指直接读数据集自算；"WebFetch 摘原句"指经 WebFetch 从网页全文摘出的原句，未对印刷版逐字核对。
+
+## 0. 覆盖面
+
+1. 检索词：Dunfield 1993 pH peat methane；pH optimum native pH peat methanogenesis；acidophilic / acidiphilic methanogen；Methanoregula boonei；Methanobacterium acidophilic West Siberian bog；moderately acid-tolerant methanogens；Ye 2012 pH ombrotrophic minerotrophic；soil pH methane emission synthesis / meta-analysis；FLUXNET-CH4 upscaling predictors soil pH；methane model pH response native pH acclimation；Williams Crawford 1984 pH；Bergman 1998 Swedish acid mire pH；Sizova 2003 acido-tolerant consortia；Wang 1993 rice soil pH；本地全文检索正则 `\bpH\b`。
+2. 渠道：
+   - 本地全文：`data/_tmp/分析_260925_模拟年份/txt/{models,reviews,observations,data}` 全部 txt（按 `\bpH\b` 计数：模式类 124 个文件中 63 个命中、综述类 35 中 24、观测类 18 中 9、数据类 17 中 2；模式类 63 个全部列出命中行，命中 3 处以上的逐个读上下文，命中 1–2 处的按命中行判定为参考文献题名、湖泊或旱地汇、硝化或一般性提及，处置见第 5 节表与表后第 4 条；综述与观测类只读与本题相关的 Segers 1998、Le Mer and Roger 2001、Olefeldt 2013、Turetsky 2014、Dunfield 1993）；`docs/refs/observations/1993_Dunfield_peat_ch4_temperature_pH.pdf`（按 260–300 dpi 读图 5、图 6）；兄弟会话 scratchpad 里已取得的 Ye 2012（Wayback 版 PDF）、Treat 2015、Treat 2018 接受稿与 PANGAEA 数据、Bridgham 2013、Abdalla 2016、Kuhn 2021、刚果 Girkin 2026 抽取文本；`scripts/sites/site_facts.csv`、`data/_tmp/分析_260828_pH两图对比/ph_77sites.csv`、`docs/work/sources/调研_260828_站点pH.md`；`~/data/methane/BAWLD-CH4/BAWLD_CH4_Terrestrial.csv`。
+   - 网络：只用 WebFetch 与 WebSearch；Crossref、DataCite、Europe PMC、Semantic Scholar 的公开接口均匿名请求，URL 与参数不含邮箱或任何个人信息；未在 mgt01 上下载。
+   - 兄弟报告：`lit_tropical_mech_260929.txt`、`diag_swamp_260929.txt`、`lit_bog_fen_wtd_260929.txt`、`lit_models_rice_260929.txt` 全文读过，已有结论只引节号。
+3. 读到全文的篇目：Dunfield 1993（本地 PDF，含图 5、6 读图）、Meng 2012、Riley 2011（pH 相关各段）、Ye 2012、Horn 2003（WebFetch 取得的出版社 PDF，p.74–82 逐页读）、Kotsyurbenko 2007（PMC 全文，WebFetch 摘原句）、Treat 2015（早期在线版，结果与表 4）、Treat 2018（接受稿方法段）、Abdalla 2016、Olefeldt 2013（结果段与图 2）、Kuhn 2021（结果段与图 7）、Bridgham 2013（p.1335、p.1339–1340）、Segers 1998（pH 段）、Le Mer and Roger 2001（第 5.1.4 节）、McNicol 2023（PDF 文本检索 p.8、p.12）、Chen 2024（PMC 全文，WebFetch 摘原句）、Girkin 2026（兄弟会话抽取文本 p.9–12）、模式文献 Zhuang 2004 附录 A2、Tian 2010 式 11、Zhu 2014 式 6、Walter and Heimann 2000 p.748、van Huissteden 2006 p.8、Müller 2015 式 A8、Xu 2015、Zheng 2019 p.663–664、Gedney 2019、Ringeval 2010、Wania 2010、Zhang 2016（LPJ-wsl）、Spahni 2011、Arora 2018、Ito 2019（后七篇只做 pH 全文检索）；CTSM 源码、namelist 定义与技术手册甲烷章；本树甲烷 pH 相关源码。
+4. 只读摘要的篇目：Kotsyurbenko 2004（Crossref 摘要）、Bräuer 2006（Europe PMC 摘要）、Bräuer 2011（Europe PMC 摘要）、Williams and Crawford 1984、1985（Crossref 摘要）、Valentine 1994（Crossref 摘要）、Wang 1993（Crossref 摘要）、Sizova 2003（只见检索结果转述，未见摘要原文）。
+5. 读不到的与已试路径：Bergman 1998（ScienceDirect 403；Crossref 与 Semantic Scholar 无摘要）；Horn 2003 的 PMC 页（验证码页，改从 d-nb.info 取到出版社 PDF）；Bräuer 2011 的 IJSEM 页（403，改用 Europe PMC 摘要）；Europe PMC 对 Sizova 2003、Kotsyurbenko 2004、Williams and Crawford 1984 返回 503（后两篇改用 Crossref 摘要）；McNicol 2023 补充材料的 140 个候选预测量清单（未取，正文只写"soil physical and chemical properties (e.g., clay content)"）；Treat 2015 正刊页码未与早期在线版对照；Lippmann 2026（PeatlandVU v3）补充材料 SB5.4 的 pH 式未取。
+6. 数据与读码（自算，脚本与输出见 scratchpad）：Treat 2018 PANGAEA 数据集与 BAWLD-CH4 陆地表的 pH 回归与分档（`ph_field.py`）；D 值、他模式函数值、Dunfield 图 5 读图点与拟合式对照（`ph_calc.py`）；14 座酸性泥炭与沼泽林塔在各 pH 方案下的离线 β 外推（`ph_sites.py`、`ph_spread.py`）；读码 `main/TRACER/MOD_Tracer_Reactive_Methane_{Physics,Const,pH,BgcLink}.F90`、`mksrfdata/Aggregation_MethanePH.F90`、CTSM `src/biogeochem/ch4Mod.F90`、`ch4varcon.F90`、`bld/namelist_files/namelist_definition_ctsm.xml`、`doc/source/tech_note/Methane/CLM50_Tech_Note_Methane.rst`。
+7. 未看：无。不入项及理由：iMAPLE、IBIS-CH4、M3D-DAMM 三个模式的 pH 函数都注明取自 TRIPLEX-GHG 或 Cao 型（本地全文命中行），不单列；Knox 2021 等 FLUXNET-CH4 站内时序驱动分析不含跨站 pH，不入项；ELM 与 CLM 同源、任务未点名，不入项。
+8. 存疑（要跑实验才能定）：见第 8 节，共三项。
+
+## 1. 结论
+
+1. 模式里的式子不是 Dunfield 等给的，是 Meng 2012 用 Dunfield 等 5 个温带与亚北极泥炭的"缓冲液急性调 pH"培养数据拟合的；原文只报图，没有函数，Meng 2012 也没写拟合做法，印刷的系数 0.2335 与代码 0.2235 不一致——已验证（读全文 Dunfield 1993 p.322、p.324 图 5；Meng 2012 p.2795 式 2）。
+2. 这条式子描述的是"一个群落被突然推离自身 pH 时掉多少"，模式却拿它当"原生 pH 不同的湿地之间差多少"用：Dunfield 自己的数据里，各泥炭在原生 pH 下的产率是自身最大值的 0.55–0.8 倍，最酸的 KLTS（原生 pH 约 3.6）不调 pH 时约 0.8 倍，而同一泥炭用缓冲液调到 3.5 时为 0——已验证（读 Dunfield 1993 图 5 p.324，读图约值）。
+3. 拟合式连它自己的数据源都没描述好：pH 4.3 处 B1、F1、KLTS 三个样品的相对产率为 0.55–0.62，拟合值 0.155，低 4 倍——已验证（读 Dunfield 1993 图 5 p.324，读图约值；scratchpad `ph_calc.out`）。
+4. 独立培养给出的酸性端响应比 D 平 4–16 倍：Ye 2012 六处泥炭的效率在 pH 3.5 为 pH 5.5 时的 0.23–0.49 倍（D 给 0.03）；Kotsyurbenko 2007 西西伯利亚 bog 的产率在 pH 3.8 为 pH 6.0 时的 0.29–0.42 倍（D 给 0.05）；Horn 2003 的 pH 4.4 泥炭富集物在 pH 4.5 与 6.5 产率相同——已验证（Ye 2012 图 5 p.42 读图；Kotsyurbenko 2007 PMC 全文 WebFetch 摘原句；Horn 2003 p.80 图 4、p.81–82）。
+5. 酸性泥炭的产甲烷群落是适应过的但没有完全适应：嗜酸菌株的最适 pH 在 5.0–5.5（Methanoregula boonei 约 5.1，西西伯利亚 Methanobacterium 5.0–5.5），仍比原生 pH 高 1 个单位左右；敏感性没有消失，只是变平——已验证（Bräuer 2011 摘要；Kotsyurbenko 2007 PMC 全文 WebFetch 摘原句；Dunfield 1993 p.324–325 图 6）。
+6. 田间多站综合里，水位与类型进模型之后 pH 没有解释力：Treat 2018 数据集 pH 系数由 0.078 变为 −0.003（p 0.93），BAWLD-CH4 由 0.071 变为 0.005（p 0.82）；水位在地表 10 cm 以内的站，pH ≤ 4.0 的排放中位与 pH > 6 的相当；Olefeldt 2013、Kuhn 2021 的连续变量里 pH 都不显著——已验证（数据自算 `ph_field.out`；Olefeldt 2013 p.593；Kuhn 2021 p.5167）。只有 Abdalla 2016 报 pH 显著，108 站里只有 36 站有 pH（混合模型 30 个观测）、其余靠插补，作者自己提示实验室 pH 与田间 pH 可能不同——已验证（读全文 Abdalla 2016 p.7083、p.7084、p.7089）。
+7. 热带酸性泥炭照样高排放：秘鲁矮林泥炭扩散通量 11.5 g C m−2 yr−1——已验证（转引 `lit_tropical_mech_260929.txt` 第 2 节）；其 pH 在 2.5–2.9，D 在此给 0.0009–0.0036——推测。理由：pH 来自该报告第 1b 节标为推测的 Finn 2020 摘取。MY-MLM 按实测 pH 3.4 走 D，排放会压到塔上的约十分之一——已验证（转引 `diag_swamp_260929.txt` 第 4 节）。
+8. 多数全球湿地甲烷模式不设 pH 项（LPJ 系、LPX-Bern、VISIT、CLASS-CTEM、ORCHIDEE、JULES），CLM4Me 原版取 1，CTSM 默认关并标"EXPERIMENTAL, UNSUPPORTED, and UNTESTED"；设 pH 项的 TEM、DLEM、TRIPLEX-GHG 在低 pH 端比 D 更陡（pH < 5.5 或 ≤ 4 直接为 0）；只有 PeatlandVU 用 Dunfield 数据推了一条平得多的线性式——已验证（见第 5 节表内各条出处）。本次没见到"只对短期 pH 变化敏感、对长期适应的酸性泥炭不敏感"的写法——推测。理由：检索词见第 0 节第 1 条，命中的动态 pH 模式（Xu 2015、Zheng 2019）模拟的是 pH 随乙酸与还原的变化，最适值仍固定。
+9. 本模式口径不一：站点 pH 恒为 6.2（因子 1），全球按 GSDE 表层 pH；GSDE 与塔实测差 −1.0 到 +2.2 个单位，而 D 在 pH 4.3 附近每差 1 个单位产量差约 7 倍；mksrf 按氢离子活度平均斑块 pH，偏向最酸像元——已验证（读码与计算，见第 6 节）。
+10. 用 77 塔现基线反推：若站点按实测 pH 走 D，北方 bog 类中位 β 由 0.97 降到 0.23、fen 由 0.70 降到 0.32；能"改善"的只有本来就偏高的 MY-MLM、US-NC4、DE-SfN、FR-LGt；去掉两座沼泽林塔后，pH 因子对站间离散没有帮助——推测。理由：离线外推，按 f 的 1.17 次方（V-49 经验）折排放，详见第 7.2 节。
+11. 推荐：全球关 pH 因子（`usephfact = .false.`，与站点口径一致，也是 CLM 默认）；不用 pH 去压热带泥炭，热带偏高按水位零点、根际氧化与热带泥炭产率去治；如需保留一个弱的酸限制作敏感性，用第 7.3 节的下限式 f_pH = φ + (1 − φ)·D(pH)，φ 取 0.4（0.3–0.5），默认 φ = 0 即与现码逐位相同——推测。理由：第 2 至 7 节。
+
+## 2. Dunfield et al. 1993 原文（问题 1）
+
+### 2.1 样品与做法
+
+1. 五个样品：B1 为南安大略 Dorset 的 bog（泥炭藓加灌木），F1 为同区 fen（莎草），KLTS 为哈德逊湾低地 Moosonee 的泥炭藓洼地，CF 为同区莎草 fen，MSH 为魁北克 Mont St Hilaire 的有林沼泽（Betula alleghaniensis、Tsuga canadensis）；取样深度 0–10 与 10–20 cm，产甲烷的 pH 试验除 CF 用 10–20 cm 外都用 0–10 cm——已验证（读全文 p.321 Materials and Methods；p.324 图 5 图注）。
+2. 做法：泥浆加柠檬酸-磷酸缓冲液调到 pH 3.5、4、5、6、7、8（部分另用磷酸缓冲液 5、6、7；MSH 只用磷酸缓冲液 5–8），抽真空换 N2，15 °C 静置，取 3–9 天的速率；实验结束时复测 pH，图上横坐标为起止 pH 的平均——已验证（读全文 p.322 pH responses 段；p.324 图 5 图注）。
+3. 试的 pH 范围 3.5–8.0——已验证（读全文 p.321 摘要）。
+4. 缓冲液本身会改变结果：MSH 加柠檬酸后产率升 40–50 倍（柠檬酸发酵产 H2），所以 MSH 只用磷酸缓冲液；"The effects of citrate and phosphate were small (except for KLTS) as indicated by the agreement with unbuffered control flasks"——已验证（读全文 p.323 右栏、p.324 左栏）。
+
+### 2.2 最适 pH 与原生 pH（图 6）
+
+1. 产甲烷的最适 pH 与原生 pH 五对（读图约值）：原生 3.7 → 最适 5.5；4.8 → 5.9；4.9 → 5.55；5.6 → 6.8；6.1 → 7.0。即最适 5.5–7.0，比原生高 0.65–1.8 个单位——已验证（读全文 p.325 图 6，读图约值）。
+2. 原文："Both processes showed optimum pH values which were about 2 pH units higher than the native peat pH in acidic peats and only 0-1 pH unit higher in the more alkaline peats"；结果段写"This indicates some partial adaptation to acidity of the microflora"——已验证（读全文 p.321 摘要；p.324 左栏）。
+3. 五个样品的最大产率相差近千倍：B1 约 350、F1 约 150、CF 约 35、KLTS 约 2、MSH 约 0.4 nmol g−1 d−1，与原生 pH 不成单调关系（最低的是原生 pH 约 6.0 的 MSH）——已验证（读全文 p.324 图 5，读图约值）。样本只有 5 个，只能说原文数据里看不出"越酸越低"的站间规律——推测。
+
+### 2.3 低 pH 端的数据点（图 5，产甲烷，读图约值，相对各样品最大值）
+
+| 样品 | 原生 pH（图 5 标记） | pH 3.5–3.6 | pH 4.0–4.3 | 原生 pH 下（不调 pH 的对照） | D 在同 pH 的值 |
+| --- | --- | --- | --- | --- | --- |
+| B1 | 约 5.0 | 0.03–0.12 | 0.59（pH 4.3） | 0.55–0.70 | D(3.6) 0.031、D(4.3) 0.155、D(5.0) 0.475 |
+| F1 | 约 5.1（箭头） | 0.03–0.08 | 0.55（pH 4.3） | 无对照瓶；pH 5.3 处 0.77–0.95 | D(5.1) 0.535 |
+| CF（10–20 cm） | 约 5.5 | 未测 | 0（pH 4.05） | 约 0.65 | D(4.05) 0.092、D(5.5) 0.776 |
+| KLTS | 约 3.6 | 0（pH 3.5） | 0.62（pH 4.3） | 约 0.8（pH 3.6） | D(3.5) 0.023 |
+| MSH | 约 6.0 | 未测（只到 5.1） | 未测 | 约 0.23 | D(6.0) 0.98 |
+
+1. 上表——已验证（读全文 p.324 图 5，260 dpi 放大读图约值；D 值见 scratchpad `ph_calc.out`）。
+2. 读法：pH 3.5–3.6 的急性点在 0–0.12，拟合式在此 0.02–0.03，量级相当；pH 4.0–4.3 的急性点三个样品为 0.55–0.62，拟合式 0.155，低约 4 倍；原生 pH 下的对照在 0.55–0.8，与原生 pH 3.6 到 5.5 无关——已验证（同上表）。拟合式用一条对数抛物线去描一个"3.6 到 4.3 之间的陡坎加 4.3 到 6 的平台"，在 4–5 之间系统偏低——推测。理由：上表各点与 D 的逐点比较。
+3. 最酸的样品 KLTS 正好是缓冲液与不调 pH 对照不一致的那个（第 2.1 节第 4 条），而拟合式的酸性端就由这类缓冲点定——已验证（读全文 p.323–324）。
+
+### 2.4 原文对田间外推的态度
+
+1. 引言把 pH 列为未来景观模式可能纳入的因子："Examples of such potentially important factors which might be included in future landscape models are environmental temperature and pH values"——已验证（读全文 p.321 引言）。
+2. 原文没有给任何函数或拟合式，只给图 5、图 6——已验证（读全文 p.321–326）。
+3. 讨论对田间保留：bog 的低排放"may be related to their extreme acidity (pH 3-4)"，但紧接着说低水位与好氧表层也会降排放，并举反例"very high fluxes of CH4 were observed from an acid (pH 3.5-5.0), continuously saturated, subarctic fen (Moore et al., 1990)"——已验证（读全文 p.325 右栏）。
+4. 原文还提出低 pH 的效应可能作用在产 H2 的发酵菌而不是产甲烷菌本身："it could also be due to the effect of acidity on H2 production in the peat"——已验证（读全文 p.325 右栏）。
+5. 小结：原文设想过把 pH 放进景观模式，但没给函数，并在讨论里点出了水位混杂与酸性饱和 fen 高排放的反例；把急性调 pH 曲线直接当作跨站因子不是原文的做法——推测。理由：以上四条。
+
+### 2.5 Meng 2012 的拟合与使用
+
+1. 原文："We used the data from Dunfield et al. (1993) to develop a new soil pH function (fpH)"，式 2 印作 10^(−0.2335 pH² + 2.7727 pH − 8.6)，"The maximum methane production occurs at pH ~ 6.2"；没有给所用数据点、归一方法与拟合统计——已验证（读全文 p.2795）。
+2. 系数：按印刷的 0.2335，顶点在 pH 5.94、顶点值 0.43；按 0.2235，顶点 6.20、值 0.9986，与"最大在 6.2"一致；CTSM 与本模式都用 0.2235，Müller 2015 式 A8 照印 0.2335——已验证（scratchpad `ph_calc.out`；读码 CTSM `ch4Mod.F90:2600`、本树 `Physics.F90:2146、2435`；读全文 Müller 2015 式 A8）。印刷版 0.2335 是笔误——推测。理由：只有 0.2235 与原文"最大在 6.2"自洽。
+3. Meng 给的理由是"it allows for small but finite methane production at acidic pH"，并引北方 bog pH 4.0 仍产甲烷——已验证（读全文 p.2795）。
+4. 支撑证据是三个酸性站：印尼 Central Kalimantan（2.33 S、113.92 E，pH 4.0，Jauhiainen 2005）不加 pH 因子时模拟 > 300 mg CH4 m−2 d−1，实测约 10，RMSE 411.26 → 28.97；Minnesota（pH 4.6）162.43 → 27.92；Minnesota 与 Michigan 去掉 pH 排放升 4–5 倍——已验证（读全文 p.2802 表 2、表 3；p.2802–2803 第 4.3 节）。
+5. 这个印尼站与本项目 ID-Pag 塔（−2.32、113.90）相距约 2.5 km——已验证（Meng 2012 表 2 p.2802；`ph_77sites.csv`）。即 CLM4Me′ 引入 pH 因子的主要实证，是在同一块热带泥炭上把一个 30 倍以上的高估压下来；本项目诊断把 ID-Pag 的 1700 倍高估大部分归到水位、根际氧化与产率结构，pH 只能解释约 100 倍——已验证（`diag_swamp_260929.txt` 第 1 节 ID-Pag 条）。
+6. 全球：Meng 2012 的 NopH 情景比基准多 100 Tg CH4 yr−1（245 → 346，+41%），约 70% 的差在热带——已验证（读全文 p.2805、p.2810 表 7）。Meng 2012 附录 A 比了 IGBP 土壤 pH 与站点湿地 pH：r 0.69、RMSE 1.07——已验证（读全文 p.2813）。
+
+## 3. 其他培养证据与产甲烷菌的酸适应（问题 2 前半）
+
+### 3.1 Ye et al. 2012（密歇根六处，统一调 pH 的对照）
+
+1. 样品：bog 1（原生 pH 3.7）、bog 2（4.1）、acidic fen（4.1）、intermediate fen（4.5）、rich fen（5.9）、cedar swamp（6.0）；水位以下 15 cm 内取芯；泥浆用 HCl 或 NaOH 调到 3.5、4.5、5.5、6.5，前 7 天每天复调，17 °C 厌氧 43 天——已验证（读全文 p.37–38 第 2.1、2.2 节；p.39 表 1）。
+2. 总产甲烷（第 15 天，图 4c，μmol CH4 g−1 d−1，读图约值；pH 3.5 / 4.5 / 5.5 / 6.5）：bog 1 0.12 / 0.15 / 0.40 / 0.80；bog 2 0.07 / 0.06 / 0.09 / 0.12；acidic fen 0.20 / 0.42 / 0.87 / 1.02；intermediate fen 0.25 / 0.45 / 1.22 / 1.82；rich fen 0.10 / 0.58 / 2.03 / 1.42；cedar swamp 0.05 / 0.15 / 1.02 / 0.93——已验证（读全文 p.41 图 4c，读图约值）。
+3. 效率（图 5，全程平均，%；pH 3.5 / 4.5 / 5.5 / 6.5）：bog 1 3.8 / 6.2 / 7.7 / 6.0；bog 2 1.5 / 2.1 / 3.3 / 2.1；acidic fen 4.8 / 9.4 / 10.9 / 9.9；intermediate fen 6.3 / 12.4 / 16.8 / 12.5；rich fen 5.3 / 17.2 / 23.1 / 17.7；cedar swamp 3.4 / 8.2 / 13.8 / 11.1。效率在 pH 5.5 最高，"regardless of the site"——已验证（读全文 p.42 图 5，读图约值；p.41 第 3.3 节原句）。
+4. 急性响应的强度：效率在 pH 3.5 为 pH 5.5 时的 0.23（rich fen）到 0.49（bog 1），同比 D 为 0.030，即 D 陡 8–16 倍；总产率在 pH 3.5 为最大值的 0.05（rich fen、cedar swamp）到 0.15–0.20（bog 1、acidic fen）——已验证（上两条算术；D 比值见 `ph_calc.out`）。
+5. 响应不对称：把原生 3.7 的 bog 1 升 2–3 个单位，产甲烷"up to 697% increase"；把原生 6.0 的 cedar swamp 降 2–3 个单位，"suppressed CH4 production potentials by up to 2105%"——已验证（读全文 p.45 第 4.3 节）。即中性群落被酸化时掉得远比酸性群落被中和时涨得多——推测。理由：同一条原句与第 2 条的读图值。
+6. 本地 pH 与统一 pH 5.5 的对比：按原生 pH 附近的水平，bog 1 的效率约 3.8%，rich fen 约 20%（差约 5 倍）；统一到 pH 5.5 后仍为 7.7% 对 23.1%（差 3 倍），bog 2 为 3.3%（差 7 倍）；总产率统一到 5.5 后 bog 与 rich fen 仍差 5–22 倍——已验证（读全文 p.41 图 4c、p.42 图 5，读图约值；与 `lit_bog_fen_wtd_260929.txt` 第 2.2 节第 5 条一致）。原文结论："low pH is an important control ... but other factors are of at least equal importance in explaining low rates of CH4 production and low CH4 production efficiency in ombrotrophic peatlands"，并推测泥炭藓来源的腐殖类物质抑制——已验证（读全文 p.42 第 4 节首段；p.45 第 4.3 节）。
+7. 与本模式 f × D 对照（f = 0.2）：原生 pH 下效率 bog 1 约 3.8% 对 0.2 × D(3.7) = 0.8%；acidic fen 约 7% 对 2.1%；intermediate fen 12.4% 对 4.5%；rich fen 约 20% 对 19%；cedar swamp 约 12% 对 19.6%——已验证（上文读图值与 D 值算术）。即在同一套泥炭里，D 能对上近中性的 rich fen，在 pH 3.7–4.5 的三处把效率压低 3–5 倍——推测。理由：同上；f = 0.2 本身无培养出处（`lit_tropical_mech_260929.txt` 第 4 节第 4 条），此处只比形状。
+8. 原文对外推的提醒："extrapolation of rates to in situ conditions should be done with extreme caution, and even more so in an experiment where something as fundamental as pH is changed"——已验证（读全文 p.42 第 4 节首段）。
+
+### 3.2 Kotsyurbenko et al. 2004、2007（西西伯利亚 Bakchar bog）
+
+1. 2004：站点 pH 4.2–4.8；水位以下 30–50 cm 的厌氧群落产甲烷最适为 20–25 °C、pH 5.0–5.5——已验证（Crossref 摘要，WebFetch 摘原句）。
+2. 2007：泥炭 pH 3.5–5.5，采样点 4.8；用 HCl 或 NaOH 调到 3.8、4.8、6.0；产率（nmol L−1 h−1）25 °C 为 18 ± 6、38 ± 10、62 ± 17，15 °C 为 14 ± 5、26 ± 7、33 ± 9；pH 3.8 且低温时 H2 途径占 > 92%；分离到的嗜酸 Methanobacterium 在 pH 3.8–6.0 产甲烷，最大在 pH 5.0–5.5——已验证（PMC 全文，WebFetch 摘原句；页码未取）。
+3. 急性响应强度：pH 3.8 对 6.0 为 0.29（25 °C）与 0.42（15 °C），D 为 0.052；pH 4.8 对 6.0 为 0.61 与 0.79，D 为 0.37——已验证（上条算术；`ph_calc.out`）。
+
+### 3.3 Horn et al. 2003（德国 Fichtelgebirge 林地酸性 bog）
+
+1. 泥炭 pH 4.4 ± 0.2；原位排放 1.3 mmol CH4 m−2 d−1；在原位 pH（4.3–4.5）下的厌氧微宇宙产甲烷 0.36–1.71 μmol g−1 d−1——已验证（读全文 p.74 摘要、p.76 结果）。
+2. 富集培养的产甲烷在 pH 4.5 与 6.5 相同；原文："The in situ emission of CH4 from the bog at pH 4.3 to 4.5 ... demonstrated that the methanogens of this bog are functional under these acidic conditions. Indeed, an increase in pH from 4.5 to 6.5 did not result in higher rates of CH4 production by methanogenic enrichments (Fig. 4). In contrast, methanogens obtained from other peats or acidic bog sediments are significantly stimulated by neutral pH"——已验证（读全文 p.80 图 4；p.81–82）。
+3. 低 pH 的一条具体机理：乙酸等挥发性脂肪酸在 pKa 4.7 以下以非解离态进入细胞，"Methanogens can tolerate up to 100 mM volatile fatty acids at neutral pH; however, they are very sensitive to volatile fatty acids at mildly acidic pH"；5 mM 乙酸在 pH 4.5 抑制富集物、在 pH 6.5 不抑制——已验证（读全文 p.78 结果、p.81 左栏）。即低 pH 的抑制有一部分要在有机酸累积时才出现——推测。理由：同条原句；Ye 2012 各样品乙酸 < 2 mM 时作者判断该机理不显著（p.45）。
+
+### 3.4 嗜酸产甲烷菌
+
+1. Bräuer 2006：从酸性泥炭沼分离的菌株 6A8，"the optimum pH for methanogenesis by this organism is lower than that of any previously described methanogen"——已验证（Europe PMC 摘要，WebFetch 摘原句）。
+2. Bräuer 2011 定名 Methanoregula boonei：分离自 Ithaca 附近 pH 4.0–4.5 的雨养 bog，"Optimal growth conditions were near pH 5.1 and 35 °C"——已验证（Europe PMC 摘要，WebFetch 摘原句）。
+3. Williams and Crawford 1985：一株 Methanobacteriaceae "was acid tolerant and able to produce methane at pH 3.1. Growth could not be demonstrated at pH less than 5.3"——已验证（Crossref 摘要）。Dunfield 1993 引同一株并说 68 个已知产甲烷种的最低生长 pH 为 5.6——已验证（读全文 p.325）。
+4. Sizova 2003：西西伯利亚泥炭藓-羊胡子草-薹草泥炭的两个产甲烷共培养体在 pH 4.0–6.5 有活性——推测。理由：只见检索结果转述，未读摘要原文。
+
+### 3.5 其他培养与综述
+
+1. Williams and Crawford 1984（明尼苏达）："Two peats with pHs of 3.8 and 4.3 had an optimum rate of methane production at pH 6.0"——已验证（Crossref 摘要）。
+2. Valentine 1994（加拿大 NOWES）："Titration experiments generally demonstrated inhibition of methanogenesis by low pH"，内陆 bog 低排放"likely resulted from pH and substrate quality limitation of the fermentation step"——已验证（Crossref 摘要）。
+3. Bergman 1998（瑞典酸性 mire，pH、温度、葡萄糖三因子中心复合设计）：摘要与全文均未取到；Treat 2015 转述其结论为 pH 与产甲烷既有正相关也有负相关、与温度和底物有交互——已验证（Treat 2015 早期在线版讨论段，转引）。
+4. Segers 1998："Most known methanogenic bacteria have their optimum pH at 7 ... Dunfield et al. (1993) observed that optimum pH was 0–2 units above field pH ... So, the adaptation to in situ pH of the microorganisms controlling methane production is variable"——已验证（读全文 p.30）。
+5. Le Mer and Roger 2001："The activity of methanogens is usually optimum around neutrality ... However, methanogens can adapt to acidic environment"——已验证（读全文 p.34 第 5.1.4 节）。
+6. Bridgham 2013 转述 Ye 2012："low pH was insufficient to explain the low CH4 production efficiency in more ombrotrophic sites"；并指出多数模式"might treat those chemical controls as constant (e.g. soil pH)"——已验证（读全文 p.1335、p.1339–1340）。
+7. Treat 2015（泛北极厌氧培养综合）：pH 与产甲烷显著正相关且依赖培养温度，CO2:CH4 与 pH 负相关；逐步回归里 pH 未进入最大产甲烷率的模型（解释 0%），占 CO2 的 5%、CO2:CH4 的 19%——已验证（读早期在线版第 11 页表 4 与同页结果段）。
+
+### 3.6 酸性端急性响应强度汇总
+
+| 来源 | 比较 | 实测比 | D 的同比 | D 陡几倍 |
+| --- | --- | --- | --- | --- |
+| Dunfield 1993 B1、F1、KLTS | pH 4.3 对最大 | 0.55–0.62 | 0.155 | 约 4 |
+| Dunfield 1993 KLTS | 原生 3.6（不调）对最大 | 约 0.8 | 0.03 | 约 25 |
+| Dunfield 1993 B1、CF | 原生（不调）对最大 | 0.55–0.70 | 0.48–0.78 | 约 1 |
+| Ye 2012 效率 | pH 3.5 对 5.5 | 0.23–0.49 | 0.030 | 8–16 |
+| Ye 2012 bog 1 总产率 | pH 3.5 对 6.5 | 0.15 | 0.024 | 约 6 |
+| Kotsyurbenko 2007 | pH 3.8 对 6.0 | 0.29–0.42 | 0.052 | 6–8 |
+| Horn 2003 富集物 | pH 4.5 对 6.5 | 约 1 | 0.235 | 约 4 |
+| van Huissteden 2006 由 Dunfield 数据推的线性式 | pH 3.4 对 6.2 | 0.33 或 0.70（两种读法，见第 5 节） | 0.0175 | 19–40 |
+
+上表——已验证（各行出处见第 2.3、3.1–3.3 节；D 比值见 `ph_calc.out`）。
+
+### 3.7 群落换成嗜酸种后 pH 敏感性是否消失（问题 2 的适应部分）
+
+1. 不消失：嗜酸菌株与酸性泥炭群落的最适仍在 5.0–5.5，把 pH 从原生值再往下压仍明显减产（Ye 2012 bog 1、Kotsyurbenko 2007）——已验证（第 3.1–3.4 节）。
+2. 但变平，而且原生 pH 下离最适不远：酸性群落在原生 pH 下的产率是自身最大值的 0.3–0.8 倍（Dunfield 1993 KLTS 约 0.8、Kotsyurbenko 2007 原生 4.8 对 6.0 为 0.61–0.79、Ye 2012 bog 1 效率 0.49、Horn 2003 富集物约 1），不是 D 给的 0.02–0.2——已验证（同上各节读图与原句）。
+3. 所以"原生 pH 不同的站之间"的差，与"同一群落被推离原生 pH"的差，是两种量；前者在培养里约为 1 到 5 倍、还混着腐殖物与底物差（Ye 2012），后者才是 D 的陡度——推测。理由：第 2.3 节与第 3.1 节第 6 条。
+
+## 4. 田间与多站综合、热带、稻田（问题 2 后半）
+
+### 4.1 北方多站综合
+
+1. Treat 2018 数据集（湿地类有 pH 且有年通量的 255 行；bog pH 中位 4.02、n 110，fen 5.20、n 129）：y = log10(年排放 + 1)：只放 pH，系数 0.078（p 0.01，R² 0.026）；加水位（截到 40 cm，n 228）后 pH −0.003（p 0.93），水位 −0.017 cm−1（R² 0.30）；再加类型，pH −0.077（p 0.03，方向反）；按站平均（63 站）只放 pH 0.135（p 0.02），加水位 0.021（p 0.70）——已验证（PANGAEA 10.1594/PANGAEA.886976，自算 `ph_field.out`）。
+2. 同数据集水位在地表 10 cm 以内的行，年排放中位（g CH4 m−2 yr−1）按 pH 分档：≤ 4.0 为 15.5（24 行）、4.0–4.5 为 19.2（24）、4.5–5.0 为 13.2（17）、5.0–6.0 为 20.5（31）、> 6.0 为 12.4（24）——已验证（同上）。D 在 4.0 与 6.0 之间为 0.08 对 0.98，即预期 pH ≤ 4 的湿站排放不到 pH 6 的十分之一；实测两者相当——已验证（`ph_calc.out` 与本条数据）。
+3. BAWLD-CH4 陆地表全类（有 pH 的 147 行，有水位的 138 行）：y = log10(暖季日均 + 1)：只放 pH 0.071（p 0.07，R² 0.024）；加水位 0.042（p 0.13）；再加类型 0.005（p 0.82）；水位在 10 cm 以内的行，暖季日均中位（mg CH4 m−2 d−1）按 pH 分档：≤ 4.0 为 100（7）、4.0–4.5 为 72（13）、4.5–5.0 为 47.6（12）、5.0–6.0 为 66.3（17）、> 6.0 为 76.8（25）——已验证（BAWLD_CH4_Terrestrial.csv，自算 `ph_field.out`）。只取 bog 与 fen 的 68 行时 pH 系数 −0.001（p 0.96）——已验证（转引 `lit_bog_fen_wtd_260929.txt` 第 2.1 节第 2 条）。
+4. 田间 D 当量斜率对照：D 在 pH 4–6 间平均每单位 log10 变 0.54；田间只放 pH 时的斜率 0.07–0.08（陡度约为 D 的七分之一），控制水位后约为 0——已验证（`ph_calc.out`、本节第 1、3 条）。田间 pH 口径杂（孔隙水、土水比 1:1 到 1:5、CaCl2 浸提），测量噪声会把真实斜率压平一部分——推测。理由：Abdalla 2016 汇编的 pH 就混了电极、去离子水与 0.01 M CaCl2 浸提、1:1 到 1:5 多种土水比（p.7082 方法段、p.7088 表注）；误差进自变量时回归斜率偏小。
+5. Olefeldt 2013（303 站，其中 82 站有 pH）："Of the continuous variables, only ZWT, GPP, and TS were significantly related to log(FCH4+5)"——已验证（读全文 p.593；站数与 pH 站数见 p.592 方法段）。
+6. Kuhn 2021（BAWLD-CH4）：连续变量里只有水位、土温与 GPP 显著，pH 在图 7 里未标显著；最佳模型为水位、土温、禾草盖度加类型（R²m 0.69）——已验证（读全文 p.5167 结果、p.5168 图 7 图注）。
+7. Turetsky 2014（71 块湿地）：全文未做 pH 分析，pH 只出现在参考文献（Dunfield 1993 题名）——已验证（全文检索 `\bpH\b` 仅 1 处）。
+8. Abdalla 2016（北方天然泥炭地）：有 pH 的 30 个观测做混合模型，pH 显著（p 0.04）；插补后 108 个观测 pH p < 0.001；pH 与水位合起来解释 16–18% 的通量变异；作者："the influence of soil pH on CH4 emissions is uncertain because laboratory-measured soil pH may differ from field pH"——已验证（读全文 p.7084、p.7089、p.7090 图 5 图注）。108 个站里只有 36 个有 pH，其余由 missMDA 插补——已验证（读全文 p.7083 方法段）。pH 又与泥炭类型相关，这条证据弱于前几条——推测。理由：插补占三分之二，且 bog 与 fen 的 pH 本身不同（BAWLD bog 4.9、fen 6.0，`lit_bog_fen_wtd_260929.txt` 第 1.1 节第 7 条）。
+
+### 4.2 FLUXNET-CH4 类跨站分析
+
+1. McNicol 2023（UpCH4，43 个淡水湿地塔）：140 个候选预测量含"soil physical and chemical properties (e.g., clay content)"；前向选择留下 6 个：塔测气温（有无 2 周滞后）、MODIS EVI（3 周滞后）、最干季均温、最湿月降水、冠层高度，无土壤化学量——已验证（读全文 p.8 第 2.1.2 节、p.12 第 3.1.1 节）。候选表是否含 pH 本次未能核（补充材料未取到，见第 0 节第 5 条），不影响"终选里没有土壤化学量"这一条——推测。理由：终选清单是 p.12 原句，与候选表无关。
+2. Chen 2024（82 个湿地站机器学习）：pH（PHAQ）在输入里，重要性前列为气温 23%、海拔 14.3%、土壤有机碳 11.2%、辐射与相对湿度，pH 不在前列——已验证（PMC 全文，WebFetch 摘原句）。
+
+### 4.3 热带酸性泥炭
+
+1. MY-MLM：塔位 0–50 cm 实测 pH 3.4，GSDE 4.27；站点现取因子 1、β 11.75；按 GSDE 约 1.2，按实测约 0.10——已验证（`site_facts.csv` 第 1124 行，Wong 2018 p.355；`diag_swamp_260929.txt` 第 4 节表；`scores77_v2_oo5.txt`）。
+2. ID-Pag：pH 3.42（Sakabe 2018 转引 Jauhiainen 2016），GSDE 4.30；站点高估约 1700 倍，实测 pH 走 D 可解释约 100 倍，余约 5 倍——已验证（`site_facts.csv` 第 827 行；`diag_swamp_260929.txt` 第 1 节）。
+3. 秘鲁 pole forest（矮林泥炭）扩散通量 11.5 g C m−2 yr−1——已验证（转引 `lit_tropical_mech_260929.txt` 第 2 节，Teh 2017 p.3669 摘要）。同区雨养泥炭 pH 2.5–2.9——推测。理由：该报告第 1b 节取自 Finn 2020 的 WebFetch 摘取，标为推测。D 在 2.5–2.9 为 0.0009–0.0036，本模式在此处实际等于不产甲烷——已验证（`ph_calc.out`）。
+4. 离体效率：刚果 pH 3.4–4 泥炭 25 °C 淹水厌氧 0.89%，巴拿马与马来西亚 0.2–0.3%——已验证（转引 `lit_tropical_mech_260929.txt` 第 1c 节）。同 pH 下 f × D = 0.2 × (0.0175–0.082) = 0.35–1.6%，与离体效率同量级——已验证（算术）。即 D 与 f = 0.2 的乘积大体能对上热带泥炭的离体效率，却在原位 MY-MLM 把排放压过头 10 倍；原位排放更多来自新鲜根源碳与水位，不按"泥炭 HR × 固定份额"走——推测。理由：`lit_tropical_mech_260929.txt` 第 1d、4 节（环剥降 67%、根系供氧去掉 85–92%）。
+5. 刚果 Girkin 2026：原文"While peat in this study had a pH of 3.4–4 ..., the optimal pH for methanogenesis is higher (6–7)"；pH 在泥炭化学排序里是显著但较弱的变量（R² 0.09–0.24），随机森林对淹水厌氧 CH4 的解释只有 R² 0.12–0.17——已验证（读全文 p.9 第 3 节、p.12 讨论，兄弟会话抽取文本第 419、427–428、594–599 行）。
+
+### 4.4 稻田
+
+1. Wang 1993（Crowley 稻田土）："The optimum pH of CH4 production was near neutrality"；比自然悬液 pH 高约 0.2 单位使产甲烷增 11–20%（Eh −250 mV）与 24–25%（−200 mV）——已验证（Crossref 摘要）。
+2. 35 种稻田土淹水 12–16 周后土壤 pH 收敛到 6.7–7.2（Sahrawat 2015 转述 Ponnamperuma）；CH4MOD 与 DNDC-Rice 无 pH 项，Cao 1995 取最低 5.5、最适 7.5、最高 9.0；田测统计里淹水前 pH 效应非单调（5.0–5.5 类相对 ≥ 8.0 类 ln 通量 +1.299）——已验证（转引 `lit_models_rice_260929.txt` 第 2.10、5.1 节）。
+3. 本模式全球稻田 pH 因子按近似口径约 0.75（中国 0.70、南亚 0.74、东南亚 0.80），站点为 1——推测。理由：转引 `lit_models_rice_260929.txt` 第 4.3 节第 3 条，该报告按 SoilGrids 与 MIRCA 的近似口径算，标为推测。C-59（`flooded_soil_ph_neutral`）已让土壤斑块饱和子柱跳过 pH 因子，默认关——已验证（读码 `Const.F90:485–491`、`Physics.F90:2427–2428`）。
+
+## 5. 模式做法（问题 3）
+
+| 模式 | pH 项 | 形式与参数 | 低端 | 出处 |
+| --- | --- | --- | --- | --- |
+| CLM4Me（Riley 2011） | 取 1 | 表 1 列"fpH 1，On, off"；原文转述 Wania 2010 认为 pH 与氧化还原因子"so poorly characterized that they should be excluded" | 不适用 | 读全文 p.1929–1930 |
+| CLM4Me′（Meng 2012） | 有 | 10^(−0.2235 pH² + 2.7727 pH − 8.6)（印 0.2335），最大约 6.2 | 式本身连续，D(3.4) 0.0175 | 读全文 p.2795 |
+| CTSM / CLM5 | 默认关 | 同上式不归一（6.2 处 0.9986）；pHmin 2.2、pHmax 9 以外不乘因子（等于 1）；namelist 注"(EXPERIMENTAL, UNSUPPORTED, and UNTESTED!)"；手册"nominally set to 1"，并称 fpH 与 fpE "poorly constrained" | 窗外等于 1 | 读码 `ch4varcon.F90:33`、`ch4Mod.F90:2598–2605`、`namelist_definition_ctsm.xml:2754–2758`、技术手册甲烷章第 60、67 行 |
+| Müller 2015（CLM4.5 参数优化） | 有 | 同 Meng 式，各站用实测 pH | 同上 | 读全文式 A8、第 2 节 |
+| TEM（Zhuang 2004） | 有 | Cao 型 (pH − pHmin)(pH − pHmax) / [(pH − pHmin)(pH − pHmax) − (pH − pHopt)²]，pHmin 5.5、pHmax 9.0、pHopt 7.5；"If pH is above or below the tolerance range, methanogenesis is completely inhibited" | pH < 5.5 为 0 | 读全文附录 A2 式 A2 |
+| Xu 2015（微生物功能群，CLM4.5 分解之上） | 有，动态 | Cao 型；乙酸产生降 pH，pH 反馈使产甲烷降约 20% | 同 Cao 型 | 读全文摘要与第 3.4 节 |
+| DLEM（Tian 2010） | 有 | 4 < pH < 7 时 1.02 / (1 + 10⁶ e^(−2.5 pH))，7–10 镜像；D 当量：pH 4.3 为 0.045、5.0 为 0.22、6.2 为 0.86 | pH ≤ 4 为 0 | 读全文式 11 p.2678；数值 `ph_calc.out` |
+| TRIPLEX-GHG（Zhu 2014） | 有 | Cao/Zhang 型，低 4.0、最适 7.0、高 9.0 | pH < 4 为 0 | 读全文式 6 p.984 |
+| Cao 1995（稻田） | 有 | 最低 5.5、最适 7.5、最高 9.0 | pH ≤ 5.5 为 0 | 转引 `lit_models_rice_260929.txt` 第 2.10 节 |
+| CH4MOD（Huang 1998） | 无 | — | — | 转引同上 |
+| Walter and Heimann 2000 | 不显式 | "The potential effect of a disadvantageous pH and the availability of nutrients on methane production rates is included in the parameter R0"，即并进站点标定常数 | — | 读全文 p.748 |
+| PeatlandVU（van Huissteden 2006） | 有 | "Based on the data of Dunfield et al. (1993) R0 is decreased by 0.1 linearly at each pH unit lower than 7"，R0 = 0.5 | 线性，pH 2 时为 0（按绝对减法读） | 读全文 p.8 |
+| LPJ-WHyMe（Wania 2010）、LPJ-wsl（Zhang 2016）、LPX-Bern（Spahni 2011）、VISIT（Ito 2019）、CLASS-CTEM（Arora 2018） | 无 | — | — | 全文检索 `\bpH\b` 均 0 处 |
+| ORCHIDEE（Ringeval 2010） | 无 | 各带共用参数，"given the lack of site-level data, it would have been unreasonable to try to include more details"（指氧化还原、pH、养分） | — | 读全文第 2.3 节后，全文检索仅此 1 处 |
+| JULES（Gedney 2019） | 无 | "there are insufficient observations to adequately constrain many such processes (e.g. redox and pH, Riley et al 2011). Instead we focus on constraining temperature sensitivity" | — | 读全文第 2 节，全文检索仅此 1 处 |
+| Zheng 2019（热力学产甲烷，ORNL） | 动态 | 显式离子平衡算 pH；批评"constant pH is often assumed within bell-shaped pH response functions (Meng et al., 2012; Tian et al., 2010; Xu et al., 2015) ... a significant error may occur when rate calculations depend heavily upon the initial choice of a single optimal pH value" | — | 读全文 p.664 |
+
+1. PeatlandVU 的式有两种读法：R0 按绝对值每单位减 0.1（从 0.5 起），归到 pH 6.2 为 1 时 pH 3.4 为 0.33；按相对值每单位减 10%，pH 3.4 为 0.70——已验证（`ph_calc.out`）。哪种是原意原文没写清——推测。理由：p.8 只有这一句。两种读法都比 D 平 19–40 倍——已验证（同上）。
+2. 用 pH 项的模式里，最适多取 6.2–7.5，低端都比 D 更硬（TEM 5.5 以下、DLEM 与 TRIPLEX 4 以下为 0）；这些都来自稻田土或少量泥炭培养，没有一个针对酸适应做区分——已验证（上表各条）。
+3. "只对短期 pH 变化敏感、对长期适应的酸性泥炭不敏感"的写法：本次读到的模式里没有；最接近的是 Walter and Heimann 2000 把 pH 并进站点常数、PeatlandVU 用一条平线——推测。理由：第 1 节第 8 条。
+4. 本地命中 1–2 处的模式文献另记三条：TECO-SPRUCE（Ma 2022）的产甲烷式含 fpH 项，函数形式在该文未给；MEND 系（Huang 2021、Zhou 2025）写明产甲烷受 pH 修正；LPJmL6（Schaphoff 2026 预印本）的 pH 只进硝化，产甲烷无 pH——已验证（读各文命中行上下文：Ma 2022 式 1 附近、Huang 2021 与 Zhou 2025 模型描述段、Schaphoff 2026 第 440 行）。前两者不在任务点名范围、函数未读，不作结论；不另列 DOI。
+
+## 6. 本模式现状（读码）与输入
+
+1. 因子计算：非湖泊斑块、`usephfact` 为真、且不属于"C-59 开时的土壤斑块饱和子柱"时乘因子；pH ≤ pHmin（2.2）或 ≥ pHmax（9）时产率直接置 0；窗内为 D，按 6.2 归一并夹到 [0, 1]——已验证（读码 `Physics.F90:2144–2146、2427–2440`；`Const.F90:409–410`）。CTSM 在窗外不乘因子（等于 1），本模式改成了 0——已验证（读码 CTSM `ch4Mod.F90:2598–2605`；本树 `Physics.F90:2430–2433` 注释）。
+2. 开关：`usephfact` 代码默认 `.true.`（CTSM 默认 `.false.`）——已验证（读码 `Const.F90:451`；CTSM `ch4varcon.F90:33`）。
+3. pH 来源：不开空间 pH 时每斑块取 6.2（因子 1）；开时读 mksrf 产的斑块 pH——已验证（读码 `MOD_Tracer_Reactive_Methane_pH.F90:56–58、147–154`；`BgcLink.F90:371`）。站点 `use_spatial_ph = .false.`，全球为 `.true.`——已验证（转引 `diag_swamp_260929.txt` 第 4 节首条、`lit_models_rice_260929.txt` 第 4.1 节第 8 条）。Sitedata 里的 `methane_ph` 变量没有代码读——已验证（转引 `diag_swamp_260929.txt` 第 4 节第 2 条）。
+4. 斑块聚合：mksrf 对 PHH2O 前四层（到 28.9 cm）按层厚与斑块内面积对氢离子活度求平均，再取 −log10——已验证（读码 `mksrfdata/Aggregation_MethanePH.F90:21–26、62`）。这样聚合偏向最酸像元：一半 pH 4、一半 pH 6 的斑块得 pH 4.30，因子 0.155；若对 pH 求平均得 5.0（0.475），对因子求平均得 0.53——已验证（算术）。
+5. GSDE 与塔实测（pH，GSDE / 实测）：MY-MLM 4.27 / 3.4；ID-Pag 4.30 / 3.42；US-NC4 5.20 / 4.2；BR-Npw 5.10 / 4.7；FI-Si2 4.34 / 4.4；FI-Sii 4.51 / 4.4（代理）；FI-Lom 4.51 / 5.5；SE-Deg 4.80 / 约 4.5；CA-SCB 6.40 / 4.0–4.5；JP-BBY 6.33 / 4.94–5.05；DE-SfN 3.98 / 约 4；NZ-Kop 4.63 / 4.7；US-BZB 5.11 / 4.80；US-BZF 5.11 / 5.6–5.9——已验证（`ph_77sites.csv`；`site_facts.csv` 对应各行；`docs/work/sources/调研_260828_站点pH.md` 第 45、58、59 行）。差值 −1.0 到 +2.15——已验证（算术）。D 在 pH 4.3 处每单位 log10 斜率 0.85，即图上差 1 个单位、产量差约 7 倍——已验证（`ph_calc.out`）。
+
+## 7. 对模式的含义（问题 4）
+
+### 7.1 三种选择的依据与风险
+
+1. 全局关（`usephfact = .false.`）：
+   - 依据：站点标定就是在因子 1 下做的，全局关使两边一致；CLM4Me 原版与 CTSM 默认都是 1；多数全球模式不设 pH；田间多站综合在控制水位与类型后 pH 无解释力（第 4.1 节）；酸性群落在原生 pH 下离最适不远（第 3.7 节）——已验证（第 3–6 节各条）。
+   - 风险：热带东南亚泥炭的全球排放升 6–7 倍产量（第 7.4 节），把 MY-MLM、ID-Pag 已知的结构性高估暴露到全球总量上；Meng 2012 的同类情景全球多 41%，其中七成在热带——已验证（Meng 2012 p.2805、p.2810 表 7）。bog 与 fen 的效率差里，Ye 2012 认为约一半来自酸度以外的因子，关掉 pH 后这部分要靠水位与植被（`lit_bog_fen_wtd_260929.txt` 第 2.3 节）——推测。理由：第 3.1 节第 6 条。
+2. 全局开现函数（现状）：
+   - 依据：Meng 2012 在三个酸性站用它降了 RMSE；现 GSDE 口径下 MY-MLM 的量级碰巧对上（β 约 1.2）——已验证（第 2.5 节第 4 条；`diag_swamp_260929.txt` 第 4 节表）。
+   - 风险：函数比所有独立培养陡 4–16 倍、比田间陡得多，连源数据的 pH 4.3 点都低估 4 倍（第 2.3、3.6、4.1 节）；与站点口径不一致；GSDE 误差 ±1–2 个单位放大成 7 倍以上的产量误差（第 6 节第 5 条）；MY-MLM 对上靠的是 GSDE 比实测高 0.87 个单位，换实测即压过头 10 倍——已验证（同上各节）。秘鲁雨养泥炭若 pH 确为 2.5–2.9，其高排放会被压到接近 0——推测。理由：该 pH 值本身标推测（第 4.3 节第 3 条）。它在热带做的是补偿别的结构误差，不是 pH——推测。理由：第 2.5 节第 5 条、第 7.2 节。
+3. 换成低 pH 端更平的函数或设下限：
+   - 依据：培养里酸性端的急性比多在 0.3–0.5（第 3.6 节），这是有实测的下限区间；PeatlandVU 的线性式也落在这一段——已验证（第 3.6 节表；第 5 节第 1 条）。
+   - 风险：静态 pH 图下，"相对原生 pH 的偏离"无法算，任何下限式都只是把一个常数乘在酸性湿地上；田间证据不支持这个常数小于 1；它仍会压北方酸性泥沼（第 7.2 节）——推测。理由：第 3.7 节第 3 条、第 4.1 节。
+
+### 7.2 用 77 塔现基线的离线反推
+
+口径：β 取 O-5 站点基线（因子 1，`v2/results/scores77_v2_oo5.txt`）；换因子后的排放倍数按 f 的 1.17 次方折算（V-49 经验，`diag_swamp_260929.txt` 第 4 节）；只算 14 座有实测 pH 的酸性泥炭与沼泽林塔。
+
+| 塔 | 类 | 现 β | 实测 pH | 按实测走 D 的 β | 按实测走下限式（φ 0.4）的 β | GSDE pH | 按 GSDE 走 D 的 β |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CA-SCB | bog | 0.77 | 4.25 | 0.08 | 0.33 | 6.40 | 0.75 |
+| DE-SfN | bog | 4.39 | 4.0 | 0.24 | 1.72 | 3.98 | 0.22 |
+| FI-Si2 | bog | 0.82 | 4.4 | 0.12 | 0.38 | 4.34 | 0.10 |
+| JP-BBY | bog | 0.53 | 5.0 | 0.22 | 0.34 | 6.33 | 0.52 |
+| NZ-Kop | bog | 1.12 | 4.7 | 0.29 | 0.60 | 4.63 | 0.25 |
+| US-BZB | bog | 1.19 | 4.8 | 0.36 | 0.68 | 5.11 | 0.58 |
+| FI-Lom | fen | 0.43 | 5.5 | 0.32 | 0.36 | 4.51 | 0.08 |
+| FI-Sii | fen | 0.70 | 4.4 | 0.10 | 0.32 | 4.51 | 0.12 |
+| FR-LGt | fen | 8.13 | 4.5 | 1.42 | 3.91 | 6.64 | 7.25 |
+| SE-Deg | fen | 0.66 | 4.5 | 0.12 | 0.32 | 4.80 | 0.20 |
+| US-BZF | fen | 1.01 | 5.75 | 0.89 | 0.94 | 5.11 | 0.49 |
+| MY-MLM | swamp | 11.75 | 3.4 | 0.10 | 4.15 | 4.27 | 1.24 |
+| US-NC4 | swamp | 2.13 | 4.2 | 0.19 | 0.89 | 5.20 | 1.16 |
+| BR-Npw | swamp | 0.42 | 4.7 | 0.11 | 0.23 | 5.10 | 0.20 |
+
+1. 上表——推测。理由：离线外推（scratchpad `ph_sites.out`），1.17 次方来自一座塔的一次扰动，其余偏差不变的假设未验证。
+2. 类中位 β：bog 因子 1 为 0.97，按实测走 D 0.23、走下限式 0.49，按 GSDE 走 D 0.39；fen 分别为 0.70、0.32、0.36、0.20——推测。理由：同上。
+3. 标定会吸收一个全局常数，所以更公平的比法是先把各方案整体缩放到中位 β = 1，再看站间离散：14 塔 log10 β 与 log10 D(实测 pH) 回归斜率 −0.76（p 0.01），去掉 MY-MLM、US-NC4 后为 −0.58（p 0.15）；去掉这两座后，缩放后的 log10 β 标准差因子 1 为 0.37、D 为 0.37、下限式 0.35，|log10 β| 中位分别为 0.16、0.30、0.14——推测。理由：离线外推（scratchpad `ph_spread.out`），样本 12–14 座。
+4. 读法：站点上 pH 因子的"信号"由两座沼泽林塔（MY-MLM、US-NC4）和两座偏高的北方塔（DE-SfN、FR-LGt）带出；这四座的偏高另有诊断（MY-MLM、US-NC4 见 `diag_swamp_260929.txt` 第 1、6 节；FR-LGt 实测水位 0.22 m 而模式 0.09 m、DE-SfN 塔上产率只有 1.5%，见账本 Q-21）；北方泥沼塔里 pH 因子不改善站间分布——推测。理由：本节第 3 条与所引诊断。
+
+### 7.3 推荐与可实现式
+
+1. 推荐一（配置，不动码）：论文 V2 全球配置取 `usephfact = .false.`，与站点一致；这就是在队的 V-116。若 V-116 的热带或全球总量超出参照，按 `lit_tropical_mech_260929.txt` 第 4 节与 `diag_swamp_260929.txt` 第 6、8 节的顺序去治（水位零点、木本根际供氧、热带泥炭产率），不回头用 pH——推测。理由：第 7.1 节第 1、2 条；第 7.2 节第 4 条。
+2. 推荐二（可选，代码默认值）：把 `Const.F90:451` 的 `usephfact` 默认改为 `.false.`，与 CTSM 一致，免得以后新配置漏写时默认开——推测。理由：第 6 节第 2 条。此项是代码改动，按铁律 15 需先与用户商定。
+3. 候选式（敏感性用，默认关）：在现 D 上加下限
+
+   f_pH = φ + (1 − φ) · D(pH)，φ = `DEF_METHANE%ph_floor` ∈ [0, 1]
+
+   - 默认 φ = 0：与现码逐位相同（窗外仍为 0，窗内为 D）；φ = 1 等价于关。
+   - 敏感性取 φ = 0.4，区间 0.3–0.5。依据：Ye 2012 六处效率在 pH 3.5 对 5.5 为 0.23–0.49（中位约 0.44）；Kotsyurbenko 2007 pH 3.8 对 6.0 为 0.29–0.42；van Huissteden 2006 由 Dunfield 数据推的线性式在 pH 3.4 为 0.33（绝对读法）；Dunfield 1993 原生 pH 下的对照为 0.55–0.8（上界）——已验证（第 3.1、3.2、3.6 节；第 5 节第 1 条）。田间多站给不出小于 1 的证据，所以 0.4 是"按培养急性响应取的偏保守下限"，不是田间标定值——推测。理由：第 4.1 节。
+   - 取值效果：φ 0.4 时 pH 2.5 为 0.40、3.4 为 0.41、4.0 为 0.45、4.3 为 0.49、5.0 为 0.69、7.8 为 0.56——已验证（`ph_calc.out`）。
+   - 窗外处理：pH ≤ pHmin 或 ≥ pHmax 时取 φ 而不是 0（φ = 0 时自然仍为 0）——推测。理由：秘鲁 pH 2.5–2.9 泥炭仍高排放（第 4.3 节第 3 条），但 pHmin 2.2 以下几乎没有湿地，这一改动实际影响很小。
+   - 落点：`Physics.F90:2429–2440` 两个分支；`Const.F90:409–410` 旁加参数、`:1275` 的 namelist 读取表加一项。只到落点，不给 diff，改法需与用户商定（铁律 15）。
+4. 若将来仍要开 pH（任一形式），三件事要一起做：站点改读实测或同源 pH（现 `methane_ph` 未被读）；mksrf 斑块聚合改为对 pH 算术平均或对因子平均，而不是对氢离子活度平均；与 f 一起重标——推测。理由：第 6 节第 3–5 条。
+5. 不属于 pH 的另一件事：Ye 2012 在同 pH 下 bog 仍比 rich fen 低 3–7 倍（效率），作者归于泥炭藓来源的抑制物；若要表示，应走类型或雨养份额（C-38 的 `rainfed_share`）而不是 pH——推测。理由：第 3.1 节第 6 条；`lit_bog_fen_wtd_260929.txt` 第 2.2 节第 5 条与第 2.3 节。
+
+### 7.4 四类对象的方向估计（相对现全球配置：GSDE pH、走 D）
+
+| 对象 | GSDE pH | 现全球因子 | 全局关 | 下限式 φ 0.4 | 站点（现因子 1） |
+| --- | --- | --- | --- | --- | --- |
+| MY-MLM 所在格 | 4.27 | 0.146 | 产量 ×6.8，排放约 ×9.5，回到站点 β 11.75 的量级 | 0.49：产量 ×3.3，排放约 ×4.1 | 两方案都不变；若站点改用实测 3.4 走下限式，β 约 4.2 |
+| ID-Pag 所在格 | 4.30 | 0.155 | 产量 ×6.5，排放约 ×8.9 | 0.49：产量 ×3.2，排放约 ×3.9 | 同上；实测 3.42 走下限式 0.41 |
+| 北方 bog 与 fen（芬兰、瑞典，GSDE 4.3–4.8） | 4.3–4.8 | 0.17–0.36 | 产量 ×2.8–6.0 | 0.50–0.62：产量 ×1.7–3.0 | 不变 |
+| 阿拉斯加、加拿大西部与日本的 bog（GSDE 5.1–6.4） | 5.1–6.4 | 0.54–0.99 | 产量 ×1.0–1.9 | 产量 ×1.0–1.4 | 不变 |
+| 湿苔原（GSDE 约 5.1） | 约 5.1 | 约 0.53 | 产量约 ×1.9 | 0.72：约 ×1.4 | 不变 |
+| 稻田（面积加权因子约 0.75） | — | 0.70–0.80 | 产量 ×1.25–1.43；C-59 已开时淹水子柱本已不乘，关 pH 无增量 | 约 0.85：约 ×1.13 | 不变 |
+
+1. 上表——推测。理由：因子值来自 `ph_calc.out`（已验证），排放倍数按 f 的 1.17 次方外推，稻田因子转引 `lit_models_rice_260929.txt` 第 4.3 节（推测）；实际变化还受氧化、传输与水位非线性影响。
+2. 全局总量方向为升，热带占大头——推测。理由：上表各类方向与 Meng 2012 的同类情景（+41%，七成在热带，p.2805）。量级待 V-116。
+
+## 8. 存疑与所需实验
+
+1. 全局关 pH 的全球与分区量级：V-116（`paper_v2/v260929/g2_ph0`）出结果后按 GCP 分区与第 7.4 节对照；判据为热带湿地、北方湿地、稻田三项相对 O-5 的倍数。
+2. 下限式在站点上的真实效果：需要先让站点读实测 pH（`SITE_ph` 或 Sitedata `methane_ph` 接上），再跑 77 塔两组（φ = 0 即 D、φ = 0.4），与因子 1 基线对比缩放后的站间离散；第 7.2 节只是离线外推。
+3. 培养的急性响应能否外推到田间：文献本身定不了；可用的实验是在北方泥沼塔上用实测 pH 跑 D 与因子 1 两组，看季节振幅 α 与相位 r 是否有差（pH 因子静态，只影响量级，若 α、r 不变，则 pH 与季节过程无关）。
+
+## 9. DOI 清单（2026-09-29 匿名查 Crossref 或 DataCite，题名、作者、刊名、卷、页或文章号、年逐条对过）
+
+作者只列 Crossref 返回的姓，人数多的写首位作者与总人数；题名大小写照 Crossref。
+
+- Dunfield, Knowles, Dumont, Moore (1993) Methane production and consumption in temperate and subarctic peat soils: Response to temperature and pH. Soil Biology and Biochemistry 25(3): 321–326. 10.1016/0038-0717(93)90130-4｜已核（Crossref）
+- Meng, Hess, Mahowald, Yavitt, Riley, Subin, Lawrence, Swenson, Jauhiainen, Fuka (2012) Sensitivity of wetland methane emissions to model assumptions: application and model testing against site observations. Biogeosciences 9(7): 2793–2819. 10.5194/bg-9-2793-2012｜已核（Crossref）
+- Riley, Subin, Lawrence, Swenson, Torn, Meng, Mahowald, Hess (2011) Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM. Biogeosciences 8(7): 1925–1953. 10.5194/bg-8-1925-2011｜已核（Crossref）
+- Ye, Jin, Bohannan, Keller, McAllister, Bridgham (2012) pH controls over anaerobic carbon mineralization, the efficiency of methane production, and methanogenic pathways in peatlands across an ombrotrophic–minerotrophic gradient. Soil Biology and Biochemistry 54: 36–47. 10.1016/j.soilbio.2012.05.015｜已核（Crossref）
+- Kotsyurbenko, Friedrich, Simankova, Nozhevnikova, Golyshin, Timmis, Conrad (2007) Shift from Acetoclastic to H2-Dependent Methanogenesis in a West Siberian Peat Bog at Low pH Values and Isolation of an Acidophilic Methanobacterium Strain. Applied and Environmental Microbiology 73(7): 2344–2348. 10.1128/AEM.02413-06｜已核（Crossref）
+- Kotsyurbenko, Chin, Glagolev, Stubner, Simankova, Nozhevnikova, Conrad (2004) Acetoclastic and hydrogenotrophic methane production and methanogenic populations in an acidic West-Siberian peat bog. Environmental Microbiology 6(11): 1159–1173. 10.1111/j.1462-2920.2004.00634.x｜已核（Crossref）
+- Horn, Matthies, Kusel, Schramm, Drake (2003) Hydrogenotrophic Methanogenesis by Moderately Acid-Tolerant Methanogens of a Methane-Emitting Acidic Peat. Applied and Environmental Microbiology 69(1): 74–83. 10.1128/AEM.69.1.74-83.2003｜已核（Crossref）
+- Bräuer, Cadillo-Quiroz, Yashiro, Yavitt, Zinder (2006) Isolation of a novel acidiphilic methanogen from an acidic peat bog. Nature 442(7099): 192–194. 10.1038/nature04810｜已核（Crossref）
+- Bräuer, Cadillo-Quiroz, Ward, Yavitt, Zinder (2011) Methanoregula boonei gen. nov., sp. nov., an acidiphilic methanogen isolated from an acidic peat bog. International Journal of Systematic and Evolutionary Microbiology 61(1): 45–52. 10.1099/ijs.0.021782-0｜已核（Crossref）
+- Williams, Crawford (1984) Methane Production in Minnesota Peatlands. Applied and Environmental Microbiology 47(6): 1266–1271. 10.1128/aem.47.6.1266-1271.1984｜已核（Crossref）
+- Williams, Crawford (1985) Methanogenic Bacteria, Including an Acid-Tolerant Strain, from Peatlands. Applied and Environmental Microbiology 50(6): 1542–1544. 10.1128/aem.50.6.1542-1544.1985｜已核（Crossref）
+- Valentine, Holland, Schimel (1994) Ecosystem and physiological controls over methane production in northern wetlands. Journal of Geophysical Research: Atmospheres 99(D1): 1563–1571. 10.1029/93JD00391｜已核（Crossref）
+- Bergman, Svensson, Nilsson (1998) Regulation of methane production in a Swedish acid mire by pH, temperature and substrate. Soil Biology and Biochemistry 30(6): 729–741. 10.1016/S0038-0717(97)00181-8｜已核（Crossref）；正文未读
+- Sizova, Panikov, Tourova, Flanagan (2003) Isolation and characterization of oligotrophic acido-tolerant methanogenic consortia from a Sphagnum peat bog. FEMS Microbiology Ecology 45(3): 301–315. 10.1016/S0168-6496(03)00165-X｜已核（Crossref）；摘要未读
+- Segers (1998) Methane production and methane consumption: a review of processes underlying wetland methane fluxes. Biogeochemistry 41(1): 23–51. 10.1023/A:1005929032764｜已核（Crossref）
+- Le Mer, Roger (2001) Production, oxidation, emission and consumption of methane by soils: A review. European Journal of Soil Biology 37(1): 25–50. 10.1016/S1164-5563(01)01067-6｜已核（Crossref）
+- Bridgham, Cadillo-Quiroz, Keller, Zhuang (2013) Methane emissions from wetlands: biogeochemical, microbial, and modeling perspectives from local to global scales. Global Change Biology 19(5): 1325–1346. 10.1111/gcb.12131｜已核（Crossref）
+- Girkin 等（25 位作者）(2026) Environmental controls over greenhouse gas dynamics of tropical peatlands of the Central Congo Basin. Philosophical Transactions of the Royal Society B 381(1956): 20240482. 10.1098/rstb.2024.0482｜已核（Crossref）
+- Treat 等（15 位作者）(2015) A pan-Arctic synthesis of CH4 and CO2 production from anoxic soil incubations. Global Change Biology 21(7): 2787–2803. 10.1111/gcb.12875｜已核（Crossref）
+- Treat, Bloom, Marushchak (2018) Nongrowing season methane emissions–a significant component of annual emissions across northern ecosystems. Global Change Biology 24(8): 3331–3343. 10.1111/gcb.14137｜已核（Crossref）
+- Treat, Bloom, Marushchak (2018) Growing season, non-growing season and annual CH4 fluxes from temperate, boreal, and Arctic wetlands and uplands. PANGAEA（数据集）. 10.1594/PANGAEA.886976｜已核（DataCite）
+- Kuhn 等（9 位作者）(2021) BAWLD-CH4: a comprehensive dataset of methane fluxes from boreal and arctic ecosystems. Earth System Science Data 13(11): 5151–5189. 10.5194/essd-13-5151-2021｜已核（Crossref）
+- Olefeldt, Turetsky, Crill, McGuire (2013) Environmental and physical controls on northern terrestrial methane emissions across permafrost zones. Global Change Biology 19(2): 589–603. 10.1111/gcb.12071｜已核（Crossref）
+- Turetsky 等（19 位作者）(2014) A synthesis of methane emissions from 71 northern, temperate, and subtropical wetlands. Global Change Biology 20(7): 2183–2197. 10.1111/gcb.12580｜已核（Crossref）
+- Abdalla 等（6 位作者）(2016) Emissions of methane from northern peatlands: a review of management impacts and implications for future management options. Ecology and Evolution 6(19): 7080–7102. 10.1002/ece3.2469｜已核（Crossref）
+- McNicol 等（65 位作者）(2023) Upscaling Wetland Methane Emissions From the FLUXNET-CH4 Eddy Covariance Network (UpCH4 v1.0): Model Development, Network Assessment, and Budget Comparison. AGU Advances 4(5): e2023AV000956. 10.1029/2023AV000956｜已核（Crossref）
+- Chen, Liu, Ma, Zhuang, Shurpali (2024) Quantifying Global Wetland Methane Emissions With In Situ Methane Flux Data and Machine Learning Approaches. Earth's Future 12(11): e2023EF004330. 10.1029/2023EF004330｜已核（Crossref）
+- Wang, DeLaune, Patrick, Masscheleyn (1993) Soil Redox and pH Effects on Methane Production in a Flooded Rice Soil. Soil Science Society of America Journal 57(2): 382–385. 10.2136/sssaj1993.03615995005700020016x｜已核（Crossref）
+- Cao, Dent, Heal (1995) Modeling methane emissions from rice paddies. Global Biogeochemical Cycles 9(2): 183–195. 10.1029/94GB03231｜已核（Crossref）
+- Zhuang, Melillo, Kicklighter, Prinn, McGuire, Steudler, Felzer, Hu (2004) Methane fluxes between terrestrial ecosystems and the atmosphere at northern high latitudes during the past century: A retrospective analysis with a process-based biogeochemistry model. Global Biogeochemical Cycles 18(3): 2004GB002239. 10.1029/2004GB002239｜已核（Crossref）
+- Tian 等（7 位作者）(2010) Spatial and temporal patterns of CH4 and N2O fluxes in terrestrial ecosystems of North America during 1979–2008: application of a global biogeochemistry model. Biogeosciences 7(9): 2673–2694. 10.5194/bg-7-2673-2010｜已核（Crossref）
+- Zhu 等（10 位作者）(2014) Modelling methane emissions from natural wetlands by development and application of the TRIPLEX-GHG model. Geoscientific Model Development 7(3): 981–999. 10.5194/gmd-7-981-2014｜已核（Crossref）
+- Xu 等（7 位作者）(2015) A microbial functional group-based module for simulating methane production and consumption: Application to an incubated permafrost soil. Journal of Geophysical Research: Biogeosciences 120(7): 1315–1333. 10.1002/2015JG002935｜已核（Crossref）
+- Walter, Heimann (2000) A process-based, climate-sensitive model to derive methane emissions from natural wetlands: Application to five wetland sites, sensitivity to model parameters, and climate. Global Biogeochemical Cycles 14(3): 745–765. 10.1029/1999GB001204｜已核（Crossref）
+- van Huissteden, van den Bos, Marticorena Alvarez (2006) Modelling the effect of water-table management on CO2 and CH4 fluxes from peat soils. Netherlands Journal of Geosciences 85(1): 3–18. 10.1017/S0016774600021399｜已核（Crossref）
+- Müller, Paudel, Shoemaker, Woodbury, Wang, Mahowald (2015) CH4 parameter estimation in CLM4.5bgc using surrogate global optimization. Geoscientific Model Development 8(10): 3285–3310. 10.5194/gmd-8-3285-2015｜已核（Crossref）
+- Zheng, Thornton, Painter, Gu, Wullschleger, Graham (2019) Modeling anaerobic soil organic carbon decomposition in Arctic polygon tundra: insights into soil geochemical influences on carbon mineralization. Biogeosciences 16(3): 663–680. 10.5194/bg-16-663-2019｜已核（Crossref）
+- Wania, Ross, Prentice (2010) Implementation and evaluation of a new methane model within a dynamic global vegetation model: LPJ-WHyMe v1.3.1. Geoscientific Model Development 3(2): 565–584. 10.5194/gmd-3-565-2010｜已核（Crossref）
+- Zhang 等（4 位作者）(2016) Modeling spatiotemporal dynamics of global wetlands: comprehensive evaluation of a new sub-grid TOPMODEL parameterization and uncertainties. Biogeosciences 13(5): 1387–1408. 10.5194/bg-13-1387-2016｜已核（Crossref）
+- Spahni 等（11 位作者）(2011) Constraining global methane emissions and uptake by ecosystems. Biogeosciences 8(6): 1643–1665. 10.5194/bg-8-1643-2011｜已核（Crossref）
+- Arora 等（3 位作者）(2018) An assessment of natural methane fluxes simulated by the CLASS-CTEM model. Biogeosciences 15(15): 4683–4709. 10.5194/bg-15-4683-2018｜已核（Crossref）
+- Ito (2019) Methane emission from pan-Arctic natural wetlands estimated using a process-based model, 1901–2016. Polar Science 21: 26–36. 10.1016/j.polar.2018.12.001｜已核（Crossref）
+- Ringeval 等（7 位作者）(2010) An attempt to quantify the impact of changes in wetland extent on methane emissions on the seasonal and interannual time scales. Global Biogeochemical Cycles 24(2): 2008GB003354. 10.1029/2008GB003354｜已核（Crossref）
+- Gedney, Huntingford, Comyn-Platt, Wiltshire (2019) Significant feedbacks of wetland methane release on climate change and the causes of their uncertainty. Environmental Research Letters 14(8): 084027. 10.1088/1748-9326/ab2726｜已核（Crossref）
+- 无 DOI：CTSM 源码与技术手册（`~/mode/Wetland/CTSM`，commit 7409d3218513e1d95dbc2828de9a11a8972b1386）。
+
+转引未单列的著录（Wong 2018、Sakabe 2018、Jauhiainen 2016、Teh 2017、Finn 2020、Sahrawat 2015、Huang 1998、Wang 2018、Hergoualc'h 2020、Girkin 2020、Girkin 2025）以所引兄弟报告的 DOI 清单为准。

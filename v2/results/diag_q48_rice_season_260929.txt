@@ -1,0 +1,188 @@
+# diag_q48_rice_season_260929：JP-Mse、US-HRA、US-HRC 生长期过短的原因与改法候选
+
+- **日期**：2026.09.29-13:58
+- **读者**：下一会话
+- **来源**：Q-48 只读诊断，承接 `v2/results/diag_rice_straw_260929.txt` 第 2.3 节第 3 条与账本 Q-32 ⑤、D-24、V-84；站点树 `cases/paper_v2/v260929/sp_v2_c52/sites_v2_oo5` 与 `sites_v2_oo5_spin`（源码 6223b59c）；读码用 case 源码副本；脚本在本会话 scratchpad `q48/q48_vars.py`、`q48_dump.py`、`q48_gdd.py`、`q48_scan.py`、`q48_srf.py`、`q48_huiharv.py`
+- **状态**：四问已答；根因为 spin 与主跑窗口都不经过 1 月 1 日，gdd020 停在冷启动的 0；改法候选 A 未实施，待用户定
+
+单位：碳库 g C m⁻²；积温 GDD 为 °C·d。gdd0 为 4–9 月（北半球）0 °C 以上积温，gdd020 为其 20 年滑动均值；gddplant 为播后 10 °C 以上积温（稻 baset 10）；hui = gddplant / gddmaturity；idpp 为播后天数；mxmat 为最长生长期。
+
+## 0. 覆盖面
+
+1. 读码。范围是 case 源码副本 `sp_v2_c52/`；其中 `main/BGC/MOD_BGC_Veg_CNPhenology.F90`、`main/CoLM.F90`、`main/MOD_CropReadin.F90`、`mkinidata/MOD_IniTimeVariable.F90` 与工作树 `CoLM202X-paper-v2/` 同名文件逐字相同——已验证（四个 `diff` 输出为空）。
+   - `MOD_BGC_Veg_CNPhenology.F90`：136（引入 `DEF_RICE_GRNFILL`、`DEF_PADDY_DRAIN_DAYS`）、142（只公开 `CNPhenology`）、182–204（调用链）、251–252（yravg 20）、297–319（gdd0、gdd8、gdd10 只在 4–9 月累积；gddplant 每步累积）、321–347（gdd020 等只在 1 月 1 日首步更新，nyrs 只在跨年那一步加一）、1044–1080（按日历播种）、1081–1105（gddmaturity 每步重算，稻为 0.35 × gdd020 + 587）、1120–1139（idpp 与 C-47 放水）、1163–1233（相 2、收获判据、相 3）。
+   - `main/CoLM.F90`：449–453、500–505（TICKTIME 在驱动前推进，一天的首步 idate(3) = deltim）、715–737（spin 回绕，已有 TRACER 钩子 `wetland_bgc_sasu_cycle_end` 在 722）。
+   - `share/MOD_TimeManager.F90:384–403`（isendofyear：本步与下一步年份不同即真）。
+   - `mkinidata/MOD_IniTimeVariable.F90:949–955、975–994`（冷启动 gdd0、gdd020 等 = 0，nyrs = 0，idop = 99999999，gddmaturity = spval）。
+   - `main/MOD_Const_PFT.F90:1300–1359`（PFT 61、62 的 lfemerg 0.12、mxmat 150、grnfill 0.68、baset 10）；`main/MOD_Vars_Global.F90:93–94`（nrice 61、nirrig_rice 62）。
+   - `main/MOD_CropReadin.F90:84–198`（播种日取 `DEF_dir_runtime/crop/plantdt-colm-64cfts-rice2_fillcoast.nc` 的 `PLANTDATE_CFT_xx`，另读 `pdrice2` 与复种份额；无品种积温或成熟积温输入）。
+   - `share/MOD_Namelist.F90:434–460、484–485`（作物相关键；无播种日、gdd020、成熟积温键）。
+   - `main/MOD_Irrigation.F90:83–91、412–455、534、565`（另一处 1 月 1 日触发块及其消费点）。
+   - `main/BGC/MOD_BGC_Vars_PFTimeVariables.F90:501–544、875–913、1411–1483`（gdd020、nyrs、gddmaturity 进重启）。
+   - 检索：`gdd0_p|gdd8_p|gdd10_p|gdd020_p|gdd820_p|gdd1020_p|nyrs_crop_active_p` 于 `main`、`mkinidata`、`share`：3 个文件（PFTimeVariables、CNPhenology、IniTimeVariable），无其他消费点；`hybgdd` 于 `main`：0 处；`idate(2) == 1 .and. idate(3)` 于 `main`：2 处（CNPhenology:324、Irrigation:84）。
+   - CTSM 对照：`~/mode/Wetland/CTSM/src/biogeochem/CNPhenologyMod.F90:149、3075–3139`；`src/biogeophys/TemperatureType.F90:1711–1721`。
+   - 脚本与配置：`v2/scripts/prep_tag.sh:46–63`；`v2/config/v2_oo5/SPIN_CROSS_JAN1`（存在）；`scripts/sites/gen_site_nmls.py:206–220、253–259`；`scripts/sites/run_sites.py:116–143`；全球 `cases/paper_v2/v260928j/g2_o4/input_g2_o4.nml:33–46`。
+   - 账本 `v2/迭代账本.md` 第 102（D-24）、154–155（Q-28、C-32）、166（Q-32）、169（C-32e）、212（C-46）、215–218（C-47、V-84、D-54、V-85）、286（Q-48）、728 行。
+2. 数据：
+   - 七座稻田塔（含 PH-RiF）`_conf/site_nml/<塔>.nml` 与 `<塔>_spin.nml` 的全部时间键；spin 与主跑全部日期重启的 pft 文件（`plantdate_p`、`idop_p`、`harvdate_p`、`gdd0_p`、`gdd020_p`、`gdd1020_p`、`nyrs_crop_active_p`、`gddplant_p`、`gddmaturity_p`、`hui_p`、`cphase_p`、叶、活茎、籽粒碳）。
+   - 六塔全部年份月值主 history：`f_tref`、`f_gddplant`、`f_gddmaturity`、`f_hui`、`f_cphase`、`f_leafc`、`f_livestemc`、`f_grainc`、`f_lai`。
+   - 六塔塔上强迫 `data/methane/FLUXNET-CH4/Forcing/<塔>_<年>_FLUXNET-CH4_Met.nc` 的半小时 `Tair`。
+   - 77 座塔的 spin 窗口、`landdata/srfdata.nc` 的 `pfttyp`、spin 末重启的 gdd020、nyrs、gddmaturity。
+   - 站点文献：`docs/refs/sites/JP-Mse/2018_Iwata.pdf` p.157 Sect. 2.1；`docs/refs/sites/US-HRA/2023_Leavitt.pdf` p.2 Sect. 2.1 与 p.3 Table 1（US-HRC 目录下为同一文件）；IT-Cas 取 `data/_tmp/分析_260927_稻田/notes.txt` 第 2.9 节（出自 Meijide 2011）。
+3. 算过的量：各塔播种日、收获日、播后天数、收获触发与收获时 hui；每轮 spin 与主跑的 gdd0 增量；塔上强迫逐日 GDD10 累积（到 587、到模式 gddmaturity、到假设 gddmaturity 的日子，播后 150 天的积温与 hui）；按塔上实测播种或移栽到收获的 GDD10；77 塔中 spin 窗口不含 1 月 1 日且有作物 PFT 的塔。
+4. 运行方式：按任务书先用 `ssh node114` 跑脚本，node114 看不到登录节点本机 `/tmp` 下的 scratchpad（报 "can't open file ... No such file or directory"），改在登录节点直跑，每个脚本读几个 nc、秒级完成——已验证（ssh 报错原文）。
+5. 未看：无。
+6. 存疑（要跑才能定）：候选 A 落地后三塔的实际收获日（第 5.1 节第 4 条按强迫 Tair 与模式 tref 之差估算）——存疑。实验：候选 A 编译后单跑三塔，读主跑末重启 `harvdate_p`、`gddmaturity_p`。
+
+## 1. 结论
+
+JP-Mse、US-HRA、US-HRC 的收获由"成熟"判据 hui ≥ 1 触发，因为三塔 gddmaturity 恒为 587，即稻的公式 0.35 × gdd020 + 587 中 gdd020 = 0；IT-Cas、KR-CRK、US-Twt 的 gdd020 为 3474–3617、gddmaturity 为 1805–1853，150 天内积不满，收获由最长生长期 mxmat = 150 天触发——已验证（各塔全部重启 `gdd020_p`、`gddmaturity_p`、`idop_p`、`harvdate_p`；读码 `CNPhenology.F90:1102、1203`）。gdd020 为 0 的原因是它只在 1 月 1 日首步更新、nyrs 只在跨年那一步加一，而三塔的强迫只在一个日历年之内（JP-Mse 2012 全年，US-HRA、US-HRC 2017 年 1 月 1 日至 8 月 26 日），spin 每轮从 1 月 2 日跑到 12 月 29 日零点或 8 月 24 日零点、主跑窗口相同，从不经过 1 月 1 日，gdd020 与 nyrs 一直停在冷启动的 0；`SPIN_CROSS_JAN1` 只处理窗口止于 1 月 1 日零点的情形（PH-RiF），不覆盖这三塔——已验证（读码 `CNPhenology.F90:321–347`、`MOD_IniTimeVariable.F90:952–955`、`prep_tag.sh:46–63`；重启 `gdd0_p` 在 spin 五轮加主跑中一路累到 19729 → 23675 从未清零，`nyrs_crop_active_p` 恒 0）。播种日、纬度与温度、品种参数都不是原因：模式播种日与塔上播种或移栽只差 3–6 天，六塔播后积温速率相近，正常三塔若也取 587 同样会在播后 51–67 天收获——已验证（第 3 节表）。与塔上实测比，模式生长期短 71–87 天、收获早 68–82 天——已验证（Iwata 2018 Sect. 2.1；Leavitt 2023 Table 1）。最小修法是在 spin 回绕时，若本轮没有经过 1 月 1 日首步，就照 1 月 1 日那段写法结一次积温年（候选 A，两处宿主代码），它只作用于 spin 窗口不含 1 月 1 日且有作物的塔（77 塔中 JP-Mse、US-HRA、US-HRC、CH-Oe2），全球 case 每轮都经过 1 月 1 日、不受影响——推测（依据：第 5 节逐项推演，未编译运行）。
+
+## 2. 问一：六塔的播种日、收获日、成熟积温与积温曲线
+
+### 2.1 物候判据（读码）
+
+1. 播种：作物未活且未播时，当日 `jday == int(plantdate_p)` 即播，记 `idop_p = jday`、`harvdate_p = 999`——已验证（读码 `CNPhenology.F90:1056–1070`）。
+2. 积温：gddplant 在作物活着时每步加 max(0, tref − (273.15 + baset))·Δt/86400，稻 baset = 10；gdd0 只在北半球 4–9 月累积——已验证（读码 `CNPhenology.F90:300–314`；`MOD_Const_PFT.F90:1355` 第 61、62 列为 10）。
+3. 成熟积温：稻 gddmaturity = 0.35 × gdd020 + 587，作物活着时每步重算；hui = gddplant / gddmaturity——已验证（读码 `CNPhenology.F90:1082–1105`）。CoLM 无 CLM5 的 hybgdd 上限（`grep hybgdd main` 0 处）——已验证。
+4. gdd020：只在 `idate(2) == 1 .and. idate(3) == deltim`（1 月 1 日首步）更新；nyrs = 0 时置 0，= 1 时取上一年 gdd0，≥ 2 时按 20 年滑动平均；随后 gdd0、gdd8、gdd10 清零；nyrs 只在 `isendofyear` 为真（本步到下一步跨年）时加一——已验证（读码 `CNPhenology.F90:321–347`；`MOD_TimeManager.F90:384–403`）。冷启动 gdd020 = 0、nyrs = 0——已验证（读码 `MOD_IniTimeVariable.F90:952–955`）。
+5. 收获：hui ≥ 1、或 idpp ≥ mxmat（稻 150）、或 C-45 双季结束条件，三者任一即收；lfemerg ≤ hui < grnfill 为相 2，hui ≥ grnfill 为相 3——已验证（读码 `CNPhenology.F90:1163–1233`；`MOD_Const_PFT.F90:1309、1324、1339`；站点 nml `DEF_RICE_GRNFILL = 0.40`）。
+
+### 2.2 六塔一览
+
+| 塔（年） | 纬度 | 播种 DOY | 收获 DOY | 播后天数 | gdd020 | gddmaturity | nyrs | 收获触发 | 收获时 hui |
+|---|---|---|---|---|---|---|---|---|---|
+| JP-Mse（2012） | 36.05°N | 126 | 188 | 62 | 0 | 587 | 0 | hui ≥ 1 | 1 |
+| US-HRA（2017） | 34.59°N | 105 | 158 | 53 | 0 | 587 | 0 | hui ≥ 1 | 1 |
+| US-HRC（2017） | 34.59°N | 105 | 157 | 52 | 0 | 587 | 0 | hui ≥ 1 | 1 |
+| IT-Cas（2009–2010） | 45.07°N | 124 | 274 | 150 | 3511 → 3505 | 1816 → 1814 | 5 → 6 | idpp ≥ 150 | 0.81、0.72 |
+| KR-CRK（2015–2018） | 38.20°N | 140 | 290 | 150 | 3610–3616 | 1851–1853 | 5 → 8 | idpp ≥ 150 | ≥ 0.85–0.93 |
+| US-Twt（2009–2016） | 38.11°N | 135 | 285 | 150 | 3474–3536 | 1805–1827 | 5 → 13 | idpp ≥ 150 | ≥ 0.67–0.75 |
+| PH-RiF（参照） | 14.14°N | 166、349 | 两季 | — | 4863–4868 | 2289–2291 | 5 → 7 | — | — |
+
+1. 播种、收获、gdd020、gddmaturity、nyrs——已验证（`q48_dump.py` 读 spin 与主跑全部日期重启；各塔每年 `harvdate_p − idop_p` 相同）。纬度——已验证（history `lat`）。
+2. 三座短季塔在 spin 首末与主跑首末四个重启里 gdd020 都是 0、nyrs 都是 0、gddmaturity 都是 587；gdd0 从未清零，JP-Mse spin 末 19728.9、主跑末 23674.9，US-HRA 17383.2 → 20879.6，US-HRC 17720.5 → 21285.6——已验证（同上）。主跑一整轮的增量就是该年 4–9 月（US-HRA、US-HRC 为 4 月 1 日至 8 月 24 日）的模式 gdd0：3946.0、3496.4、3565.1——已验证（两重启相减）。
+3. 短季塔的触发：收获发生在播后 52–62 天、远小于 150，只能是 hui ≥ 1；用塔上强迫 Tair 逐日重算，GDD10 在播后 64、52、50 天达到 587，与模式 62、53、52 天相符（JP-Mse 模式 tref 夏季比塔上 Tair 高 0.5–1.0 °C，故早两天）——已验证（`q48_gdd.py` 输出；history `f_tref` 月均与强迫月均对比）。
+4. 正常塔的触发：收获日恒为播种日加 150——已验证（重启）。收获时 hui：IT-Cas 收获在 10 月 1 日首步，10 月月均 gddplant 乘步数即收获时 gddplant 1475.1、1305.1，除以 gddmaturity 得 0.81、0.72；KR-CRK、US-Twt 由 10 月月均 hui 按存活步数反推的"10 月 1 日到收获"均值为 0.85–0.93、0.67–0.75，是收获时 hui 的下限——已验证（`q48_huiharv.py` 输出；读码 `CNPhenology.F90:1208` 收获步 hui 置 0）。三塔都 < 1，即成熟积温未达、被 150 天上限截断——已验证（同上）。
+5. PH-RiF 的 spin 窗口原止于 2013 年 1 月 1 日零点，`SPIN_CROSS_JAN1` 把它推到 1 月 2 日后 gdd020 = 4865、gddmaturity = 2290，说明该标记对这一情形有效——已验证（`PH-RiF_spin.nml` spinup_day = 2；重启 `2013-001-00000`、`2013-002-00000`）。
+
+### 2.3 积温曲线（模式月均 gddplant，history `f_gddplant`；括号内为月均 tref °C）
+
+| 月 | JP-Mse 2012 | US-HRA 2017 | US-HRC 2017 | IT-Cas 2009 | KR-CRK 2016 | US-Twt 2012 |
+|---|---|---|---|---|---|---|
+| 4 | 0（12.95） | 36（18.82） | 42（19.94） | 0（12.83） | 0（13.26） | 0（14.82） |
+| 5 | 91（18.15） | 299（21.60） | 310（21.67） | 93（17.94） | 25（18.01） | 37（17.83） |
+| 6 | 364（19.99） | 116（25.26）收 | 93（25.89）收 | 369（20.00） | 285（21.33） | 265（19.04） |
+| 7 | 94（25.52）收 | 0（28.14） | 0（28.32） | 706（21.50） | 665（23.89） | 553（19.87） |
+| 8 | 0（27.80） | 0（26.32） | 0（26.69） | 1069（21.82） | 1149（25.15） | 866（19.84） |
+| 9 | 0（24.75） | — | — | 1371（17.28） | 1526（20.13） | 1132（18.12） |
+| 10 | 0 | — | — | 1（收） | 833（收） | 420（收） |
+
+1. 表内数值——已验证（`q48_dump.py` 输出）。"收"标该月内收获，月均含收获后的 0。
+2. 6 月的月均 gddplant 在短季塔与正常塔相近（JP-Mse 364 对 IT-Cas 369、KR-CRK 285），即积温速率并不慢；差别只在门槛 587 对 1805–1853——已验证（上表与第 2.2 节）。
+
+## 3. 问二：短季三塔与正常三塔差在哪
+
+| 可能因素 | 短季三塔 | 正常三塔 | 是否原因 |
+|---|---|---|---|
+| 作物历（播种日，全球 runtime 文件） | DOY 126、105、105；塔上移栽或播种 123、99、100 | DOY 124、140、135 | 否 |
+| 积温基准 gdd020 | 0（nyrs 0） | 3474–3617（nyrs 5–13） | 是 |
+| 纬度与温度 | 34.6–36.1°N；强迫 GDD10 在播后 50–64 天达到 587 | 38.1–45.1°N；强迫 GDD10 在播后 51–67 天达到 587 | 否 |
+| 品种参数 | PFT 62，mxmat 150、baset 10、lfemerg 0.12、grnfill 0.40（nml） | 同 | 否 |
+| 初始化窗口（SPIN_CROSS_JAN1） | spin 止于 12 月 29 日或 8 月 24 日，标记不动 | spin 为 1 月 2 日至次年 1 月 2 日，含 1 月 1 日 | 是（直接机制） |
+| 强迫年份起止 | JP-Mse 2012-01-01 至 2012-12-31；US-HRA、US-HRC 2017-01-01 至 2017-08-26 | IT-Cas 2009–2010，KR-CRK 2015–2018，US-Twt 2009-01-01 至 2017-04-04 | 是（根源） |
+
+1. 作物历：播种日只能取全球 runtime 文件（站点无入口），三座短季塔模式播种日与塔上只差 3–6 天——已验证（读码 `MOD_CropReadin.F90:146–171`；重启 `plantdate_p`；第 4 节塔上日期）。
+2. 积温基准：见第 2.2 节第 2 条。gdd020 在全部代码里只有 CNPhenology 读写，为 0 时稻的 gddmaturity 退化为常数项 587——已验证（第 0 节检索；读码 `CNPhenology.F90:1102`）。
+3. 纬度与温度：用塔上强迫逐日重算，GDD10 到 587 的播后天数短季塔 64、52、50，正常塔 IT-Cas 54–60、KR-CRK 51–53、US-Twt 53–67——已验证（`q48_gdd.py` 输出）。所以换成 587，正常塔也会在两个月内收获；温度不是区分因素——推测（依据：同一门槛下天数重叠）。
+4. 品种参数：六塔主跑 nml 除站名、年份、站点文件、强迫 nml 外逐行相同，三个稻田键都在——已验证（`diff JP-Mse.nml IT-Cas.nml` 只差 6 行；`grep -c` 各 3 处）。
+5. 初始化窗口：`gen_site_nmls.py` 取 spin 窗口 [start, min(start + 365 d, end)]，start 与 end 各向内收一天以吸收 greenwich = .false. 的时差；一年以内的强迫因此得到不含 1 月 1 日的窗口；主跑窗口 [start, end] 同样不含——已验证（读码 `gen_site_nmls.py:206–220、253–259`；三塔 `_spin.nml` 与 `.nml` 时间键）。`SPIN_CROSS_JAN1` 只在 `spinup_month == 1 and spinup_day == 1` 时把日改为 2——已验证（读码 `prep_tag.sh:57–60`）。
+6. 强迫年份：三塔强迫时间轴分别为 2012-01-01 00:00 至 2012-12-31 23:00、2017-01-01 00:00 至 2017-08-26 23:00（两塔同）——已验证（`q48_gdd.py` 读 `time` 首末）。站点表 obs_Syear = obs_Eyear——已验证（`_conf/LIST_sites.csv`）。
+7. 77 座塔里 spin 窗口不含 1 月 1 日的共 11 座（BW-Gum、BW-Nxr、CH-Oe2、FI-Hyy、JP-Mse、JP-SwL、US-EDN、US-HRA、US-HRC、US-StJ、US-Tw5），其中有作物 PFT 的只有 JP-Mse、US-HRA、US-HRC（PFT 62）与 CH-Oe2（PFT 15、17、18、20、21，gdd020 = 0，玉米 gddmaturity 816、春麦 1349、冬麦 440，都是常数项）——已验证（`q48_scan.py` 输出）。其余八座没有作物，gdd 各量不被消费——已验证（第 0 节检索）。
+8. `MOD_Irrigation.F90:84–91` 也是 1 月 1 日首步触发（清年灌溉累计、设 `zwt_stand`），三塔同样从不触发；但 `zwt_stand` 只在地下水取水里用，而站点取 `DEF_IRRIGATION_ALLOCATION = 1`（按需、不走该分支），对物理无影响——已验证（读码 `MOD_Irrigation.F90:424–455、534、565`；`MOD_Namelist.F90:435` 默认 1，站点 nml 未改）。
+
+## 4. 问三：与塔上实测对照
+
+| 塔 | 塔上播种或移栽 | 塔上收获 | 塔上生长期 | 模式播种→收获 | 模式偏短 | 收获偏早 | 塔上期间 GDD10（强迫） |
+|---|---|---|---|---|---|---|---|
+| JP-Mse 2012 | 5 月 2 日移栽（DOY 123） | 9 月 12 日（DOY 256） | 133 d | 126 → 188，62 d | 71 d | 68 d | 1675 |
+| US-HRA 2017 | 4 月 9 日条播（DOY 99） | 8 月 27 日（DOY 239） | 140 d | 105 → 158，53 d | 87 d | 81 d | ≥ 1952（强迫止于 DOY 238） |
+| US-HRC 2017 | 4 月 10 日条播（DOY 100） | 8 月 27 日（DOY 239） | 139 d | 105 → 157，52 d | 87 d | 82 d | ≥ 2012（同上） |
+
+1. JP-Mse：4 月 25 日开灌、淹到 8 月 28 日（6 月 24–28 日短暂排水），5 月 2 日移栽，7 月 27–30 日抽穗，9 月 12 日收获，10 月 6 日翻耕；品种越光（Koshihikari）——已验证（读 `docs/refs/sites/JP-Mse/2018_Iwata.pdf` p.157 Sect. 2.1）。
+2. US-HRA 为南田、US-HRC 为北田；2017 年两田 5 月 18 日淹水、延迟淹灌（DF）；Table 1 2017 行：季始北 4 月 10 日、南 4 月 9 日，季末两田 8 月 27 日，淹水天数北 75、南 84——已验证（读 `docs/refs/sites/US-HRA/2023_Leavitt.pdf` p.2 Sect. 2.1、p.3 Table 1）。
+3. 塔上期间 GDD10：按强迫 Tair 从塔上播种或移栽日累到收获日；US-HRA、US-HRC 强迫止于 8 月 26 日，比收获早一天，给下限——已验证（`q48_gdd.py` 输出）。三塔实测季所需 GDD10 为 1675–2030 左右，与公式在 gdd020 正常时给出的 1811–1968 同量级，是 587 的约三倍——推测（依据：上表与第 5.1 节第 3 条；强迫 Tair 与模式 tref 差 0.5–1 °C）。
+4. 参照：IT-Cas 2009 年塔上 day 104 泡田、day 265 收获，模式 day 274 收获，晚 9 天——已验证（`data/_tmp/分析_260927_稻田/notes.txt` 第 2.9 节，出自 Meijide 2011 Sect. 2.1；模式重启 `harvdate_p`）。
+5. 前一份诊断里三塔收获时叶加活茎碳 57–96 g C m⁻²、泡田 31–41 天，是这一 587 门槛的直接后果——推测（依据：生长期只有正常塔的 35–41%，6 月底前即收，月均叶加活茎碳峰值 JP-Mse 96、US-HRA 57、US-HRC 63，对 IT-Cas 2009 的 8–9 月 435–445）。
+
+## 5. 问四：改法候选
+
+### 5.1 候选 A（推荐）：spin 回绕时补结一次积温年
+
+1. 改哪：宿主两处（按 D-51 单独提交，不混甲烷文件）。
+   - `main/BGC/MOD_BGC_Veg_CNPhenology.F90`：把 `yravg`、`yravgm1` 由 `CNPhenologyClimate` 的局部常量（251–252）提到模块级；加模块变量 `gdd_year_closed`（初值 `.false.`），在 1 月 1 日块（324 行 IF 内）置 `.true.`；新增公开子程序 `CropGDDSpinCycleEnd`，并在 142 行加 `PUBLIC CropGDDSpinCycleEnd`。
+   - `main/CoLM.F90`：spin 回绕块（717–731）里、`wetland_bgc_sasu_cycle_end` 旁加一行调用，条件编译 `#if (defined BGC) && (defined CROP)`，并在 USE 区引入该子程序。
+2. 改成什么（示意，未编译）：
+
+```fortran
+   ! MOD_BGC_Veg_CNPhenology.F90, module level
+   real(r8), parameter :: yravg   = 20.0_r8      ! length of years to average for gdd
+   real(r8), parameter :: yravgm1 = yravg-1.0_r8 ! minus 1 of above
+   logical :: gdd_year_closed = .false.          ! Q-48: 1 January GDD update seen in this spin-up cycle
+
+   ! in CNPhenologyClimate, first line inside IF (idate(2) == 1 .and. idate(3) == deltim)
+            gdd_year_closed = .true.
+
+   SUBROUTINE CropGDDSpinCycleEnd ()
+   ! Q-48: a spin-up cycle of single-year or part-year site forcing never
+   ! reaches the first step of 1 January, so gdd020/gdd820/gdd1020 stay at
+   ! the cold-start 0 and rice matures at 587 GDD. Such a cycle closes the
+   ! GDD year at its wrap, as CNPhenologyClimate does on 1 January.
+   USE MOD_LandPFT, only: numpft
+   integer :: m
+      IF (.not. gdd_year_closed) THEN
+         DO m = 1, numpft
+            nyrs_crop_active_p(m) = nyrs_crop_active_p(m) + 1
+            IF (nyrs_crop_active_p(m) == 1) THEN
+               gdd020_p(m)  = gdd0_p(m)
+               gdd820_p(m)  = gdd8_p(m)
+               gdd1020_p(m) = gdd10_p(m)
+            ELSE
+               gdd020_p(m)  = (yravgm1*gdd020_p(m)  + gdd0_p(m))  / yravg
+               gdd820_p(m)  = (yravgm1*gdd820_p(m)  + gdd8_p(m))  / yravg
+               gdd1020_p(m) = (yravgm1*gdd1020_p(m) + gdd10_p(m)) / yravg
+            ENDIF
+            gdd0_p(m)  = 0._r8
+            gdd8_p(m)  = 0._r8
+            gdd10_p(m) = 0._r8
+         ENDDO
+      ENDIF
+      gdd_year_closed = .false.
+   END SUBROUTINE CropGDDSpinCycleEnd
+
+   ! CoLM.F90, spin-up wrap block, next to wetland_bgc_sasu_cycle_end
+#if (defined BGC) && (defined CROP)
+                  IF (p_is_worker) CALL CropGDDSpinCycleEnd ()
+#endif
+```
+
+3. 行为怎么变：只在"本轮 spin 没经过 1 月 1 日首步"时生效，等于把一轮当一年结账；gdd020、nyrs 已在重启里（`PFTimeVariables.F90:875–878、1411–1418`），主跑经交接重启继承，不需改重启格式——已验证（读码）。按主跑一整轮的 gdd0 增量，第 2 轮起 gdd020 为 JP-Mse 3946、US-HRA 3496、US-HRC 3565，gddmaturity 为 1968、1811、1835——推测（依据：第 2.2 节第 2 条的增量代入 0.35 × gdd020 + 587；第 1 轮仍为 587，与正常塔冷启动首轮相同）。
+4. 预期收获：JP-Mse 播后约 145–150 天（DOY 约 270–276，塔上 256，晚 2–3 周；强迫 Tair 下 GDD10 到 1921 在播后 151 天，模式 tref 夏季高 0.5–1 °C）；US-HRA、US-HRC 约 DOY 228–233（强迫 Tair 下到 1808、1837 在 DOY 233、232；塔上 239）——推测（依据：`q48_gdd.py` 输出与 tref 差）。C-47 放水随之移到预计收获前 21 天：JP-Mse 约 9 月上中旬（塔上 8 月 28 日），US-HRA、US-HRC 约 7 月底（塔上 US-HRC 约 8 月 1 日、US-HRA 约 8 月 10 日，按 5 月 18 日淹水加淹水天数 75、84 推）——推测。收获时叶加活茎碳升到与正常塔同量级，排放季延到 7–8 月（三塔塔上峰所在）——推测。
+5. 影响面：77 塔里只动 JP-Mse、US-HRA、US-HRC 与 CH-Oe2（旱作塔，玉米、麦的 gddmaturity 也会由常数项变为按气候）——推测（依据：第 3 节第 7 条的名单；其余不含 1 月 1 日的八座无作物）。全球：`g2_o4` 窗口 2008-01-01 至 2009-01-01，每轮首步即 1 月 1 日首步（TICKTIME 在驱动前推进），标记每轮都被置真，回绕时不动作，全球稻田不受影响——推测（依据：读 `input_g2_o4.nml:34–46` 与 `CoLM.F90:500–505`）。
+6. 局限：US-HRA、US-HRC 的 gdd0 只有 4 月 1 日到 8 月 24 日（183 天中的 148 天），gddmaturity 比完整 4–9 月偏低，恰好使收获落在强迫止日之前；若将来强迫延到全年，gddmaturity 约升到 2100 以上，收获会晚于 8 月 24 日，作物跨回绕时在下一轮 1 月 2 日因 idpp ≥ 150 被收——推测（依据：8 月月均 tref 26 °C，补 8 月 25 日至 9 月 30 日约 900 GDD0）。
+
+### 5.2 候选 B：处方成熟积温
+
+1. 做法：站点文件或 namelist 给每塔一个 gddmaturity（或 gdd020），全球给图；CTSM 有同类入口（`rx_cultivar_gdds`，可按 gdd20 基线缩放；gddmaturity 低于 `min_gddmaturity` 时直接停机）——已验证（读码 CTSM `CNPhenologyMod.F90:149、3097–3103、3129–3138`）。
+2. 利弊：可按品种与移栽定（JP-Mse 塔上移栽到收获 GDD10 约 1675，越光是早熟品种），但要新增一个键与一套数据，全球还要图；本问题的根因是初始化而非参数，不必为此增实体——推测（依据：第 3 节第 2、3 条）。
+
+### 5.3 不推荐的两条
+
+1. 把结积温年从 1 月 1 日挪到累积窗末（北半球 10 月 1 日、南半球 4 月 1 日）：JP-Mse 窗口含 10 月 1 日能修好，US-HRA、US-HRC 窗口止于 8 月 24 日修不好；且改变全球（南半球 gdd020 由"本年 1–3 月加上年 10–12 月"变为同一个夏季，北半球 10 月 1 日还活着的作物季中 gddmaturity 会变）——推测（依据：读码 `CNPhenology.F90:300–305、1082–1105` 每步重算）。
+2. 只改配置：US-HRA、US-HRC 强迫止于 8 月 26 日，任何窗口都到不了 1 月 1 日或年末；JP-Mse 要让窗口从 1 月 1 日零点跑到 12 月 31 日 24 时，才能让年末一步 nyrs 加一、下一轮首步触发 1 月 1 日块，而 `gen_site_nmls.py` 为吸收 greenwich = .false. 的时差两端各收一天，能否不收要先核强迫时间轴的时区——存疑。实验：JP-Mse 单塔用 1 月 1 日至 12 月 31 日窗口跑一轮，看是否读强迫越界、`nyrs_crop_active_p` 是否变 1。
+
+### 5.4 附带发现（不在 Q-48 范围）
+
+1. 正常三塔都在 hui < 1 时被 150 天上限截断（IT-Cas 0.72–0.81），公式 0.35 × gdd020 + 587 对这些塔偏高，或 150 天上限偏短；账本 C-46 已记 IT-Cas 0.69、KR-CRK 0.84——已验证（第 2.2 节第 4 条；账本第 212 行）。候选 A 之后 JP-Mse 也会落在同一情形（强迫 Tair 下播后 150 天 hui 约 0.97–1.0）——推测（依据：`q48_gdd.py` 输出）。要不要动另议。
+2. 冷启动的第 1 轮 spin 在任何塔、任何 case 都用 587（gdd020 尚无），现有 5 轮 spin 中只有第 1 轮受影响——已验证（读码 `CNPhenology.F90:325–328`、`MOD_IniTimeVariable.F90:952`；正常塔 spin 首重启 gdd020 = 0）。
+3. gddmaturity 在作物活着时每步重算，1 月 1 日更新 gdd020 会改变跨年作物（PH-RiF 旱季稻 DOY 349 播）的季中门槛；幅度为 0.35 × (gdd0 − gdd020) / 20，塔上 1–2 GDD，可忽略——已验证（PH-RiF 重启 gddmaturity 2289.07–2290.92）。

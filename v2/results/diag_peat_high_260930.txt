@@ -1,0 +1,142 @@
+# diag_peat_high_260930：偏高泥炭三塔（FR-LGt、DE-SfN、US-Los）诊断
+
+- **日期**：2026.09.30-15:47
+- **读者**：下一会话
+- **来源**：中控派活的只读子任务 methane-diag-peathigh；基底 `v2_p9n`（树 `cases/paper_v2/v260930/sp_v2_c104` @e979f598，配置 `v2/config/v2_p8n`，分数 `v2/results/scores77_v2_p9n.txt`），对照 `v2_p9w`（实测水位驱动，树 `sp_v2_c91`）；脚本与输出在 `v2/_scratch/peathigh/`（`run_all.py` 一次重跑全部，输出 `out_*.txt`）；账本 V-28、Q-16、Q-21、Q-24、Q-25、V-53、V-55、D-38、V-56、V-164、V-167、V-172、Q-63、Q-75、Q-81、Q-83；`scripts/sites/site_facts.csv`；塔文献转文本 `v2/_scratch/moss/txt/<塔>/`
+- **状态**：四问已答；第 5 节改法候选都未跑
+- **失效于**：站点基底换代并改动湿地水位下限、有林份额、植物输入或氧化写法之一，或三塔的站点参数改动
+
+## 0. 覆盖面
+
+1. 账本：grep `FR-LGt\|DE-SfN\|US-Los` 命中 38 行，逐行读；另读 C-13、C-30、C-66、C-71、C-88、C-89、D-38、Q-31、Q-55、Q-67、Q-78、V-168、V-184、V-185。
+2. 站点事实：`site_facts.csv` 三塔 60、48、60 行全读；泥炭塔 pH 取 `v2/_scratch/ph_floor/p1_site_ph_rows.txt`、`p3_site_bias.txt`。
+3. 塔文献（转文本按 water table、hummock、hollow、microrelief、pine、tower、drain、ditch、soil temperature、groundwater 检索后读相关段）：Hommeltenberg 2014 AFM 第 2.1、3、4 节；Hommeltenberg 2014 BG 站点段；Dettmann 2016 站点段、表 2、第 270–285 行；D'Angelo 2021 站点段与讨论；Bernard-Jannin 2018 第 2.1 节；Sulman 2009、Turner 2019 站点段；Turner 2021 第 3.1 节。
+4. 塔上数据：FLUXNET-CH4 元数据（探头深度、植被旗标）；三塔与对照五塔（CA-SCB、FI-Sii、SE-Deg、FI-Si2、JP-BBY）的日与半小时原始 csv（只读）。
+5. 模式输出：`v2_p9n` 77 塔收支；三塔与对照塔的月气候态、分层、通道、淹水子柱份额、潜热；`v2_p9w` 三塔。
+6. 读码（树 `sp_v2_c104`）：水位下限 `main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90:4652–4706` 与补水 `main/MOD_SoilSnowHydrology.F90:1400–1432`；氧化 `Physics.F90:2972–3040`；有林份额的 LAI 上限与植物输入比 `MOD_Tracer_Reactive_Methane_WetlandVeg.F90:338–419`、`MOD_Tracer_Reactive_BgcShim.F90:265–280`；站点参数写入 `scripts/sites/gen_site_nmls.py:52–78`。
+7. 不入项：history 中 `f_groundwater_supply/demand` 全为缺测（`supply_check.py` 输出 nan），补水量引账本第 494 行旧版 `drain_supply.py` 的结论。
+8. 未看：无。
+9. 存疑：只留第 5 节各条要跑才能定的效果量，测法写在各条内。
+
+## 1. 结论
+
+- FR-LGt（β 13.2）：偏高主要在水位。塔上 2017–2018 年月均水位 0.17–0.32 m、无丘洼微地形，模式被 fen 下限 0.13 m 补水托在 0.04–0.12 m；按实测水位驱动 β 13.1 → 5.7。余下约 5.7 倍在模式对深水位响应太弱：水位 0.25 m 时模式 E/HR 仍 2.9 %，塔上 E/(Reco/2) 0.3 %——已验证（`out_tower_vs_model_p9n.txt`、`out_tower_vs_model_p9w.txt`、账本 V-167、`SoilSnowHydrology.F90:1400–1432`）
+- DE-SfN（β 5.3）：偏高落在水位零点与植被两环。FLUXNET 与原文的 −0.05 m 以井位地表为零，模式 0.05–0.10 m 与之相合；以微地形平均地表为零，中央井（四周有矮松）2010–2014 年均 −0.18 m，模式偏湿约 0.1 m。模式把矮松林（冠高 2 m、PAI 2.3）当开阔草本泥炭（有林份额 0、LAI 上限 0.6），夏季 10–20 cm 土温高 3.8 °C——已验证（Dettmann 2016 表 2；Hommeltenberg 2014 AFM 第 2.1 节；`out_tower_vs_model_p9n.txt`）
+- US-Los（β 2.6）：水位不是原因（实测水位驱动 β 2.46 → 2.47）。塔上 GPP 921 对模式 367 g C m-2 yr-1，单位 GPP 甲烷塔上 0.70 %、模式 4.6 %；冷季（11–5 月）偏高 2.7–8 倍，夏季约 2 倍。塔上是桤木与柳的灌丛 fen、无藓、约 0.5 m 腐殖化泥炭覆于冰水砂上，模式有林份额 0——已验证（`out_ch4_clim_p9n_p9f_p9w.txt`、`out_tower_vs_model_p9n.txt`、Sulman 2009 第 2.1.1 节）
+- 总判断：三塔模式底物不偏多（模式 HR 为塔上 Reco/2 的 0.47–1.05 倍，对照五塔 0.84–1.86 倍）；模式在所有泥炭塔上给出几乎同一个碳转甲烷份额（P/HR 三塔 11.7–12.1 %、对照 8.8–13.5 %；O/P 三塔 0.35–0.40、对照 0.38–0.41），而塔上单位碳产率三塔 E/(Reco/2) 0.3–2.4 %、对照 6.4–15.3 %。模式缺区分这类塔的手段：水位被夹在 0.07–0.12 m（账本 Q-25），pH 恒 6.2，f 全局 0.2——已验证（`out_site_budget_p9n.txt`、`out_pathway_shares_p9n.txt`、`v2/config/v2_p8n/ch4_parameter.nml`）
+- 三塔塔上年量（1.8–6.5 g C m-2 yr-1）接近 BAWLD-CH4 bog 与 fen 年通量中位（约 2.9 与 7.4 g C m-2 yr-1），对照五塔（11–17）落在湿型高端；模式把所有泥炭塔都做成湿型莎草泥沼的排放水平——推测。理由：BAWLD 年通量中位只有 6 与 15 行（`data/_tmp/分析_260927_湿地分类/notes.txt` 第 3 节，g CH4 按 12/16 折成 g C）。
+- pH 不是三塔独有的错配：DE-SfN 4.0、FR-LGt 4–5，对照塔 4.3–5.0——已验证（`v2/_scratch/ph_floor/p3_site_bias.txt`、`site_facts.csv`）
+
+## 2. 每塔是什么样的地方（问 1）
+
+### 2.1 FR-LGt（La Guette，法国）
+
+- 类型与状态：过渡型贫营养 fen（pH 4–5，电导率低于 80），泥炭藓为主，近 70 年被 Molinia caerulea、Betula、Pinus sylvestris 侵入；南侧 1945 年前修路，路沟排水，2009 年清沟降低出口；2014-02 在路沟做水文修复，修复区水位 0 至 −26 cm，未受影响的对照区 0 至 −43 cm 以下——已验证（D'Angelo 2021 站点段；Bernard-Jannin 2018 第 2.1.1 节；`site_facts.csv`）
+- 水位：FLUXNET-CH4 2017–2018 月均 −0.17 至 −0.32 m，年均 −0.24（2017）、−0.22（2018）；2011–2014 年均 −0.21、−0.18、−0.12、−0.10 m（D'Angelo 2015 博士论文，无 DOI）；无明显丘洼，井位零点即平均地表——已验证（`out_ts_probe_check.txt`；`site_facts.csv`；Bernard-Jannin 2018 第 2.1.1 节）
+- 植被：DOM_VEG aerenchymatous（Molinia），SPHAGNUM 1，TREE 0；塔上 GPP 1073、Reco 1529 g C m-2 yr-1（NT 月气候态折年）；中宇宙里藓至多占 GPP 0.33——已验证（元数据；`out_tower_vs_model_p9n.txt`；`lit_moss_productivity_260930.txt` 第 2.2 节表）
+- 泥炭：平均厚 0.8 m、最厚 1.8 m；0–30 cm 容重 0.05–0.28 g cm-3、碳 19–44 %——已验证（`site_facts.csv`，D'Angelo 2015 博士论文表 5.2）
+- 年通量：EC 2018 年 2.45 g C m-2 yr-1；本文 12 个月气候态折 1.8；同站箱式 2013–2014（作者称两个特湿年，水位 −0.10、−0.12 m）17 ± 5；中宇宙纯藓 7、藓加 Molinia 33——已验证（Delwiche 2021 表 B2；D'Angelo 2021 表 1 与讨论段；Leroy 2019 表 3）
+- 资料：5–8 月 FCH4 实测覆盖只 11–30 %，夏季以插补为主——已验证（`out_tower_vs_model_p9n.txt` 的 meas% 行）
+
+### 2.2 DE-SfN（Schechenfilz Nord，德国）
+
+- 类型与状态：近自然雨养 bog 矮松林，Pinus mugo ssp. rotundata 平均冠高 2 m、PAI 2.3 ± 0.8，地被以 Sphagnum 为主，伴 Calluna、Vaccinium uliginosum、Eriophorum vaginatum；复合体北部采泥炭至 1950 年代、2001 年修复，观测区泥炭原生——已验证（Hommeltenberg 2014 AFM 第 2.1 节；Hommeltenberg 2014 BG 第 2.1.1 节）
+- 水位：原文三年均值 −0.05 ± 0.05 m（+0.07 至 −0.32）；FLUXNET-CH4 半小时 WTD 只有 2012-07 至 12（月均 −0.05 至 −0.11），2013–2014 无实测；以测量的微地形平均地表为零，2010-09 至 2014-11 均值南井 −0.15、中央井 −0.18、北井 −0.04 m，中央井四周有矮松、莎草与石南，北井无矮松，丘洼高差标准差 0.061–0.089 m——已验证（Hommeltenberg 2014 AFM 第 2.1 节；`out_ts_probe_check.txt`；Dettmann 2016 表 2 与第 282 行"all given and shown water table depths here are relative to m"）
+- 水位作用：2013 年 7–8 月水位低于 −0.12 m 六周，排放少三分之一；低于 −0.2 m 时排放变小且不随温度变——已验证（Hommeltenberg 2014 AFM 第 3、4 节）
+- 其他：泥炭 5.1 m、有机碳约 50 %、容重 0.08–0.09 g cm-3、pH 约 4；塔上 GPP 760、Reco 679 g C m-2 yr-1——已验证（`site_facts.csv`；`out_tower_vs_model_p9n.txt`）
+- 年通量：5.3 ± 0.34 g C m-2 yr-1（2012-07 至 2013-06），作者称处于已报道天然与复湿泥炭地的下限，并转引芬兰矮松 bog 箱式 6.1 ± 1.2——已验证（Hommeltenberg 2014 AFM 摘要与第 4 节）
+- 资料：6 月 FCH4 实测覆盖 11 %；TS_1（标 2 cm）夏季日较差只 0.95 °C（FR-LGt 的 2 cm 为 10 °C），10 cm 以下探头与之一致偏冷——已验证（`out_ts_probe_check.txt`）
+
+### 2.3 US-Los（Lost Creek，美国威斯康星）
+
+- 类型与状态：地表水与地下水补给的矿养灌丛 fen，源头溪流穿过；塔周以桤木 Alnus incana ssp. rugosa 与柳为主，林下薹草；无泥炭藓与褐藓，TREE 1，DOM_VEG eri_shrub；印痕内阔叶灌丛湿地 20 %、针叶林湿地 10 %、挺水与湿草甸 9 %、完全开阔约 45 %——已验证（Sulman 2009 第 2.1.1 节；Turner 2019 站点段；元数据）
+- 扰动：2000 与 2003 年两次拆河狸坝，2002–2006 年均水位降约 30 cm、泥炭沉降约 25 cm，灌丛木质生物量 2001–2005 增 64 %——已验证（Sulman 2009 第 2.1.1、3.2、4 节）
+- 水位：2014–2018 月均 +0.01 至 −0.38 m、年均 −0.06 至 −0.19；2019、2020 年均 −0.26、−0.29；塔位平坦，作者认为微地形不重要——已验证（`out_ts_probe_check.txt`；Delwiche 2021 表 B2；Turner 2021 第 3.1 节；Sulman 2009 第 4 节）
+- 泥炭与化学：腐殖化有机层约 0.5 m，发育在冰水砂上；水与土壤化学未测；pH 无实测——已验证（Sulman 2009 第 2.1.1、4 节；`site_facts.csv`）
+- 塔上 GPP 921、Reco 830 g C m-2 yr-1；塔下实测 LAI 4.24——已验证（`out_tower_vs_model_p9n.txt`；账本第 504 行引 Qiu et al. 2018 表 2）
+- 年通量：6.51 ± 1.28 g C m-2 yr-1（2014–2018，逐年 5.51–8.67）；2019、2020 为 2.08、2.98——已验证（Delwiche 2021 表 B2、B3；Turner 2021 表 1）
+- 资料：TS_1 元数据标 0 cm，但日较差 0.03–0.10 °C、夏季 4–10 °C、9 月达峰，是深层或地下水温度，不能当表层土温；`month_decomp.py` 给 US-Los 的塔上表观 Q10 8.12 用的正是它，不可用——已验证（`out_ts_probe_check.txt`、`out_month_decomp_p9n.txt`）
+
+## 3. 模式偏高落在哪一环（问 2）
+
+### 3.1 收支对照
+
+`v2_p9n`，g C m-2 yr-1，塔上有甲烷的月（`site_budget.py`，Reco 为 DT 分区）：
+
+| 塔 | 模式 HR | P | O/P | E | E/HR | 塔上 E | 塔上 Reco/2 | E/(Reco/2) | HR/(Reco/2) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| FR-LGt | 251 | 29.4 | 0.37 | 18.4 | 7.3 % | 1.4 | 533 | 0.3 % | 0.47 |
+| DE-SfN | 251 | 30.3 | 0.40 | 18.2 | 7.2 % | 3.7 | 240 | 1.5 % | 1.05 |
+| US-Los | 220 | 26.2 | 0.35 | 16.8 | 7.6 % | 6.5 | 274 | 2.4 % | 0.80 |
+| CA-SCB | 295 | 26.1 | 0.38 | 16.0 | 5.4 % | 18.3 | 201 | 9.1 % | 1.47 |
+| FI-Sii | 226 | 23.0 | 0.40 | 13.9 | 6.1 % | 13.9 | 152 | 9.2 % | 1.49 |
+| SE-Deg | 184 | 16.2 | 0.39 | 9.9 | 5.4 % | 10.7 | 100 | 10.7 % | 1.84 |
+| FI-Si2 | 234 | 26.0 | 0.38 | 15.6 | 6.7 % | 19.2 | 126 | 15.3 % | 1.86 |
+| JP-BBY | 249 | 33.7 | 0.41 | 19.9 | 8.0 % | 19.0 | 298 | 6.4 % | 0.84 |
+
+——已验证（`out_site_budget_p9n.txt`）
+
+单位 GPP 甲烷（年，按塔上有甲烷的日历月）：塔上 FR-LGt 0.17 %、DE-SfN 0.43 %、US-Los 0.70 %，对照五塔 2.0–4.3 %；模式三塔 3.9–4.6 %，对照 2.2–3.9 %——已验证（`out_tower_vs_model_p9n.txt` 年量行）
+
+### 3.2 按月拆
+
+模式/塔上（mg CH4 m-2 d-1 月气候态之比，计分配对月）：
+
+| 月 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| FR-LGt | 14 | 15 | 11 | 12 | 6.0 | 5.1 | 13 | 37 | 16 | 40 | 33 | 塔上负 |
+| DE-SfN | 3.2 | 3.3 | 18 | 6.3 | 7.7 | 20 | 7.8 | 6.1 | 3.5 | 3.4 | 4.9 | 6.8 |
+| US-Los | 8.0 | 2.7 | 3.2 | 4.1 | 4.6 | 2.1 | 2.1 | 2.7 | 2.7 | 2.0 | 2.7 | 4.3 |
+
+——已验证（`out_ch4_clim_p9n_p9f_p9w.txt`）
+
+- FR-LGt 全年 5 倍以上，最小在塔上峰值的 5–6 月（这两月实测覆盖 11–30 %）——已验证（同上与 meas% 行）
+- DE-SfN 塔上峰在 8–10 月（21–25），模式峰在 7 月（140），相位差 1–2 个月（r 0.55）——已验证（同上）
+- US-Los 夏季约 2 倍，冷季与春季 2.7–8 倍；5 月塔上 14、模式 65，塔上 6 月才起跳——已验证（同上）
+
+### 3.3 逐环
+
+1. 底物：不偏多。三塔模式 HR/(Reco/2) 0.47–1.05，低于对照塔 0.84–1.86；植物输入 = 0.5 × 光合 × 输入比（`BgcShim.F90:277–278`），三塔模式 GPP 只有塔上 0.40–0.62——已验证（第 3.1 节表；`out_tower_vs_model_p9n.txt`）
+2. 产率：f 全局 0.2（`use_biome_f_methane = .false.`）、pH 恒 6.2 因子 1（`use_spatial_ph = .false.`，账本 V-168），三塔 P/HR 与对照塔同档——已验证（`v2_p8n/ch4_parameter.nml`；第 3.1 节表）。温度：DE-SfN 模式 6–8 月 10、20 cm 土温 17.1、16.3 °C，塔上 13.2、12.5 °C，高 3.8–3.9 °C；FR-LGt 5–20 cm 高 1.5–1.9 °C；对照塔 CA-SCB 同深度模式反而低 0.6–2.0 °C——已验证（`out_tower_vs_model_p9n.txt` JJA 行与探头深度行）。按模式产量表观 Q10 2.25，DE-SfN 的 3.8 °C 约合产量 ×1.36——推测。理由：Q10 取自 `month_decomp` 的模式 P 拟合，未单独跑降温试验。
+3. 水位：模式月均水位 FR-LGt 0.04–0.12、DE-SfN 0.05–0.10、US-Los 0.06–0.10 m，淹水比例 0.13–0.45；塔上见第 2 节。实测水位驱动（V-167）：FR-LGt β 13.1 → 5.7、US-Los 2.46 → 2.47、DE-SfN 5.25 → 6.95（井位零点，2013–2014 为插补平段）——已验证（`out_tower_vs_model_p9n.txt`；`scores77_v2_p9f.txt`、`scores77_v2_p9w.txt`）。以 Dettmann 的平均地表口径（均值 −0.15 至 −0.18、丘洼标准差 0.071–0.089 m），DE-SfN 淹水比例应只有约 2 %，模式为 0.20–0.37——推测。理由：按正态微地形 Φ(−0.18/0.089) 估算，未跑。
+4. 氧化：三塔 O/P 0.35–0.40，与对照同。非淹水子柱只氧化产量的 0.20–0.24，淹水子柱 0.70–0.90——已验证（`out_sat_share_p9n.txt`）。FR-LGt 在实测水位 0.25 m 下 O/P 0.39，产量 52 % 来自含水位的 0.17–0.29 m 层（该层只约三成在水位以下）、38 % 来自 0.29–0.49 m——已验证（`out_layer_profile_p9w.txt`、`out_tower_vs_model_p9w.txt`）
+5. 通道：三塔通气组织占排放 0.31–0.50，对照 0.37–0.54；本模式排放受产量限制，通道只分配去向（账本 V-53）；关 C-64 地面导度只压低这三塔而 bog 类整体变差（V-164），不是根——已验证（`out_pathway_shares_p9n.txt`；账本）
+
+## 4. 塔上事实与模式设置的错配（问 3）
+
+1. FR-LGt 排水未表示：塔上路沟排水、水位 0.17–0.32 m；模式当接侧向来水的天然 fen（`wetland_share_rain_site` 0、`wetland_share_bog_site` 0），下限 = `wetland_max_wtd` 0.13 m（`Physics.F90:4670–4678`），水位深于下限即补水到下限（`SoilSnowHydrology.F90:1400–1432`），夏季被托在 0.12 m——已验证（`v2_p8n/SITE_PARAMS.csv`；读码；`out_tower_vs_model_p9n.txt`）
+2. DE-SfN 水位零点：FLUXNET 与原文 −0.05 m 以井位地表为零，平均地表口径中央井 −0.18 m；模式是平面地表加 0.11 m 微地形，水位 0.05–0.10 m——已验证（Dettmann 2016 表 2；`ch4_parameter.nml` `wetland_microtopo_sigma`）。塔印痕中心对应中央井——推测。理由：中央井四周植被（矮松、莎草、石南、泥炭藓）与 AFM 第 2.1 节对印痕中心的描述一致，原文未给井与塔的距离。V-167 里 DE-SfN 变差用的是井位口径且 2013–2014 为插补值，不能拿来排除水位——已验证（`out_ts_probe_check.txt` 2013–2014 无实测）
+3. DE-SfN 植被：矮松林（DOM_VEG tree，PAI 2.3），模式有林份额 0、LAI 上限 0.6、禾草通气组织；后果是冠层不遮荫、夏季土温高 3.8 °C，GPP 472 对 760——已验证（`SITE_PARAMS.csv`；Hommeltenberg 2014 AFM 第 2.1 节；`out_tower_vs_model_p9n.txt`）
+4. US-Los 植被：桤木、柳灌丛（TREE 1），模式有林份额 0、LAI 上限 0.6，GPP 367 对 921；s_moss 0 与塔上无藓相符——已验证（同上；Sulman 2009）
+5. US-Los 泥炭厚度：塔上约 0.5 m 腐殖化泥炭覆于砂上，模式泥炭份额 1（`SITE_MAIN.csv`），第 8 层（0.83–1.38 m）碳占 12 %（对照 1–6 %），但该层产量只占 1 %——已验证（`out_layer_profile_p9n.txt`）。对水力与导热的影响——存疑。测法：US-Los 泥炭份额取 0.5 m 对应值跑一次，看水位与冷季排放。
+6. 冷季：US-Los 模式 5–20 cm 冬季约 0 °C 不冻，冬季 P/HR 约 7 %、E/HR 3.6–5.7 %（对照塔冬季 E/HR 1–3 %），塔上冷季 E/(Reco/2) 1.2–2.4 %——已验证（`out_month_decomp_p9n.txt`）
+7. 资料层面（不是模式错配，但影响判读）：FR-LGt EC 年量（2018 年 2.45，水位 −0.22 至 −0.24）比同站箱式（2013–2014 年 17 ± 5，水位 −0.10、−0.12）低 7 倍，模式 21 接近湿年箱式量；夏季 FCH4 插补 70–89 %；DE-SfN 6 月插补 89 %；US-Los TS_1 非表层——已验证（第 2 节各条）
+8. 反例提醒：CA-SCB 8–9 月塔上水位 0.20–0.22 m 仍排 71–116 mg CH4 m-2 d-1，水位不是区分三塔的唯一量——已验证（`out_tower_vs_model_p9n.txt`）。其原因——存疑。测法：本诊断未查 CA-SCB 塔上水位零点与融冻塌陷底物，另查。
+
+## 5. 改法候选（问 4）
+
+先站点表示，后全局机制。
+
+1. FR-LGt 下限按塔上排水放深（站点，只动配置）：`SITE_PARAMS.csv` 为 FR-LGt 加列 `DEF_METHANE%wetland_max_wtd` = 0.25（塔上 2017–2018 年均 0.22–0.24、月均最深 0.32）。依据：路沟排水与 2009 年清沟（D'Angelo 2021）、塔上水位（Delwiche 2021 表 B2）、无丘洼（Bernard-Jannin 2018）。可行性：宽表列名原样写进该塔 nml（`gen_site_nmls.py:52–78`），FR-LGt 的 s_e、s_d、s_bog 都为 0，下限即该键（`Physics.F90:4670–4706`）——已验证（读码）。预期：FR-LGt β 13 → 6–9，其余塔逐位不变——推测。理由：上界是实测水位驱动的 5.7；模式年降水 702 大于蒸散 455 mm，去掉补水后能否降到 0.25 m 取决于泥炭出水。测法：子集 peat，与 `v2_p9n` 比。备选 `wetland_share_rain_site` 1（不接来水、不补水）效果相近，但语义是雨养，与 fen 事实不符。
+2. 深水位下产量与氧化的写法（全局，改码）：(a) 含水位的层按饱和份额产甲烷（账本 Q-81 第 ② 条已列）；(b) 核非淹水子柱氧化帽，现在只氧化产量的 0.20–0.24。依据：FR-LGt 在 0.25 m 水位下产量一半来自只三成饱和的层，模式 E/HR 2.9 % 对塔上 0.3 %；BAWLD-CH4 水位档 ≤ −20 cm 3.6、−10 至 −5 cm 62.8 mg CH4 m-2 d-1，差 17 倍，而模式 FR-LGt 水位 0.10 → 0.25 m 只降 2.5 倍（21.0 → 8.5 g C m-2 yr-1）——已验证（`out_layer_profile_p9w.txt`、`out_sat_share_p9n.txt`、`out_tower_vs_model_p9w.txt`、`data/_tmp/分析_260927_湿地分类/notes.txt` 第 3 节）。预期：水位深于约 0.15 m 的塔下降（FR-LGt，第 1 条之后更明显；US-Uaf、干足迹苔原），水位浅于 0.1 m 的塔几乎不动；CA-SCB 夏末 0.14–0.15 m 可能被压低——推测。理由：作用只在含水位层与水位以上层。须 77 塔与全球一起测（D-38 原则一）。
+3. DE-SfN 水位零点诊断（站点，诊断）：按平均地表口径（井位实测减 0.13 m：中央井 −0.18 对原文 −0.05）开 `USE_SITE_WTD` 只跑 DE-SfN。若 β 明显下降，改法落在 DE-SfN 的模式水量：它已不接来水、下限 0.20 m 不起作用，水位由降水减蒸散与泥炭出水决定。需改站点水位数据或加零点偏移键，属正本或代码改动，须用户定。预期：DE-SfN 下降，他塔不动——推测。理由：同一换零点在 FR-LGt 上的类比（V-167）；未跑。
+4. 有林份额按塔事实给（站点加结构，改码）：DE-SfN 取 1（矮松林，DOM_VEG tree），US-Los 取约 0.3（Turner 2019 印痕灌丛 20 % 加针叶林湿地 10 %；塔周以桤木、柳为主则更高）。前提是先把有林份额绑着的三件事拆开：有林部分 LAI 不封顶（V-55 使 DE-SfN GPP 到塔上 2.3 倍）、C-89 藓层保底（s_moss 1 时输入比 0.48）、冠层遮荫。按现写法估算：DE-SfN 取 1 时植物输入约为现在的 1.7 倍（GPP ×3.6、输入比 1 → 0.48），会更高；US-Los 取 0.3 时约 0.9 倍、取 1 时约 0.7 倍（s_moss 0，输入比等于草本 LAI 比，GPP 分别 ×2.0、×3.5）——推测。理由：按 `WetlandVeg.F90:338–419` 的式子与 k 0.32 手算，未跑。f 不动（D-38 已撤按有林份额缩放 f）。预期：DE-SfN 土温降约 4 °C、GPP 近塔上，甲烷方向取决于拆法；US-Los β 2.6 → 约 1.8–2.3，GPP 比 0.40 → 约 0.8——推测。
+5. 记录、暂不做：US-Los 冷季 2.7–8 倍是 CH4:HR 温度敏感性偏弱（账本 Q-78：模式 0.20 eV 对塔上 0.71 eV）在不冻土上的表现，全局温度结构已试不采用，三塔在 q10 2.0 下都更差（V-184：DE-SfN 5.17 → 5.90、FR-LGt 13.1 → 13.8、US-Los 2.46 → 2.94）——已验证（`scores77_v2_p9k.txt`、`scores77_v2_p9q20.txt`）
+
+不建议：pH 因子按塔给（对照塔同样酸，田间依据弱，D-61、Q-67）；按塔上 GPP 抬 LAI 上限（V-172：FR-LGt 13.1 → 27.8、US-Los 2.46 → 4.77）；关 C-64（V-164）；按有林份额缩放 f（D-38）。
+
+## 6. 文献
+
+第一作者姓、作者数、刊名、卷期页、年、题名均取自 Crossref（2026-09-30 逐条查，请求不含个人信息）；无 DOI 者注明。
+
+- Bernard-Jannin 等 9 人 (2018) Hydrological control of dissolved organic carbon dynamics in a rehabilitated Sphagnum-dominated peatland: a water-table based modelling approach. Hydrology and Earth System Sciences 22(9): 4907–4920. doi:10.5194/hess-22-4907-2018
+- D'Angelo 等 7 人 (2021) Carbon Balance and Spatial Variability of CO2 and CH4 Fluxes in a Sphagnum-Dominated Peatland in a Temperate Climate. Wetlands 41(1): 5. doi:10.1007/s13157-021-01411-y
+- D'Angelo (2015) 博士论文，Université d'Orléans，HAL tel-01304452，无 DOI（经 `site_facts.csv` 转录，未另核）
+- Delwiche 等 152 人 (2021) FLUXNET-CH4: a global, multi-ecosystem dataset and analysis of methane seasonality from freshwater wetlands. Earth System Science Data 13(7): 3607–3689. doi:10.5194/essd-13-3607-2021
+- Dettmann 等 2 人 (2016) Deriving Effective Soil Water Retention Characteristics from Shallow Water Table Fluctuations in Peatlands. Vadose Zone Journal 15(10): 1–13. doi:10.2136/vzj2016.04.0029
+- Hommeltenberg 等 6 人 (2014) Ecosystem scale methane fluxes in a natural temperate bog-pine forest in southern Germany. Agricultural and Forest Meteorology 198–199: 273–284. doi:10.1016/j.agrformet.2014.08.017
+- Hommeltenberg 等 4 人 (2014) Can a bog drained for forestry be a stronger carbon sink than a natural bog forest? Biogeosciences 11(13): 3477–3493. doi:10.5194/bg-11-3477-2014
+- Leroy 等 8 人 (2019) CO2 and CH4 budgets and global warming potential modifications in Sphagnum-dominated peat mesocosms invaded by Molinia caerulea. Biogeosciences 16(20): 4085–4095. doi:10.5194/bg-16-4085-2019
+- Sulman 等 5 人 (2009) Contrasting carbon dioxide fluxes between a drying shrub wetland in Northern Wisconsin, USA, and nearby forests. Biogeosciences 6(6): 1115–1126. doi:10.5194/bg-6-1115-2009
+- Turner 等 5 人 (2019) Wind Sheltering Impacts on Land-Atmosphere Fluxes Over Fens. Frontiers in Environmental Science 7: 179. doi:10.3389/fenvs.2019.00179
+- Turner 等 4 人 (2021) Lagged Wetland CH4 Flux Response in a Historically Wet Year. Journal of Geophysical Research: Biogeosciences 126(11): e2021JG006458. doi:10.1029/2021JG006458

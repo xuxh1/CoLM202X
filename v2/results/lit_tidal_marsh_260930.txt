@@ -1,0 +1,78 @@
+# lit_tidal_marsh_260930：潮汐盐沼在单点中的表示（L-13）
+
+- **日期**：2026.09.30-05:57
+- **读者**：下一会话
+- **来源**：中控派活 methane-lit-tidal（只读，未改码、未跑模式、未改数据正本）；承接 `v2/results/lit_saltmarsh_260930.txt` 与账本 Q-65、C-42、C-96、V-173；塔上半小时数据 `data/FLUXNET-CH4/raw/FLX_<塔>_FLUXNET-CH4_HH_*.csv`，脚本与输出 `v2/_scratch/tidal/tide_obs.py`、`tide_obs.out`；模式清单 `v2/_scratch/tidal/model_inventory.py`、`model_inventory.out`（tag `cases/paper_v2/v260930/sp_v2_c91/sites_v2_p9f`，commit 04842b9e）；读码 `main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90`、`MOD_Tracer_Reactive_Methane_Const.F90`、`main/MOD_SoilSnowHydrology.F90`（工作树 e3f4858b）
+- **状态**：部分完成：问题 1 的塔上淹水与淹水期通量、模式侧溶解甲烷与硫酸盐补给的离线量级、问题 4 已答；问题 2（他模式细节）与问题 3（潮位站可得性）派出的三个文献子任务在交回时尚未返回，未并入，第 3、4 节只列已由上一轮或站点事实表核过的内容
+- **失效于**：模式加入潮汐水位强迫或侧向溶解甲烷汇之后
+
+口径：E、P、O 为排放、产量、氧化，mg CH4 m-2 d-1；WTD 为 FLUXNET-CH4 原始水位，地表以上为正（`data/FLUXNET-CH4/README.md` 第 5 节：38 站中 35 站为此口径，三座盐沼塔不在例外表 `add_site_wtd.py:37`）；"淹水"指半小时 WTD > 0；FCH4 用实测、不用插补值；分层比较按"年月 × 昼夜（SW_IN_F > 10 W m-2）"，每层淹水与出露各至少 20 个半小时。复现：`v2/scripts/run_on_node.sh node114 ../_scratch/tidal/tide_obs.py`，`model_inventory.py` 同法。
+
+## 0. 覆盖面
+
+1. 读码：`Physics.F90` 的 `methane_acceptor` 在当前工作树为第 2750–2835 行（任务书的 2739–2824 是 24061070 归档的行号），调用门控第 624–626、1471、1634 行；`methane_aere` 第 3028–3131 行；C-42 与 C-96 第 2616–2625 行；`Const.F90` 受体库参数第 369–413 行、站点键第 1199–1209 行；`MOD_SoilSnowHydrology.F90` 积水目标第 1283–1330 行。
+2. 数据：五塔 HH 文件全部读；只有 US-Srr、US-StJ、US-EDN 有 WTD 列，US-LA1、US-MRM 无；五塔都无盐度、电导、硝酸盐、硫酸盐列（`tide_obs.out` 各塔第 2 行）。模式：p9f 五塔全部 hist 与 hist_tracer。
+3. 站点事实：`scripts/sites/site_facts.csv` 五塔的盐度、孔隙水硫酸盐、水位均值与范围、常年积水、管理与扰动史行（行号见正文）。
+4. 未并入：问题 2 他模式（PEPRMT-Tidal 水位项、ELM-PFLOTRAN 潮汐边界、MEM、DNDC、ecosys）与问题 3 潮位站（CRMS 2825、NOAA、NERRS、USGS）的检索由三个子任务执行，交回时未返回。
+5. 存疑（要跑实验才能定）：第 5 节 T1 淹水抑制项实跑后的 KGE_ln；US-LA1 淹水期通量是降是升（塔上文件无 WTD，要 CRMS 2825 逐时水位配对）。
+
+## 1. 结论
+
+1. 塔上淹水频率差别很大：US-StJ 31 % 的半小时淹水、每日 1.84 次、每次中位 3 h、日水位变幅中位 1.10 m；US-EDN 42 %、每日 1.13 次、变幅 0.46 m；US-Srr 11 %、每日 0.37 次、变幅 0.07 m、只 36.5 % 的日子有淹水——已验证（tide_obs.out）。US-LA1 年淹水 31 次、3861 h（约 44 %）——已验证（site_facts.csv:2376，Krauss 2016 图 2）。US-MRM 低沼每日两次、高潮淹 0.20–0.60 m，泥滩 0.60–1.00 m——已验证（site_facts.csv:2557–2560，Reid 2013 第 4.1 节）。
+2. 淹水改变传输：US-StJ 同月同昼夜比较，淹水时通量是出露时的 0.49 倍（16 层中 15 层更低，四分位 0.43–0.60），退潮时高于涨潮（49.9 对 30.9，16 层中 14 层）；日距平 r(FCH4, WTD) = −0.18——已验证（tide_obs.out US-StJ）。US-Srr 淹水与出露无差别（比值中位 1.10，21 层中 8 层更低）；US-EDN 通量近 0，无从判断——已验证（tide_obs.out）。
+3. 侧向输出在模式里量级小：模式溶解甲烷少、周转快，0–0.83 m 饱和子柱存量 1.3–16 mmol m-2，存量 / 排放只 0.4–2.9 d，0–0.29 m 孔隙水甲烷 6–31 µM；按孔隙水交换 10 L m-2 d-1 算侧向输出只占排放 1–6 %，50 L m-2 d-1 也只 6–28 %（US-MRM 最大）——已验证（model_inventory.out）。实测孔隙水远高于模式（US-StJ 土壤孔隙气甲烷可达 145 000 µmol mol-1）——已验证（Capooci 2024 摘要，上一轮第 2.3 节）。模式里 99–100 % 走通气组织，根把孔隙水抽空，侧向汇抢不到甲烷——推测。依据是周转天数与通气组织份额。
+4. 潮汐硫酸盐补给在容量上压倒产量：按海水比例 [SO4] = 0.77 S mM、每 mol SO4 顶替 1 mol CH4（受体库 8 mol e-），孔隙水交换 10 L m-2 d-1 带来的硫酸盐即为模式产量的 4.0（US-MRM）到 14.9 倍（US-StJ）——已验证（model_inventory.out；Physics.F90 `e_per_ch4 = 8`）。决定作用的是冲刷深度而非速率；但 US-StJ 孔隙水硫酸盐 3–18 mM 贯穿 0–90 cm 而排放高，US-MRM 硫酸盐在 10–20 cm 以下耗尽而排放近 0，硫酸盐方向与两塔观测相反——已验证（site_facts.csv:3117、2547）。
+5. 一套参数不能让 StJ、LA1 与 Srr、MRM 同时对上：所需相对现行的倍数 LA1 0.68、StJ 0.81、Srr 0.049、MRM 0.011（上一轮第 5.1 节所需因子 / 现行因子）；淹水抑制项（第 5 节 T1）只给 0.78–0.94，恰合 StJ、LA1，对 Srr、MRM 差 1–2 个数量级——已验证（按第 1 条的淹水份额与第 2 条的 0.49 计算）。Srr 很少被淹而排放低、MRM 频繁深淹而排放低、StJ 频繁淹水而排放高，淹水频率与观测不单调——已验证（第 1 条与上一轮第 3 节塔上 E）。缺的是 Srr、MRM 的独立约束（孔隙水硫酸盐与甲烷剖面、潮沟甲烷与侧向输出实测），以及若显式算硫酸盐时 StJ 所需的不受硫酸盐抑制的甲基营养型份额——推测。
+
+## 2. 三条作用的量级（问题 1）
+
+### 2.1 按塔
+
+| 塔 | 淹水份额 | 每日次数 | 日变幅 m | 淹水 / 出露通量 | 孔隙水硫酸盐 | 出处 |
+| --- | --- | --- | --- | --- | --- | --- |
+| US-MRM | 低沼每日两次，高潮 0.20–0.60 m；泥滩低潮也有 0–0.10 m 积水 | 约 2 | 大潮 0.4–1.0 | 塔上无 WTD | 低沼 10–20 cm 以下耗尽，浓度只在 Reid 2013 图 2 | site_facts.csv:2547、2557–2561 |
+| US-Srr | 11.3 % | 0.37 | 中位 0.07，p90 0.24 | 1.10（21 层） | 未取得（Hartman 2024 补充材料） | tide_obs.out；site_facts.csv:3054 |
+| US-StJ | 31.0 %（>0.10 m 18.1 %） | 1.84 | 中位 1.10 | 0.49（16 层）；退潮高于涨潮 | 短型互花米草区 3–18 mM、高型区未检出至 9 mM，0–90 cm | tide_obs.out；site_facts.csv:3117–3118 |
+| US-LA1 | 约 44 %（3861 h，31 次） | 约 0.085 | 微潮，月均 0.23–0.56 m NAVD88 | 塔上无 WTD；月尺度水位最高月通量最高 | 无实测，由电导率推 | site_facts.csv:2366、2375–2376；Holm 2016 表 4 |
+| US-EDN | 42.4 % | 1.13 | 中位 0.46 | 通量近 0，不可判 | 无实测；35 psu 按海水比例约 27 mM | tide_obs.out；site_facts.csv:2043 |
+
+- 塔上 WTD 分布：US-Srr 中位 −0.09、p5 −0.43 m；US-StJ 中位 −0.20、p5 −0.88、p95 +0.24 m；US-EDN 中位 −0.02 m——已验证（tide_obs.out）。模式三塔地下水位 0.10–0.11 m、积水 0.1–0.9 mm——已验证（model_inventory.out）。
+
+### 2.2 模式侧的量级
+
+| 塔 | E | P | 0–0.29 m 孔隙水 CH4 µM | 0–0.83 m 存量 mmol m-2 | 存量 / E（d） | q = 10 侧向输出占 E | q = 10 硫酸盐补给 / P |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| US-MRM | 89.8 | 155.8 | 31 | 16.0 | 2.9 | 6 % | 4.0 |
+| US-Srr | 83.7 | 140.6 | 6 | 1.8 | 0.4 | 1 % | 7.8 |
+| US-StJ | 50.7 | 87.2 | 7 | 4.6 | 1.4 | 2 % | 14.9 |
+| US-LA1 | 70.3 | 120.7 | 13 | 7.6 | 1.7 | 3 % | 9.5 |
+| US-EDN | 0.2 | 0.8 | 4 | 1.3 | 86.6 | 242 % | 5541 |
+
+——已验证（model_inventory.out，全部月份；q 为孔隙水交换 L m-2 d-1）。
+
+## 3. 他模式的表示（问题 2，未完成）
+
+- PEPRMT-Tidal：产量乘 kI_NO3/(kI_NO3 + [NO3]) × kI_SO4/(kI_SO4 + [SO4])，[SO4] 由电导率或盐度按海水比例推，v1.0 代码 kI_SO4 486.4、kI_NO3 0.102 mg L-1；驱动为 GPP、气温、水位、电导率、硝酸盐——已验证（上一轮第 2.5 节，Oikawa 2024 式 5 与 v1.0 代码）。水位如何进入氧化与传输未核——存疑。
+- ELM-PFLOTRAN（Sulman et al. 2024）：把潮汐驱动的土壤氧化还原与生物地球化学相互作用接入陆面模式——已验证（上一轮只读摘要）。潮位与硫酸盐边界的具体形式、参数未核。
+- MEM、DNDC 盐沼版、ecosys：未核。
+
+## 4. 塔上可得的驱动（问题 3，未完成）
+
+- 塔上文件：US-Srr、US-StJ、US-EDN 有半小时 WTD（覆盖 40 %、46 %、67 %），US-LA1、US-MRM 无；五塔无盐度或电导列——已验证（tide_obs.out）。
+- US-LA1：CRMS 2825 距塔 250 m，连续记录水位与电导率（研究期盐度 2–17 psu，水位用 NAVD88）——已验证（site_facts.csv:2364–2365、2375）。
+- US-Srr：USGS First Mallard 站连续电导率折算盐度，2004–2018——已验证（site_facts.csv:3050）。US-StJ：NERR Aspen Landing 水质站 YSI 6600，盐度 2020–2021——已验证（site_facts.csv:3114）。US-MRM：论文称水温、电导率与潮位取自 MERI，未给数值——已验证（site_facts.csv:2546）。
+- 各站是否公开、时间覆盖与基准面换算未核。
+
+## 5. CoLM 单点的最简表示与预期（问题 4）
+
+- T1 淹水抑制通气组织与扩散：作用对象 `methane_aere` 的通气组织通量与地表扩散（现无淹没项，第 3028–3131 行只随 LAI、孔隙度、根分布）；式 E_aere,flood = E_aere × [1 − f_fl (1 − r_fl)]，f_fl 为当日淹水份额（塔上 WTD 或潮位站的半小时份额，驱动放 Sitedata 逐日量，如 `WTD_daily` 同法），r_fl = 0.49（US-StJ 实测）。预期倍数 MRM 约 0.80（f_fl 取 0.4 为推测）、Srr 0.94、StJ 0.84、LA1 0.78、EDN 0.79；StJ β 1.30 → 约 1.09、LA1 1.57 → 约 1.22——已验证（按第 1 节第 1、2 条计算；MRM 的 f_fl 推测）。LA1 淹水期通量方向未知——存疑。
+- T2 侧向溶解甲烷汇：在 0–z_f 层对饱和子柱溶解甲烷加一级汇 k_lat = n_tide × V_ex /(θ z_f)。按第 2.2 节量级只削 1–6 %，不值得先做——已验证（model_inventory.out）。
+- T3 硫酸盐接受体库（候选 16）：容量 A_max,SO4 = 8 θ × 0.77 S mol e- m-3，0–z_f 层每次淹水补满。补给容量远超产量（第 1 节第 4 条），结果由 z_f 决定：z_f 0.17 m 时削掉约 82 % 产量（上一轮第 4.2 节产量分布），对各塔同向压低；StJ 硫酸盐贯穿 0–90 cm 会被压到接近 0，须另加不受硫酸盐影响的甲基营养型份额——推测。依据是 site_facts.csv:3117 与 Capooci 2024 摘要。
+- 判断：T1 可用一套参数改善 StJ、LA1，但 Srr（去掉约 2.4 倍底物偏高后仍差约 8 倍）与 MRM（约 90 倍）不是潮汐项能给的量级；V-173 的硝酸盐项按塔反推 K 相差近两个数量级，也不行；缺 Srr、MRM 的孔隙水硫酸盐与甲烷剖面、潮沟甲烷浓度与侧向输出实测——推测。
+
+## 6. DOI 列表（著录经 Crossref）
+
+- Arias-Ortiz, A., Oikawa, P. Y., Carlin, J., Masqué, P., Shahan, J., Kanneg, S., Paytan, A., and Baldocchi, D. D.: Tidal and nontidal marsh restoration: a trade-off between carbon sequestration, methane emissions, and soil accretion, Journal of Geophysical Research: Biogeosciences, 126(12), e2021JG006573, 2021. doi:10.1029/2021JG006573
+- Shahan, J., Chu, H., Windham-Myers, L., Matsumura, M., Carlin, J., Eichelmann, E., Stuart-Haentjens, E., Bergamaschi, B., Nakatsuka, K., Sturtevant, C., and Oikawa, P.: Combining eddy covariance and chamber methods to better constrain CO2 and CH4 fluxes across a heterogeneous restored tidal wetland, Journal of Geophysical Research: Biogeosciences, 127(9), e2022JG007112, 2022. doi:10.1029/2022JG007112
+- Segers, R., and Leffelaar, P. A.: Modeling methane fluxes in wetlands with gas-transporting plants: 1. Single-root scale, Journal of Geophysical Research: Atmospheres, 106(D4), 3511–3528, 2001. doi:10.1029/2000JD900484
+- 其余引用（Oikawa 2024、Sulman 2024、Capooci 2024、Seyfferth 2020、Reid 2013、Holm 2016、Krauss 2016、Arias-Ortiz 2024、Poffenbarger 2011、PEPRMT-Tidal v1.0 代码）著录见 `v2/results/lit_saltmarsh_260930.txt` 第 7 节，已经 Crossref 或 DataCite 核过。

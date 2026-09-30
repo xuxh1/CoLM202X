@@ -1,0 +1,192 @@
+# lit_marsh_energy_260929：挺水植物常年积水沼泽的能量分配、水温底温与陆面模式的积水处理
+
+- **日期**：2026.09.29-19:20
+- **读者**：下一会话
+- **来源**：文献调研子任务（只读，未改码、未跑模式）；承接 `v2/results/diag_marsh_energy_260929.txt` 的塔上与模式能量拆分；本地 CTSM 源码与技术手册 `/share/home/dq076/mode/Wetland/CTSM/`；CoLM 工作树 `CoLM202X-paper-v2/main/`
+- **状态**：五问已答；著录已逐条打 Crossref；三篇只读到摘要或检索摘录，已在各句标明
+
+口径：通量 W m-2，向上为正；E 为水面或地面蒸发，T 为蒸腾，ET 为二者之和；1 mm yr-1 蒸发折 0.0776 W m-2。"三角洲四塔"指 US-Tw1（West Pond）、US-Tw4（East End）、US-Myb（Mayberry）、US-Sne（Sherman Wetland）。"诊断件"指 `v2/results/diag_marsh_energy_260929.txt`。
+
+## 0. 覆盖面
+
+1. 网络检索词（WebSearch，每次返回 9–10 条，逐条看标题与摘要）：
+   - Eichelmann 2018 land cover type structure evapotranspiration Delta AFM
+   - Hemes 2018 aerodynamic surface properties surface cooling restored wetlands
+   - Goodrich wetland heat storage water energy balance closure marsh（两轮，另一轮加 tule cattail）
+   - Goulden Litvak Miller 2007 Typha marsh evapotranspiration
+   - Eichelmann ... water temperature dead plant material West Pond East End Mayberry
+   - Twitchell West Pond Mayberry water temperature warmer than air nighttime evaporation
+   - Burba Verma Kim 1999 Phragmites prairie wetland heat storage（两轮）
+   - Krochta Chang 2025 wetland water temperature review
+   - Wania 2009 LPJ-WHyMe standing water heat diffusion
+   - rice paddy land surface model floodwater layer energy balance water temperature
+   - Old Woman Creek / US-WPT energy balance Chu
+   - light transmission through Typha canopy to water surface（两轮）
+   - Farrer Goldberg 2009 litter light
+   - emergent macrophyte shading stratification Chimney 2006
+   - Schile 2013 non-photosynthetic vegetation Twitchell；Dronova Taddeo 2016 LAI
+   - mean annual soil temperature vs air temperature
+2. 读了全文（PDF 逐页）：Hemes 等 2018（JGR-B，19 页）；Goulden 等 2007（Aquatic Botany，10 页）；Eichelmann 等 2022（GCB 接收稿，第 1–10、16–21 页）；Poindexter 等 2016（GRL，本地文本 `data/_tmp/分析_260925_站点测量高度/text/US-Tw1/2016_Poindexter.txt` 第 1–110、280–375 行）；Rocha & Goulden 2009（AFM，第 1–4 页，与能量无关，不入正文）。
+3. 只读到摘要（OpenAlex 或出版方摘要页）：Eichelmann 等 2018（AmeriFlux 出版物页）；Maruyama 等 2017；Xu 等 2023；Payne 1972；Malone 等 2014；Krochta & Chang 2025；Albright 等 2022 预印本（与本题距离远，不入正文）。
+4. 只见检索摘录、未读原文：Burba、Verma、Kim 1999（BLM）开阔水储热数；Xu 等 2023 "积水与第 1 层土并为一层"一句；"挺水植被区水体光照不到入射 2 %"一句（出处未能对上，不入正文）。
+5. 本地代码与手册（逐处读过）：
+   - CTSM 技术手册：`Hydrology/CLM50_Tech_Note_Hydrology.rst` 第 238–341 行；`Soil_Snow_Temperatures/..._Soil_Snow_Temperatures.rst` 第 34、190–260、388–425、605–636 行；`Fluxes/..._Fluxes.rst` 第 463–521、898–917、995–1032、1528 行；`Surface_Albedos/..._Surface_Albedos.rst` 第 484 行；`Lake/CLM50_Tech_Note_Lake.rst` 第 6–32、458–487、599 行。
+   - CTSM 源码 `src/biogeophys/`：`SoilTemperatureMod.F90` 第 166–432、552–563、826–840、994–1114、1660–1745、2206–2210 行；`SurfaceAlbedoMod.F90` 第 195–222、1225–1280 行；`CanopyFluxesMod.F90` 第 1255–1280、1513–1528 行；`SurfaceResistanceMod.F90` 第 23–24、270–330、385–426 行；`SurfaceHumidityMod.F90` 第 137–231 行（grep 命中处）；`FrictionVelocityMod.F90` 第 594–621 行；`bld/namelist_files/namelist_defaults_ctsm.xml` 第 270–271 行。grep `h2osfc` 于 `src/biogeophys/` 命中 26 个文件；在能量路径上的 6 个（SoilTemperatureMod、CanopyFluxesMod、SurfaceResistanceMod、SurfaceHumidityMod、SoilFluxesMod、BareGroundFluxesMod）逐条看了命中行，其余 20 个是水量收支、状态与通量类型声明、平衡检查与单元测试文件，不在能量数据流上，未逐个打开。
+   - CoLM 工作树 `CoLM202X-paper-v2/main/MOD_LeafTemperature.F90` 第 660–686 行（冠层下阻抗）。
+   - 诊断件全文（333 行）。
+6. 没找到或未取得：
+   - 任务书点名的"Goodrich 等沼泽热储存论文"：两轮检索都没有对上的文献；与"沼泽水体热储存、枯落物"对得上的是 Goulden 等 2007（Aquatic Botany），本报告按它处理——存疑。任务书所指若另有其文，需要作者、年份再查。
+   - Eichelmann 等 2018 全文（Elsevier 403，OSTI 无全文），只用摘要与 Hemes 2018、Eichelmann 2022 对它的转述。
+   - Burba 等 1999 两篇（BLM、Wetlands）与 AFM 的 Phragmites 篇全文，Springer/Elsevier 付费墙。
+   - 挺水植物冠层（tule、cattail）下水面接收短波比例的实测数：检索三轮没找到可核的数，第 3 节改用冠层遮荫公式与诊断件的模式份额估。
+   - Dronova & Taddeo 2016 的三角洲湿地 PAI 数值（只有题录）。
+   - JULES、ORCHIDEE-PEAT、LPJ-wsl、ELM 对积水能量的处理：未逐一核对原文；ELM 沿用 CLM4.5 的 h2osfc——推测。
+   - US-WPT（Winous Point）的能量分配论文：未读，只用诊断件里的塔上数。
+
+## 1. 问题 1：三角洲复湿沼泽的实测能量分配
+
+### 1.1 年蒸散与邻近农田、稻田
+
+```text
+地类（塔）                    年 ET mm        折 LE W m-2   出处
+放牧草场                       652 ± 131       50.6          Eichelmann 2018 摘要（2 年均值 ± SD）
+苜蓿（US-Tw3）                 901 ± 24        69.9          同上（3 年）
+淹水稻田                       975 ± 50        75.7          同上（4 年）
+West Pond 郁闭湿地（US-Tw1）   996 ± 63        77.3          同上（4 年）
+Mayberry 开阔水湿地（US-Myb）  1091 ± 144      84.7          同上（4 年）
+East End 开阔水湿地（US-Tw4）  1140 ± 67       88.5          同上（3 年）
+```
+
+- 上表年 ET——已验证（来源：10.1016/j.agrformet.2018.03.007 摘要，AmeriFlux 出版物页）；LE 列按 0.0776 W m-2 / (mm yr-1) 折算——已验证（手算）。
+- 郁闭湿地的 ET 与苜蓿、稻田同一量级，开阔水湿地高 10–25 %；郁闭冠层"阻止水柱受热、水温显著偏低、水面饱和水汽压低"，并"把水面与大气解耦、抑制水汽湍流输送"——已验证（来源：同上摘要原句）。
+- 蒸发与蒸腾的拆分（2013–2019，ANN 方法）：West Pond 年 E 200–300 mm、T 700–800 mm、T/ET 70–75 %；Mayberry E 从 831 mm（2013）降到 449 mm（2019）、T 300–500 mm、T/ET 30–50 %；East End E 从 1119 mm（2014）降到 630 mm（2019）、T/ET 0–30 %；Sherman 年 E 约 1100 mm、T/ET 低于 15 %；四站年 ET 850–1250 mm——已验证（来源：10.1111/gcb.15974，接收稿第 622–656 行）。
+- 植被盖度（2018 年塔足迹）：West Pond 97 %、East End 96 %、Mayberry 64 %、Sherman 45 %；West Pond 水深 0.2–0.4 m，Mayberry 0.02–2 m；优势种都是 tule（Schoenoplectus acutus）与 cattail（Typha spp.）——已验证（来源：10.1111/gcb.15974，接收稿第 236–255 行）。
+- 夜间 ET 在这些淹水站点基本是蒸发，主要受气温与水温驱动，VPD 次之——已验证（来源：10.1111/gcb.15974，接收稿第 86–88 行，转述 Eichelmann 2018）。
+
+### 1.2 年均与夏季的四项分量
+
+文献没有给出三角洲四塔 Rn、H、LE、G 的年均绝对值表（Hemes 2018 只给湿地减苜蓿的差值）。绝对值取诊断件从 FLUXNET-CH4 半小时产品算的结果：
+
+```text
+塔      Rn     H      LE     G       closure   6-8 月 H   6-8 月 LE
+US-Tw1  131.5  14.1   80.8   无      0.72      10.3       155.9
+US-Tw4  137.0   6.5   87.8   -0.5    0.69      -2.2       163.9
+US-Myb  111.6   9.2   97.8   无      0.98      18.8       169.2
+US-Sne  115.1   6.8   96.1   -0.5    0.89      14.3       147.4
+US-WPT   97.7   8.8   58.8   无      0.69
+```
+
+- 上表——已验证（来源：诊断件第 56–63 行）。四塔年均感热只有 7–14 W m-2，潜热占可用能量的大头，蒸发比 LE/Rn 0.61–0.88——已验证（来源：诊断件第 56–59、292–295 行）。
+- 湿地比苜蓿多吸收净辐射：反照率（塔上四分量表，月中午最小/最大）East End 0.097/0.142、West Pond 0.108/0.142、Mayberry 0.122/0.134（MODIS 估）、苜蓿 0.142/0.248；生长季白天 East End 比苜蓿多吸收至多 193 W m-2——已验证（来源：10.1029/2018JG004494，第 2075 页表 1、第 2082 页）。
+- 半小时能量闭合：苜蓿 79.3 %、West Pond 78.1 %、East End 55.8 %、Mayberry 65.2 %；开阔水多的湿地闭合差，作者归因于水柱储热测不全，West Pond 与 Mayberry 没测 G——已验证（来源：10.1029/2018JG004494，第 2076 页）。Eichelmann 2022 给四湿地日总量闭合 73–81 %——已验证（来源：10.1111/gcb.15974，接收稿第 289–292 行）。佛罗里达 Everglades 两块淡水沼泽的闭合 60–80 %，淹水期降到 60–70 %——已验证（来源：10.1002/2014JG002700 摘要）。
+- 地表温度（空气动力学温度 T_aero）：生长季中午 East End、Mayberry、West Pond 分别比苜蓿低至多 3.4、5.1、2.1 °C，夜间高至多 1.9、3.6、0.7 °C；春季湿地月均 T_aero 比苜蓿高至多 2.3 °C——已验证（来源：10.1029/2018JG004494，第 2078、2081 页）。
+- 空气动力学导度：湿地峰值 0.037–0.044 m s-1，约为苜蓿 0.025 m s-1 的两倍（折合冠层上空气动力学阻抗 23–27 对 40 s m-1）——已验证（来源：10.1029/2018JG004494，第 2079–2080 页；阻抗为倒数手算）。
+- 同气候的加州南部 Typha 沼泽（San Joaquin Freshwater Marsh，1–2 m 厚的立枯与倒伏枯落物）年 ET 490 mm，夏季 3–4 mm d-1、冬季零点几 mm d-1，仲夏 Bowen 比约 1，蒸腾占 ET 的 80 %，水面蒸发（E_subcanopy）年 95 mm——已验证（来源：10.1016/j.aquabot.2006.09.005，第 97、101–102 页）。
+
+## 2. 问题 2：水温、底泥温度与气温之差，水体储热
+
+### 2.1 水温与底泥温度对气温
+
+- 郁闭冠层下水偏冷：West Pond 的水温比其他湿地站低 15–25 %，原因是厚枯落物层与郁闭冠层把大气与水面解耦、白天净辐射不进水柱——已验证（来源：10.1029/2018JG004494，第 2084 页）。Eichelmann 2018 摘要同样写郁闭冠层"阻止水柱受热、水温显著偏低"——已验证（来源：10.1016/j.agrformet.2018.03.007 摘要）。
+- 最极端的是 San Joaquin 沼泽：枯落物覆盖下的水温在多数日子里只比当日最低气温高约 1 °C（2003 年 1–6 月）；作者把枯落物层比作二极管——夜里枯落物上表面辐射冷却、层内不稳定对流把水的热量往上送，白天上表面受热、层内稳定、热量送不下来——已验证（来源：10.1016/j.aquabot.2006.09.005，第 97、104 页，图 5）。
+- 三角洲塔上的底泥（TS，均在沉积物面以下）与气温之差随植被盖度几乎成直线（五塔 r = −0.99，每单位盖度 −8.3 K）：Tw1（盖度 0.97）年均 −2.7 K，Sne（0.454）+1.8 K——已验证（来源：诊断件第 42 行）。逐月：Tw1 除 12 月（+0.5 K）外底泥都低于气温（1 月 −1.2、7 月 −4.4 K），Sne 每月高于气温（1 月 +2.4、7 月 +1.7 K），Myb 为 −0.2 到 +1.6 K——已验证（来源：诊断件第 119–167、174 行）。这与文献"郁闭则冷、开阔则暖"的方向一致——推测。
+- 淹水稻田：100 mm 水层的日均水温比排干时的地面温度高，两地实测最大差 2.6 °C，主要原因是地面粗糙度（水面更光滑，地面与冠层空气的交换变弱），自由对流对水温有重要作用；模拟在低气温、小 LAI 时差可达 3 °C，而且大部分差出现在水深小于 50 mm 时——已验证（来源：10.1002/2017WR021019 摘要）。
+- 挺水植被在综述中的两种作用：遮荫降温，或造成分层——已验证（来源：10.1177/03091333241306653 摘要）。
+- 冬季：WPT 塔上 10 cm 底泥 12–2 月 3.8–5.3 °C、气温 −2.0 到 1.5 °C——已验证（来源：诊断件第 271 行）；冰盖与水层隔热、结冰潜热保温是冬季底泥偏暖的原因——推测。依据只有物理推理，未找到专门文献。
+
+### 2.2 水体的昼夜与季节储热
+
+- West Pond 水柱白天多为稳定分层、无热对流；夜里水面冷却，冷水下沉造成对流翻混；对流时的界面传输速度约 1 cm h-1，仅靠风的时段约 0.1 cm h-1——已验证（来源：10.1002/2016GL068782，第 6276–6277 页；本地文本第 76–77、83–87、349–353 行）。站点平均水深 25 cm，冠层高出水面 2–4 m，Typha 盖度 95 %——已验证（来源：同上，本地文本第 103–108 行）。
+- 有开阔水的 East End、Mayberry 白天把多吸的净辐射存进水柱，生长季湿地减苜蓿的残差储热中午达 +150 到 +200 W m-2，夜里 −50 到 −80 W m-2，夜间以潜热放出；West Pond 的储热差很小——已验证（来源：10.1029/2018JG004494，第 2082 页正文；数值为第 2081 页图 4b 读图约值）。
+- 厚枯落物下的水柱白天只升温约 0.5 °C，折合 50 cm 水深、10 h 白天平均约 30 W m-2，不到 Rn 的 10 %——已验证（来源：10.1016/j.aquabot.2006.09.005，第 100 页）。
+- 草原湿地开阔水面：白天水体储热消耗 Rn 的 45–60 %（季均约 127 W m-2），夜间约 −135 W m-2——存疑。只见检索摘录，未读原文（10.1023/A:1001802821846）。
+- 储热在日与年尺度上积分都近于零；它改变日循环与夜间潜热，不改变年均地表能量平衡——推测。依据：诊断件第 4.2 节的线性估算（年周期储热导纳 0.12–1.03 W m-2 K-1，远小于地表耦合 10–60 W m-2 K-1）与离线柱结果（年均变 −1.0 到 +0.5 K）。
+
+## 3. 问题 3：水面反照率与冠层下水面收到的短波
+
+- 水面反照率：阴天漫射 0.061 ± 0.005，高太阳角晴天约 0.03，太阳高度低于 10° 时可升到 0.4 以上——已验证（来源：10.1175/1520-0469(1972)029<0959:AOTSS>2.0.CO;2 摘要；摘要文本经重排，低太阳角一值按原文措辞为量级）。CLM 湖面：直射 0.05/(cosZ + 0.15)（cosZ = 0.5 时 0.077，0.9 时 0.048），湖泊漫射 0.10——已验证（来源：CTSM `SurfaceAlbedoMod.F90` 第 1252、1263–1264 行）。
+- CLM 湿土反照率：albsod = min(albsat + max(0.11 − 0.40θ1, 0), albdry)，饱和即取 albsat；20 类土色的 albsat 可见光 0.04–0.25、近红外 0.08–0.50——已验证（来源：CTSM `SurfaceAlbedoMod.F90` 第 211–214、1236–1242 行；技术手册 Surface_Albedos 第 484 行）。深色泥炭土色的饱和反照率与水面只差几个百分点——推测。
+- 整站反照率：塔上 0.13–0.16，模式 0.13–0.14，两者相符——已验证（来源：诊断件第 64 行）；Hemes 2018 表 1 的湿地 0.10–0.14 比苜蓿 0.14–0.25 低，作者把湿地低反照率归于深色水面与高冠层的陷光——已验证（来源：10.1029/2018JG004494，第 2075、2079 页）。所以问题不在整站反照率，而在短波在冠层与地面之间怎么分——推测。
+- 冠层下水面收到的短波：没找到 tule、cattail 冠层下的可核实测比例（第 0 节第 6 条）。San Joaquin 沼泽的枯落物"遮住水面、挡住直接日晒"只有定性描述——已验证（来源：10.1016/j.aquabot.2006.09.005，第 104 页）。
+- 模式给地面的份额：Sne 0.205、Myb 0.172、Tw1 0.328、Tw4 0.364 的入射短波，年均地面吸收 42–82 W m-2；塔足迹开阔水份额 Sne 0.55、Myb 0.43、Tw4 0.16（2018 年为 0.04）、Tw1 0.03——已验证（来源：诊断件第 45、299 行；Eichelmann 2022 第 236–255 行）。模式的地面份额与开阔水份额排序相反——已验证（来源：诊断件第 299 行）。
+- 量级估算（入射短波年均 Sne 218.5、Myb 248.0 W m-2，诊断件第 103–106 行）：地面份额若按"开阔水份额 + 植被区份额 × 冠层透射 0.2"算，Sne 为 0.64、Myb 为 0.54，地面短波比模式多 95、92 W m-2；反照率由湿土换成水面，若差 0.05，按地面短波 45–140 W m-2 只改地面吸收 2–7 W m-2——推测。依据：冠层透射 0.2 是假设值，反照率差取 0.05。两者差一个量级以上——推测。
+
+## 4. 问题 4：CTSM/CLM5 与其他模式怎么处理积水
+
+### 4.1 CTSM（CLM5）的 h2osfc
+
+1. 状态与覆盖比例：积水有自己的质量 W_sfc 与温度 T_h2osfc；覆盖比例 f_h2osfc 由微地形正态分布算 0.5[1 + erf(d/(σ√2))]，CLM4.5 起用它代替了湿地地类——已验证（来源：技术手册 Hydrology 第 243–255 行）。
+2. 温度节点与热容：积水是土柱之上单独的一层，热容 c_h2osfc = cpliq·h2osfc/f_h2osfc，厚度 dz = 1e-3·h2osfc/f_h2osfc，与第 1 层土组成四元带状方程——已验证（来源：技术手册 Soil_Snow_Temperatures 第 34、195、388–425 行；`SoilTemperatureMod.F90` 第 346–356、2206–2210 行）。积水导热率取水的分子导热 tkwat 与第 1 层土导热的调和组合，没有对流混合——已验证（来源：`SoilTemperatureMod.F90` 第 832–837 行）。积水低于冰点时成冰、转入雪层——已验证（来源：技术手册同章第 610–636 行；源码第 994–1114 行）。
+3. 地表能量平衡分块：地面感热、蒸发、上行长波都按 (1 − f_sno − f_h2osfc)、f_sno、f_h2osfc 三块加权，积水块用 T_h2osfc 与 q_sat(T_h2osfc)——已验证（来源：技术手册 Fluxes 第 468、494、509–521、1528 行；`SurfaceHumidityMod.F90` 第 206–216 行）。t_grnd 取土与积水按面积的加权——已验证（来源：`SoilTemperatureMod.F90` 第 562–563 行）。
+4. 短波与反照率：积水块吸收的短波就是土面的 sabg_soil，即与土面同一反照率、全部吸收在积水表面，不透入水体、不直达底泥——已验证（来源：`SoilTemperatureMod.F90` 第 1699–1701 行）。土柱反照率只看第 1 层含水 θ1，源码里没有 h2osfc 项——已验证（来源：`SurfaceAlbedoMod.F90` 第 1236–1242 行；grep h2osfc 于该文件 0 处）。
+5. 蒸发阻抗：CLM5 默认 soil_resis_method = 1（Swenson & Lawrence 2014 的干表层阻抗 SL14），CLM4.5 物理为 0（Lee–Pielke β）——已验证（来源：`namelist_defaults_ctsm.xml` 第 270–271 行；`SurfaceResistanceMod.F90` 第 23–24 行）。SL14 下有植被时地面水汽导度 wtgq = f_veg/(r_aw' + soilresis)，积水块的蒸发 qflx_ev_h2osfc 用同一个 wtgq——已验证（来源：`CanopyFluxesMod.F90` 第 1272、1527–1528 行；技术手册 Fluxes 第 915 行）。soilresis = dsl/(D·ε) + 20 s m-1，表层饱和时 dsl → 0，下限约 20 s m-1——已验证（来源：`SurfaceResistanceMod.F90` 第 404–412 行）。即 CLM5 对积水用的是"与土面同一阻抗、湿时约 20 s m-1"，与 CoLM 现状的 0 相差很小——推测。
+6. 枯落物阻抗 rdl = (1 − e^(−elai_dl))/(0.004·uaf) 只在 β 方案分支里加，CLM5 默认的 SL14 分支不加——已验证（来源：`CanopyFluxesMod.F90` 第 1258–1273 行）。
+7. 冠层下湍流阻抗：r_ah' = r_aw' = 1/(C_s·U_av)，C_s = C_s,bare·W + 0.004·(1 − W)，W = e^(−(L+S))——已验证（来源：技术手册 Fluxes 第 995–1032 行；10.1175/JCLI3595.1）。地面粗糙度 z0mg 取 zlnd，不因积水改变——已验证（来源：`FrictionVelocityMod.F90` 第 597–620 行）。CoLM 用同一公式——已验证（来源：`CoLM202X-paper-v2/main/MOD_LeafTemperature.F90` 第 675–678 行）。
+8. 按这一公式手算（uaf 取 0.3 m s-1、z0mg 0.01 m）：L+S = 1、1.5、2、3、4、5、6 时冠层下阻抗 rd 为 31、50、80、186、365、566、710 s m-1——已验证（手算，公式见上一条）。模式 LAI 0.8–1.5（MODIS 月值，诊断件第 75–86 行）落在 rd 几十 s m-1 一档，真实挺水冠层加立枯若 L+S 4–6 则在数百 s m-1——推测（L+S 4–6 未核实测）。
+
+### 4.2 CLM 湖泊方案（LISSS）：短波进水体、直达底泥
+
+- 表面只吸收 β 份短波（无雪时 β 取近红外份额），其余 (1 − β) 进水体；不结冰时顶部 z_a = 0.6 m 内不再吸收，之下按 e^(−η(z − z_a)) 衰减，η = 1.1925·d^(−0.424)；穿出湖底的短波由第 1 层"土"（底泥）吸收——已验证（来源：技术手册 Lake 第 32、463–487 行；10.1029/2011MS000072）。对 0.14–0.6 m 深的积水，可见光一半左右直接加热底泥——推测（依据：水深小于 z_a，β 为近红外份额）。
+- 水体有涡扩散与对流翻混（密度不稳即混合，含由底泥放热引起的自下而上混合）——已验证（来源：技术手册 Lake 第 360–401、599 行）。
+
+### 4.3 专门处理积水的模式
+
+- Noah-MP 稻田版（Xu、Maruyama、Kusaka 2023）：把浅水层并入 Noah-MP；有水时地面阻抗下降，对小 Bowen 比至关重要；SAGA 站白天潜热低估减少约 74 W m-2（67 %）、感热高估减少约 92 W m-2（55 %），改进中 30–40 % 来自积水、60–70 % 来自作物参数重标——已验证（来源：10.1029/2022MS003248 摘要）。积水与第 1 层土并成一层——存疑。只见检索摘录，未读全文。
+- 稻田水温模式（Maruyama 等 2017）：地面与植被两个能量平衡方程，水层热容与水面空气动力学性质随水深变，自由对流项决定水温，逐季模拟 RMSE 0.8–1.0 °C——已验证（来源：10.1002/2017WR021019 摘要）。
+- 这两个稻田方案的方向是"有水就降地面阻抗、增蒸发"，适用于冠层稀、无枯落物的稻田；三角洲郁闭沼泽的观测方向相反（水面被解耦、蒸发受抑）——推测。依据：第 1.1 节 Eichelmann 2018/2022 与 Goulden 2007。
+
+## 5. 问题 5：综合判断与候选改法
+
+### 5.1 判断
+
+1. 三角洲四塔分两类：Twitchell 两塔是郁闭冠层（盖度 96–97 %），文献与塔上都是底泥比气温冷、水面蒸发小（West Pond 年 E 200–300 mm）；Sherman 两塔开阔水 36–55 %，底泥比气温暖、水面蒸发大（Sherman 年 E 约 1100 mm）——已验证（来源：第 1.1、2.1 节各条）。
+2. 模式积水后四塔的地面蒸发（LEg，p7mm 年均 96–118 W m-2）都高于文献拆分的 E（Tw1 16–23、Tw4 49–87、Myb 35–64、Sne 约 85 W m-2），超出最多的是 Twitchell——推测。依据：模式数取诊断件第 76–82 行，观测按第 1.1 节 mm 数折算，年份不完全重合。模式蒸腾 LEtr 35–53 W m-2 低于 West Pond 的 T 54–62 W m-2——推测（依据同上）。
+3. 积水后变冷全部来自地面蒸发增大（地面短波、LAI、反照率不变）——已验证（来源：诊断件第 45、286 行）。年均偏冷要从地表年均能量平衡找：地面吸收短波加冠层长波，要由地面感热与蒸发带走；模式蒸发大于地面辐射收入，只能从空气吸感热，地面就冷于气温——推测。依据：储热一年积分为零（第 2.2 节末条）。
+4. 对 Sherman 两塔，短波份额的缺口（90–95 W m-2 量级）大于蒸发的超出（25–60 W m-2）；对 Twitchell 两塔，蒸发超出是主项，而模式地面短波反而偏多（冠层 LAI 0.8–0.9 偏稀）——推测。依据：第 3 节末条与本节第 2 条的量级。
+5. 积水热容并进第 1 层不改变年均；文献中的储热只作用于日循环与夜间潜热——推测。依据：第 2.2 节；诊断件第 4 节。
+
+### 5.2 候选改法（按对年均底泥温度的量级排序）
+
+```text
+序  改法                                         作用的塔        量级（年均）                        文献依据
+1   地面短波按开阔水份额分：开阔水部分的地面      Myb、Sne        地面短波 +90 W m-2 量级；            Hemes 2018 第 2082、2084 页；
+    不受冠层遮荫（或拆出开阔水块）                                 离线柱 +1 到 +4 K（诊断件第 310 行） Eichelmann 2022 第 236–255 行；
+                                                                                                      塔上盖度回归（诊断件第 42 行）
+2   给积水面加冠层下/枯落物阻抗，使水面蒸发回到   四塔，Twitchell  LEg 降 25–80 W m-2；              Goulden 2007 第 103–104 页
+    拆分观测（参照：郁闭沼泽水面到大气的总导度    超出最多         离线柱 rs = 100 s m-1 时 +1.8 到      （G_subcanopy 约 0.4 mol m-2 s-1，
+    正午约 0.4 mol m-2 s-1，约 100 s m-1，夜里                     +2.3 K（诊断件第 304–310 行）         开阔水 2–5）；Eichelmann 2018
+    更小；开阔水 2–5 mol m-2 s-1，8–21 s m-1）                                                         摘要；Eichelmann 2022 E 数
+3   冠层用真实挺水植被的 L+S（含立枯 SAI）：      Tw1、Tw4        rd 由几十升到数百 s m-1；             Hemes 2018 第 2084 页；
+    同时加大遮荫、冠层下阻抗与蒸腾，把 Twitchell                   地面短波降、蒸腾升；Tw1 需要底泥     Poindexter 2016（冠层 2–4 m、
+    推向"底泥冷于气温"的实测方向                                   比气温冷 2.7 K 才对                  盖度 95 %）；Zeng 2005
+4   水体吸收短波、可见光透到底泥（湖泊方案式）    四塔，开阔水塔    把地面热源下移到底泥下方；           Subin 2012；技术手册 Lake
+                                                  更明显          年均量级不超过 1 K                   第 463–487 行
+5   地面反照率按水面取（0.06 左右）               四塔             地面吸收 +2 到 +7 W m-2，           Payne 1972；SurfaceAlbedoMod
+                                                                  不到 0.4 K                          第 1252 行
+6   积水热容（已加的开关）                        四塔             年均一阶为零，离线 −1.0 到 +0.5 K；  Goulden 2007 第 100 页；
+                                                                  主要削日较差                         Hemes 2018 图 4b
+```
+
+- 上表排序与量级——推测。依据：第 1–4 节各条的已验证数与诊断件的离线柱结果；离线柱地面收天空长波、无冠层长波，补短波一档的增温偏大（诊断件第 310 行）。
+- 第 1、2 条对 Sherman 两塔要一起改：单独限制蒸发只把 2 cm 土温抬到约气温，仍比 Sherman 塔上低 1.2–2.1 K——已验证（来源：诊断件第 310–311 行）。
+- 第 2、3 条对 Twitchell 要一起改：p7mm 下 Tw1 已偏暖 1.1 K，只加阻抗会更暖，要靠真实冠层的遮荫抵回——推测。依据：诊断件第 44、311 行的 p7mm 偏差与第 5.1 节第 4 条。
+- 改后的验收量建议取三项：四塔年均 E 对 Eichelmann 2022 的拆分数、6–8 月地面感热由负转正（塔上整塔 H 为 −2 到 +19 W m-2）、底泥减气温随盖度的斜率（塔上 −8.3 K/单位盖度）——推测。
+- 与文献无关但同量级的强迫问题：Sne 长波入射比 Twitchell 低 18–21 W m-2，折 0.3–0.7 K；Myb 短波强迫比实测高 21 W m-2——已验证（来源：诊断件第 108–112 行），哪一方有仪器偏差——存疑（诊断件第 35 行已列实验）。
+
+## 6. 文献表（Crossref 逐条核对，著录字段取自 api.crossref.org）
+
+1. Eichelmann, E., Hemes, K. S., Knox, S. H., Oikawa, P. Y., Chamberlain, S. D., Sturtevant, C., Verfaillie, J., Baldocchi, D. D. (2018). The effect of land cover type and structure on evapotranspiration from agricultural and wetland sites in the Sacramento–San Joaquin River Delta, California. Agricultural and Forest Meteorology, 256–257, 179–195. https://doi.org/10.1016/j.agrformet.2018.03.007
+2. Hemes, K. S., Eichelmann, E., Chamberlain, S. D., Knox, S. H., Oikawa, P. Y., Sturtevant, C., Verfaillie, J., Szutu, D., Baldocchi, D. D. (2018). A unique combination of aerodynamic and surface properties contribute to surface cooling in restored wetlands of the Sacramento-San Joaquin Delta, California. Journal of Geophysical Research: Biogeosciences, 123(7), 2072–2090. https://doi.org/10.1029/2018JG004494
+3. Eichelmann, E., Mantoani, M. C., Chamberlain, S. D., Hemes, K. S., Oikawa, P. Y., Szutu, D., Valach, A., Verfaillie, J., Baldocchi, D. D. (2022). A novel approach to partitioning evapotranspiration into evaporation and transpiration in flooded ecosystems. Global Change Biology, 28(3), 990–1007. https://doi.org/10.1111/gcb.15974
+4. Goulden, M. L., Litvak, M., Miller, S. D. (2007). Factors that control Typha marsh evapotranspiration. Aquatic Botany, 86(2), 97–106. https://doi.org/10.1016/j.aquabot.2006.09.005
+5. Poindexter, C. M., Baldocchi, D. D., Matthes, J. H., Knox, S. H., Variano, E. A. (2016). The contribution of an overlooked transport process to a wetland's methane emissions. Geophysical Research Letters, 43(12), 6276–6284. https://doi.org/10.1002/2016GL068782
+6. Burba, G. G., Verma, S. B., Kim, J. (1999). Energy fluxes of an open water area in a mid-latitude prairie wetland. Boundary-Layer Meteorology, 91(3), 495–504. https://doi.org/10.1023/A:1001802821846 （著录已核；正文数值未读原文）
+7. Maruyama, A., Nemoto, M., Hamasaki, T., Ishida, S., Kuwagata, T. (2017). A water temperature simulation model for rice paddies with variable water depths. Water Resources Research, 53(12), 10065–10084. https://doi.org/10.1002/2017WR021019
+8. Xu, X., Maruyama, A., Kusaka, H. (2023). Improvements in the land and crop modeling over flooded rice fields by incorporating the shallow paddy water. Journal of Advances in Modeling Earth Systems, 15(8), e2022MS003248. https://doi.org/10.1029/2022MS003248
+9. Payne, R. E. (1972). Albedo of the sea surface. Journal of the Atmospheric Sciences, 29(5), 959–970. https://doi.org/10.1175/1520-0469(1972)029<0959:AOTSS>2.0.CO;2
+10. Subin, Z. M., Riley, W. J., Mironov, D. (2012). An improved lake model for climate simulations: Model structure, evaluation, and sensitivity analyses in CESM1. Journal of Advances in Modeling Earth Systems, 4(1), 2011MS000072. https://doi.org/10.1029/2011MS000072
+11. Zeng, X., Barlage, M., Dickinson, R. E., Dai, Y., Wang, G., Oleson, K. (2005). Treatment of undercanopy turbulence in land models. Journal of Climate, 18(23), 5086–5094. https://doi.org/10.1175/JCLI3595.1
+12. Swenson, S. C., Lawrence, D. M. (2014). Assessing a dry surface layer-based soil resistance parameterization for the Community Land Model using GRACE and FLUXNET-MTE data. Journal of Geophysical Research: Atmospheres, 119(17). https://doi.org/10.1002/2014JD022314 （页码 Crossref 未给，未核）
+13. Malone, S. L., Staudhammer, C. L., Loescher, H. W., Olivas, P., Oberbauer, S. F., Ryan, M. G., Schedlbauer, J., Starr, G. (2014). Seasonal patterns in energy partitioning of two freshwater marsh ecosystems in the Florida Everglades. Journal of Geophysical Research: Biogeosciences, 119(8), 1487–1505. https://doi.org/10.1002/2014JG002700
+14. Krochta, M., Chang, H. (2025). Reviewing controls of wetland water temperature change across scales and typologies. Progress in Physical Geography: Earth and Environment, 49(1–2), 144–164. https://doi.org/10.1177/03091333241306653
+15. CTSM 技术手册（CLM5）：本地 `/share/home/dq076/mode/Wetland/CTSM/doc/source/tech_note/`，无 DOI，按章节文件与行号引用。

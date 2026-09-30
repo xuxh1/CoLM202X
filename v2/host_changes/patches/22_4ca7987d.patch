@@ -1,0 +1,78 @@
+From 4ca7987da148a3e43e2cacfa76498fe7c461825b Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Sun, 27 Sep 2026 22:34:03 +0800
+Subject: [PATCH] feat(rice): plow pan caps percolation of bunded paddies at 3
+ mm/d (C-32c)
+
+---
+ main/MOD_SoilSnowHydrology.F90 | 30 +++++++++++++++++++++++++++---
+ 1 file changed, 27 insertions(+), 3 deletions(-)
+
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index a40ded79..aca71aa4 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -8,7 +8,8 @@ MODULE MOD_SoilSnowHydrology
+                            DEF_URBAN_RUN,           DEF_USE_IRRIGATION,    &
+                            DEF_SPLIT_SOILSNOW,      DEF_Runoff_SCHEME,     &
+                            DEF_DA_TWS_GRACE,        DEF_Optimize_Baseflow, &
+-                           DEF_USE_Dynamic_Wetland, USE_SITE_WTD
++                           DEF_USE_Dynamic_Wetland, USE_SITE_WTD,          &
++                           DEF_PADDY_RICE_BUND
+ #if (defined CaMa_Flood)
+    USE YOS_CMF_INPUT,      only: LWINFILT
+ #endif
+@@ -790,6 +791,15 @@ ENDIF
+ 
+    integer :: ps, pe, m
+ 
++   ! C-32c: saturated conductivity the vertical solver sees; the plow pan of a
++   ! bunded paddy caps it at paddy_plowpan_k in the layer centred 0.15-0.35 m.
++   ! Puddled fields lose 1-5 mm/d to percolation on heavy soils, more on light
++   ! ones, through the compacted plow sole (Tuong et al. 1994,
++   ! doi:10.2136/sssaj1994.03615995005800060031x; Bouman and Tuong 2001,
++   ! doi:10.1016/S0378-3774(00)00128-1).
++   real(r8) :: hks_vert(1:nl_soil)
++   real(r8), parameter :: paddy_plowpan_k = 3._r8 / 86400._r8   ! [mm/s]
++
+ 
+ #ifdef Campbell_SOIL_MODEL
+       prms(1,:) = bsw(1:nl_soil)
+@@ -1212,10 +1222,24 @@ IF((patchtype<=1) .or. is_dry_lake &
+       ENDIF
+ #endif
+ 
++      hks_vert(1:nl_soil) = hksati(1:nl_soil)
++#ifdef CROP
++      IF (patchtype == 0 .and. DEF_USE_IRRIGATION .and. DEF_PADDY_RICE_BUND) THEN
++         ps = patch_pft_s(ipatch)
++         pe = patch_pft_e(ipatch)
++         DO m = ps, pe
++            IF (paddy_bunded(m)) THEN
++               WHERE (sp_zc(1:nl_soil) >= 150. .and. sp_zc(1:nl_soil) <= 350.) &
++                  hks_vert(1:nl_soil) = min(hks_vert(1:nl_soil), paddy_plowpan_k)
++            ENDIF
++         ENDDO
++      ENDIF
++#endif
++
+       CALL soil_water_vertical_movement ( &
+          nl_soil,                 deltim,                   sp_zc(1:nl_soil),    sp_zi(0:nl_soil), &
+          is_permeable(1:nl_soil), eff_porosity(1:nl_soil),  theta_r(1:nl_soil),  psi0(1:nl_soil),  &
+-         hksati(1:nl_soil),       nprms, prms(:,1:nl_soil), porsl(nl_soil),      qgtop,            &
++         hks_vert(1:nl_soil),     nprms, prms(:,1:nl_soil), porsl(nl_soil),      qgtop,            &
+          etr,                     rootr(1:nl_soil),         rootflux(1:nl_soil), rsubst,           &
+          qinfl,                   wdsrf,                    zwtmm,               wa,               &
+          vol_liq(1:nl_soil),      smp(1:nl_soil),           hk(1:nl_soil),       qlayer(0:nl_soil),&
+@@ -2761,7 +2785,7 @@ ENDIF
+    !-----------------------------------------------------------------------
+    logical FUNCTION paddy_bunded(m)
+ 
+-   USE MOD_Namelist, only: DEF_PADDY_RICE_BUND
++   ! DEF_PADDY_RICE_BUND comes from the module header
+    USE MOD_Vars_Global, only: irrig_method_paddy, irrig_min_cphase, irrig_max_cphase
+    USE MOD_Vars_PFTimeVariables, only: irrig_method_p
+    USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p
+-- 
+2.53.0
+

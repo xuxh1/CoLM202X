@@ -1,0 +1,42 @@
+From 8452054b5fec3f797ea87e25001ace04495617db Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Wed, 30 Sep 2026 01:28:27 +0800
+Subject: [PATCH] feat(thermal): pond litter resistance scaled by the emergent
+ marsh share of the wetland tile
+
+The litter floor DEF_WETLAND_POND_LITTER_RSS over the ponded water of a wetland tile, measured under an emergent Typha marsh (Goulden et al. 2007), is now multiplied by wetland_emergent_share of the methane module instead of being kept or zeroed by wetland_is_temperate_marsh. With DEF_METHANE%wetland_dim_class (C-88) the factor is the tile's emergent marsh share (GLWD 17, or wetland_share_emerg_site at a tower), so a tile carries the litter mat on that share only; without it the factor is 1 for the temperate marsh class and 0 otherwise.
+
+Key off: unchanged bit for bit. The factor is exactly 1 or 0, rss_min is finite and non-negative, and rss_min * 1 = rss_min and rss_min * 0 = +0, the value the old branch assigned.
+
+---
+ main/MOD_Thermal.F90 | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/main/MOD_Thermal.F90 b/main/MOD_Thermal.F90
+index 46e0f656..b02f3685 100644
+--- a/main/MOD_Thermal.F90
++++ b/main/MOD_Thermal.F90
+@@ -142,7 +142,7 @@ CONTAINS
+    USE MOD_Vars_TimeVariables, only: wdsrf, fveg
+ #ifdef TRACER
+    USE MOD_Vars_TimeVariables, only: zwt
+-   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_moss_rss, wetland_is_temperate_marsh
++   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_moss_rss, wetland_emergent_share
+ #endif
+ 
+    IMPLICIT NONE
+@@ -658,8 +658,9 @@ ENDIF
+          IF ((patchtype==2) .and. (wdsrf(ipatch) > 1.)) &
+             rss_min = max(DEF_WETLAND_POND_LITTER_RSS, 0.)
+ #ifdef TRACER
+-         ! the litter mat of emergent marshes, the temperate marsh class only
+-         IF (.not. wetland_is_temperate_marsh(ipatch)) rss_min = 0.
++         ! the litter mat of emergent marshes, on the emergent marsh share of
++         ! the tile (the temperate marsh class, 1 or 0, without C-88)
++         rss_min = rss_min * wetland_emergent_share(ipatch)
+          ! moss and peat surface of a dynamic wetland tile (C-26)
+          IF (DEF_USE_Dynamic_Wetland .and. (patchtype==2)) &
+             rss_min = max(rss_min, wetland_moss_rss(ipatch, zwt(ipatch), wdsrf(ipatch)))
+-- 
+2.53.0
+

@@ -1,0 +1,196 @@
+From 1db4aad3b623a1703306db1c43c50edb255ad349 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Fri, 25 Sep 2026 14:41:36 +0800
+Subject: [PATCH] feat(methane): nitrogen closure and burial for the wetland
+ tile (C-20)
+
+Ledger C-20 (paper V2), four switches, all off by default. The wetland
+tile gets its litter N from the prescribed plant input at C:N 46 with no
+plant uptake, deposition, loss or vertical movement, so mineral N piles
+up at depth (68-2,589 gN m-2 after spin-up) while the surface, where the
+litter lands, holds almost none and litter-to-SOM immobilization is held
+at fpi 0.04-0.2 at productive towers.
+
+wetland_n_unlimited: immobilization runs at its potential rate and the
+shortfall enters as supplemental N, as in CLM's carbon-only mode
+(suplnitro = 'ALL'); fpi keeps the share the soil supplied.
+wetland_n_uptake: the litter N is taken up from the mineral N left after
+immobilization, in proportion to each layer's residual; fpg reports the
+share the soil supplied.
+wetland_vert_transp and wetland_burial_velocity: CLM's SOM mixing
+(SoilBiogeochemLittVertTransp, bioturbation) on the wetland tile with a
+downward advection for peat accretion, 12 g C m-2 yr-1 over 25 kg C m-3
+(Wania et al. 2009 after Clymo 1984), about 4.8e-4 m yr-1.
+
+The supplemental and uptake fluxes are cleared in the competition routine
+only when their switch is on and used only under that switch, since the
+wetland path never runs CNZeroFluxes.
+
+---
+ Makefile                                      |  3 +-
+ .../MOD_BGC_Soil_BiogeochemCompetition.F90    | 69 ++++++++++++++++++-
+ .../MOD_BGC_Soil_BiogeochemLittVertTransp.F90 |  9 ++-
+ 3 files changed, 77 insertions(+), 4 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 4588f28a..791e7593 100644
+--- a/Makefile
++++ b/Makefile
+@@ -843,7 +843,8 @@ MOD_Tracer_Reactive_Methane_Microbes.o: MOD_Tracer_Reactive_Methane_Const.o \
+ MOD_Tracer_Reactive_Methane_BgcLink.o: MOD_Tracer_Reactive_Methane_Const.o \
+ 	MOD_Tracer_Reactive_Methane_VegOverride.o MOD_Tracer_Reactive_Methane_pH.o \
+ 	MOD_Vars_TimeVariables.o MOD_Vars_TimeInvariants.o \
+-	MOD_BGC_CNCStateUpdate1.o MOD_BGC_Soil_BiogeochemNStateUpdate1.o MOD_BGC_CNSummary.o
++	MOD_BGC_CNCStateUpdate1.o MOD_BGC_Soil_BiogeochemNStateUpdate1.o MOD_BGC_CNSummary.o \
++	MOD_BGC_Soil_BiogeochemLittVertTransp.o
+ MOD_Tracer_Reactive_Methane_AccFlux.o: MOD_Tracer_Reactive_Methane_BgcLink.o \
+ 	MOD_Tracer_Reactive_Methane_Const.o MOD_Tracer_Reactive_Methane_Microbes.o \
+ 	MOD_Tracer_Reactive_Methane_State.o
+diff --git a/main/BGC/MOD_BGC_Soil_BiogeochemCompetition.F90 b/main/BGC/MOD_BGC_Soil_BiogeochemCompetition.F90
+index 72ff3814..9341d30e 100644
+--- a/main/BGC/MOD_BGC_Soil_BiogeochemCompetition.F90
++++ b/main/BGC/MOD_BGC_Soil_BiogeochemCompetition.F90
+@@ -465,12 +465,39 @@ CONTAINS
+ 
+    END SUBROUTINE SoilBiogeochemCompetition
+ 
+-   SUBROUTINE SoilBiogeochemCompetitionNoPlant(i, deltim, nl_soil, dz_soi)
++   SUBROUTINE SoilBiogeochemCompetitionNoPlant(i, deltim, nl_soil, dz_soi, n_unlimited, plant_ndemand_col)
+ 
+       integer,  intent(in) :: i, nl_soil
+       real(r8), intent(in) :: deltim, dz_soi(1:nl_soil)
++      ! Optional N closure for a tile whose litter input is prescribed rather
++      ! than grown by a plant (the wetland tile). Absent, the tile has no plant
++      ! and immobilization is limited by each layer's mineral N, as before.
++      ! n_unlimited: immobilization proceeds at its potential rate and the N a
++      !   layer lacks enters through supplement_to_sminn_vr, as in CLM's
++      !   carbon-only supplemental N (suplnitro = 'ALL'); fpi(i) still reports
++      !   the share the soil itself supplied.
++      ! plant_ndemand_col [gN m-2 s-1]: N returned in the prescribed litter; it
++      !   is taken up from the mineral N left after immobilization, each layer
++      !   in proportion to its residual (the column-wide nuptake_prof of
++      !   SoilBiogeochemCompetition), and fpg(i) reports the share the soil
++      !   supplied.
++      logical,  intent(in), optional :: n_unlimited
++      real(r8), intent(in), optional :: plant_ndemand_col
+       integer :: j
+       real(r8) :: available, remaining, actual_immob, potential_immob
++      real(r8) :: resid_nh4(1:nl_soil), resid_no3(1:nl_soil), resid_tot, take
++      logical  :: unlimited
++
++      unlimited = .false.
++      IF (present(n_unlimited)) unlimited = n_unlimited
++      ! The wetland path never runs CNZeroFluxes, so these fluxes are cleared
++      ! here whenever they are about to be used.
++      IF (unlimited) supplement_to_sminn_vr(1:nl_soil,i) = 0._r8
++      IF (present(plant_ndemand_col)) THEN
++         smin_nh4_to_plant_vr(1:nl_soil,i) = 0._r8
++         smin_no3_to_plant_vr(1:nl_soil,i) = 0._r8
++         sminn_to_plant_vr   (1:nl_soil,i) = 0._r8
++      ENDIF
+ 
+       actual_immob = 0._r8
+       potential_immob = 0._r8
+@@ -503,6 +530,15 @@ CONTAINS
+          ENDIF
+          actual_immob = actual_immob + actual_immob_vr(j,i) * dz_soi(j)
+          potential_immob = potential_immob + max(potential_immob_vr(j,i), 0._r8) * dz_soi(j)
++
++         ! Supplemental N: the shortfall is added to the NH4 (or bulk) pool by
++         ! the caller, so the pool never goes negative.
++         IF (unlimited .and. potential_immob_vr(j,i) > actual_immob_vr(j,i)) THEN
++            supplement_to_sminn_vr(j,i) = potential_immob_vr(j,i) - actual_immob_vr(j,i)
++            IF (DEF_USE_NITRIF) actual_immob_nh4_vr(j,i) = actual_immob_nh4_vr(j,i) + supplement_to_sminn_vr(j,i)
++            actual_immob_vr(j,i) = potential_immob_vr(j,i)
++            fpi_vr(j,i) = 1._r8
++         ENDIF
+       ENDDO
+ 
+       sminn_to_plant(i) = 0._r8
+@@ -513,6 +549,37 @@ CONTAINS
+          fpi(i) = 1._r8
+       ENDIF
+ 
++      ! Uptake of the prescribed litter N from what immobilization left in the
++      ! pools; the supplement is not counted as residual, since it only covers
++      ! immobilization.
++      IF (present(plant_ndemand_col)) THEN
++         IF (plant_ndemand_col > 0._r8) THEN
++            resid_tot = 0._r8
++            DO j = 1, nl_soil
++               IF (DEF_USE_NITRIF) THEN
++                  resid_nh4(j) = max(smin_nh4_vr(j,i) - (actual_immob_nh4_vr(j,i) &
++                     - supplement_to_sminn_vr(j,i)) * deltim, 0._r8)
++                  resid_no3(j) = max(smin_no3_vr(j,i) - actual_immob_no3_vr(j,i) * deltim, 0._r8)
++               ELSE
++                  resid_nh4(j) = max(sminn_vr(j,i) - (actual_immob_vr(j,i) &
++                     - supplement_to_sminn_vr(j,i)) * deltim, 0._r8)
++                  resid_no3(j) = 0._r8
++               ENDIF
++               resid_tot = resid_tot + (resid_nh4(j) + resid_no3(j)) * dz_soi(j)
++            ENDDO
++            IF (resid_tot > 0._r8) THEN
++               take = min(plant_ndemand_col * deltim / resid_tot, 1._r8) / deltim
++               DO j = 1, nl_soil
++                  smin_nh4_to_plant_vr(j,i) = resid_nh4(j) * take
++                  smin_no3_to_plant_vr(j,i) = resid_no3(j) * take
++                  sminn_to_plant_vr(j,i) = smin_nh4_to_plant_vr(j,i) + smin_no3_to_plant_vr(j,i)
++                  sminn_to_plant(i) = sminn_to_plant(i) + sminn_to_plant_vr(j,i) * dz_soi(j)
++               ENDDO
++            ENDIF
++            fpg(i) = sminn_to_plant(i) / plant_ndemand_col
++         ENDIF
++      ENDIF
++
+    END SUBROUTINE SoilBiogeochemCompetitionNoPlant
+ 
+ END MODULE MOD_BGC_Soil_BiogeochemCompetition
+diff --git a/main/BGC/MOD_BGC_Soil_BiogeochemLittVertTransp.F90 b/main/BGC/MOD_BGC_Soil_BiogeochemLittVertTransp.F90
+index 27a2cb36..4540fa91 100644
+--- a/main/BGC/MOD_BGC_Soil_BiogeochemLittVertTransp.F90
++++ b/main/BGC/MOD_BGC_Soil_BiogeochemLittVertTransp.F90
+@@ -43,7 +43,8 @@ MODULE MOD_BGC_Soil_BiogeochemLittVertTransp
+ 
+ CONTAINS
+ 
+-   SUBROUTINE SoilBiogeochemLittVertTransp(i,deltim,nl_soil,nl_soil_full,ndecomp_pools,nbedrock,z_soi,zi_soi,dz_soi)
++   SUBROUTINE SoilBiogeochemLittVertTransp(i,deltim,nl_soil,nl_soil_full,ndecomp_pools,nbedrock,z_soi,zi_soi,dz_soi, &
++                                           adv_flux_in)
+ 
+    integer ,intent(in) :: i                        ! patch index
+    real(r8),intent(in) :: deltim                   ! time step in seconds
+@@ -54,6 +55,7 @@ CONTAINS
+    real(r8),intent(in) :: z_soi (1:nl_soil_full)   ! depth of each soil layer (m)
+    real(r8),intent(in) :: zi_soi(0:nl_soil_full)   ! interface level below a zsoi level (m)
+    real(r8),intent(in) :: dz_soi(1:nl_soil_full)   ! thicknesses of each soil layer (m)
++   real(r8),intent(in),optional :: adv_flux_in     ! downward advection replacing som_adv_flux (m/s), e.g. peat burial
+ 
+    ! !LOCAL VARIABLES:
+    real(r8) :: diffus (1:nl_soil+1)                    ! diffusivity (m2/s)  (includes spinup correction, if any)
+@@ -81,11 +83,14 @@ CONTAINS
+    integer  :: jtop                                    ! top level at each column
+    real(r8) :: spinup_term                             ! spinup accelerated decomposition factor, used to accelerate transport as well
+    real(r8) :: epsilon                                 ! small number
++   real(r8) :: adv_const                               ! advective flux of the non-cryoturbated profile (m/s)
+ 
+       aaa (pe) = max (0._r8, (1._r8 - 0.1_r8 * abs(pe))**5)  ! A function from Patankar, Table 5.2, pg 95
+ 
+       epsilon = 1.e-30
+       spinup_term = 1._r8
++      adv_const = som_adv_flux
++      IF (present(adv_flux_in)) adv_const = adv_flux_in
+ 
+       IF  (( max(altmax(i), altmax_lastyear(i)) <= max_altdepth_cryoturbation ) .and. &
+           ( max(altmax(i), altmax_lastyear(i)) > 0._r8) ) THEN
+@@ -110,7 +115,7 @@ CONTAINS
+          ! constant advection, constant diffusion
+          DO j = 1,nl_soil+1
+             IF ( j <= nbedrock+1 ) THEN
+-               som_adv_coef(j,i) = som_adv_flux
++               som_adv_coef(j,i) = adv_const
+                som_diffus_coef(j,i) = som_diffus
+             ELSE
+                som_adv_coef(j,i) = 0._r8
+-- 
+2.53.0
+

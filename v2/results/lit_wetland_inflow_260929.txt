@@ -1,0 +1,161 @@
+# 文献_260929_湿地周边来水
+
+- **日期**：2026.09.29-11:16
+- **读者**：下一会话
+- **来源**：V2 文献线只读调研；承接候选池第 17 条、账本 C-8 暂缓项、Q-5、D-20、Q-18、D-34、V-57、V-98、V-99、V-102；读码树 CoLM202X-paper-v2 @ c86605d3（分支 methane-paper-v2，main/、mksrfdata/、mkinidata/、share/ 无未提交改动）
+- **状态**：第 1 节本地可读的 17 份模式文献与 CTSM、CoLM 源码已读；PEAT-CLSM、ORCHIDEE-PEAT 原文、CLASSIC 泥炭、JULES 描述文与数据许可证的在线核实交稿时未完成，列在第 0 节"未看"
+
+## 0. 覆盖面
+
+检索词（对每份文本 grep，不分大小写）：run-on、runon、inflow、upslope、contributing、receiv、runoff from、redistribut、surrounding、lateral flow、lateral water、slope、wetland fraction、hydrological forcing、water level。
+
+范围与命中：
+
+| 来源 | 读法 | 与来水有关的命中 | 处置 |
+| --- | --- | --- | --- |
+| Gedney and Cox 2003（JULES TOPMODEL） | 文本 p. 1267–1269 | 1 处（q_l = a_l R） | 第 1.1 节 |
+| Ringeval et al. 2012（ORCHIDEE TOPMODEL） | 文本 Sect. 2 | 6 处 | 第 1.1 节 |
+| Bohn et al. 2007（VIC + TOPMODEL） | 文本 p. 2–3 | 2 处 | 第 1.1 节 |
+| Bohn et al. 2013（VIC 湖泊湿地瓦片） | 文本附录 A1 | 3 处 | 第 1.2 节 |
+| Arora et al. 2018（CLASS-CTEM 动态湿地） | 文本附录 A | 3 处 | 第 1.1 节 |
+| Schaphoff et al. 2026 预印本（LPJmL6） | 文本 Sect. 2.1、2.2.3–2.2.5 | CTI 式与 stand 坡度；无高地向湿地转水句 | 第 1.1 节 |
+| Castro-Morales et al. 2018（JSBACH） | 文本 p. 2695 | 1 处 | 第 1.1 节 |
+| Salmon et al. 2022（ORCHIDEE-PEAT 转述） | 文本 p. 2815、2817 | 2 处 | 第 1.2 节 |
+| Kaiser et al. 2017（JSBACH 多边形苔原） | 文本 p. 338–339 | 2 处 | 第 1.2 节 |
+| Wania et al. 2009、2010（LPJ-WHy） | 文本 GB3014 p. 6、11；GMD p. 573 | 4 处 | 第 1.2 节 |
+| Fan and Miguez-Macho 2011 | 文本 p. 255、261 | 多处 | 第 1.3 节 |
+| Yazbeck et al. 2025（ELM-Wet） | 文本 p. 5–6、14 | 5 处 | 第 1.4 节 |
+| Gao et al. 2025（JULES-HIMMELI） | 文本 Sect. 3.1.1 | 2 处 | 第 1.5 节 |
+| Shi et al. 2015、Bisht et al. 2018、Swenson et al. 2012、Kleinen et al. 2012 | grep | Shi 2015 为泥炭丘–洼间横向流（柱内微地形）；Bisht 2018 自述无柱间侧向流；另两篇无相关句 | 不入项：不涉及湿地接受外来水 |
+| Bohn and Lettenmaier 2010 | 摘要 | 讲水位空间分布的甲烷偏差，不涉及来水 | 不入项 |
+| CTSM 技术手册 Hillslope_Hydrology、Methane 章；CTSM src/biogeophys/SoilHydrologyMod.F90（@7409d321） | 读全文与读码 | 坡地侧向流式与河道交换 | 第 1.1、1.3 节 |
+| CoLM 源码（见第 3 节各处 文件:行号） | 读码 | 下限块、径流、汇流、流域模式侧向流、TWI | 第 1.4、3 节 |
+| 本地既有结果：`v2/results/step2_ratio_check.log`、`hybas_ratio.log`、`q18_fan_wtd_sites.log`；账本 Q-5、Q-18、V-57 | 读 | 汇水比与所需比 | 第 2、3 节 |
+| 本地数据 README：`~/data/HydroSHEDS/v1/README.txt`、`~/data/HydroBASINS/v1c/README.txt` | 读 | 分辨率、来源、许可名 | 第 2 节 |
+
+著录：下列 22 个 DOI 逐条查 Crossref（匿名请求），题名、作者、刊名、卷、页或文章号、年与本文所用一致——已验证（`api.crossref.org/works/<doi>`，2026-09-29）：
+10.1175/1525-7541(2003)004<1265:TSOGCM>2.0.CO;2（Gedney and Cox 2003, J. Hydrometeorol. 4, 1265–1275）；
+10.5194/gmd-5-941-2012（Ringeval et al. 2012, GMD 5, 941–962）；
+10.1088/1748-9326/2/4/045015（Bohn et al. 2007, ERL 2, 045015）；
+10.5194/bg-10-6559-2013（Bohn et al. 2013, BG 10, 6559–6576）；
+10.5194/bg-15-4683-2018（Arora et al. 2018, BG 15, 4683–4709）；
+10.5194/egusphere-2025-6210（Schaphoff et al. 2026, EGUsphere 预印本，未经同行评议）；
+10.5194/bg-15-2691-2018（Castro-Morales et al. 2018, BG 15, 2691–2722）；
+10.5194/gmd-15-2813-2022（Salmon et al. 2022, GMD 15, 2813–2838）；
+10.5194/gmd-10-333-2017（Kaiser et al. 2017, GMD 10, 333–358）；
+10.1029/2008GB003412（Wania et al. 2009, GBC 23, GB3014）；
+10.5194/gmd-3-565-2010（Wania et al. 2010, GMD 3, 565–584）；
+10.1007/s00382-010-0829-8（Fan and Miguez-Macho 2011, Clim. Dyn. 37, 253–278）；
+10.1029/2006JD008111（Fan et al. 2007, JGR 112, D10125）；
+10.1029/2024MS004396（Yazbeck et al. 2025, JAMES 17, e2024MS004396）；
+10.1016/j.scitotenv.2025.179526（Gao et al. 2025, Sci. Total Environ. 980, 179526）；
+10.1029/2019MS001833（Swenson et al. 2019, JAMES 11, 4044–4065）；
+10.1029/2024MS004410（Swenson and Lawrence 2025, JAMES 17, e2024MS004410）；
+10.1029/2005JD006111（Niu et al. 2005, JGR 110, D21106）；
+10.1080/02626667909491834（Beven and Kirkby 1979, Hydrol. Sci. Bull. 24, 43–69）；
+10.5194/gmd-7-3089-2014（Stocker et al. 2014, GMD 7, 3089–3110）；
+10.5194/bg-13-1387-2016（Zhang et al. 2016, BG 13, 1387–1408）。
+注：CTSM 技术手册参考文献把 `Swensonetal2019b` 指到了另一篇（冠层热储存，10.1029/2018MS001476），坡地侧向流论文是上面的 10.1029/2019MS001833——已验证（读 CLM50_Tech_Note_References.rst 第 1577–1583 行并查 Crossref）。
+
+未看（不为空，交稿时三项检索未返回；补法是重做这三项检索）：
+1. PEAT-CLSM 原文：Bechtold et al. 2019（10.1029/2018MS001574）、Apers et al. 2022（10.1029/2021MS002784），本地无 PDF；本文只用 CoLM 代码注释对 Bechtold 2019 式 6–9 的转述（`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90:4117-4152`）。两个 DOI 未查 Crossref。
+2. ORCHIDEE-PEAT 原式：Qiu et al. 2018、Largeron et al. 2018；本文只用 Salmon et al. 2022 的转述。
+3. CLASSIC 泥炭（Wu et al. 2016）、JULES 描述文（Clark et al. 2011）与 Chadburn et al. 2022、Miguez-Macho and Fan 2012。
+4. DYPTOP（Stocker et al. 2014）与 LPJ-wsl（Zhang et al. 2016）正文式号：本地有文本，只核了 DOI，未逐式读。
+5. 数据集在线核实：MERIT Hydro 的 hnd 图层与许可、GLWD v2 许可、Fan et al. 2013 全球水位的下载与许可、Hydrography90m、全球 HAND 产品（Nobre et al. 2011 等）、CaMa-Flood 地图许可。
+6. 草原坑塘与北方 fen 的"集水面积 ÷ 湿地面积"原文数值（Hayashi 等）、Winter、Brinson 的水文地貌分类原文。
+
+存疑（要跑才能定）：方案二 2a 的动态下限在北方格点是否会被高地深水位拉深，实验写在第 3.2 节。
+
+## 1. 各模式怎样给湿地来水
+
+### 1.1 湿地没有独立水量平衡，份额由格点水分诊断（来水隐含在格点内重分配里）
+
+- JULES（Gedney and Cox 2003）：TOPMODEL 准平衡假设"局地下坡流量 q_l 由上坡汇水面积 a_l 上的均匀补给 R 平衡，q_l = a_l R"；局地水位由 T(z_wl) exp(−λ_l) = T(z̄_w) exp(−λ̄) 定（式 10、11），局地地形指数超过 λ_cr^min = ln[T(0)/T(z̄_w)] + λ̄ 处饱和（式 12），湿地只取 λ_cr^max ≥ λ ≥ λ_cr^min（式 14，λ_cr^max 按 Aselmann and Crutzen 纬向湿地面积标定）。侧向来水只以"汇水面积大的低地水位高"这一稳态关系出现，湿地本身不记水量——已验证（读 Gedney and Cox 2003 p. 1267–1268）。
+- ORCHIDEE（Ringeval et al. 2012）：TOPMODEL 由格点平均亏缺给出最大含水份额 F_max，冻土时 F_max^eff = ω_liq/(ω_liq+ω_froz) F_max（式 6）；文中自述 TOPMODEL 的水力梯度等于地表坡度、稳态、导水率指数衰减三条假设在 ORCHIDEE 里"并未显式满足"——已验证（读 Ringeval et al. 2012 p. 945）。
+- VIC（Bohn et al. 2007）：局地水位 z_WTi(t) = z_WT(t) − m[κ_i − λ]（式 3），κ_i = ln(a_i/tan β_i)，格点平均水位来自 VIC 土壤柱；100 km 格点内 TWI > 14 处与遥感 bog 对应——已验证（读 Bohn et al. 2007 p. 3）。
+- CLASS-CTEM（Arora et al. 2018）：f_w = max[0, min(f_s, f_s (w − w_low)/(w_high − w_low))]（式 A1），f_s 为 1′ 坡度小于 0.002 的份额，w 为顶层液态水饱和度，阈值按纬带标定；无来水项——已验证（读 Arora et al. 2018 p. 4702）。
+- LPJmL6（Schaphoff et al. 2026 预印本）：CTI_i = ln(α_i/tan β_i)（式 1），z_Δi = z̄_Δ + (CTI_i − CTI̅)/f（式 2），饱和阈值 CTI_sat = CTI̅ − f z̄_Δ（式 4）；湿地作为单独 stand 有自己的水分，坡度按指数分布把最缓的一段分给湿地 stand（式 22–24）；检索 runoff、lateral、transferred 未见高地 stand 向湿地 stand 转水的句子——已验证（读预印本 Sect. 2.1 与 2.2.3–2.2.5）。
+- JSBACH（Castro-Morales et al. 2018）：在 TOPMODEL 判为淹水的份额里把无冰孔隙规定为 95 % 饱和，原文称"模仿按地形侧向分布水形成的积水条件"——已验证（读 Castro-Morales et al. 2018 p. 2695）。
+- CLM5 甲烷：淹水份额取地表水微地形式或按总储水 TWS 反演的 fws_slope × TWS + fws_intercept；自然植被只一个土壤柱，没有独立湿地斑块，也没有来水项——已验证（读 CTSM `doc/source/tech_note/Methane/CLM50_Tech_Note_Methane.rst` 第 322–345 行）。
+- DYPTOP（Stocker et al. 2014）、LPJ-wsl（Zhang et al. 2016）属 TOPMODEL 份额类——推测（依据题名与在 Schaphoff 2026 中被当作同类引用；正文式号未读）。
+
+含义：这一类都是"格点平均水位加地形分布，诊断哪部分到地表"，湿地不另记水。本模式的湿地斑块有自己的土壤柱与水位，不能直接照搬，但可以把 TOPMODEL 关系改写成湿地斑块的"目标水位"（第 3.2 节）——推测。
+
+### 1.2 同格点高地产流导入湿地瓦片（与 C-8 暂缓设计同型）
+
+- ORCHIDEE-PEAT（经 Salmon et al. 2022 转述）：泥炭地土壤水力扩散模型"接受降水，以及从同一格点内泥炭地周围其他土壤收集来的径流"，底部排水关闭以保持泥炭下部饱和，地表加积水库——已验证（读 Salmon et al. 2022 p. 2815）。站点试验中"修改每格泥炭地份额，以便由其他土壤份额的径流收集到足够的水充满泥炭地、抬高水位"——已验证（读 Salmon et al. 2022 p. 2817）。即面积比在站点上是调参量，与本模式 Q-5 发现的"格点面积比比所需大一到两个量级"是同一个问题的两面——推测。原式（Qiu et al. 2018、Largeron et al. 2018）未读。
+- JSBACH 多边形苔原（Kaiser et al. 2017）：环脊（rim）按普通高地土壤跑，其地表径流与排水收集起来加到中心洼地的降水上；中心在土壤水达到田间持水量之前关闭径流与排水——已验证（读 Kaiser et al. 2017 p. 338–339）。
+- LPJ-WHy（Wania et al. 2009）：只在 spin-up 期给泥炭表层加 0.5 mm d⁻¹ 的"run-on"水源（第 53 段）；第 75–76 段自述"入流与出流未被表示"，Minnesota 贫营养 fen 模拟水位偏深，因为"fen 按定义接受地下水或坡面流"，要模拟 fen 需要格点间汇流——已验证（读 Wania et al. 2009 GB3014 p. 6、p. 11）。同一站点（Junction Fen）在 Wania et al. 2010 中写作"接受周边高地的部分径流、无出口"——已验证（读 Wania et al. 2010 p. 573）。
+- VIC 湖泊湿地瓦片（Bohn et al. 2013）：湿地露出部分的地表径流与地下排水流入淹水部分，淹水部分再排入河道；该研究只模拟格点的湿部分，高地未与之耦合——已验证（读 Bohn et al. 2013 附录 A1，p. 6573）。
+
+### 1.3 显式侧向地下水（Darcy）
+
+- Fan and Miguez-Macho 2011：按水源把湿地分为 A 型（降水加局地地表、地下径流，小集水区、悬于区域水位之上、间歇性）、D 型（河网汇流但由浅层地下水托住）、E 型（区域地下水汇聚），B、C 在两端之间（图 1）；坡地格 R ΔxΔy = ΣQ（式 1），谷地格 ΣQ = Q_r（式 2），格间 Q = wT(h − h_n)/l（式 3）——已验证（读 Fan and Miguez-Macho 2011 p. 255、p. 261）。
+- CTSM 坡地水文（Swenson et al. 2019；Swenson and Lawrence 2025 给全球代表性坡地数据集）：同一格点多列，上坡列向下坡列 Q_vol = k_aniso · T · w · Δhead/Δd，下坡列入流 = Q_vol / A_下坡列；最低列与河道按河道水深交换，河道有水时可反向补给（losing stream）——已验证（读 CTSM 技术手册 hh.eqn.1；读码 `src/biogeophys/SoilHydrologyMod.F90:2199-2222, 2299, 2326-2329`）。
+- CoLM 自身的流域模式（`CatchLateralFlow`，Shupeng Zhang 2023）：水文单元（HRU，带 hand、elva、plen、flen，`main/HYDRO/MOD_Catch_HillslopeNetwork.F90:24-35`）之间 Q = (h_up − h_dn) · flen · K_l / Δp / (1 + ca + cb)，h = 高程 − 水位，下游为河道时 h = 河床高程 − 河深 + 河水深；K_l 按 Fan et al. (2007) 随水位深度衰减（`main/HYDRO/MOD_Catch_SubsurfaceFlow.F90:361-420`）；同一 HRU 内各斑块（含湿地 patchtype 2）按 −K_l (zwt − zwt_mean) · 6π / A 向平均水位交换（同文件 474–484 行）——已验证（读码）。V2 用的是格点汇流模式，这段不编译；下限块本身也写在 `#if defined(TRACER) && !defined(CatchLateralFlow)` 里（`main/MOD_SoilSnowHydrology.F90:1232`）——已验证（读码）。
+
+### 1.4 用水位强迫或河网来水
+
+- ELM-Wet（Yazbeck et al. 2025）：湿地地块底部两层设为几乎不透水；水深两种给法，(a) 径流关闭直到水面达到按斑块类型给定的最大淹水深，(b) 读入实测水面高程时间序列、按斑块加高程偏移；原文说模型"不解析侧向流，只通过强迫水位间接计入其效果"，US-LA2 的水主要来自 Davis Pond 分洪——已验证（读 Yazbeck et al. 2025 Sect. 2.2 p. 5–6、p. 14）。
+- CoLM V2 自身：Q-43 把汇流洪水按径流方案渗入土壤斑块，条件写死 `patchtype == 0`（`main/MOD_SoilSnowHydrology.F90:1070`），渗入量按单元集水区从河湖水量里扣除（`main/HYDRO/MOD_Grid_RiverLakeFlow.F90:638-644`，累积在 1831–1856 行，洪水比例与水深在 1860–1897 行发给斑块）；单点由 C-48 站点洪水序列代替（`main/TRACER/MOD_Tracer_Reactive_Methane_State.F90:2616-2713`）——已验证（读码）。湿地斑块目前不接这路水。
+
+### 1.5 站点侧的旁证
+
+- JULES-HIMMELI 在 FI-Lom（与本模式同一座塔）：默认水文不能积水、"土壤柱没有侧向来水"，暖季水位下落，水位相关系数 0.14 为各站最低，文中改用偏差订正水位——已验证（读 Gao et al. 2025 Sect. 3.1.1，p. 6）。
+
+### 1.6 小结
+
+- 在已读的全球模式里，没有一个给"每格一个独立湿地斑块"配上经过全球验证的物理来水项：TOPMODEL 与坡度类只诊断份额；给湿地瓦片导入同格点高地产流的只有 ORCHIDEE-PEAT（及 JSBACH、LPJ-WHy 的站点做法），而面积比在站点上被当作调参量；显式 Darcy 侧流（Fan 2011、CTSM 坡地、CoLM 流域模式）需要相对高程与路径几何——已验证（第 1.1–1.4 节各条）。
+- 本模式的下限块在单点上等于无源补水，在全球则以负的地下径流进入单元集水区的净径流（`main/MOD_SoilSnowHydrology.F90:1252, 1400-1402`；`main/HYDRO/MOD_Grid_RiverLakeFlow.F90:329-359, 620`），从格点其他斑块的径流里扣——已验证（读码）。
+
+## 2. 可用数据
+
+| 数据 | 分辨率与覆盖 | 图层 | 本地 | 许可与引用 | 状态 |
+| --- | --- | --- | --- | --- | --- |
+| HydroSHEDS v1 | 15″，八区；60° N 以北由 HYDRO1k 重采样到 15″，有效细节更粗 | D8 流向、累积流（上游像元数） | `~/data/HydroSHEDS/v1/`（dir、acc 16 个 zip） | HydroSHEDS 许可协议（技术文档内）；Lehner et al. 2008 Eos | 已验证（读 README）；许可原文未读，DOI 未核 |
+| HydroBASINS v1c 12 级 | 子流域 29–306 km²（塔所在子流域） | SUB_AREA、UP_AREA、HYBAS_ID、NEXT_DOWN | `~/data/HydroBASINS/v1c/` | 同上系列 | 已验证（读 README；子流域面积读 `v2/results/hybas_ratio.log`） |
+| MERIT Hydro | 3″ 全球（CoLM 的 TWI 由它算） | 流向、上游面积、HAND（hnd）等 | 只有派生的 TWI.nc（经地表数据进 `topoweti`） | Yamazaki et al. 2019 WRR（CoLM 代码头注所引）；D-34 记"需注册" | 已验证（读 `mksrfdata/Aggregation_TopoWetness.F90:6-11, 86-88`、`mkinidata/MOD_Initialize.F90:549-550`）；hnd 图层与许可未核 |
+| GLWD v2 | 15″，与 HydroSHEDS 同网格（README 所述） | 33 类；模式湿地取 16–19、22–27 | `~/mode/Methane/data/GLWD_v2/` | Lehner et al. 2025 ESSD（本地 PDF） | 已验证（README 与 V-57）；许可未核 |
+| CaMa 类单元集水区 15′ | 全球 | topo_area、topo_rivhgt、topo_fldhgt 洪泛剖面等 | V2 在用 `grid_routing_data_15min.nc` | Yamazaki et al. 2011 | 已验证（读 `v2/config/v2_oo1/template.nml:104`、`main/HYDRO/MOD_Grid_RiverLakeNetwork.F90:890-897`）；许可未核 |
+| Fan et al. 2013 全球水位 | 30″ | 平衡水位 | 已用于 Q-18 | Science 2013 | 作湿地边界不可行：北欧 fen 塔格点 11–27 m（FI-Sii 11.4、FI-Lom 17.4、SE-Deg 26.7 m，塔上 −0.03 至 0.04 m）——已验证（读 `v2/results/q18_fan_wtd_sites.log`） |
+
+既有汇水比结果（决定方案一能用到哪一步）：
+- 按 2° 格点土壤 ÷ 湿地面积比 2.5–650，离线所需 0.1–35，大一到两个量级——已验证（账本第 2.9 节，`v2/results/step2_ratio_check.log`）。
+- HydroSHEDS 15″ 在 GLWD 斑块上求局地汇水比，46 站只 13 站成立——已验证（账本 Q-18，`data/_tmp/分析_260925_局地汇水/class_summary.txt`）。
+- HydroBASINS 12 级子流域的旱地 ÷ 湿地比，天然矿养泥沼对得上（FI-Sii 6.8 对所需 8.6、SE-Deg 6.3 对 3.6、CA-SCB 2.3 对 3.5、US-Myb 19.3 对 19.6）；雨养 bog 给多了（DE-SfN 8.9 对 0.12、FI-Si2 6.8 对 0.63），河湖或人工供水湿地给少了（US-Tw1/4/5 0.04 对 6.7–8.0、DE-Zrk 11.2 对 147、FI-Lom 3.7 对 74、US-WPT 3.5 对 23.6）——已验证（读 `v2/results/hybas_ratio.log` 与账本 V-57）。
+
+## 3. 可落到本模式的方案
+
+三个方案按 Fan and Miguez-Macho 2011 图 1 的水源分工：A 型（降水加局地径流）走方案一或方案二，D、E 型（河网、区域地下水）走方案三，雨养 bog 不接来水（C-38 已有开关）——推测（分工依据第 1.3 节与 V-57 的三类失败）。三个方案都改宿主水文，按 D-51 单独提交。
+
+### 3.1 方案一：局地汇水产流导入（ORCHIDEE-PEAT 型，汇水比取 HydroBASINS 12 级）
+
+- 式：q_in(t) = (1 − s_ombro) · min(A_soil/A_w, R_c) · R_up(t − Δt)。R_up 为同一格点土壤斑块上一步的径流（地表加地下，按面积加权）；R_c 为该 2° 格点内含模式湿地类（GLWD 16–19、22–27）的 12 级子流域的旱地面积之和 ÷ 其中湿地面积之和；s_ombro 为雨养份额（C-38）。取消下限（`wetland_max_wtd` 置 −1），湿地饱和后多余水照旧经地表与积水出流离开。min() 保证导入量不超过高地产出，水量在格点内守恒——推测（式为本文设计，未试算）。
+- 代码：
+  - 下限块 `main/MOD_SoilSnowHydrology.F90:1240-1260`：把 1243–1250 行的补水量 wsupply 换成 q_in·Δt，经 1252 行同一出口记为负的 rsubst，1400–1402 行 rnof 照旧——已验证（读码，出口已存在）。
+  - 格点内高地产流：在 `main/CoLMDRIVER.F90:72-75`（`site_wtd_update` 之后、斑块循环之前）按 `elm_patch%substt/subend/subfrc`（`mksrfdata/MOD_LandPatch.F90:280` 建）对 patchtype ≤ 1 的斑块取上一步 `rnof` 的面积加权均值，存成湿地斑块可读的数组——已验证（读码确认循环结构与映射存在），新代码未写。
+  - R_c 作为常量随湿地植被文件读入（C-13 的 `wetland_veg_file` 通道，`main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90:616-622` 附近已有同类文件键）——推测。
+- 数据与预处理：HydroBASINS 12 级与 GLWD v2（均在本地）；把 `v2/scripts/hybas_ratio.py` 从逐塔推广到 2° 网格，输出每格 R_c；许可未核（第 0 节未看第 5 项）。
+- 站点验证：单点只有一个湿地斑块，没有同格点高地。R_up 两种取法：同强迫跑一个土壤斑块取其逐日径流（自洽），或 ERA5-Land 径流气候态（D-20）；R_c 取 V-57 的塔值。先看天然矿养泥沼与沼泽（FI-Sii、SE-Deg、CA-SCB、US-Myb、US-Los、FR-LGt），期望夏季水位中位落在塔上 0.10–0.12 m 附近而不是 V-99 的 0.22–0.24 m；按类报 KGE_ln、β、α、r 四数（`score_series_v2.py`），水位用 `v2/scripts/wtd_season.py`，年来水总量与 `drain_supply.py` 量出的现下限补水比（FI-Sii 158、SE-Deg 169 mm yr⁻¹，账本第 2.8 节）。
+- 风险：来水跟着高地产流的时间走，融雪季多、夏季少，而下限的补水恰在夏季最多，夏季水位下落可能只被部分挡住——推测；两种湿地图层同站差 15 倍（Q-18），R_c 对湿地图层敏感；河湖与人工供水站（DE-Zrk、FI-Lom、US-Tw1/4/5、US-WPT）本方案给不够水（V-57），要靠方案三或单列。
+
+### 3.2 方案二：格点内地下水侧向交换（TOPMODEL 动态下限，或两柱 Darcy）
+
+- 2a 式（TOPMODEL 目标水位）：d(t) = max[0, z̄_up(t) − (λ_w − λ̄_up)/f]，z̄_up 为同格点土壤斑块面积加权水位，λ_w、λ̄_up 为湿地斑块与土壤斑块的平均地形湿度指数，f 取本模式 TOPMODEL 基流用的衰减系数 2.0 m⁻¹；以 d(t) 代替按类常数下限，补水量以同格点高地同一步的地下径流为上限。依据是 Gedney and Cox 2003 式 11、Bohn et al. 2007 式 3、Schaphoff et al. 2026 式 2 的同一关系——推测（改写为本文设计）。
+- 2a 代码与数据：下限值来源 `wetland_max_wtd_of`（`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90:4074-4100`）改为读 d(t)；λ 已在模式里——每个斑块的 `topoweti` 是该斑块自身像元上 MERIT Hydro TWI 的均值（`mksrfdata/Aggregation_TopoWetness.F90:118-137`，运行时读入 `mkinidata/MOD_Initialize.F90:549-550`），f 即 `vdcf = 2.0`（`main/MOD_Runoff.F90:217`）；z̄_up 用方案一同样的格点内聚合——已验证（读码）。不需要新数据。
+- 2b 式（两柱 Darcy，移植 CoLM 流域模式或 CTSM 坡地）：Q = K_l · L · [(Δz − z̄_up) − (−z_w)] / Δp，q_in = Q / A_w；K_l 按 Fan et al. (2007) 随深度衰减，半隐式阻尼照 `main/HYDRO/MOD_Catch_SubsurfaceFlow.F90:386-415`；Δz 为高地与湿地的 HAND 差，L 为湿地周长，Δp 为平均流径。数据要 MERIT Hydro hnd（需注册，许可未核）与 GLWD 湿地像元——推测。
+- 站点验证：单点同样要一个同强迫的土壤斑块给 z̄_up。先做离线试算（实验，不改码）：从全球 O-2 输出取各塔格点土壤斑块的水位与 `topoweti`，算 d(t) 的月气候态，与塔上水位和现下限 0.10–0.13 m 对照；若北方格点土壤水位在数米、λ_w − λ̄_up 只有几，d(t) 会深于 1 m，湿地失去托底——存疑（这是第 0 节登记的存疑项，要这次试算来定）。
+- 风险：2a 仍是诊断式下限，只是随区域水位变，量纲上与 Q-5 的"格点尺度过大"同源——推测；2b 的 L、Δp 在 2° 上约束弱，60° N 以北 DEM 与流向可靠性低（HydroSHEDS README 已注明北部来自 HYDRO1k）。
+
+### 3.3 方案三：河网与湿地连通（Q-43 洪水入渗扩到湿地斑块）
+
+- 式：湿地斑块在其单元集水区有洪水时（fld_dph_p > 0、fld_frc_p > 0.05），按径流方案接受洪水入渗，入渗量从河湖水量中扣除；连通判据可加 HAND：只有湿地像元 HAND 低于当步洪水位时才连通。另一写法照 CTSM 最低列与河道的双向交换，以河道水位为边界的 Darcy 流（`src/biogeophys/SoilHydrologyMod.F90:2218-2240`）——推测（本文设计）。
+- 代码：放开 `main/MOD_SoilSnowHydrology.F90:1070` 的 `patchtype == 0` 条件到动态湿地（patchtype 2），入渗仍记进 `fld_qinfl_p`，汇流侧 `accumulate_flood_infiltration` 与扣水（`main/HYDRO/MOD_Grid_RiverLakeFlow.F90:1831-1856, 638-644`）不必改；单点走 C-48 站点洪水序列（`main/TRACER/MOD_Tracer_Reactive_Methane_State.F90:2705-2710` 已同时写 `fld_frc_p`、`fld_dph_p`）——已验证（读码，接口已在）。注意 Q-43 块在下限块之前执行（1062 行对 1240 行），两者同时开时下限会把洪水入渗后仍缺的部分补齐——已验证（读码行序）。
+- 数据：CaMa 15′ 单元集水区（在用）、GLWD v2 类别；HAND 连通判据要 MERIT hnd（未核）。
+- 站点验证：河湖相连的塔（US-Tw1/4/5、US-Myb、US-WPT、FI-Lom、BR-Npw）用 C-48 的 GIEMS 洪水序列驱动；三角洲塔的"水位"是渠道水深（Q-16），水位只作参考，以通量四数为主。
+- 风险：C-48 的水深是假定值（0.5 m 乘淹水比例）；FI-Lom 这类贯流泥沼未必落在 CaMa 洪泛剖面里——推测；DE-Zrk 的来水是筑坝管理，没有物理表示，应单列。
+
+### 3.4 先后
+
+- 先做方案二 2a 的离线试算（不需新数据、不改码），同时把 `hybas_ratio.py` 推广到 2° 网格为方案一备数据；两者看完再定改码。方案三接口现成，可独立于前两者在河湖相连塔上先试——推测（排序依据是数据与代码准备量）。

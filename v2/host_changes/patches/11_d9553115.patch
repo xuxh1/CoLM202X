@@ -1,0 +1,193 @@
+From d955311563cfa95346d365e169ccc8e0f2d5693a Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Fri, 25 Sep 2026 14:49:07 +0800
+Subject: [PATCH] feat(photosynthesis): co-limitation under the WUE model and
+ leaf-only PAR (C-21)
+
+Ledger C-21 (paper V2), two namelist switches, both off by default. The
+wetland tile's assimilation is 1.5-3.5 times tower GPP (median 1.6), and
+it drives the methane substrate and the aerenchyma.
+
+DEF_WUE_COLIMIT: with DEF_USE_WUEST, C3 assimilation was the hard minimum
+of the Rubisco and light limited rates, bypassing CoLM's own Ball-Berry
+co-limitation (atheta 0.877, btheta 0.95) and the sink rate that carries
+the C3 low-temperature inhibition (Collatz et al. 1991; Dai et al. 2004;
+CLM4.5 also co-limits). With the switch C3 keeps the WUE optimal ci and
+combines the three rates with the two quadratics; the sink rate takes no
+ci term, since pco2i is not set on the WUE path. Off, the code path is the
+original one.
+
+DEF_PAR_LEAF_ONLY: parsun and parsha are absorbed over lai+sai by the
+two-stream and drove leaf photosynthesis unscaled, so stem-absorbed PAR
+fed the leaves. With the switch only the leaf share lai/(lai+sai) enters
+photosynthesis, as in CLM; sabv and the energy balance are unchanged.
+
+---
+ main/MOD_AssimStomataConductance.F90 | 17 ++++++++++++++---
+ main/MOD_LeafTemperature.F90         | 26 +++++++++++++++++++++-----
+ share/MOD_Namelist.F90               | 16 ++++++++++++++++
+ 3 files changed, 51 insertions(+), 8 deletions(-)
+
+diff --git a/main/MOD_AssimStomataConductance.F90 b/main/MOD_AssimStomataConductance.F90
+index 11b66905..3222acd5 100644
+--- a/main/MOD_AssimStomataConductance.F90
++++ b/main/MOD_AssimStomataConductance.F90
+@@ -238,8 +238,17 @@ CONTAINS
+          omc = vm   * ( pco2i_c-gammas ) / ( pco2i_c + rrkk ) * c3 + vm * c4
+          ome = epar * ( pco2i_e-gammas ) / ( pco2i_e+2.*gammas ) * c3 + epar * c4
+          !IF(.not. DEF_USE_WUEST .or. epar .lt. 1.e-12)THEN
+-         IF(.not. DEF_USE_WUEST .or. abs(c4 - 1) .lt. 0.001)THEN
+-            oms = omss * c3 + omss*pco2i * c4
++         ! DEF_WUE_COLIMIT: C3 under the WUE model keeps the optimal ci of each
++         ! limitation (omc at pco2i_c, ome at pco2i_e) but combines omc, ome
++         ! and the sink rate oms with the two quadratics below instead of a
++         ! hard minimum. pco2i is not set on the WUE path; the C3 sink rate
++         ! has no ci term.
++         IF(.not. DEF_USE_WUEST .or. abs(c4 - 1) .lt. 0.001 .or. DEF_WUE_COLIMIT)THEN
++            IF (DEF_USE_WUEST .and. abs(c4 - 1) .ge. 0.001) THEN
++               oms = omss * c3
++            ELSE
++               oms = omss * c3 + omss*pco2i * c4
++            ENDIF
+ 
+             sqrtin= max( 0., ( (ome+omc)**2 - 4.*atheta*ome*omc ) )
+             omp   = ( ( ome+omc ) - sqrt( sqrtin ) ) / ( 2.*atheta )
+@@ -711,7 +720,9 @@ CONTAINS
+ 
+          omc = vm   * ( pco2i-gammas ) / ( pco2i + rrkk ) * c3 + vm * c4
+          ome = epar * ( pco2i-gammas ) / ( pco2i+2.*gammas ) * c3 + epar * c4
+-         IF(.not. DEF_USE_WUEST .or. abs(c4 - 1) .lt. 0.001)THEN
++         ! DEF_WUE_COLIMIT: C3 under the WUE model takes the same co-limitation
++         ! of omc, ome and oms as the Ball-Berry branch (as in stomata)
++         IF(.not. DEF_USE_WUEST .or. abs(c4 - 1) .lt. 0.001 .or. DEF_WUE_COLIMIT)THEN
+             oms = omss * c3 + omss*pco2i * c4
+ 
+             sqrtin= max( 0., ( (ome+omc)**2 - 4.*atheta*ome*omc ) )
+diff --git a/main/MOD_LeafTemperature.F90 b/main/MOD_LeafTemperature.F90
+index 05f56c3f..00e3a744 100644
+--- a/main/MOD_LeafTemperature.F90
++++ b/main/MOD_LeafTemperature.F90
+@@ -6,7 +6,7 @@ MODULE MOD_LeafTemperature
+    USE MOD_Precision
+    USE MOD_Namelist, only: DEF_USE_CBL_HEIGHT, DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, &
+                            DEF_RSS_SCHEME, DEF_SPLIT_SOILSNOW, &
+-                           DEF_VEG_SNOW
++                           DEF_VEG_SNOW, DEF_PAR_LEAF_ONLY
+    USE MOD_SPMD_Task
+ 
+    IMPLICIT NONE
+@@ -412,6 +412,7 @@ CONTAINS
+    real(r8) evplwet, evplwet_dtl, etr_dtl, elwmax, elwdif, etr0, sumrootr
+    real(r8) irab, dirab_dtl, fsenl_dtl, fevpl_dtl
+    real(r8) w, csoilcn, z0mg, cintsun(3), cintsha(3)
++   real(r8) parsun_leaf, parsha_leaf   ! par absorbed by sunlit/shaded leaves for photosynthesis [W/m2]
+    real(r8) fevpl_bef, fevpl_noadj, dtl_noadj, htvpl, erre
+    real(r8) qevpl, qdewl, qsubl, qfrol, qmelt, qfrz
+ 
+@@ -466,6 +467,21 @@ CONTAINS
+       cintsha(2) = (1.-exp(-extkd*lai))/extkd - cintsun(2)
+       cintsha(3) = lai - cintsun(3)
+ 
++! par for leaf photosynthesis: parsun and parsha are absorbed by leaves and
++! stems (two-stream over lai+sai, MOD_Albedo). With DEF_PAR_LEAF_ONLY only the
++! leaf share lai/(lai+sai) drives photosynthesis, as in CLM (APAR per unit
++! lai+sai, used per unit lai). The same factor for sunlit and shaded keeps
++! their split. sabv and the energy balance keep the whole-canopy absorption.
++      parsun_leaf = parsun
++      parsha_leaf = parsha
++#ifndef LULC_USGS
++      ! LULC_USGS leaves stems out of the two-stream (sai_ = 0 in MOD_Albedo)
++      IF (DEF_PAR_LEAF_ONLY .and. lai+sai > 0.) THEN
++         parsun_leaf = parsun * lai/(lai+sai)
++         parsha_leaf = parsha * lai/(lai+sai)
++      ENDIF
++#endif
++
+ !-----------------------------------------------------------------------
+ ! get fraction of wet and dry canopy surface (fwet & fdry)
+ ! initial saturated vapor pressure and humidity and their derivation
+@@ -690,7 +706,7 @@ CONTAINS
+                  shti     ,hhti     ,trda     ,trdm     ,trop     ,&
+                  g1       ,g0       ,gradm    ,binter   ,thm      ,&
+                  psrf     ,po2m     ,pco2m    ,pco2a    ,eah      ,&
+-                 ei       ,tl       ,parsun   ,&
++                 ei       ,tl       ,parsun_leaf,&
+             !Ozone stress variables
+                  o3coefv_sun   ,o3coefg_sun   ,&
+             !End ozone stress variables
+@@ -705,7 +721,7 @@ CONTAINS
+                  shti     ,hhti     ,trda     ,trdm     ,trop     ,&
+                  g1       ,g0       ,gradm    ,binter   ,thm      ,&
+                  psrf     ,po2m     ,pco2m    ,pco2a    ,eah      ,&
+-                 ei       ,tl       ,parsha   ,&
++                 ei       ,tl       ,parsha_leaf,&
+             ! Ozone stress variables
+                  o3coefv_sha    ,o3coefg_sha  ,&
+             ! End ozone stress variables
+@@ -740,11 +756,11 @@ CONTAINS
+                gssun = gssun * laisun
+                gssha = gssha * laisha
+ 
+-               CALL update_photosyn(tl, po2m, pco2m, pco2a, parsun, psrf, rstfacsun, rb, gssun, &
++               CALL update_photosyn(tl, po2m, pco2m, pco2a, parsun_leaf, psrf, rstfacsun, rb, gssun, &
+                                     effcon, vmax25, c3c4, gradm, trop, slti, hlti, shti, hhti, trda, &
+                                     trdm, cintsun, assimsun, respcsun)
+ 
+-               CALL update_photosyn(tl, po2m, pco2m, pco2a, parsha, psrf, rstfacsha, rb, gssha, &
++               CALL update_photosyn(tl, po2m, pco2m, pco2a, parsha_leaf, psrf, rstfacsha, rb, gssha, &
+                                     effcon, vmax25, c3c4, gradm, trop, slti, hlti, shti, hhti, trda, &
+                                     trdm, cintsha, assimsha, respcsha)
+ 
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index f901ac44..884d8890 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -406,9 +406,21 @@ MODULE MOD_Namelist
+ 
+    logical :: DEF_USE_NOSTRESSNITROGEN  = .false. ! photosynthesis stress option
+    integer :: DEF_RSTFAC                = 1       ! root resistance factors option
++   ! parsun and parsha are absorbed by leaves and stems (two-stream over
++   ! lai+sai). .true. passes only the leaf share, lai/(lai+sai), to leaf
++   ! photosynthesis, as CLM (APAR per unit lai+sai used per unit lai); sabv
++   ! and the canopy energy balance are unchanged. All tiles through
++   ! LeafTemperature; no effect with LULC_USGS, whose two-stream has no stems.
++   logical :: DEF_PAR_LEAF_ONLY         = .false.
+    logical :: DEF_USE_PLANTHYDRAULICS   = .true.  ! Plant Hydraulics
+    logical :: DEF_USE_MEDLYNST          = .false. ! Medlyn stomata model
+    logical :: DEF_USE_WUEST             = .true.  ! WUE stomata model
++   ! With DEF_USE_WUEST, C3 assimilation is the hard minimum of the Rubisco and
++   ! light limited rates. .true. combines them and the sink limited rate with
++   ! the two quadratic co-limitations of the Ball-Berry branch (Collatz et al.
++   ! 1991; Dai et al. 2004), keeping the WUE optimal ci; the sink rate carries
++   ! the C3 low-temperature inhibition. All tiles. No effect without WUEST.
++   logical :: DEF_WUE_COLIMIT           = .false.
+ 
+    logical :: DEF_USE_SASU              = .false. ! Semi-Analytic-Spin-Up
+    logical :: DEF_USE_DiagMatrix        = .false.
+@@ -1189,9 +1201,11 @@ CONTAINS
+       DEF_Srfdata_CompressLevel,              &
+ 
+       DEF_USE_CBL_HEIGHT,                     & !add by zhongwang wei @ sysu 2022/12/31
++      DEF_PAR_LEAF_ONLY,                      &
+       DEF_USE_PLANTHYDRAULICS,                & !add by xingjie lu @ sysu 2023/05/28
+       DEF_USE_MEDLYNST,                       & !add by xingjie lu @ sysu 2023/05/28
+       DEF_USE_WUEST,                          & !add by xingjie lu @ sysu 2024/05/28
++      DEF_WUE_COLIMIT,                        &
+       DEF_USE_SASU,                           & !add by Xingjie Lu @ sysu 2023/06/27
+       DEF_USE_DiagMatrix,                     & !add by Xingjie Lu @ sysu 2023/06/27
+       DEF_USE_PN,                             & !add by Xingjie Lu @ sysu 2023/06/27
+@@ -1842,9 +1856,11 @@ CONTAINS
+       CALL mpi_bcast (DEF_SSP                                ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_CBL_HEIGHT                     ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_PAR_LEAF_ONLY                      ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_PLANTHYDRAULICS                ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_MEDLYNST                       ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_WUEST                          ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WUE_COLIMIT                        ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_SASU                           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_DiagMatrix                     ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_PN                             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

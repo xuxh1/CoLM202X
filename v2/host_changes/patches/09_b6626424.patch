@@ -1,0 +1,79 @@
+From b66264244f45c5c0cfa9712da6a94d18b577ebbe Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Fri, 25 Sep 2026 14:37:32 +0800
+Subject: [PATCH] feat(methane): scale the wetland LAI by cap over its annual
+ peak instead of clipping it (C-19)
+
+Ledger C-19 (paper V2), DEF_METHANE%wetland_lai_shape, off by default.
+C-13 clips the non-forested share's remote-sensing LAI at the measured
+peak each month (min(tlai, cap)). Where the remote-sensing peak exceeds the
+cap, an open fen then holds its July LAI from April to November: at four
+boreal towers the LAI sits at 0.6 in every month from April to November,
+so the aerenchyma cross-section (proportional to LAI) and the plant pathway
+stay flat while observed CH4 falls 3-7 times in the shoulder seasons. With
+the switch on the annual peak of the LAI year is found by reading all its
+months once, and the non-forested share is scaled by cap / peak, which
+keeps the measured peak and the remote-sensing seasonal shape. Patches
+whose peak is below the cap are left as read.
+
+---
+ main/CoLM.F90 | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/main/CoLM.F90 b/main/CoLM.F90
+index c02b40f3..a6d72722 100644
+--- a/main/CoLM.F90
++++ b/main/CoLM.F90
+@@ -101,6 +101,9 @@ PROGRAM CoLM
+    USE MOD_Aerosol, only: AerosolDepInit, AerosolDepReadin
+ 
+    USE MOD_ParameterOptimization
++#if (defined TRACER) && (defined BGC)
++   USE MOD_Tracer_Reactive_Methane_WetlandVeg, only: wetveg_lai_peak_needed, wetveg_track_lai_peak
++#endif
+ #ifdef TRACER
+    USE MOD_Tracer_LandPhase, only: land_tracer_init, land_tracer_final
+    USE MOD_Tracer_Lifecycle, only: tracer_lifecycle_reset
+@@ -157,6 +160,7 @@ PROGRAM CoLM
+    integer :: e_year, e_month, e_day, e_seconds, e_julian
+    integer :: p_year, p_month, p_day, p_seconds, p_julian
+    integer :: lc_year, lai_year
++   integer :: m_lai         ! month or 8-day index of the wetland LAI peak pass
+    integer :: month, mday, year_p, month_p, mday_p, month_prev, mday_prev
+    integer :: n_spinupcycle, i_spinupcycle, istep
+    logical :: is_spinup
+@@ -603,6 +607,16 @@ PROGRAM CoLM
+ 
+          IF (DEF_LAI_MONTHLY) THEN
+             IF (month /= month_p) THEN
++#if (defined TRACER) && (defined BGC)
++               ! Wetland LAI shape: annual peak of this LAI year before the cap
++               ! (no-op unless DEF_METHANE%wetland_lai_shape)
++               IF (wetveg_lai_peak_needed (lai_year)) THEN
++                  DO m_lai = 1, 12
++                     CALL LAI_readin (lai_year, m_lai, dir_landdata)
++                     CALL wetveg_track_lai_peak (m_lai == 1, lai_year)
++                  ENDDO
++               ENDIF
++#endif
+                CALL LAI_readin (lai_year, month, dir_landdata)
+ #if (defined TRACER) && (defined BGC)
+                CALL wetveg_cap_lai ()   ! C-13: no-op unless DEF_METHANE%wetland_veg_glwd
+@@ -615,6 +629,14 @@ PROGRAM CoLM
+             ! Update every 8 days (time interval of the MODIS LAI data)
+             Julian_8day = int(calendarday(jdate)-1)/8*8 + 1
+             IF (Julian_8day /= Julian_8day_p) THEN
++#if (defined TRACER) && (defined BGC)
++               IF (wetveg_lai_peak_needed (jdate(1))) THEN
++                  DO m_lai = 1, 361, 8
++                     CALL LAI_readin (jdate(1), m_lai, dir_landdata)
++                     CALL wetveg_track_lai_peak (m_lai == 1, jdate(1))
++                  ENDDO
++               ENDIF
++#endif
+                CALL LAI_readin (jdate(1), Julian_8day, dir_landdata)
+ #if (defined TRACER) && (defined BGC)
+                CALL wetveg_cap_lai ()   ! C-13: no-op unless DEF_METHANE%wetland_veg_glwd
+-- 
+2.53.0
+

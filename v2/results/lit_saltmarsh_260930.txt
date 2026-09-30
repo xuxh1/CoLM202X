@@ -1,0 +1,238 @@
+# lit_saltmarsh_260930：盐沼甲烷偏高的文献调研与诊断
+
+- **日期**：2026.09.30-05:02
+- **读者**：下一会话
+- **来源**：中控派活 methane-salt（只读调研与诊断，未改码、未跑模式、未提交）；站点 tag `cases/paper_v2/v260930/sp_v2_c90/sites_v2_p9a`（commit 24061070，`CODE_COMMIT.txt`）；计分 `v2/results/scores77_v2_p9a.csv`；账本 `v2/迭代账本.md` 的 C-42、V-75、D-30、V-155 行；站点事实 `scripts/sites/site_facts.csv`；取数脚本 `v2/_scratch/salt/diag_salt.py`（复用 `_scratch/marsh/diag_marsh.py` 的读取函数）、`v2/_scratch/salt/factor_options.py`，输出 `diag_salt.out`、`factor_options.out`（同目录）
+- **状态**：四问已答；改法只到式子、参数、依据与离线预期因子，未实跑
+
+口径：排放 E 用 mg CH4 m-2 d-1（年量用 g C m-2 yr-1 或 g CH4 m-2 yr-1，写明）；"塔上月"指 FCH4_f 半小时覆盖不少于 80 % 的月（同 `diag_marsh.py`），与 `score77.py` 的月口径略有出入，故第 3、4 节的塔上均值与计分表的 obs 列差几个百分点；盐度 psu（文献的 ppt 视同 psu）；"所需因子"= 现行 C-42 因子 × 塔上均值 / 模式均值，即相对淡水的产率因子要取多少才能把均值对上；β、α、r、KGE_ln 同 `scripts/sites/score_series.py:88-98`。常数倍改动使 β 与 α 同乘该倍数、r 不变，第 5 节的预期 KGE_ln 按此离线折算（产量到排放按线性处理，氧化份额随浓度变化未计入）。
+
+## 0. 覆盖面
+
+1. 检索（WebSearch，7 次）：
+   - `Arias-Ortiz 2024 methane fluxes tidal marshes conterminous United States salinity threshold Global Change Biology`：命中 10，取 Arias-Ortiz et al. 2024 全文（UAB 仓库 PDF）。
+   - `Oikawa 2024 PEPRMT-Tidal sulfate methane model tidal wetlands JGR Biogeosciences`：命中 9，取 Oikawa et al. 2024 全文（NSF PAR PDF）与模型代码（GitHub `pattyoikawa/PEPRMT-Tidal` v1.0 的 `PEPRMT_CH4_FINAL.R`、`Run_PEPRMT_Tidal.Rmd`）。
+   - `Reid Hackensack Mill Creek marsh methane porewater sulfate 2013 JGR Biogeosciences`：命中 9，取 Reid et al. 2013 摘要（OpenAlex）；出版社全文 403。
+   - `land surface model coastal wetland methane sulfate reduction salinity inhibition ELM Alquimia tidal marsh 2023 2024`：命中 9，取 Sulman et al. 2024 摘要（Crossref）；全文 PDF 解析失败。
+   - `Poffenbarger Needelman Megonigal 2011 "salinity influence on methane emissions from tidal marshes" abstract ...`：命中 10，取 Holm et al. 2016 全文（lacoast.gov PDF）、Wilson et al. 2026 摘要（Crossref）、Cai et al. 2025 预印本摘要（arXiv）；Poffenbarger 原文三处来源均 403。
+   - `"Mill Creek" marsh Hackensack Meadowlands eddy covariance methane Schäfer ...`：命中 9，用于核实 US-MRM 位置。
+   - `King 1984 "noncompetitive substrates" methanogenic bacteria marine sediments ...`：命中 9，取 King 1984、Oremland and Polcin 1982 的书目。
+2. 读全文或原文页：Arias-Ortiz et al. 2024 第 1–17 页（第 18–23 页为致谢与参考文献）；Oikawa et al. 2024 第 1–18 页（第 19–22 页为参考文献）；Holm et al. 2016 第 1–11 页；PEPRMT-Tidal v1.0 代码两件的相关行。只取得摘要：Reid et al. 2013、Sulman et al. 2024、Capooci et al. 2024、Al-Haj and Fulweiler 2020、Rosentreter et al. 2021、Weston et al. 2006、Lovley and Klug 1983、Oremland and Polcin 1982、Koebsch et al. 2019、Russell et al. 2023、Hartman et al. 2024、Capooci and Vargas 2022、Wilson et al. 2026、Cai et al. 2025。只取得书目：Poffenbarger et al. 2011（方程取自账本 C-42 行转录的出版社摘要与 Holm 2016 图 8）、Bartlett et al. 1987、Oremland et al. 1982、King 1984、Seyfferth et al. 2020、Schäfer et al. 2014、2019、Trifunovic et al. 2020、Vázquez-Lule and Vargas 2021、Hill and Vargas 2022、Krauss et al. 2016、Callaway et al. 2012、Delwiche et al. 2021（这几篇的站点数值取自 `site_facts.csv` 已有转录行，行号见正文）。
+3. 注册库：第 7 节 31 条（30 篇文献与 1 份代码）全部经 Crossref 或 DataCite 核题名、作者、刊名、卷、页或文章号、年（著录据注册库返回填写）。任务书举的 "Schmidt" 未能对上具体文献，未收。
+4. 读码（`cases/paper_v2/v260930/sp_v2_c90/` 下，即 commit 24061070 的归档）：grep `salinity` 于 `main/TRACER/`（5 处，均读）；`MOD_Tracer_Reactive_Methane_Physics.F90:2207`（`methane_prod` 入口）、`2440–2736`（产量整段，含 C-42 第 2613–2615 行、氧化还原滞后第 2617–2622 行、0.5 截断第 2625 行、产量与微生物上限第 2632–2690 行）、`2739–2824`（`methane_acceptor`，候选 16 受体库）；`MOD_Tracer_Reactive_Methane_Const.F90:355–403`（受体库参数与说明）、`1137–1140`（`wetland_salinity_site`）；`MOD_Tracer_Reactive_Methane_BgcLink.F90:93`（`BIOME_TEMPERATE_MARSH = 3`）。
+5. 配置：`sites_v2_p9a/_conf/ch4_parameter.nml` 全文；`ch4_param/US-MRM.nml` 对基础件的 diff（只多站点四键）；`site_nml/US-MRM.nml` 对 `US-StJ.nml` 的 diff；六塔 `site_nml` 的 `USE_SITE_WTD` 与 `DEF_WETLAND_PEAT_SHARE_SITE`；`SITE_MAIN.csv`、`SITE_PARAMS.csv` 的 DE-Hte、US-Srr、US-MRM 行。
+6. 数据：六塔 `sites_v2_p9a/<塔>/history/` 全部 hist 与 hist_tracer；六个 `Observation/*_Flux.nc`（FCH4_f、Resp_DT、GPP_DT、TS_1、WTD_f；五座美国塔无盐度、电导、硝酸盐变量）；六个 `Sitedata/*_site.nc` 的 WTD_daily；`site_facts.csv` 六塔的盐度、电导率、孔隙水硫酸盐、水位、类型、优势种、管理与扰动史、年通量行。复现：`ssh -o BatchMode=yes node110 /share/home/dq076/software/miniconda3/envs/py311/bin/python /share/home/dq076/mode/Methane/CoLM202X-paper-v2/v2/_scratch/salt/diag_salt.py`（输出写 `diag_salt.out`），`factor_options.py` 同法（写 `factor_options.out`）。下文"诊断输出 某塔"指 `diag_salt.out` 该塔段，"因子表"指 `factor_options.out`。
+7. 未看：无。取不到全文的见第 2 条，所用数字只取自已读到的摘要、图表或 `site_facts.csv` 转录行。
+8. 存疑（要跑实验才能定）：
+   - 第 5 节候选式实跑后的 KGE_ln。离线折算按常数倍，氧化随 CH4 浓度非线性、硝酸盐与盐度实为时变，实跑可能偏离。实验：C-42 树上加硝酸盐项，六座盐沼塔子集 tag，与 `v2_p9a` 配对比。
+   - US-Srr 高位沼泽（Z* 2.2）在模式里该不该降水位。塔上 WTD 均值 0.12 m（Sitedata），模式 0.10 m，差得不多；实验：US-Srr 开 `USE_SITE_WTD`，看 E 降多少。
+   - 受体库（候选 16）接潮汐硫酸盐补给的补给速率。无站点约束，要做敏感性试验。
+
+## 1. 结论
+
+1. C-42 的斜率有两份综述支持：Poffenbarger et al. 2011 为 log10(F) = 1.38 − 0.056 S，Holm et al. 2016 并入路易斯安那两塔后重拟为 1.4179 − 0.0572 S（R2 0.53），Arias-Ortiz et al. 2024 的五个盐度类中位对淡水之比过类中点拟合为 log10(比) = −0.148 − 0.0514 S——已验证（账本 C-42 行；Holm 2016 图 8；factor_options.out 末行）。
+2. US-Srr 与 US-MRM 的偏高不是盐度函数形状的问题：两塔孔隙水盐度 8.83 与 5（比 US-LA1 的 9.3、US-StJ 的 10.55 还低），塔上年通量却比 Poffenbarger 回归低 0.84 与 1.44 个数量级，而 US-LA1、US-StJ 高 0.28 与 0.38 个数量级；任何随盐度单调下降的因子都会给 US-MRM 最大的因子，方向与观测相反——已验证（factor_options.out 第三段；诊断输出四塔第 1 行）。
+3. 两座偏低塔共有的站点特征是城市污水带来的高硝酸盐：US-MRM 所在 Hackensack 河 40–60 % 为污水厂出水、硝态氮 5.1 mg L-1，US-Srr 紧邻日排 1000 kg 以上硝态氮的污水厂排口、潮沟硝酸盐 1.0 mg L-1；US-LA1 为 0.2——已验证（site_facts.csv:2588；Oikawa 2024 第 5、8 页）。US-Srr 另是高位沼泽（Z* 2.2，很少被淹），2017 年 163 天盐度低于 1 ppt 的淡水脉冲里甲烷不升（0.39 对其余年份 0.36 g C m-2），PEPRMT-Tidal 关掉硝酸盐抑制就大幅高估——已验证（Oikawa 2024 第 5、13–14、18 页，图 7；Arias-Ortiz 2024 第 15 页）。
+4. 模式侧：盐度因子只乘在湿地斑块产率上，常数、不随深度与时间变；六塔都无潮汐淹水（积水 0 mm，水位地表下 0.08–0.10 m，淹水比例 0.17–0.21），美国五塔排放 99–100 % 走通气组织；模式的"淡水当量"排放（E / C-42 因子）在四座中盐塔为 190–268 mg CH4 m-2 d-1，是 Poffenbarger 截距（24 g CH4 m-2 yr-1，即 65.7 mg）的 2.9–4.1 倍——已验证（Physics.F90:2613–2615；诊断输出第 1、2、3 段，淡水当量由第 1 行 E 除以因子得）。US-Srr、US-LA1 的异养呼吸约为塔上推算值的 2.4 与 2.3 倍，是底物侧另一份偏高——推测。依据是塔上异养呼吸取 Reco − 0.5 GPP。
+5. 改法：不建议用盐度换算的硫酸盐阈值式替换 C-42（PEPRMT 式的硫酸盐项在 5–11 psu 比 C-42 更弱，四塔 β 全升；Arias-Ortiz 类中位阶梯把 US-LA1、US-StJ 压到 β 0.6，US-Srr、US-MRM 仍 8 与 20）。建议在 C-42 上加站点硝酸盐抑制项 K/(K + NO3)，K = 0.102 mg L-1（PEPRMT-Tidal 式 5 与 v1.0 代码）：预期相对淡水因子 US-LA1 0.102、US-StJ 0.034、US-Srr 0.030、US-MRM 0.010（所需 0.204、0.207、0.016、0.006），盐沼类中位 KGE_ln −2.31 → −0.79；若连硫酸盐项一起换成 PEPRMT 原式，类中位 −0.39。代价是 US-StJ 0.68 → −1.69（或 −1.12）、US-LA1 0.25 → −0.79（或 −0.39）——已验证（factor_options.out 第二段）。US-StJ 本身高于回归，文献归于深层甲基营养型产甲烷、硫酸盐的空间异质与潮沟侧向输出——已验证（Capooci 2024 摘要；Oikawa 2024 第 17 页）。
+6. DE-Hte 偏低（β 0.12）与盐度无关：塔上常年积水 0.27 m，模式水位在地表下 0.10 m；站点表把它设为矿质（泥炭份额 0）、LAI 上限 0.6；表层孔隙水硫酸盐 0.0–0.1 mM，按硫酸盐算因子约 1，比现行 0.78 只高 1.28 倍——已验证（诊断输出 DE-Hte；SITE_MAIN.csv:4；SITE_PARAMS.csv:4；site_facts.csv:440）。
+
+## 2. 机理与量级（问题 1）
+
+### 2.1 硫酸盐还原与产甲烷的竞争
+
+- 硫酸盐还原菌与产甲烷菌争氢与乙酸，硫酸盐在时产甲烷的份额被压到很低；湖泊沉积物里硫酸盐 60–105 µM 时硫酸盐还原菌已能胜出——已验证（Lovley and Klug 1983 摘要）。按海水硫酸盐与盐度之比 74 mg L-1 per ppt（即 0.77 mM per psu，PEPRMT-Tidal 代码 `conc_so4AV = 7.4e-8*(Sal*1e6)*1000`），这一浓度只相当于 0.08–0.14 psu——已验证（PEPRMT_CH4_FINAL.R；按 74/96.06 换算）。
+- 淡水潮汐沉积物进盐后，两周内硫酸盐还原占有机质矿化的一半以上，四周后超过 95 %，产甲烷下降；淡水对照中产甲烷占 62 %——已验证（Weston et al. 2006 摘要）。
+- 实地年通量的下降比竞争动力学平缓得多：孔隙水硫酸盐会被就地耗尽而与盐度脱钩，高盐下也可出现高排放——已验证（Arias-Ortiz 2024 第 15 页，引 Wilson et al. 2015）。Poffenbarger et al. 2011 报孔隙水硫酸盐高于 4 mM 时孔隙水甲烷可忽略——已验证（Arias-Ortiz 2024 第 15 页转述）。
+
+### 2.2 盐度与排放的形状（低盐与中盐）
+
+- 全局形状是对数线性：Poffenbarger log10(F [g CH4 m-2 yr-1]) = 1.38 − 0.056 S（r2 0.52）；Holm 2016 并入 US-LA1 与淡水塔后 1.4179 − 0.0572 S（R2 0.53），称"关系只变 1 %"——已验证（账本 C-42；Holm 2016 第 11 页图 8、第 12 页）。
+- 美国本土 108 个点的年通量：盐度类中位淡水 34.5、寡盐 16.9、中盐 4.2、多盐 1.2、混合海水 0.5 g CH4 m-2 yr-1（每升一类约降三倍）；淡水对寡盐、寡盐对中盐的分布统计上重叠，按采样拆开的箱式数据只有淡水与寡盐重叠，作者据此认为衰减主要发生在寡盐阈（5 psu）以上——已验证（Arias-Ortiz 2024 第 9、14 页，图 3）。
+- 分位回归阈值：中位通量在孔隙水硫酸盐 2.8 ± 0.5 mM、孔隙水盐度 9.6 ± 1.1 psu 以上显著下降；90 分位落到 5 ± 3 nmol m-2 s-1 以下的阈值是硫酸盐 4.7 ± 0.6 mM、孔隙水盐度 21 ± 2 psu、地表水盐度 15 ± 3 psu；阈值定义为 7 × ln2 / 斜率（即 99 % 降幅）——已验证（Arias-Ortiz 2024 摘要、第 7、11、15 页）。
+- 低盐区方差极大：淡水与寡盐点的通量方差是中盐、多盐、混合海水的 27、700 与 5000 倍以上——已验证（Arias-Ortiz 2024 第 9 页）。旧金山湾 11 个湿地复合体里甲烷最高出现在寡盐（约 3 ppt）而非淡水——已验证（Hartman et al. 2024 摘要）。
+- 条件推断树：第一分叉是盐度类，之后是日最高气温常年值 MATmax 与高程类；淡水与寡盐、MATmax 不超过 25.6 °C 时，低、中高程中位 41.5、高高程中位 3.2 g CH4 m-2 yr-1；中盐 MATmax 高于 19 °C 中位 19.2，不超过 19 °C 中位 3.1；多盐与混合海水中位 0.7——已验证（Arias-Ortiz 2024 第 10–11 页，图 4、表 3）。
+- 植物种比盐度更能预测全球潮汐沼泽通量（单独解释 62 % 方差），且多盐沼泽并不都低——已验证（Wilson et al. 2026 摘要）。
+
+### 2.3 潮汐冲刷对水位与氧化的作用
+
+- 淹水频率：淡水与寡盐里低、中高程比高高程中位高约 13 倍，归于淹水越频繁土壤氧越少、产甲烷越强、甲烷氧化越弱；咸水系统不见此效应，因硫酸盐还原先于产甲烷——已验证（Arias-Ortiz 2024 第 14 页）。
+- 水位决定日内排放的时点与通道，低潮到涨潮时释放储存的甲烷——已验证（Arias-Ortiz 2024 摘要第 2 页、第 13 页）。连续观测里盐度整体不是首要预测量，只在生长季变淡的 US-LA1、US-MRM、US-EDN 的季节尺度上重要，在 US-StJ、US-MRM 的日尺度上因与水位相关而重要——已验证（Arias-Ortiz 2024 第 13 页）。
+- 储存：US-MRM 泥滩沉积物长期储存甲烷，排放滞后到冬季——已验证（Reid et al. 2013 摘要）。
+- 侧向输出：US-StJ 土壤孔隙气甲烷高达 145 000 µmol mol-1 而土气通量低，最可能的主去向是排向潮沟——已验证（Capooci et al. 2024 摘要）。涡度塔与箱式都看不到侧向输出——已验证（Arias-Ortiz 2024 第 15 页）。
+- 氧化：低潮时沉积物表层的好氧氧化与根际供氧会使孔隙水甲烷与通量脱钩——已验证（Arias-Ortiz 2024 第 15 页）。
+- 微潮站（US-LA1，潮差 < 30 cm）受风与河水脉冲主导，排放最高出现在水位高于地表时；月通量峰（2012 年 8 月 4.31 g CH4 m-2 mo-1）同月水位最高（0.56 m NAVD88）、盐度最低（3.7 psu）——已验证（Holm 2016 第 3、7、9 页，表 4）。
+
+### 2.4 非竞争性底物（甲基化合物）
+
+- 河口沉积物里硫酸盐不抑制以甲醇、三甲胺、甲硫氨酸为底物的产甲烷，却大大延缓以氢或乙酸为底物的产甲烷——已验证（Oremland and Polcin 1982 摘要）。盐沼缺氧沉积物中产甲烷与硫酸盐还原可同时进行——已验证（Oremland et al. 1982 题名）。
+- 甲胺是海洋表层沉积物的重要甲烷前体，低浓度下硫酸盐还原菌对甲醇有竞争优势，高于约 1 mM 时反之——推测。依据是检索结果对 King 1984 的转述，未读原文。
+- US-StJ 的甲烷来自年轻碳，途径为甲基营养型与氢营养型——已验证（Capooci 2024 摘要）。PEPRMT-Tidal 低估 US-StJ，作者归于深部甲基营养型产甲烷与硫酸盐随深度与位置的异质（近潮沟处可有高甲烷），以及芦苇的传输——已验证（Oikawa 2024 第 17 页）。
+- 这一通道的占比没有可直接用的量化值——推测。已读到的来源只给定性结论。
+
+### 2.5 硝酸盐
+
+- PEPRMT-Tidal 的产量式（式 5）：P = Vmax [C]/(kM + [C]) × kI_NO3/(kI_NO3 + [NO3]) × kI_SO4/(kI_SO4 + [SO4])，[SO4] 由盐度按海水比例算（74 mg L-1 per ppt）——已验证（Oikawa 2024 第 7 页式 5；PEPRMT_CH4_FINAL.R）。v1.0 代码的拟合值 kI_SO4 = 486.4 mg L-1（约 5.06 mM）、kI_NO3 = 0.102 mg L-1——已验证（Run_PEPRMT_Tidal.Rmd 的 `CH4_theta` 第 7、8 个值；PEPRMT_CH4_FINAL.R 的 `kiSO4 = theta[7]`、`kiNO3 = theta[8]`）。论文最终版参数在补充材料表 S5，未取得，是否与 v1.0 相同——存疑。
+- US-StJ 潮沟硝酸盐 0–30 µM 范围内甲烷通量随硝酸盐指数下降——已验证（Oikawa 2024 第 9 页图 3）。
+- 合成数据里甲烷随溶解硝酸盐升高而降，降幅小于硫酸盐，只 3 项研究——已验证（Arias-Ortiz 2024 第 15 页）。另一方面，氮负荷被预期会通过提高生产力增加滨海植被生态系统的甲烷——已验证（Al-Haj and Fulweiler 2020 摘要）。两者方向相反，净效应因站而异——推测。
+
+## 3. 两座偏高塔的站点事实（问题 2）
+
+各塔在模式里的对照（诊断输出第 1 行；塔上月均值）：
+
+| 塔 | 孔隙水盐度 psu | C-42 因子 | 塔上 E | 模式 E | 模式/塔上 | 所需因子 |
+| --- | --- | --- | --- | --- | --- | --- |
+| US-LA1 | 9.3 | 0.301 | 44.9 | 66.3 | 1.48 | 0.204 |
+| US-StJ | 10.55 | 0.257 | 51.4 | 63.7 | 1.24 | 0.207 |
+| US-Srr | 8.83 | 0.320 | 4.21 | 85.9 | 20.4 | 0.0157 |
+| US-MRM | 5.0 | 0.525 | 1.12 | 99.7 | 88.7 | 0.0059 |
+| US-EDN | 35 | 0.011 | −0.28 | 0.22 | 不计 | 约 0 |
+| DE-Hte | 1.9 | 0.783 | 208.6 | 24.1 | 0.12 | 6.76（大于 1） |
+
+### 3.1 US-MRM
+
+- 位置：新泽西 Meadowlands 的 Hackensack 河口，不是 Mullica River——已验证（site_facts.csv:2566 转录 Reid 2013 第 2 节 "a tidal marsh located along the Hackensack River Estuary"；Schäfer et al. 2014 题名 "an urban tidal marsh in the Hudson-Raritan estuary"）。站点论文里的列名 MRMMB 即 Marsh Resource Meadowlands Mitigation Bank——推测。依据是检索结果摘要，未打开原页。
+- 管理：1999–2001 年疏浚填方做补偿恢复，补种互花米草，其后定期喷药控芦苇——已验证（site_facts.csv:2586，转录 Schäfer 2019 第 2.1 节）。
+- 盐度：孔隙水 2–8（0–55 cm，2011–2012），潮水 8–10 ppt，Hackensack 河全期均值 7.6 ppt——已验证（site_facts.csv:2544–2545）。C-42 取孔隙水中点 5，若按潮水 9 取则因子 0.31、β 由 86.6 降到约 51——已验证（按 10^(−0.056×9) 计算）。
+- 硫酸盐：低沼剖面硫酸盐还原与产甲烷的氧化还原界面在 10–20 cm 深，泥滩剖面测不到硫酸盐；浓度只在图上——已验证（site_facts.csv:2547，转录 Reid 2013 第 4.2 节）。
+- 潮汐与地貌：30 % 泥滩、70 % 有植被低沼，低沼比泥滩高 0.40 m；大潮时低沼高潮淹 0.20–0.60 m，泥滩 0.60–1.00 m——已验证（site_facts.csv:2557–2562）。
+- 植被：互花米草占低沼 85–90 %、芦苇 10–15 %，2011 年夏起塔足迹内已无芦苇——已验证（site_facts.csv:2567）。
+- 氮：河水 40–60 % 为污水厂出水，年均硝态氮 5.1、铵态氮 4.6 mg L-1；2012 年秋 Sandy 飓风淹没到高潮位以上约 1.6 m——已验证（site_facts.csv:2588，转录 Schäfer 2014 第 2.1 节）。
+- 塔上：年通量 0.30（2012）、0.37（2013）g C m-2 yr-1，季节性很弱；计分表 obs 1.14 mg CH4 m-2 d-1，r 0.09——已验证（site_facts.csv:2589–2592；scores77_v2_p9a.csv:50）。气候凉（MAT 12.0 °C，Köppen Cfa）——已验证（site_facts.csv:2564）。
+
+### 3.2 US-Srr
+
+- 位置：加州 Suisun Bay 的 Rush Ranch，旧金山湾国家河口研究保护区内的天然、从未筑堤的微咸潮汐沼泽——已验证（Oikawa 2024 第 8 页；site_facts.csv:3079）。
+- 盐度：潮沟地表水 4.6（0.25–12.3）ppt，属寡盐；孔隙水 8.83 ppt；2014–2016 干旱期盐化，2015 年 8 月峰值 12.5——已验证（Oikawa 2024 第 5 页表 1；site_facts.csv:3049–3052）。
+- 硫酸盐：孔隙水实测在 Hartman 2024 补充材料，未取得——已验证（site_facts.csv:3054）。
+- 高程与水位：Z* = 2.2（高于平均高潮位，塔址很少被淹），平均潮差 1.72 m；2016 年均水位地表下 0.18 m（Delwiche）；Sitedata 月均 0.117 m（45 个月）——已验证（Oikawa 2024 第 5、8 页；site_facts.csv:3064、3066；诊断输出 US-Srr）。日内排放随 GPP 起伏，作者归于高位、足迹很少被淹——已验证（Arias-Ortiz 2024 第 15 页）。
+- 植被：Schoenoplectus、Typha、Juncus、Distichlis、Sarcocornia——已验证（Oikawa 2024 表 1）。土壤有机质 31 %（18–44）——已验证（Oikawa 2024 表 1）。
+- 氮：紧邻 Fairfield-Suisun 污水厂排口（日排 1000 kg 以上硝态氮），潮沟硝酸盐 1.0（0.35–2.6）mg L-1——已验证（Oikawa 2024 第 5、8 页）。
+- 塔上：年通量 0.71–0.88 g C m-2 yr-1（2014–2017），季节性极弱——已验证（site_facts.csv:3082–3087）。2017 年淡水脉冲期间排放不升，PEPRMT-Tidal 靠硝酸盐项才不高估——已验证（Oikawa 2024 第 13–14、18 页）。盐度升高使年 GPP 降 24 %——已验证（Russell et al. 2023 摘要）。
+
+### 3.3 对照塔
+
+- US-LA1（路易斯安那 Pointe-aux-Chenes 微咸沼泽）：常被淹、受咸水入侵，微潮；孔隙水 9.3、连续记录 7.0（2–17）psu；硝酸盐 0.2 mg L-1；表层 0–24 cm 土 40–70 % 有机质；EC 年量 13.8 g CH4 m-2 yr-1；盐度解释日排放 25 %、水位 18 %——已验证（Oikawa 2024 第 5、8 页；Holm 2016 第 3–4、7 页）。2012 年 7–8 月淡水脉冲期间甲烷强烈上升——已验证（Oikawa 2024 第 14–15 页）。
+- US-StJ（特拉华 St. Jones）：中盐、低沼与高沼交错；孔隙水 6.6–14.5 psu，短型互花米草区孔隙水硫酸盐 3–18 mM；硝酸盐 0.68 mg L-1；Z* 1.1；年量 8.5–16.2 g C m-2 yr-1——已验证（site_facts.csv:3113–3118、3142–3145；Oikawa 2024 表 1）。其硫酸盐已高于 Arias-Ortiz 的 90 分位阈值（4.7 mM），排放却高，是阈值法的反例——已验证（与第 2.2 节对照）。
+- US-EDN（Eden Landing）：35（26–46）ppt，年量 0.62 ± 0.20 g C m-2 yr-1；6 个塔上月均值约 0（−0.28），模式 0.22，C-42 已处理妥当；不足 8 个月未计分——已验证（site_facts.csv:2041、2069；诊断输出 US-EDN）。
+
+### 3.4 为什么 5–9 psu 的两塔接近 0
+
+1. 回归本身的离散：C-42 用的是跨站年通量回归，r2 约 0.5；在 < 18 psu 段同盐度的年通量相差两个数量级以上——已验证（账本 C-42；Holm 2016 图 8；Arias-Ortiz 2024 第 9 页）。US-Srr、US-MRM 分别在回归线下 0.84 与 1.44 个数量级——已验证（factor_options.out 第三段）。
+2. 硝酸盐：两塔是这组塔里仅有的两处污水出水负荷站，硝酸盐 1.0 与 5.1 mg L-1，按 PEPRMT 的 kI 因子 0.093 与 0.020；US-LA1 为 0.338——已验证（因子表 N 列）。US-Srr 已有直接证据（第 1 节第 3 条）；US-MRM 只有高负荷事实，没有剔除试验——推测。
+3. US-Srr 高位、少淹：Arias-Ortiz 树中淡水到寡盐的高高程节点中位 3.2 g CH4 m-2 yr-1，合 8.8 mg CH4 m-2 d-1，与塔上同一量级——已验证（Arias-Ortiz 2024 表 3；US-Srr 在该树中落入哪个节点——推测，依据是其地表水盐度 4.6 属寡盐、Z* 2.2 属高位、MATmax 未查）。
+4. US-MRM 凉、深淹、泥滩多：中盐且 MATmax 不超过 19 °C 的节点中位 3.1 g CH4 m-2 yr-1（几何标准差 3.6）；US-MRM 塔上 0.45 g CH4 m-2 yr-1，约低 1.5 个几何标准差——推测。依据是 MAT 12 °C 推 MATmax 不超过 19 °C，未查 PRISM。每日两次 0.2–1.0 m 深的潮淹带来硫酸盐、硝酸盐与溶氧，并把溶解甲烷侧向带走——推测。依据是第 2.3 节的机制与第 3.1 节的潮位，本站无侧向输出实测。
+5. 模式底物偏多：US-Srr 模式 GPP 2747 对塔上 1742（1.58 倍），HR 1212 对塔上推算约 497（2.4 倍）；US-MRM GPP 1.74 倍，HR 0.76 倍；US-LA1 GPP 2.9 倍、HR 2.3 倍；US-StJ 两者约 1——已验证（诊断输出第 3 段；HR 推算值为推测，依据是塔上异养呼吸取 Reco − 0.5 GPP）。所以 US-Srr 的 20 倍里约 2.4 倍在底物侧，剩下约 8 倍要靠产率抑制——推测。
+
+## 4. 模式侧现状（问题 3）
+
+### 4.1 盐度因子在哪
+
+- `main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90:2613–2615`：`if (patchtype == 2 .and. DEF_METHANE%wetland_salinity_site > 0._r8) f_methane_adj = f_methane_adj * 10._r8**(-0.056_r8 * DEF_METHANE%wetland_salinity_site)`——已验证（读码 sp_v2_c90 归档，commit 24061070）。
+- 顺序：f_methane_adj = f × Q10 温度因子（2544–2555）→ 液态水份额（2564–2565）→ pH（2581–2607）→ C-42（2609–2615，含注释）→ 氧化还原滞后（2617–2622）→ 截断 0.5（2625）→ 乘 base_decomp 与剖面份额得各层产量（2632–2672）；只作用于湿地斑块（patchtype 2），饱和与非饱和两子柱、各层、各步同一常数；不碰氧化、传输与冒泡——已验证（读码同上）。当前 f = 0.2（`use_biome_f_methane = .false.`），Q10 1.33，截断在正常温度下不起作用——已验证（ch4_parameter.nml:108；诊断输出土温 10–22 °C）。
+- 键：`MOD_Tracer_Reactive_Methane_Const.F90:1137–1140`，缺省 −1 不缩放；站点值由 `SITE_PARAMS.csv` 第 5 列写进 `_conf/ch4_param/<塔>.nml`（如 US-MRM.nml 多 `wetland_salinity_site = 5.0`）——已验证（读码；SITE_PARAMS.csv:1、18、50；ch4_param diff）。全球湿地斑块不设此键——已验证（账本 C-42 行）。
+- 可接硫酸盐的现成结构：候选 16 受体库（`Physics.F90:2739–2824`，参数与说明 `Const.F90:359–403`）把 NO3、Mn、Fe(III)、SO4、腐殖醌合为一池，按 Segers and Leffelaar 2001 分走厌氧碳流，只由 O2 再氧化补充，缺省关——已验证（读码；`_conf/ch4_parameter.nml` 无 `acceptor_pool` 键）。
+
+### 4.2 盐沼塔在模式里的水位、淹水与通道
+
+- 美国五塔的湿地类别均为 3（温带沼泽，`BgcLink.F90:93`），DE-Hte 为 4——已验证（诊断输出 wetland_type）。水位下限键 `wetland_max_wtd_temperate_marsh = 0.10`（`use_biome_wetland_max_wtd = .true.`）——已验证（ch4_parameter.nml:241、244）。
+- 水位：地表下月均 0.08–0.10 m，六塔几乎无积水（月均积水 0–4 mm，只 US-EDN 的 1、3 月 14–19 mm），淹水比例均值 0.17–0.21（US-EDN 0.27）——已验证（诊断输出第 2 段）。无潮汐强迫，六塔 `USE_SITE_WTD = .false.`——已验证（site_nml grep）。
+- 塔上水位：US-StJ 地表下 0.29 m（Sitedata）、US-Srr 0.12 m、US-EDN 地表上 0.04 m、DE-Hte 地表上 0.27 m；US-LA1、US-MRM 文件中无有效 WTD——已验证（诊断输出第 2 段）。
+- 通道：四座中盐塔排放 99–100 % 走通气组织，氧化占产量 40–42 %（US-EDN 产量近 0，比例无意义）；DE-Hte 通气组织 63 %、扩散 34 %，氧化 53 %——已验证（诊断输出第 3 段）。产量 82 % 在 0.17 m 以上四层——已验证（诊断输出 sat production share）。
+
+### 4.3 逐项账（g C m-2 yr-1，塔上月）
+
+| 塔 | GPP 模/塔 | HR 模 | 产量 P | 氧化 O | 排放 E | P/HR | P / C-42 因子 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| US-LA1 | 1310 / 457 | 848 | 31.5 | 13.0 | 18.1 | 3.7 % | 104.6 |
+| US-StJ | 2372 / 2468 | 1094 | 29.9 | 12.4 | 17.4 | 2.7 % | 116.6 |
+| US-Srr | 2747 / 1742 | 1212 | 39.5 | 16.0 | 23.5 | 3.3 % | 123.2 |
+| US-MRM | 2009 / 1154 | 897 | 46.8 | 19.9 | 27.2 | 5.2 % | 89.1 |
+| DE-Hte | 445 / 879 | 193 | 14.0 | 7.4 | 6.6 | 7.2 % | 17.8 |
+
+——已验证（诊断输出第 3 段）。
+
+## 5. 改法建议（问题 4）
+
+### 5.1 候选式与各塔预期因子（相对淡水）
+
+- F0 现行 C-42：10^(−0.056 S)。
+- F1 硫酸盐 Michaelis 式：1 / (1 + [SO4]/K_SO4)，[SO4] = 74 S mg L-1，K_SO4 = 486.4 mg L-1（PEPRMT-Tidal v1.0）。
+- F2 Arias-Ortiz 类中位阶梯：S < 0.5 取 1，0.5–5 取 0.49，5–18 取 0.12，18–30 取 0.035，30 以上 0.014。
+- N 硝酸盐项：K_NO3 / (K_NO3 + [NO3])，K_NO3 = 0.102 mg L-1（PEPRMT-Tidal v1.0），[NO3] 取潮沟或河水年均（Oikawa 2024 表 1；US-MRM 取 Schäfer 2014 的 5.1）。
+
+| 塔 | 所需 | F0 | F1 | F2 | N | F0×N | F1×N |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| US-LA1 | 0.204 | 0.301 | 0.414 | 0.122 | 0.338 | 0.102 | 0.140 |
+| US-StJ | 0.207 | 0.257 | 0.384 | 0.122 | 0.130 | 0.034 | 0.050 |
+| US-Srr | 0.0157 | 0.320 | 0.427 | 0.122 | 0.093 | 0.030 | 0.040 |
+| US-MRM | 0.0059 | 0.525 | 0.568 | 0.122 | 0.020 | 0.010 | 0.011 |
+| US-EDN | 约 0 | 0.011 | 0.158 | 0.014 | 0.102 | 0.0011 | 0.016 |
+| DE-Hte | 6.76 | 0.783 | 0.776 | 0.490 | 1 | 0.783 | 0.776 |
+
+离线折算的 KGE_ln（β）：
+
+| 塔 | 现行 F0 | F1 | F2 | F0×N | F1×N |
+| --- | --- | --- | --- | --- | --- |
+| US-LA1 | 0.25（1.57） | 0.17（2.16） | −0.56（0.63） | −0.79（0.53） | −0.39（0.73） |
+| US-StJ | 0.68（1.30） | 0.19（1.94） | 0.11（0.61） | −1.69（0.17） | −1.12（0.25） |
+| US-Srr | −2.80（21.3） | −3.20（28.3） | −1.47（8.08） | 0.23（1.97） | −0.03（2.62） |
+| US-MRM | −4.95（86.6） | −5.06（93.7） | −2.93（20.1） | −0.06（1.70） | −0.10（1.84） |
+| DE-Hte | −2.31（0.12） | −2.32（0.12） | −2.97（0.07） | −2.31（0.12） | −2.32（0.12） |
+| 类中位 | −2.31 | −2.32 | −1.47 | −0.79 | −0.39 |
+
+——已验证（factor_options.out；现行列与 scores77_v2_p9a.csv 逐塔一致）。
+
+### 5.2 建议
+
+1. 硫酸盐阈值式不替换 C-42。F1 在 5–11 psu 比 C-42 弱，四塔全变差，且在 35 psu 给 0.158、比 C-42 大 14 倍，US-EDN 会从约 0 抬起来；F2 把 US-LA1、US-StJ 压过头，US-Srr、US-MRM 仍差 8 与 20 倍——已验证（5.1 两表）。C-42 的斜率与 Arias-Ortiz 类中位同为约 −0.05 per psu，保留——已验证（第 1 节第 1 条）。
+2. 加站点硝酸盐项（推荐先试）：f_methane_adj 在 C-42 之后再乘 K_NO3 / (K_NO3 + NO3_site)，新站点键如 `wetland_nitrate_site`（mg L-1，≤ 0 不缩放），K_NO3 = 0.102 mg L-1；依据是 PEPRMT-Tidal 式 5 与 US-Srr 淡水脉冲试验、US-StJ 的硝酸盐—甲烷指数关系、Arias-Ortiz 的合成信号；各塔预期因子与分数见 5.1 的 F0×N 列——已验证（第 2.5 节、5.1）。不利处三条：US-StJ 与 US-LA1 会被压低（β 0.17 与 0.53）；K 是 PEPRMT 与其 Vmax 在 US-EDN、US-Srr、US-StJ 上联合拟合的，而 PEPRMT 本身在 US-StJ 低估，搬进 CoLM 后强度未必合适；Oikawa 表 1 的硝酸盐单位未注明是以 NO3 还是以 N 计，US-MRM 的 5.1 是硝态氮，若表 1 为以 NO3 计则两者差 4.4 倍——存疑。照 C-42 的做法只设站点键、缺省不缩放，全球不受影响——推测。依据是账本 C-42 行记全球湿地斑块不含 GLWD 盐沼类。
+3. 若要连硫酸盐项一并照 PEPRMT 原式（F1×N），类中位更好（−0.39），但 US-EDN 的因子由 0.011 升到 0.016、DE-Hte 不变——已验证（5.1）。两式二选一要实跑定——存疑。
+4. US-StJ、US-LA1 高于回归的部分不在盐度与硝酸盐里：US-StJ 归于深层甲基营养型产甲烷、硫酸盐异质与潮沟输出，US-LA1 归于微潮常淹与淡水脉冲（盐度时变）——已验证（第 2.3、2.4、3.3 节文献）。要保住这两塔，可考虑月变盐度（LA1 有 CRMS 2825 连续盐度）——推测。依据是 Holm 2016 表 4 中月通量与月盐度反相。
+5. 底物侧另记：US-Srr、US-LA1 的模式 GPP 与 HR 偏高 1.6–2.9 倍，归现有的湿地光合偏高线（账本 Q-3）处理，不应由盐沼产率因子吸收——推测。依据是第 3.4 节第 5 条。
+6. 机制化的后续一步：把潮汐硫酸盐接进候选 16 受体库，容量 A_max,SO4 = 8 θ [SO4]（每 mol SO4 接受 8 mol 电子，[SO4] = 0.77 S mM），补给不只靠 O2 再氧化而加一项潮汐补给 k_tide (A_max,SO4 − A)；可自然给出 US-MRM 10–20 cm 的硫酸盐—甲烷界面与深层产甲烷经通气组织外排，与 Sulman et al. 2024 在 ELM-PFLOTRAN 中的做法同向——推测。k_tide 无站点约束（见第 0 节存疑第 3 条）。
+7. DE-Hte 不走盐沼改法：先查站点表的泥炭份额 0 与 LAI 上限 0.6 是否与 Koebsch 2019 所述复湿泥炭地一致，以及 0.27 m 常年积水在模式里缺失；若按表层硫酸盐 0.05 mM 算，盐度因子应取约 1——推测。依据是第 1 节第 6 条与 Koebsch 2019 摘要（淡水复湿耗尽表层硫酸盐、触发高产甲烷）。
+
+## 6. 各塔预期因子速查
+
+- US-LA1：现 0.301，所需 0.204；F0×N 0.102，F1×N 0.140。
+- US-StJ：现 0.257，所需 0.207；F0×N 0.034，F1×N 0.050。
+- US-Srr：现 0.320，所需 0.0157；F0×N 0.030，F1×N 0.040。
+- US-MRM：现 0.525，所需 0.0059；F0×N 0.010，F1×N 0.011。
+- US-EDN：现 0.011，塔上约 0；F0×N 0.0011，F1×N 0.016。
+- DE-Hte：现 0.783，所需 6.76（盐度以外的问题）；按表层硫酸盐约 1。
+——已验证（factor_options.out 第一段；diag_salt.out 第 1 行）。
+
+## 7. 参考文献（著录经 Crossref，末条与代码经 DataCite）
+
+- Al-Haj, A. N., and Fulweiler, R. W.: A synthesis of methane emissions from shallow vegetated coastal ecosystems, Global Change Biology, 26(5), 2988–3005, 2020. doi:10.1111/gcb.15046
+- Arias-Ortiz, A., Wolfe, J., Bridgham, S. D., Knox, S., McNicol, G., et al. (38 authors): Methane fluxes in tidal marshes of the conterminous United States, Global Change Biology, 30(9), e17462, 2024. doi:10.1111/gcb.17462
+- Bartlett, K. B., Bartlett, D. S., Harriss, R. C., and Sebacher, D. I.: Methane emissions along a salt marsh salinity gradient, Biogeochemistry, 4(3), 183–202, 1987. doi:10.1007/BF02187365
+- Callaway, J. C., Borgnis, E. L., Turner, R. E., and Milan, C. S.: Carbon sequestration and sediment accretion in San Francisco Bay tidal wetlands, Estuaries and Coasts, 35(5), 1163–1181, 2012. doi:10.1007/s12237-012-9508-9
+- Capooci, M., and Vargas, R.: Trace gas fluxes from tidal salt marsh soils: implications for carbon–sulfur biogeochemistry, Biogeosciences, 19(19), 4655–4670, 2022. doi:10.5194/bg-19-4655-2022
+- Capooci, M., Seyfferth, A. L., Tobias, C., Wozniak, A. S., Hedgpeth, A., Bowen, M., Biddle, J. F., McFarlane, K. J., and Vargas, R.: High methane concentrations in tidal salt marsh soils: Where does the methane go?, Global Change Biology, 30(1), e17050, 2024. doi:10.1111/gcb.17050
+- Delwiche, K. B., Knox, S. H., Malhotra, A., et al. (137 authors): FLUXNET-CH4: a global, multi-ecosystem dataset and analysis of methane seasonality from freshwater wetlands, Earth System Science Data, 13(7), 3607–3689, 2021. doi:10.5194/essd-13-3607-2021
+- Hartman, W. H., Bueno de Mesquita, C. P., Theroux, S. M., Morgan-Lang, C., Baldocchi, D. D., and Tringe, S. G.: Multiple microbial guilds mediate soil methane cycling along a wetland salinity gradient, mSystems, 9(1), e00936-23, 2024. doi:10.1128/msystems.00936-23
+- Hill, A. C., and Vargas, R.: Methane and carbon dioxide fluxes in a temperate tidal salt marsh: comparisons between plot and ecosystem measurements, Journal of Geophysical Research: Biogeosciences, 127(7), e2022JG006943, 2022. doi:10.1029/2022JG006943
+- Holm, G. O., Jr., Perez, B. C., McWhorter, D. E., Krauss, K. W., Johnson, D. J., Raynie, R. C., and Killebrew, C. J.: Ecosystem level methane fluxes from tidal freshwater and brackish marshes of the Mississippi River Delta: implications for coastal wetland carbon projects, Wetlands, 36(3), 401–413, 2016. doi:10.1007/s13157-016-0746-7
+- King, G. M.: Utilization of hydrogen, acetate, and "noncompetitive" substrates by methanogenic bacteria in marine sediments, Geomicrobiology Journal, 3(4), 275–306, 1984. doi:10.1080/01490458409377807
+- Koebsch, F., Winkel, M., Liebner, S., Liu, B., Westphal, J., Schmiedinger, I., Spitzy, A., Gehre, M., Jurasinski, G., Köhler, S., Unger, V., Koch, M., Sachs, T., and Böttcher, M. E.: Sulfate deprivation triggers high methane production in a disturbed and rewetted coastal peatland, Biogeosciences, 16(9), 1937–1953, 2019. doi:10.5194/bg-16-1937-2019
+- Krauss, K. W., Holm, G. O., Jr., Perez, B. C., McWhorter, D. E., Cormier, N., Moss, R. F., Johnson, D. J., Neubauer, S. C., and Raynie, R. C.: Component greenhouse gas fluxes and radiative balance from two deltaic marshes in Louisiana: pairing chamber techniques and eddy covariance, Journal of Geophysical Research: Biogeosciences, 121(6), 1503–1521, 2016. doi:10.1002/2015JG003224
+- Lovley, D. R., and Klug, M. J.: Sulfate reducers can outcompete methanogens at freshwater sulfate concentrations, Applied and Environmental Microbiology, 45(1), 187–192, 1983. doi:10.1128/aem.45.1.187-192.1983
+- Oikawa, P. Y., Sihi, D., Forbrich, I., Fluet-Chouinard, E., Najarro, M., et al. (21 authors): A new coupled biogeochemical modeling approach provides accurate predictions of methane and carbon dioxide fluxes across diverse tidal wetlands, Journal of Geophysical Research: Biogeosciences, 129(10), e2023JG007943, 2024. doi:10.1029/2023JG007943
+- Oremland, R. S., and Polcin, S.: Methanogenesis and sulfate reduction: competitive and noncompetitive substrates in estuarine sediments, Applied and Environmental Microbiology, 44(6), 1270–1276, 1982. doi:10.1128/aem.44.6.1270-1276.1982
+- Oremland, R. S., Marsh, L. M., and Polcin, S.: Methane production and simultaneous sulphate reduction in anoxic, salt marsh sediments, Nature, 296(5853), 143–145, 1982. doi:10.1038/296143a0
+- Poffenbarger, H. J., Needelman, B. A., and Megonigal, J. P.: Salinity influence on methane emissions from tidal marshes, Wetlands, 31(5), 831–842, 2011. doi:10.1007/s13157-011-0197-0
+- Reid, M. C., Tripathee, R., Schäfer, K. V. R., and Jaffé, P. R.: Tidal marsh methane dynamics: difference in seasonal lags in emissions driven by storage in vegetated versus unvegetated sediments, Journal of Geophysical Research: Biogeosciences, 118(4), 1802–1813, 2013. doi:10.1002/2013JG002438
+- Rosentreter, J. A., Al-Haj, A. N., Fulweiler, R. W., and Williamson, P.: Methane and nitrous oxide emissions complicate coastal blue carbon assessments, Global Biogeochemical Cycles, 35(2), e2020GB006858, 2021. doi:10.1029/2020GB006858
+- Russell, S. J., Windham-Myers, L., Stuart-Haëntjens, E. J., Bergamaschi, B. A., Anderson, F., Oikawa, P., and Knox, S. H.: Increased salinity decreases annual gross primary productivity at a Northern California brackish tidal marsh, Environmental Research Letters, 18(3), 034045, 2023. doi:10.1088/1748-9326/acbbdf
+- Schäfer, K. V. R., Tripathee, R., Artigas, F., Morin, T. H., and Bohrer, G.: Carbon dioxide fluxes of an urban tidal marsh in the Hudson-Raritan estuary, Journal of Geophysical Research: Biogeosciences, 119(11), 2065–2081, 2014. doi:10.1002/2014JG002703
+- Schäfer, K. V. R., Duman, T., Tomasicchio, K., Tripathee, R., and Sturtevant, C.: Carbon dioxide fluxes of temperate urban wetlands with different restoration history, Agricultural and Forest Meteorology, 275, 223–232, 2019. doi:10.1016/j.agrformet.2019.05.026
+- Seyfferth, A. L., Bothfeld, F., Vargas, R., Stuckey, J. W., Wang, J., Kearns, K., Michael, H. A., Guimond, J., Yu, X., and Sparks, D. L.: Spatial and temporal heterogeneity of geochemical controls on carbon cycling in a tidal salt marsh, Geochimica et Cosmochimica Acta, 282, 1–18, 2020. doi:10.1016/j.gca.2020.05.013
+- Sulman, B. N., Wang, J., LaFond-Hudson, S., O'Meara, T. A., Yuan, F., Molins, S., Hammond, G., Forbrich, I., Cardon, Z. G., Giblin, A., et al.: Integrating tide-driven wetland soil redox and biogeochemical interactions into a land surface model, Journal of Advances in Modeling Earth Systems, 16(4), e2023MS004002, 2024. doi:10.1029/2023MS004002（Crossref 返回前 10 位作者）
+- Trifunovic, B., Vázquez-Lule, A., Capooci, M., Seyfferth, A. L., Moffat, C., and Vargas, R.: Carbon dioxide and methane emissions from a temperate salt marsh tidal creek, Journal of Geophysical Research: Biogeosciences, 125(8), e2019JG005558, 2020. doi:10.1029/2019JG005558
+- Vázquez-Lule, A., and Vargas, R.: Biophysical drivers of net ecosystem and methane exchange across phenological phases in a tidal salt marsh, Agricultural and Forest Meteorology, 300, 108309, 2021. doi:10.1016/j.agrformet.2020.108309
+- Weston, N. B., Dixon, R. E., and Joye, S. B.: Ramifications of increased salinity in tidal freshwater sediments: geochemistry and microbial pathways of organic matter mineralization, Journal of Geophysical Research: Biogeosciences, 111(G1), 2005JG000071, 2006. doi:10.1029/2005JG000071
+- Wilson, E. M., Balint, S. J., and Fulweiler, R. W.: Plants are a powerful proxy for global tidal marsh methane fluxes, Proceedings of the National Academy of Sciences, 123(29), e2530848123, 2026. doi:10.1073/pnas.2530848123
+- Cai, X., Yang, X., and Raymond, P. A.: Seesaw of saltwater and inundation drives methane emissions in coastal tidal wetlands, arXiv preprint, 2025. doi:10.48550/arXiv.2512.14076（DataCite；预印本，正文未用于结论）
+- 代码：Oikawa, P.: pattyoikawa/PEPRMT-Tidal: PEPRMT-Tidal, v1.0, Zenodo, 2023. doi:10.5281/zenodo.10278505（DataCite）

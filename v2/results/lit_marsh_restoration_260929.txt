@@ -1,0 +1,263 @@
+# lit_marsh_restoration_260929：复湿与新建沼泽的碳库、植被演替、甲烷随年数的变化与非平衡起步
+
+- **日期**：2026.09.29-20:37
+- **读者**：下一会话
+- **来源**：文献调研子任务（只读，未改码、未跑模式）；承接 `v2/results/diag_marsh_260929.txt`（管理沼泽拆账）、`v2/results/marsh_sites_260929.tsv`（积水与盖度）、`scripts/sites/site_facts.csv`；著录逐条打 Crossref
+- **状态**：六问已答；推荐方案只到依据与预期量级，未实跑；三篇只读到摘要或检索摘录，已在句末标明
+
+口径：通量 g C m-2 yr-1；比值一律"模式 / 塔上"；R 为生态系统呼吸之比，G 为总初级生产力（GPP）之比，Q = R/G（单位 GPP 的呼吸之比），三者取自诊断件第 4.3 节。"复湿后第 n 年"以淹水后第一个完整日历年为第 1 年。"三角洲"指 Sacramento-San Joaquin Delta。"新积累层"指复湿后在原地表之上沉积的有机层（文献 accreted horizon / newly accreted material）。
+
+## 0. 覆盖面
+
+1. 网络检索词（WebSearch，每次 9–10 条，逐条看标题与摘要）：
+   - McNicol 2020 "Where old meets new" radiocarbon
+   - Miller Fram Fujii Wheeler 2008 subsidence reversal Twitchell accretion
+   - Oikawa 2017 hierarchy of models PEPRMT；PEPRMT labile SOC time since restoration；osti Oikawa 2017
+   - Arias-Ortiz 2021 tidal nontidal marsh restoration
+   - Knox 2015 agricultural peatland restoration
+   - Hemes 2019 carbon and climate benefit restoring degraded peat
+   - Valach 2021 productive wetlands restored quickly net CO2 sinks
+   - Miller Fujii 2010 plant community primary productivity（两轮）；Miller 2011 carbon gas fluxes re-established wetlands
+   - Chamberlain 2018 soil properties sediment accretion methane
+   - Bernal Mitsch 2013 carbon sequestration created riverine wetlands；Mitsch 2014 validation ecosystem services created wetlands；Nahlik Mitsch 2010 methane created riverine wetlands
+   - Hahn-Schöfl 2011 organic sediment inundation fen；Kalhori 2024 temporally dynamic emission factors；Günther 2020 prompt rewetting
+   - ecosys Grant restored wetland Delta（两轮）；DNDC Delta ACR methodology；ACR methodology PEPRMT SUBCALC；Deverel 2014 impounded marshes simulated accretion
+   - land surface model rewetting drained peatland spin-up（JULES、ORCHIDEE、LPJ-GUESS）；LPJ-GUESS LPX JULES time since rewetting；PEATLAND-VU rewetting；CLM restored wetland rewetting initialization；E3SM ELM restored wetland；CLM-Microbe CLM4Me spin-up；non-equilibrium soil carbon initialization wetland；Qiu 2021 cultivated northern peatlands
+2. 读了全文（PDF 逐页或全文页）：
+   - Arias-Ortiz 等 2021（JGR-B，第 1–6、8–14 页，含表 1、表 2、图 3–5）
+   - McNicol 等 2020（接受稿 LLNL-JRNL-789121，第 1–8、16–22 页，第 1–138、299–505 行）
+   - Hemes 等 2019（接受稿，NOAA 库，第 1–8、12–27 页，第 1–223、316–672 行，含表 1、表 2）
+   - Chamberlain 等 2018（eScholarship 接受稿，第 1–8、10–15 页，第 1–3.4 节）
+   - Miller 等 2008（SFEWS，第 1–15 页，含表 1、表 2）
+   - Oikawa 等 2024（JGR-B，第 1–6 页，第 1–2.3.2 节）
+   - Anderson 等 2016（JGR-B，第 1–3 页，摘要与第 1–2.1 节）
+   - Valach 等 2021、Kasak 等 2026（PMC 全文页，WebFetch 按节抽取，第 3.1–4.4 节与表 1）
+3. 只读到摘要或页面摘录：Knox 2015（Crossref 摘要）；Oikawa 2017（AmeriFlux 摘要页）；Miller & Fujii 2010（AmeriFlux 摘要页）；Miller 2011（USGS 摘要页）；Bernal & Mitsch 2013（OpenAlex 摘要）；Hahn-Schöfl 2011（BG 摘要页）；Antonijević 2023、Kalhori 2024、Qiu 2021、Zhao 2026、Deverel 2014（OpenAlex 摘要重构）；Günther 2020（PMC 全文页摘录）；Tyystjärvi 2024（BG 页面摘录）；Lippmann 2023（GMD 页面摘录）；PEPRMT-DAMM 模型清单页（CWEMF wiki）。
+4. 只见检索摘录、未读原文：Nahlik & Mitsch 2010 年排放数；Mitsch 2014"天然定殖湿地甲烷一直更高"；Qiu 2021"天然与耕作泥炭分两个土柱"。这三条在正文标存疑。
+5. 本地文件与代码（逐处读过）：
+   - `v2/results/diag_marsh_260929.txt` 全文（276 行）；`v2/results/marsh_sites_260929.tsv` 全文；`v2/results/lit_marsh_energy_260929.txt` 第 1–60 行（体例）。
+   - `scripts/sites/site_facts.csv`：grep 十塔"管理状态""扰动史""有机碳或有机质""容重""泥炭厚度"行（第 2032–2034、2428–2430、2604–2642、2812–2836、2895–2897、3024–3027、3207–3225、3298–3301、3353–3367、3529–3542 行）。
+   - `data/FLUXNET-CH4/Observation/` 文件名（各塔观测年份；另见排水前对照塔 US-Snd 2010–2015、US-Tw3 2013–2014）。
+   - CoLM 工作树 `CoLM202X-paper-v2/`：`mkinidata/MOD_Initialize.F90:697–702`（分解库基准周转时间）、`1915–1965`（泥炭份额读取）；`main/BGC/MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90:58–63、122–127`；`main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90:790–850、1880–1900`；`share/MOD_Namelist.F90:205–230`。
+6. 没找到或未取得：
+   - CLM/CTSM、ELM、ecosys、DNDC 针对复湿湿地或稻田转换的专门初始化先例：多轮检索未找到。ecosys 只检到北极多边形冻原的应用；DNDC 只检到"ACR 三角洲湿地方法学引用 DNDC"的二手描述，方法学正文（ACR PDF）未读。
+   - ELM-Wet（Yazbeck 2025，US-LA2）的 spin-up 做法：Wiley 403、OSTI 全文 404，未取得。
+   - Miller & Fujii 2010、Miller 2011 全文（Springer 付费墙），只用摘要。
+   - Knox 2015 全文（只用 Crossref 摘要）；Kalhori 2024 全文（Nature 与 GFZ 均 403）。
+   - US-DPW、US-LA2、US-OWC 的复湿或建成史：三塔为自然湿地，无复湿年份可查；US-OWC 的新积累层速率未专门检索。
+   - 三角洲各塔复湿初年的 LAI 实测时间序列：未找到，只有盖度与生物量。
+
+## 1. 结论
+
+1. 问一：十塔里真正处于"复湿后头几年"的是 US-Sne（塔上 2017–2018 为复湿后第 1–2 年，前身牧场）、US-Tw4（2014–2018 为第 1–5 年，前身玉米田、冲积矿质土）、US-Myb（2011–2018 为第 1–8 年，前身牧场、排水泥炭）；US-Tw1（第 14–21 年）、US-Tw5（淹水第 21 年、植被重置第 5 年）、US-ORv（建成第 17–21 年）、US-WPT（全年淹水第 10–12 年）已过建植期；US-OWC、US-DPW、US-LA2 为自然湿地——已验证（第 2 节表内逐格来源）。
+2. 问二：三角洲复湿塔的新积累层是低容重（0.05–0.23 g cm-3）、高碳（18–44 %）的根系与凋落物层，US-Myb 9 年约 5 cm、US-Tw1 22 年 30–44 cm；碳积累速率 US-Myb 280 ± 90、US-Tw1 350 ± 150 g C m-2 yr-1，与涡度塔净吸收在统计上相等——已验证（10.1029/2021JG006573 第 11 页、表 2、第 12 页图 5）。老泥炭淹水后大幅减缓分解（淹水前牧场与玉米田每年失碳约 300 g C），但在 US-Myb 复湿第 5 年仍供给约三分之一的甲烷（上限约 15 g CH4 m-2 yr-1）——已验证（10.1016/j.agrformet.2019.01.017 表 1；10.1111/gcb.14916 接受稿第 458–461 行）。
+3. 问三：浅水设计的塘（US-Tw1、US-Tw4）两个生长季内基本郁闭；深水或带开阔水道的塘（US-Tw5、US-Myb、US-Sne）开阔水长期存在，US-Sne 复湿第 2 年植被盖度 0.45；净吸收需约 55 % 植被盖度，多数塔复湿后第 2 年成汇；凋落物层约 2 年积起，老塘（US-Tw1）立枯最多、并压低春季光合——已验证（第 4 节逐条来源）。
+4. 问四：三角洲塔的甲烷不是"头几年高、后来降"，而是随植被建立在头 2–4 年上升（US-Myb 35.6 → 63.4、US-Tw4 16.4 → 49.2），5–15 年后下降（US-Myb 第 13 年 11、US-Tw1 第 17 年 56 → 第 23 年 16）；排放主要由新鲜碳驱动（新鲜碳占产甲烷的二分之一到三分之二）——已验证（10.1111/gcb.14124 第 3.2 节；10.1111/gcb.70700 第 3.1 节；10.1111/gcb.14916 第 396–398 行）。欧洲复湿泥炭（淹死的草本当底物）才是"头几年高、10 年后降"——已验证（10.5194/bg-8-1539-2011 摘要；10.1111/gcb.16713 题名；10.1038/s43247-024-01226-9 摘要）。
+5. 问五：直接可借的先例是 PEPRMT（三角洲复湿塔专用）：土壤有机碳初值用实测、以"复湿后年数"为输入，复湿 3 年内给更多可分解有机碳，且只把一半 GPP 交给呼吸与产甲烷、另一半存入生物量——已验证（10.1029/2023JG007943 第 2.3.2 节第 6 页）。陆面模式里的做法是"天然平衡态 spin-up → 按管理史瞬态跑排水与复湿"（ORCHIDEE-PEAT、JSBACH-YASSO-HIMMELI）或"实测土壤性质 + 5 年短 spin-up"（Peatland-VU-NUCOM）——已验证（第 6 节逐条来源）。CLM/CTSM、ELM、ecosys、DNDC 的复湿专门初始化未找到。
+6. 问六：推荐"实测泥炭播种 + 新鲜库冷启动 + 从复湿年瞬态跑 + 植被按足迹盖度与建植年爬坡"，并对老塘另加持续埋藏项。对呼吸偏高的作用按量排序：植被与 GPP 非平衡（R 降到 Q，即 0.77–1.61）> 持续埋藏（按塔上 NEP 扣，US-Tw1、US-Tw4、US-Tw5 降 32–38 %，US-Myb 13 %，US-WPT 近 0）> 新鲜库冷启动（只在复湿后约 5–10 年内，R 至多降 11–23 %）> 老泥炭可分解性（主要改甲烷来源，对 R 小）——推测。理由：第 7.3 节逐塔算术；冷启动只能扣掉平衡态里土壤有机质分解那一份（诊断件第 208 行，占异养呼吸 26–51 %），而 US-Tw1 第 14–21 年仍每年净固碳 544 g C，靠初值解释不了。
+
+## 2. 问一：复湿年份、复湿前土地利用、塔上年份对应复湿后第几年
+
+| 塔 | 复湿或建成 | 复湿前土地利用 | 母质 | 塔上观测年份 | 复湿后第几年 |
+| --- | --- | --- | --- | --- | --- |
+| US-Tw1（West Pond） | 1997 秋永久淹水，3 ha | 玉米田 | 排水泥炭，泥炭 4–6 m | 2011–2018（涡度 2012 夏起） | 14–21 |
+| US-Tw5（East Pond） | 1997 淹水；2013 整塘植被移走，年龄重置 | 同一块农田 | 排水泥炭，4–6 m | 2018 | 淹水第 21 年，植被重置第 5 年 |
+| US-Tw4（East End） | 2013 年末建成，323 ha | 玉米田 | 冲积矿质土（Scribner），富铁 | 2013–2018 | 2014 = 1，2018 = 5 |
+| US-Myb（Mayberry） | 2010 年 10 月，121 ha | 胡椒草与一年生草牧场 | 排水泥炭，大于 5 m | 2010–2018 | 2011 = 1，2018 = 8 |
+| US-Sne（Sherman Wetland） | 2016 年 11 月，263 ha | 牧场（塔即原 US-Snd 所在） | 排水泥炭与高有机矿质土 | 2016–2018 | 2016 = 复湿前，2017 = 1，2018 = 2 |
+| US-WPT（Winous Point） | 1856 年起堤围猎场，2001 年起全年淹水 | 堤围沼泽（区域在 1850–1890 年排干为农田） | 粉砂质黏土上约 20 cm 有机层 | 2011–2013 | 全年淹水第 10–12 年 |
+| US-ORv（Olentangy） | 1993–94 年开挖建成 | 河漫滩（Ross 系矿质土） | 矿质土，不适用泥炭 | 2011–2015 | 17–21 |
+| US-OWC | 自然河口湿地 | — | 矿质沉积物 | 2015–2016 | 不适用 |
+| US-DPW | 自然洼地沼泽 | — | 砂质土 | 2013–2017 | 不适用 |
+| US-LA2 | 自然淡水沼（Davis Pond 导流受纳区） | — | 浮毡泥炭 | 2011–2013 | 不适用 |
+
+- 复湿年份、前土地利用、面积——已验证（10.1371/journal.pone.0248398 表 1；10.1029/2021JG006573 表 1 第 4 页；`site_facts.csv` 第 2635、3025、3207、3298、3353、3529、2812、2895、2032、2428 行）。
+- US-Tw4 建成时间：Hemes 2019 记"late 2013"，Chamberlain 2018 以 2014-01-01 为第 1 天——已验证（10.1016/j.agrformet.2019.01.017 接受稿第 156–157 行；10.1111/gcb.14124 接受稿第 2.1 节图 3 图注）。本文取 2014 为第 1 年。
+- US-Tw1 复湿年份另有"1999"一说（Chamberlain 2018 第 2.1、3.4 节），多数来源为 1997——存疑。实验：不需要，按 1997 与按 1999 计复湿后年数只差 2 年，不改第 7 节的结论。
+- 三角洲泥炭岛背景：约 150 年排水使地面下沉最多 6 m，现行下沉 0.6–4.0 cm yr-1，其中约 75 % 来自泥炭微生物氧化——已验证（10.15447/sfews.2008v6iss3art1 摘要与第 2 页）。塔址地面 US-Tw1 −4.9 m、US-Myb −3.5 m、US-Sne −4.4 m（海平面以下）——已验证（`site_facts.csv` 第 3207、2637、3027 行）；Arias-Ortiz 2021 给 US-Myb、US-Tw1 为 −3.73、−3.17 m——已验证（10.1029/2021JG006573 第 4 页）。
+- 观测年份——已验证（`ls data/FLUXNET-CH4/Observation/` 文件名 US-Tw1_2011-2018、US-Tw4_2013-2018、US-Tw5_2018-2018、US-Myb_2010-2018、US-Sne_2016-2018、US-WPT_2011-2013、US-ORv_2011-2015、US-OWC_2015-2016、US-DPW_2013-2017、US-LA2_2011-2013）。
+- 排水前对照塔在本地观测库里有 US-Snd（Sherman 牧场，2010–2015）与 US-Tw3（Twitchell 苜蓿，2013–2014）——已验证（同上 ls）。Twitchell 玉米（US-Tw4 前身）不在本地库——已验证（同上 ls）。
+
+## 3. 问二：土壤碳
+
+### 3.1 新积累层与碳积累速率
+
+| 塔 | 新积累层厚度 | 新积累层容重 g cm-3 | 新积累层碳 % | 下伏层 | 碳积累速率 g C m-2 yr-1 | 地面抬升 cm yr-1 |
+| --- | --- | --- | --- | --- | --- | --- |
+| US-Myb（9 年） | 约 5 cm（1.10 g cm-2） | 0.23 | 18–40（上约 5 cm） | 容重 0.63，碳 15–18 %，80 cm 以下 25–30 % | 280 ± 90 | 0.55 ± 0.13（表观） |
+| US-Tw1（22 年） | 30–44 cm（2.4 g cm-2）；另一处取芯大于 0.5 m | 0.08；分层 0.088 / 0.277 / 0.402 | 18–40；分层 34.7 / 22.9 / 20.2 | 容重 0.54；淹水前氧化泥炭 0.61、淹水后 0.49 | 350 ± 150 | 1.65 ± 0.54（表观）；1997–2005 年 3.1（SET 中位） |
+| US-Tw5（9 年，重置前） | 20–30 cm（冷冻芯最大） | 0.048 / 0.079 / 0.223 | 43.5 / 38.3 / 26.9 | 淹水后氧化泥炭 0.41 | 未测 | 1997–2005 年 3.8（SET 中位），开阔水区约 0 |
+| US-Tw4（1–4 年） | 未给厚度 | 未给 | 10.18 ± 1.49 | 母质层碳与新积累层无显著差 | 未测 | 未测 |
+| US-ORv（15 年） | 不超过 16 cm | 0.60–0.71（2009） | 表层 3.6–4.6（2009；1993 通水前 1.6） | 冲积矿质土 | 219–267 | 未取 |
+| US-WPT | 有机层约 20 cm | 未给 | 0–20 cm 储量 5.32 ± 0.13 kg C m-2 | 粉砂质黏土 | 96.9 ± 10.3（1966–2013 沉积） | 未取 |
+
+- US-Myb、US-Tw1 新积累层厚度、容重、碳、下伏层——已验证（10.1029/2021JG006573 第 11 页"depth of restoration"与"newly accreted material"两段）。碳积累速率与表观抬升——已验证（同上表 2）。
+- US-Tw1 大于 0.5 m 的 O 层（0.5–0.7 m 未分解植物体压在粉砂质黏壤土上）——已验证（10.1111/gcb.14124 接受稿第 2.2 节）。
+- US-Tw1、US-Tw5 分层容重与碳、SET 速率、淹水前后氧化泥炭容重——已验证（10.15447/sfews.2008v6iss3art1 第 8–9 页、第 12 页、表 1、表 2；`site_facts.csv` 第 3216–3221、3358–3363 行）。
+- US-Tw4 新积累层碳——已验证（10.1111/gcb.14124 接受稿第 3.1 节）；Kasak 2026 另给 US-Tw4 11.3 ± 1.9 %、US-Tw1 16.9 ± 2.8 %、US-Myb 16.8 ± 4.8 %、最年轻三塔（含 US-Sne）9.1 ± 1.7 %——已验证（10.1111/gcb.70700 第 3.2 节）。
+- US-ORv——已验证（`site_facts.csv` 第 2826–2836 行，转引 10.1525/bio.2012.62.3.5 表 1 与 10.1016/j.agrformet.2017.01.022 第 2.1 节；碳积累速率 10.2134/jeq2012.0229 摘要：两块 15 年湿地平均 242，天然定殖 267 ± 17、人工种植 219 ± 15）。
+- US-WPT——已验证（`site_facts.csv` 第 3538 行，转引 10.1111/gcb.12760 Site information 节）。
+- 新积累层几乎全是原地挺水植物的根与根状茎（进水悬浮物只够 0.47 cm yr-1），δ13C −28.1 与 −29.1 ‰，与下伏老土 −26.7 ‰ 明显分开——已验证（10.15447/sfews.2008v6iss3art1 第 13–14 页；10.1029/2021JG006573 第 11 页）。
+- 这些管理湿地的碳积累速率与塔上净大气吸收（US-Myb −290 ± 72、US-Tw1 −320 ± 101）在统计上无差（p = 0.94、0.88），即几乎全部净吸收都埋进了新积累层——已验证（10.1029/2021JG006573 第 9 页、第 12 页图 5 与正文）。
+- Deverel 2014 队列模型给围堤沼长期固碳 12–15 t C ha-1 yr-1（折 1200–1500 g C m-2 yr-1），是 Arias-Ortiz 实测 280–350 的约 4 倍——存疑。实验：不需要实验，取得 10.15447/sfews.2014v12iss2art5 全文核对单位（摘要只见 OpenAlex 重构文本）。
+- 三角洲历史泥炭的长期积累只有 0.05–0.41 cm yr-1，复湿塔 1–4 cm yr-1 的高速率部分是初期根系生物量建立——已验证（10.15447/sfews.2008v6iss3art1 第 14 页）。
+
+### 3.2 表层（0–30 cm）有机碳密度
+
+| 塔 | 实测或推算 0–30 cm kg C m-2 | 分层碳密度 kg C m-3 | 模式 0–0.35 m kg C m-2（诊断件 5.3 表） |
+| --- | --- | --- | --- |
+| US-Tw1 | 15.0（Miller 芯）；4–10（Arias-Ortiz 新积累层均值 0.08 g cm-3 × 18–40 %） | 30.5 / 63.4 / 81.2 | 16.5 |
+| US-Tw5 | 9.2 | 20.9 / 30.3 / 60.0 | 17.2 |
+| US-Myb | 26–33 | 新积累层 41–92，下伏 95–113 | 23.6 |
+| US-Sne | 43–45（用农耕岛氧化层代理）；年轻塔碳 9.1 % 时更低 | 氧化层 142–150 | 25.1 |
+| US-Tw4 | 无容重，算不出 | — | 12.3 |
+| US-ORv | 3.6（深度未注） | 表层 22–33 | 18.4 |
+| US-WPT | 0–20 cm 5.32 | 平均 26.6 | 19.9 |
+
+- 各数由上表容重 × 碳质量分数 × 层厚手算——已验证（手算：US-Tw1 0.15 × 30.5 + 0.10 × 63.4 + 0.05 × 81.2 = 15.0；US-Tw5 0.15 × 20.9 + 0.10 × 30.3 + 0.05 × 60.0 = 9.2；US-Myb 0.05 × 41–92 + 0.25 × 95–113；US-Sne 岛中心 0.653 × 22.9 % = 150、近堤 0.565 × 25.2 % = 142，再 × 0.30 m）。US-Sne 代理值来自 Drexler 2009 四个农耕岛合并最小二乘均值——已验证（`site_facts.csv` 第 3034–3037 行，10.1672/08-97.1 表 2b、表 3b）。
+- 读法：泥炭塔上层碳储量模式与实测同量级或偏低，矿质土塔（US-ORv、US-WPT）模式高 3–5 倍；这与诊断件第 227 行的判断一致——推测。理由：US-Tw1 两套取芯相差 1.5–3.7 倍，US-Sne 只有代理值。
+
+### 3.3 老泥炭的可分解性
+
+- 复湿前：Sherman 牧场（US-Snd）每年净放 CO2 306 ± 36、CH4 9 ± 2；Twitchell 玉米田放 CO2 292 ± 37，另收获移走 293；Knox 2015 的排水地最多每年放 341 g C（CO2）与 11.4 g C（CH4）——已验证（10.1016/j.agrformet.2019.01.017 表 1 与第 489–493、502–504 行；10.1111/gcb.12745 摘要）。
+- 淹水后：Twitchell 淹水迅速减少了气态碳损失，放射性碳显示部分原因是老碳氧化减少——已验证（10.1007/s13157-011-0215-2 摘要）。复湿塔与邻近排水地年光合相近，差别在淹水抑制了生态系统呼吸——已验证（10.1111/gcb.12745 摘要）。
+- 复湿第一年（植被未建成）：US-Sne、US-Tw4、US-Myb 三个首年平均净放 CO2 201 ± 101，原文归因于刚淹水土壤的呼吸——已验证（10.1016/j.agrformet.2019.01.017 第 399–403 行）。
+- US-Myb 复湿第 5 年：0–50 cm 泥炭 Δ14C 为 −275 至 −435 ‰（2540–4520 yr BP）；甲烷 Δ14C 开阔水 −192 ‰、植被区 −84 ‰；混合模型算得约三分之一的甲烷来自老泥炭，最多约 15 g CH4 m-2 yr-1；老碳甲烷绝大部分出自植被区，原文推测是激发效应——已验证（10.1111/gcb.14916 接受稿第 361–366、383–393、458–461、489–493 行）。15 g CH4 折 11.2 g C——已验证（手算 15 × 12/16）。
+- 老泥炭净失碳在塔上碳账里测不出：碳积累速率与净大气吸收相等（第 3.1 节）——推测。理由：两者误差 ± 70–150，老泥炭若每年净失约 100 g C 以上才会显出差来。
+- 欧洲复湿草甸对照：淹水 2.5 年形成的新沉积层（淹死的草与砂）CO2、CH4 产率最高 412、788 mg C d-1 kg-1 C，带根泥炭低 10–20 倍，剔除新鲜有机质后 CH4 产率小于 1——已验证（10.5194/bg-8-1539-2011 摘要）。
+- 读法：老泥炭在淹水后基本"关停"，仍有的那部分主要靠植物根际激发，量级为甲烷的三成、净碳账里看不出；复湿塔的呼吸与甲烷主体是新鲜碳——推测。理由：以上五条合读。
+
+## 4. 问三：植被与凋落物
+
+- 建植速度：浅塘（设计水深 25 cm，US-Tw1）两个生长季内几乎全被挺水植被占据，1998 年第一个生长季末香蒲已占西塘大部；深塘（55 cm，US-Tw5）9 年后仍有开阔水——已验证（10.15447/sfews.2008v6iss3art1 摘要与第 6 页）。US-Myb、US-Tw4 第一年为开阔水、无植被，第二年"fully vegetated"——已验证（10.1111/gcb.14124 接受稿第 3.2 节）。US-Tw4 香蒲很快扩张到 95 %——已验证（`site_facts.csv` 第 3301 行）。
+- 盖度：2018 年全场 / 85 % 足迹 US-Tw1 0.997 / 0.970、US-Tw5 0.968 / 0.912、US-Tw4 0.821 / 0.842、US-Myb 0.644 / 0.480、US-Sne 0.583 / 0.454——已验证（10.1371/journal.pone.0248398 表 1）。Kasak 2026 表 1 给 US-Myb 82.4 %、US-Sne 45.7 %——已验证（10.1111/gcb.70700 表 1）。
+- 成汇阈值与年数：净碳汇需植被比例 0.55 ± 0.02 以上；多数塔复湿后第 2 年成汇——已验证（10.1371/journal.pone.0248398 第 3.2、4.4 节）。US-Sne 复湿头 3 年平均仍净放 310 ± 154（与 Hill Slough 合并）——已验证（10.1111/gcb.70700 PMC 全文 WebFetch 抽取句，节号未取得）。Hemes 2019 表 1 记 US-Sne 2017 年 CO2 +323 ± 34——已验证（10.1016/j.agrformet.2019.01.017 表 1）。
+- 生产力：挺水植被净初级生产力 1.3–3.2 kg C m-2 yr-1，生长季中期活生物量约为年生产力的一半——已验证（10.1007/s11273-009-9143-9 摘要）。该数由异速生长模型推得，高于塔上 GPP（US-Tw1 1692），不宜直接当植物输入——推测。理由：净初级生产力不应大于 GPP。
+- 头几年的高呼吸：US-Myb 第 2–3 年高生态系统呼吸抵消了高光合，原文归因于根系扩张带来的自养与异养呼吸、根系分泌物，以及上一年大量死物质提供的易分解碳——已验证（10.1371/journal.pone.0248398 第 4.4 节）。
+- 凋落物与立枯：持久的凋落物层约需 2 年积起；最老的 US-Tw1 枯物比例最高、活植被比例最低——已验证（10.1371/journal.pone.0248398 第 4.3 节）。US-Tw1 春季返青滞后，原文归因于厚枯物层遮光——已验证（10.1016/j.agrformet.2019.01.017 第 409–412 行）。Twitchell 塘 2010–2011 年日净吸收峰值只有 2002 年的三分之一（−2.9 对 −10.6 g C m-2 d-1），原文归因于立枯增多——已验证（10.1002/2015JG003083 摘要）。
+- 扰动：US-Myb 2013 年虫害、2015–2016 年盐胁迫使 CO2 吸收近中性——已验证（10.1016/j.agrformet.2019.01.017 第 407–409 行）。
+- 模式对照：九塔模式 LAI 峰 1.43–3.00，塔上 PAI 5.8–6.1（US-Tw1、US-Myb），模式全程按成熟植被——已验证（`diag_marsh_260929.txt` 第 186–201 行）。
+
+## 5. 问四：甲烷随复湿年数的变化
+
+| 塔 | 复湿后年 → 年排放 g C m-2 yr-1 | 来源 |
+| --- | --- | --- |
+| US-Myb | 第 1 年 35.6，第 2 年 63.4，第 4 年 57.2；第 6 年起明显下降，第 13 年最低 11 | Chamberlain 2018 第 3.2 节；Kasak 2026 第 3.1 节 |
+| US-Tw4 | 第 1 年 16.4，第 2 年 27.8，第 4 年 49.2；此后连降 4 年接近复湿初值，再回升 | 同上 |
+| US-Tw1 | 第 17 年峰值 56，第 23 年降到 16；2013–2017 年均 45 ± 4；2013–2020 年均 37 ± 4 | Kasak 2026 第 3.1 节；Hemes 2019 表 1；Arias-Ortiz 2021 第 9 页 |
+| US-Sne | 第 1 年（2017）46 ± 1，植被稀疏 | Hemes 2019 表 1 |
+| US-ORv | 建成第 12–14 年：人工种植塘中位 6、均值 17；天然定殖塘中位 19、均值 68 | Nahlik & Mitsch 2010（检索摘录） |
+
+- US-Myb、US-Tw4、US-Tw1、US-Sne 各数——已验证（10.1111/gcb.14124 接受稿第 3.2 节；10.1111/gcb.70700 第 3.1 节；10.1016/j.agrformet.2019.01.017 表 1；10.1029/2021JG006573 第 9 页）。US-ORv——存疑。实验：不需要实验，取得 10.1007/s13157-010-0038-6 全文核对即可。
+- US-Tw4 头三年偏低，原文归因于冲积土高铁（铁还原抑制产甲烷），第 3–4 年与泥炭塔趋同——已验证（10.1111/gcb.14124 摘要与第 3.2 节）。
+- 下降的原因之一是意外的水位下降（2020 年 US-Tw4、US-Tw1 落水使 CO2 吸收与 CH4 同降）——已验证（10.1111/gcb.70700 PMC 全文 WebFetch 抽取句，节号未取得）。
+- 与底物新鲜度：US-Myb 甲烷的二分之一到三分之二来自新近固定的碳且以乙酸途径为主；生态系统甲烷随 GPP 近线性上升，生长季后期偏高（滞后）——已验证（10.1111/gcb.14916 接受稿第 396–398、414–416 行）。高甲烷与当年碳吸收是一对取舍，因为甲烷主要由新鲜碳供给——已验证（同上摘要第 39–41 行）。
+- 欧洲复湿泥炭：淹死的草本形成的新沉积层强力产甲烷（第 3.3 节）；德国 Peene 河谷淹水草甸甲烷高排放持续约 10 年，直到香蒲出现才结束——已验证（10.1111/gcb.16713 题名；OpenAlex 摘要重构"CH4 emissions declined only after 10 years of the transition period"）。德国另一复湿泥炭的年排放要到复湿后 13–16 年才接近 IPCC 缺省排放因子，CH4 有下降趋势（每年减 23.6 kg CH4 ha-1 yr-1）——已验证（10.1038/s43247-024-01226-9 OpenAlex 摘要）。
+- 但"复湿头几年甲烷峰"并非普遍现象——已验证（10.1038/s41467-020-15499-z PMC 全文摘录"likely not a global phenomenon"）。
+- 读法：三角洲塔是"先随植被与新鲜碳上升、再随立枯积累与水位扰动下降"，峰在复湿后第 2–4 年（年轻塔）或更晚（US-Tw1）；欧洲泥炭是"淹死植被的一次性脉冲、约 10 年衰减"。模式在两类塔上都给恒定的成熟态排放——推测。理由：以上各条；模式逐年排放只随遥感 LAI 变（诊断件第 83 行 US-Tw4 30.9 → 60.0、US-Myb 2017–2018 年比值 2.95–3.05）。
+
+## 6. 问五：模式怎么处理非平衡起步
+
+| 模式 | 做法 | 与本题的关系 | 证据 |
+| --- | --- | --- | --- |
+| PEPRMT（Oikawa 2017，三角洲复湿塔专用） | 三个碳库：新固定的易分解碳（每日 GPP 的 50 %）、生物量碳、老的土壤有机碳；另 50 % GPP 存入生物量，不给微生物呼吸与产甲烷；土壤有机碳初值用实测；可分解有机碳按"扰动后年数"调节，复湿不足 3 年时给更多 | 直接先例：实测初值 + 复湿年数 + 只让一半 GPP 进呼吸 | 已验证（10.1029/2023JG007943 第 2.3.2 节第 6 页；CWEMF PEPRMT-DAMM 清单页输入项含 initial soil organic carbon、time since restoration） |
+| PEPRMT 的教训 | 经验模型不计复湿后的高呼吸，年净交换高估 33–51 % | 说明复湿头几年呼吸确有"脉冲" | 已验证（10.1002/2016JG003438 摘要） |
+| PEPRMT-Tidal + CMEM（Oikawa 2024） | 土壤有机碳由逐年沉积队列模型给出，只算顶 1 m | 新积累层可按队列显式追踪 | 已验证（10.1029/2023JG007943 第 2.1–2.3.2 节） |
+| 三角洲队列模型（Deverel 2014） | 队列记账模型从 4700 cal yr BP 模拟 Franks Tract 天然沼的垂直积累（约 0.12 cm yr-1），并模拟 1997 年起的 Twitchell 复湿塘；预测管理围堤沼今后约 3 cm yr-1 积累高有机质 | 新积累层速率的模型对照 | 已验证（10.15447/sfews.2014v12iss2art5 OpenAlex 摘要重构） |
+| ORCHIDEE-PEAT（Qiu 2021） | 天然泥炭演化后转耕作，排放随排水后年数下降 | "天然平衡 → 按管理史瞬态"的做法 | 已验证（10.1126/sciadv.abf1332 OpenAlex 摘要）；"天然与耕作分两个土柱"——存疑（检索摘录） |
+| JSBACH-YASSO-HIMMELI（Tyystjärvi 2024） | 10000 年 spin-up，再按管理情景（排水、恢复）瞬态；恢复后首次采伐残体使 CH4 强源，随残体分解下降 | 同上，且显示"残体脉冲"随分解衰减 | 已验证（10.5194/bg-21-5745-2024 BG 页面摘录，节号未取得） |
+| Peatland-VU-NUCOM（Lippmann 2023） | 初始土壤性质用实测，只做 5 年 spin-up（1990–1995）让各有机质库与土中气体稳定；有机质分泥炭、腐殖质、微生物、凋落物与死根、根分泌物五库 | "实测初值 + 短 spin-up"的做法 | 已验证（10.5194/gmd-16-6773-2023 GMD 页面摘录） |
+| LPJ-GUESS（Zhao 2026） | 丹麦复湿站 2007–2023 模拟 | 初始化未读 | 已验证（10.1038/s43247-025-03163-7 OpenAlex 摘要）；初始化做法未取得 |
+| CLM/CTSM、ELM（含 ELM-Wet 在 US-LA2）、ecosys、DNDC | 未找到复湿或稻田转换的专门初始化 | — | 第 0 节第 6 条 |
+
+- CoLM 现有可用开关（读注释与代码）：
+  - 分解库基准周转时间：代谢凋落物 1/18.5 yr、纤维与木质凋落物 1/4.9 yr、活性有机质 1/7.3 yr、慢库 5 yr、惰性库 222 yr、粗木质残体 1/0.3 yr（再乘温、湿、氧、深度因子）——已验证（读码 `mkinidata/MOD_Initialize.F90:697–702`；`MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90:58–63、122–127`）。
+  - `DEF_USE_WETLAND_PEAT_C`（用 OM_density × 580 g C kg-1 播种湿地分解库）、`DEF_WETLAND_PEAT_C_PROFILE`、`DEF_WETLAND_PEAT_C_PASSIVE`（播种量全放惰性库）、`DEF_WETLAND_PEAT_C_PASSIVE_ZTOP`——已验证（读注释 `share/MOD_Namelist.F90:208–229`）。
+  - `wetland_bgc_sasu`：每轮 spin-up 让凋落物、粗木质残体、活性与慢库跳到稳态，惰性库保留播种的泥炭——已验证（读注释 `MOD_Tracer_Reactive_Methane_Const.F90:823–830`）。
+  - `wetland_vert_transp` 与 `wetland_burial_velocity`（默认 0；注释示例 4.8e-4 m yr-1，对应北方泥炭 12 g C m-2 yr-1），越过柱底的碳作埋藏泥炭移出——已验证（读注释 `MOD_Tracer_Reactive_Methane_Const.F90:812–821`）。三角洲表观抬升 0.55–1.65 cm yr-1 是示例值的 11–34 倍——已验证（手算 0.0055/0.00048、0.0165/0.00048）。
+  - `wetland_tau_s3`（湿地惰性库周转时间，替代 222 yr）——已验证（读注释 `Const.F90:793–799`）。
+
+## 7. 问六：推荐方案与排序
+
+### 7.1 方案（站点非平衡起步）
+
+1. 复湿前状态：分解库不做湿地平衡 spin-up。惰性库按实测碳密度播种老泥炭（`DEF_USE_WETLAND_PEAT_C` + `DEF_WETLAND_PEAT_C_PASSIVE`，泥炭塔用 Drexler 2009 氧化层与 Arias-Ortiz 下伏层数，矿质塔用第 3.2 节数）；凋落物、活性库、慢库置为排水期水平或零。不建议对排水状态做平衡 spin-up：三角洲排水地每年失碳约 300 g C 是 150 年瞬态，平衡 spin-up 会把老泥炭耗尽——推测。理由：第 3.3 节首条与 3.1 节下伏泥炭仍厚 2–6 m。
+2. 从复湿年瞬态跑到塔上最后一年：US-Myb 从 2010 年 10 月、US-Tw4 从 2013 年末、US-Sne 从 2016 年 11 月、US-Tw5 从 1997（2013 年植被清零）、US-Tw1 从 1997、US-ORv 从 1994 起跑；复湿前年份（US-Sne 2016）用排水态或剔除（D-17 已剔除）——推测。理由：PEPRMT 与 ORCHIDEE-PEAT、JSBACH 的做法（第 6 节）。
+3. 植被按足迹盖度（`marsh_sites_260929.tsv`：US-Tw1 0.970、US-Tw4 0.842、US-Tw5 0.912、US-Myb 0.57、US-Sne 0.454、US-WPT 0.956、US-OWC 0.515）加建植爬坡：第 1 年近 0（开阔水），第 2 年到足迹盖度；US-Sne 第 1–2 年都取低值——推测。理由：第 4 节首三条。
+4. 老塘持续净固碳另用埋藏项：以实测碳积累速率为目标（US-Myb 280、US-Tw1 350，约为塔上 GPP 的 0.21–0.22），而不是靠初值——推测。理由：US-Tw1 第 14–21 年仍每年净固碳 544，而慢库基准周转 5 yr，冷启动的不平衡在复湿约 10 年后只剩惰性库一份（第 6 节代码条）。`wetland_vert_transp` 的埋藏是从柱底移出，在播种了老泥炭的柱上可能先移出老泥炭而不是新凋落物——存疑。实验：读 `SoilBiogeochemLittVertTransp` 对应代码，或在 US-Tw1 单塔开 0.01 m yr-1 看逐层碳与异养呼吸的变化。
+5. 约束量（跑完逐条对）：复湿首年 NEE +201 ± 101；US-Myb、US-Tw4 第 1、2、4 年 CH4（第 5 节表）；US-Myb 老碳占甲烷约三分之一；碳积累速率 280、350——已验证（各条来源见第 3–5 节）。
+
+### 7.2 各塔要用的数与出处
+
+| 塔 | 起跑年 | 播种老泥炭 | 新积累层目标 | 盖度 | 排水态对照塔 |
+| --- | --- | --- | --- | --- | --- |
+| US-Tw1 | 1997 | 下伏容重 0.54、碳 15–18 %；泥炭 4–6 m | 30–44 cm / 22 年，350 ± 150 | 0.970 | US-Tw3（苜蓿，本地有）；Twitchell 玉米（Hemes 2019 表 1，本地无） |
+| US-Tw5 | 1997，2013 植被清零 | 同上，淹水后氧化泥炭容重 0.41 | 20–30 cm / 9 年（重置前） | 0.912 | 同上 |
+| US-Tw4 | 2013 年末 | 冲积矿质土，碳约 10 % | 无实测 | 0.842 | 同上 |
+| US-Myb | 2010-10 | 下伏容重 0.63、碳 15–18 %，80 cm 下 25–30 % | 5 cm / 9 年，280 ± 90 | 0.57 | US-Snd（本地有） |
+| US-Sne | 2016-11 | 农耕岛氧化层碳密度 142–150 kg C m-3，厚 0.25–0.92 m；其下未氧化泥炭容重 0.158–0.215、碳 31.2–31.9 % | 无（第 2 年） | 0.454 | US-Snd |
+| US-ORv | 1994 | 矿质土，通水前表层碳 1.6 % | 不超过 16 cm / 15 年，219–267 | 足迹湿地 0.195 | 无 |
+| US-WPT | 2001（全年淹水） | 矿质土 | 有机层 20 cm，96.9 | 0.956 | 无 |
+
+- 表内各数——已验证（第 2–4 节对应条目；盖度 `marsh_sites_260929.tsv` 第 2–10 行）。
+
+### 7.3 对"呼吸偏高 1.5–2.6 倍"的作用排序（逐塔算术）
+
+记模式 Reco = 0.5 GPP（自养）+ HR，数取诊断件第 4.3 节表（第 165–176 行）。
+
+| 塔 | 现 R | ① 植被与 GPP 非平衡：R → Q | ② 持续埋藏：Reco 扣塔上 NEP | ② 按实测碳积累速率扣 | ③ 冷启动：HR 扣 26–51 % |
+| --- | --- | --- | --- | --- | --- |
+| US-Tw1 | 1.50 | 1.36 | 1.03 | 1.19 | 1.15–1.32（只在头约 10 年） |
+| US-Tw4 | 2.08 | 1.49 | 1.34 | — | 1.64–1.85 |
+| US-Tw5 | 2.21 | 1.61 | 1.36 | — | 1.73–1.97 |
+| US-Myb | 2.58 | 1.21 | 2.25 | 2.29 | 1.99–2.28 |
+| US-Sne（2017–2018） | 4.42 | 0.77 | 塔上 NEP 为负，不适用 | — | 方向相反（塔上首年呼吸高） |
+| US-DPW | 1.82 | 1.11 | 1.64 | — | 不适用（自然湿地） |
+| US-WPT | 2.06 | 0.93 | 2.05 | — | 不适用 |
+
+- 算术：① R/G；② (Reco_m − NEP_obs)/Reco_obs，如 US-Tw1 (1721 − 544)/1148；③ (Reco_m − (0.26–0.51) × HR_m)/Reco_obs，HR_m = Reco_m − 0.5 GPP_m，如 US-Myb HR_m = 2451 − 1354 = 1097——已验证（手算，输入取 `diag_marsh_260929.txt` 第 165–176、208 行）。
+- 排序：① 植被与 GPP 非平衡（开阔水、建植期、虫害与盐害年）作用最大，US-Myb、US-Sne、US-WPT、US-DPW 靠它；② 持续埋藏次之，US-Tw1、US-Tw4、US-Tw5、US-ORv 靠它；③ 新鲜库冷启动只在复湿后约 5–10 年起作用，至多降 11–23 %，且在 US-Sne 复湿头两年方向相反；④ 老泥炭播种与可分解性主要改甲烷的碳来源（约三成老碳），对 R 影响小——推测。理由：上表；③ 的上限取诊断件第 208 行"土壤有机质分解占异养呼吸 26–51 %"，冷启动最多扣掉这一份；④ 见第 3.3 节老泥炭净失碳在碳账里测不出。
+- ① + ② 合用时，扣全部塔上 NEP 会过头：R 落到 0.75–0.89（US-Tw1 0.89、US-Tw4 0.75、US-Tw5 0.76、US-Myb 0.87）；改扣实测碳积累速率则为 US-Tw1 1.06、US-Myb 0.91——已验证（手算：模式 Reco/GPP × 塔上 GPP − 扣除量，再除以塔上 Reco，如 US-Tw1 0.924 × 1692 − 350 = 1213，1213/1148 = 1.06）。读法：② 的目标量宜取碳积累速率（约为塔上 GPP 的 0.21–0.22）而不是全部 NEP；真正要检验的是 ② 在模式里用什么过程实现（埋藏、缺氧抑制还是只让一半输入进分解）——推测。理由：碳积累速率与塔上净吸收在误差内相等（第 3.1 节），扣 NEP 与扣碳积累速率之差落在两者误差内。
+- 与甲烷的关系：模式 E/HR 6.1–8.6 % 近常数（诊断件第 130–141 行），HR 降多少 E 一阶降多少；而诊断件第 6.1 节已判单位呼吸排放 Y 偏低 0.64–0.88，所以 ① ② 落地后 β 可能掉到 1 以下，需与积水与通气组织候选（诊断件候选 1、7）同步——推测。理由：β = G × Q × Y 恒等式。
+
+### 7.4 建议的最小实验
+
+- 三塔（US-Tw4、US-Myb、US-Sne）按第 7.1 节第 1–3 步从复湿年瞬态跑，不开 `wetland_bgc_sasu`，比逐年 GPP、Reco、NEE、CH4 与第 5 节表——推测。理由：这三塔复湿后年份最短，冷启动与建植爬坡的信号最大。
+- US-Tw1 单塔比三种 ②：埋藏速度、`wetland_tau_s3` 加长、植物输入只进一半（PEPRMT 式），看哪种能在第 14–21 年维持约 350–544 g C 的净固碳而不改 E/Reco——推测。理由：第 6 节 PEPRMT 与 CoLM 开关。
+
+## 8. 著录（Crossref 逐条核对；DOI 查询不带任何个人信息）
+
+1. Arias-Ortiz, A., Oikawa, P. Y., Carlin, J., Masqué, P., Shahan, J., Kanneg, S., Paytan, A., Baldocchi, D. D. (2021) Tidal and nontidal marsh restoration: a trade-off between carbon sequestration, methane emissions, and soil accretion. JGR Biogeosciences 126(12), e2021JG006573. doi:10.1029/2021JG006573。Crossref 已核
+2. McNicol, G., Knox, S. H., Guilderson, T. P., Baldocchi, D. D., Silver, W. L. (2020) Where old meets new: an ecosystem study of methanogenesis in a reflooded agricultural peatland. Global Change Biology 26(2), 772–785. doi:10.1111/gcb.14916。Crossref 已核
+3. Miller, R. L., Fram, M., Fujii, R., Wheeler, G. (2008) Subsidence reversal in a re-established wetland in the Sacramento-San Joaquin Delta, California, USA. San Francisco Estuary and Watershed Science 6(3), 1. doi:10.15447/sfews.2008v6iss3art1。Crossref 已核
+4. Miller, R. L., Fujii, R. (2010) Plant community, primary productivity, and environmental conditions following wetland re-establishment in the Sacramento-San Joaquin Delta, California. Wetlands Ecology and Management 18(1), 1–16. doi:10.1007/s11273-009-9143-9。Crossref 已核
+5. Miller, R. L. (2011) Carbon gas fluxes in re-established wetlands on organic soils differ relative to plant community and hydrology. Wetlands 31(6), 1055–1066. doi:10.1007/s13157-011-0215-2。Crossref 已核
+6. Knox, S. H., Sturtevant, C., Matthes, J. H., Koteen, L., Verfaillie, J., Baldocchi, D. (2015) Agricultural peatland restoration: effects of land-use change on greenhouse gas (CO2 and CH4) fluxes in the Sacramento-San Joaquin Delta. Global Change Biology 21(2), 750–765. doi:10.1111/gcb.12745。Crossref 已核
+7. Hemes, K. S., Chamberlain, S. D., Eichelmann, E., Anthony, T., Valach, A., Kasak, K., Szutu, D., Verfaillie, J., Silver, W. L., Baldocchi, D. D. (2019) Assessing the carbon and climate benefit of restoring degraded agricultural peat soils to managed wetlands. Agricultural and Forest Meteorology 268, 202–214. doi:10.1016/j.agrformet.2019.01.017。Crossref 已核
+8. Hemes, K. S., Chamberlain, S. D., Eichelmann, E., Knox, S. H., Baldocchi, D. D. (2018) A biogeochemical compromise: the high methane cost of sequestering carbon in restored wetlands. Geophysical Research Letters 45(12), 6081–6091. doi:10.1029/2018GL077747。Crossref 已核（本文只作背景，未引数）
+9. Valach, A. C., Kasak, K., Hemes, K. S., Anthony, T. L., Dronova, I., Taddeo, S., Silver, W. L., Szutu, D., Verfaillie, J., Baldocchi, D. D. (2021) Productive wetlands restored for carbon sequestration quickly become net CO2 sinks with site-level factors driving uptake variability. PLOS ONE 16(3), e0248398. doi:10.1371/journal.pone.0248398。Crossref 已核
+10. Chamberlain, S. D., Anthony, T. L., Silver, W. L., Eichelmann, E., Hemes, K. S., Oikawa, P. Y., Sturtevant, C., Szutu, D. J., Verfaillie, J. G., Baldocchi, D. D. (2018) Soil properties and sediment accretion modulate methane fluxes from restored wetlands. Global Change Biology 24(9), 4107–4121. doi:10.1111/gcb.14124。Crossref 已核
+11. Oikawa, P. Y., Jenerette, G. D., Knox, S. H., Sturtevant, C., Verfaillie, J., Dronova, I., Poindexter, C. M., Eichelmann, E., Baldocchi, D. D. (2017) Evaluation of a hierarchy of models reveals importance of substrate limitation for predicting carbon dioxide and methane exchange in restored wetlands. JGR Biogeosciences 122(1), 145–167. doi:10.1002/2016JG003438。Crossref 已核
+12. Oikawa, P. Y., Sihi, D., Forbrich, I., 等 21 人 (2024) A new coupled biogeochemical modeling approach provides accurate predictions of methane and carbon dioxide fluxes across diverse tidal wetlands. JGR Biogeosciences 129(10), e2023JG007943. doi:10.1029/2023JG007943。Crossref 已核
+13. Kasak, K., Ahmadi, A., Dronova, I., Arias-Ortiz, A., Wang, T., Valach, A. C., Szutu, D., Verfaillie, J., Baldocchi, D. (2026) Interannual variability in greenhouse gas emissions challenges post-restoration net sink predictions in California Delta wetlands. Global Change Biology 32(1), e70700. doi:10.1111/gcb.70700。Crossref 已核
+14. Anderson, F. E., Bergamaschi, B., Sturtevant, C., 等 15 人 (2016) Variation of energy and carbon fluxes from a restored temperate freshwater wetland and implications for carbon market verification protocols. JGR Biogeosciences 121(3), 777–795. doi:10.1002/2015JG003083。Crossref 已核
+15. Bernal, B., Mitsch, W. J. (2013) Carbon sequestration in two created riverine wetlands in the Midwestern United States. Journal of Environmental Quality 42(4), 1236–1244. doi:10.2134/jeq2012.0229。Crossref 已核
+16. Mitsch, W. J., Zhang, L., Stefanik, K. C., Nahlik, A. M., Anderson, C. J., Bernal, B., Hernandez, M., Song, K. (2012) Creating wetlands: primary succession, water quality changes, and self-design over 15 years. BioScience 62(3), 237–250. doi:10.1525/bio.2012.62.3.5。Crossref 已核（经 site_facts 转引）
+17. Mitsch, W. J., Zhang, L., Waletzko, E., Bernal, B. (2014) Validation of the ecosystem services of created wetlands: two decades of plant succession, nutrient retention, and carbon sequestration in experimental riverine marshes. Ecological Engineering 72, 11–24. doi:10.1016/j.ecoleng.2014.09.108。Crossref 已核（本文只用检索摘录，已标存疑）
+18. Nahlik, A. M., Mitsch, W. J. (2010) Methane emissions from created riverine wetlands. Wetlands 30(4), 783–793. doi:10.1007/s13157-010-0038-6。Crossref 已核（数据只见检索摘录）
+19. Morin, T. H., Bohrer, G., Stefanik, K. C., Rey-Sanchez, A. C., Matheny, A. M., Mitsch, W. J. (2017) Combining eddy-covariance and chamber measurements to determine the methane budget from a small, heterogeneous urban floodplain wetland park. Agricultural and Forest Meteorology 237–238, 160–170. doi:10.1016/j.agrformet.2017.01.022。Crossref 已核（经 site_facts 转引）
+20. Chu, H., Gottgens, J. F., Chen, J., Sun, G., Desai, A. R., Ouyang, Z., Shao, C., Czajkowski, K. (2015) Climatic variability, hydrologic anomaly, and methane emission can turn productive freshwater marshes into net carbon sources. Global Change Biology 21(3), 1165–1181. doi:10.1111/gcb.12760。Crossref 已核（经 site_facts 转引）
+21. Drexler, J. Z., de Fontaine, C. S., Deverel, S. J. (2009) The legacy of wetland drainage on the remaining peat in the Sacramento-San Joaquin Delta, California, USA. Wetlands 29(1), 372–386. doi:10.1672/08-97.1。Crossref 已核（经 site_facts 转引）
+22. Deverel, S. J., Ingrum, T., Lucero, C., Drexler, J. Z. (2014) Impounded marshes on subsided islands: simulated vertical accretion, processes, and effects, Sacramento-San Joaquin Delta, CA USA. San Francisco Estuary and Watershed Science 12(2), 5. doi:10.15447/sfews.2014v12iss2art5。Crossref 已核
+23. Hahn-Schöfl, M., Zak, D., Minke, M., Gelbrecht, J., Augustin, J., Freibauer, A. (2011) Organic sediment formed during inundation of a degraded fen grassland emits large fluxes of CH4 and CO2. Biogeosciences 8(6), 1539–1550. doi:10.5194/bg-8-1539-2011。Crossref 已核
+24. Antonijević, D., Hoffmann, M., Prochnow, A., Krabbe, K., Weituschat, M., Couwenberg, J., Ehlert, S., Zak, D., Augustin, J. (2023) The unexpected long period of elevated CH4 emissions from an inundated fen meadow ended only with the occurrence of cattail (Typha latifolia). Global Change Biology 29(13), 3678–3691. doi:10.1111/gcb.16713。Crossref 已核
+25. Kalhori, A., Wille, C., Gottschalk, P., Li, Z., Hashemi, J., Kemper, K., Sachs, T. (2024) Temporally dynamic carbon dioxide and methane emission factors for rewetted peatlands. Communications Earth & Environment 5(1), 62. doi:10.1038/s43247-024-01226-9。Crossref 已核
+26. Günther, A., Barthelmes, A., Huth, V., Joosten, H., Jurasinski, G., Koebsch, F., Couwenberg, J. (2020) Prompt rewetting of drained peatlands reduces climate warming despite methane emissions. Nature Communications 11(1), 1644. doi:10.1038/s41467-020-15499-z。Crossref 已核
+27. Qiu, C., Ciais, P., Zhu, D., Guenet, B., Peng, S., Petrescu, A. M. R., Lauerwald, R., Makowski, D., Gallego-Sala, A. V., Charman, D. J., Brewer, S. C. (2021) Large historical carbon emissions from cultivated northern peatlands. Science Advances 7(23), eabf1332. doi:10.1126/sciadv.abf1332。Crossref 已核
+28. Tyystjärvi, V., Markkanen, T., Backman, L., 等 15 人 (2024) Future methane fluxes of peatlands are controlled by management practices and fluctuations in hydrological conditions due to climatic variability. Biogeosciences 21(24), 5745–5771. doi:10.5194/bg-21-5745-2024。Crossref 已核
+29. Lippmann, T. J. R., van der Velde, Y., Heijmans, M. M. P. D., Dolman, H., Hendriks, D. M. D., van Huissteden, K. (2023) Peatland-VU-NUCOM (PVN 1.0): using dynamic plant functional types to model peatland vegetation, CH4, and CO2 emissions. Geoscientific Model Development 16(22), 6773–6804. doi:10.5194/gmd-16-6773-2023。Crossref 已核
+30. Zhao, B., Zhang, W., Wang, P., Gustafson, A. M., Jørgensen, C. J., Elberling, B. (2026) Optimized wetland rewetting strategies can control methane, carbon dioxide, and oxygen responses to water table fluctuations. Communications Earth & Environment 7(1), 109. doi:10.1038/s43247-025-03163-7。Crossref 已核
+31. Yazbeck, T., Bohrer, G., 等 13 人 (2025) ELM-Wet: inclusion of a wet-landunit with sub-grid representation of eco-hydrological patches and hydrological forcing improves methane emission estimations in the E3SM Land Model (ELM). JAMES 17(2), e2024MS004396. doi:10.1029/2024MS004396。Crossref 已核（全文未取得）
+32. Krauss, K. W., Holm, G. O., Perez, B. C., 等 9 人 (2016) Component greenhouse gas fluxes and radiative balance from two deltaic marshes in Louisiana: pairing chamber techniques and eddy covariance. JGR Biogeosciences 121(6), 1503–1521. doi:10.1002/2015JG003224。Crossref 已核（经 site_facts 转引）
+
+- `site_facts.csv` 行内另引的 DOI（10.1111/gcb.13580、10.1002/2013JG002520、10.1016/j.scitotenv.2020.136960、10.1029/2022jg006977、10.1111/gcb.70053）本文未重核，只以文件行号作来源——已验证（本节条目与正文来源对照）。

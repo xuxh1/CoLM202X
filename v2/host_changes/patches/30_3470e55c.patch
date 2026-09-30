@@ -1,0 +1,65 @@
+From 3470e55cc571f5a797f07c5c6b110266139482fa Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Mon, 28 Sep 2026 10:46:12 +0800
+Subject: [PATCH] fix(crop): a second-season rice crop is harvested on the
+ first-season sowing date (C-45)
+
+Without it a second season sown late, or a spurious one in the calendar,
+could still stand on the first-season date and skip the main season.
+
+---
+ main/BGC/MOD_BGC_Veg_CNPhenology.F90 | 17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/main/BGC/MOD_BGC_Veg_CNPhenology.F90 b/main/BGC/MOD_BGC_Veg_CNPhenology.F90
+index a8c10ee6..354b89d3 100644
+--- a/main/BGC/MOD_BGC_Veg_CNPhenology.F90
++++ b/main/BGC/MOD_BGC_Veg_CNPhenology.F90
+@@ -1025,7 +1025,7 @@ CONTAINS
+    integer :: jdayyrstart(2)
+    real(r8) :: initial_seed_at_planting = 3._r8 ! Initial seed at planting
+    integer ivt
+-   logical :: sow_now
++   logical :: sow_now, end_second
+ 
+     !------------------------------------------------------------------------
+ 
+@@ -1124,6 +1124,16 @@ CONTAINS
+ 
+                onset_counter_p(m) = onset_counter_p(m) - deltim
+ 
++              ! C-45: a second-season rice crop still standing on the sowing
++              ! date of the first season is harvested then, so the first
++              ! season is never skipped (it is sown on the next time step)
++               end_second = .false.
++               IF (ivt == nirrig_rice .and. rice_double_p(m) >= 0.5_r8) THEN
++                  IF (pdrice2(i) > 0._r8 .and. pdrice2(i) /= spval) &
++                     end_second = idop_p(m) == int(pdrice2(i)) .and. jday == int(plantdate_p(m)) &
++                        .and. int(pdrice2(i)) /= int(plantdate_p(m))
++               ENDIF
++
+               ! enter phase 2 onset for one time step:
+               ! transfer seed carbon to leaf emergence
+ 
+@@ -1131,7 +1141,8 @@ CONTAINS
+                !    hui_p(m) = max(hui_p(m),grnfill(ivt))
+                ! ENDIF
+ 
+-               IF (hui_p(m) >= lfemerg(ivt) .and. hui_p(m) < grnfill(ivt) .and. idpp < mxmat(ivt)) THEN
++               IF (hui_p(m) >= lfemerg(ivt) .and. hui_p(m) < grnfill(ivt) .and. idpp < mxmat(ivt) &
++                   .and. .not. end_second) THEN
+                   cphase_p(m) = 2._r8
+               ! CALL vernalization IF winter temperate cereal planted, living, and the
+               ! vernalization factor is not 1;
+@@ -1170,7 +1181,7 @@ CONTAINS
+                  ! the onset_counter would change from dt and you'd need to make
+                  ! changes to the offset SUBROUTINE below
+ 
+-               ELSE IF (hui_p(m) >= 1._r8 .or. idpp >= mxmat(ivt)) THEN
++               ELSE IF (hui_p(m) >= 1._r8 .or. idpp >= mxmat(ivt) .or. end_second) THEN
+                   IF (harvdate_p(m) >= NOT_Harvested) harvdate_p(m) = jday
+                   croplive_p(m) = .false.     ! no re-entry in greater IF-block
+                   cropplant_p(m)=.false.
+-- 
+2.53.0
+

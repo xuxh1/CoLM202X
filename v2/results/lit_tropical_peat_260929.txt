@@ -1,0 +1,171 @@
+# lit_tropical_peat_260929：热带泥炭沼泽单位分解碳产甲烷为何偏低——文献调研
+
+- **日期**：2026.09.29-11:10
+- **读者**：下一会话
+- **来源**：文献线只读调研，承接 `v2/迭代账本.md` 的 Q-22、Q-24、Q-37、C-29、C-30、D-38、D-46、V-49、V-52、V-53、V-78；已有笔记 `data/_tmp/分析_260926_热带泥炭林/notes.txt`（其著录当日查过 Crossref，本文引用处照它的读法标注）；主会话读本树 `main/TRACER` 定消费点，读站点与全球产物取数，第 5 节 DOI 于 2026-09-29 全部重查 Crossref
+- **状态**：第 0 至 5 节成文；三个子任务（机理与实测、树的通道与氧化、其他模式与反演）交回前未汇入，相关缺口列在第 0 节第 6 条；第 3 节候选只到依据、改法与预期，未动代码与配置
+
+口径：塔上比值写 E/(Reco/2)，模式写 E/HR（排放占异养呼吸）、P/HR（产量占异养呼吸）。单位面积排放照原文单位，另注换算。
+读法："全文"给页码或节号；"只读摘要"；"转引"写经哪篇；"经笔记"指数值取自 notes.txt 且该笔记注明读的是原文哪一处。
+
+## 0. 覆盖面
+
+1. 检索词（本地与读码）：CH4:CO2、CH4/(CH4+CO2)、anaerobic incubation、lignin、phenol、aromatic、exudate、girdling、hydrogenotrophic、acetoclastic、pH、tree stem、conduit、aerenchyma；读码检索 `f_methane`、`wetland_f_tropical_peat`、`wetland_f_tree_ratio`、`somhr`、`lithr`、`decomp_hr_vr`、`donor_pool`、`usephfact`、`use_spatial_ph`、`nongrassporosratio`、`wetveg_forest`、`wetveg_ombro`、`exu_vr`。
+2. 范围：`docs/refs/{sites/MY-MLM,sites/ID-Pag,sites/_traits,models,reviews}`；抽文本目录 `data/_tmp/分析_260926_苔藓蒸发阻抗/txt/`（721 个，其中热带与树相关 38 个）；笔记 `data/_tmp/分析_260926_热带泥炭林/notes.txt`；`v2/迭代账本.md`、`v2/候选池.tsv`、`v2/results/` 的区域、国家、站点、收支、分类型单位面积日志；本树 `main/TRACER` 与 `main/BGC`；全球 case `cases/paper_v2/v260928k/g2_fi/bld/run/ch4_parameter.nml`；站点 case `cases/paper_v2/v260929/sp_v2_c52/sites_v2_oo5/MY-MLM`（历史与重启文件）；GSDE 系 pH 原始场 `CoLMrawdata/soil/PHH2O1.nc`（逐点读 5×5 像元中位）。
+3. 本次主会话亲读并取数：读码 12 处（第 3 节各条所列行号）；MY-MLM 2015 年月均碳库剖面（七个库）与 f_hr；MY-MLM 常数重启文件的 donor_pool、receiver_pool、rf_decomp 与 tau；14 个点的 GSDE pH；`region_eval_g2_fi_2018-2018.log`、`country_eval_g2_fi_2018-2018.log`、`scores77_v2_oo5.txt`、`budget_v2_k4lrxmnq_*.log`、`model_per_area_glwd_g2_v2w.log`。
+4. 经笔记引用、未在本次重读原文的：Wong 2018、Sakabe 2018、Hirano 2012、Pangala 2013、Deshmukh 2020、Asyhari 2024、Delwiche 2021、Girkin 2020、van Lent 2019、Treat 2015、Segers 1998、Hodgkins 2018、Riley 2011、Meng 2012、Spahni 2011、Hodson 2011、Zhang 2016、Bloom 2017、Arora 2018、Kallingal 2024、Zhang 2023（笔记第 1、2、4、7 节）。
+5. 只读摘要或转引的（笔记已标）：Holmes 2015、Sjögersten 2018、Hoyos-Santillan 2016、Wright 2011、Keller and Bridgham 2007（只读摘要）；Griffis 2020（涡度 22 g C，笔记记为转述未核）；Girkin 2018、2025（经 `lit_models_wetland_260929.txt` 第 9 条，子任务读 PMC 全文）。
+6. 未看（三个子任务在交回前未完成，下列在本文里没有一手读数，结论里凡涉及处都标推测或不下结论）：
+   - 机理：Freeman 2001"酶锁"在热带泥炭的检验；东南亚木质泥炭与秘鲁棕榈泥炭、刚果泥炭的化学对比原文；热带泥炭硫酸盐、Fe(III)、腐殖质受体的量；Ye 2012 的产甲烷效率对 pH 函数（只知题名）；Miyajima 1997。
+   - 实测：刚果盆地中部泥炭的任何 CH4 实测；秘鲁 Pastaza-Marañón 箱法的单位面积数（Teh 2017 只核了著录）；Lupascu 2020 文莱数值。
+   - 树：Pangala 2017 的份额与机理细节（只核著录）；巴拿马、秘鲁棕榈与热带泥炭树干排放的其他实测；热带泥炭树的根际泌氧与氧化份额。
+   - 模式：JULES、TEM、VISIT、DLEM、CLM5/ELM 是否分热带；Holocene Peat Model 热带版（Kurnianto 2015）与 ecosys（Mezbahuddin）热带泥炭工作；Saunois 2020、2025 的东南亚与刚果区域数与评论；Lunt 2019 等反演对刚果与东南亚的约束。
+7. 不入项：pH 因子换成别的函数一事，因 Ye 2012 未读，本文只做第 1.6 节的读码与读数，不给新函数。
+
+## 1. 机理证据
+
+### 1.1 要解释的量
+
+- MY-MLM：模式异养呼吸 1705、产量 240（P/HR 14.1%）、氧化 110、排放 129 g C m−2 yr−1（E/HR 7.6%），塔上排放 11.0、Reco 4070，E/(Reco/2) 0.5%，模式为塔上 11.75 倍——已验证（`v2/results/budget_v2_k4lrxmnq_sasu5.log` MY-MLM 行）。异养呼吸与塔上 Reco/2 相符，偏高全在产率——已验证（同上；账本 Q-22 更正段）。
+- ID-Pag：模式 E/HR 10.0%，塔上 E/(Reco/2) 约 0.0%，模式为 437 倍；当前 77 站计分里该站"0 common months"未计分——已验证（`budget_v2_k4lrxmnq_val2.log`；`scores77_v2_oo5.txt` 末行）。
+- 对照：北方有机土厌氧培养 CO2:CH4 中位 19.0，即 CH4 占 5.0%——已验证（经笔记，Treat 2015 Results p.2793–2794）；北方到温带的无树塔 E/(Reco/2) 中位 6.4%、模式 6.2%——已验证（账本 Q-24）。热带林地泥炭培养 0.2–0.3%（25 °C，Girkin 2020 p.91）——已验证（经笔记）。所以要解释的是单位分解碳的产率在东南亚泥炭林低一个数量级，而不是分解量。
+- 全球：东南亚湿地加洪泛 32.9 Tg yr−1，22 模式中位 21.6（15.7–38.5），反演中位 24.9（14.0–28.9）；印尼 18.32 对 8.15（3.66–13.94），巴布亚新几内亚 8.72 对 2.18（0.96–5.03）；巴西 10.46（反演 19.7–32.6，偏低）、赤道非洲 12.9（反演 18.5–28.1，偏低）——已验证（`region_eval_g2_fi_2018-2018.log`、`country_eval_g2_fi_2018-2018.log`）。单位面积（g CH4 m−2 yr−1）：热带泥炭东南亚 89.1、南美 59.5、非洲 60.4——已验证（`model_per_area_glwd_g2_v2w.log` 第 11–13 行，2011–2012 年）。
+
+### 1.2 实测：东南亚低，新热带棕榈泥炭高两到三倍
+
+- Maludam（MY-MLM）涡度 9.2 g C m−2 yr−1（7.5–10.8），pH 3.4——已验证（经笔记，Wong 2018 Abstract、Table 2、Sect. 2.1）。
+- Palangka Raya 未排水林（ID-Pag）0.17 / 0.09 g C m−2 yr−1，源汇转换水位 −0.112 m，最低 −0.53 m，pH 3.42——已验证（经笔记，Sakabe 2018 Abstract、Sect. 3.1、3.4）。
+- Kampar 原始林 9.1 g CH4 m−2 yr−1（约 6.8 g C），水位均值 −0.24 m——已验证（经笔记，Deshmukh 2020 Abstract、Table 4）。
+- 东加里曼丹 Muara Siran 箱法，水位 +19 cm 仍只有 CH4:CO2 约 0.54%（碳，折算）——已验证（经笔记，Asyhari 2024 Results）。
+- Sebangau：积水洼地 32.9 ± 7.8 μg CH4 m−2 h−1（约 0.22 g C m−2 yr−1，折算），树干排放占生态系统 62%（0–3 m）至 87%（外推到 15 m）——已验证（经笔记，Pangala 2013 p.525–527）。
+- 秘鲁 Quistococha 棕榈泥炭涡度约 22 g CH4-C m−2 yr−1，水位均值 +0.034 m——推测（经笔记，转述未核）。秘鲁 Mauritia 泥炭林培养：完好与中度退化样地各含水处理均为 CH4 净汇，重度退化 WFPS > 95% 时 CH4/(CH4+CO2) 约 0.16–0.8%——已验证（经笔记，van Lent 2019 Sect. 3.2、Table 2）。
+- 判断：积水与水面测量（Sebangau 洼地、Muara Siran）在东南亚仍只有约 0.5% 以下，说明东南亚泥炭林低不主要来自水位位置，而来自单位分解碳的产甲烷份额低或表层氧化——推测。理由：水位已在地表或以上时量级仍低。
+
+### 1.3 底物质量：木质与芳香族、根源新鲜碳
+
+- Hodgkins 2018：文莱 Mendaram 泥炭芳香族高，作者写 "This high lignin content may help to explain the very low anaerobic decomposition and CH4 production rates previously reported in Southeast Asian peatlands"——已验证（经笔记，Results，图 3 附近正文）；无培养比值数字。
+- 巴拿马泥炭：CH4 与 CO2 产率强受底物限制，碳水化合物解释 CH4 产率方差 63%、CO2 30%——推测（经笔记，Wright 2011 只读摘要）；表层泥炭占累计 CH4 产量 92%，高产与木质素、长链脂肪酸、多糖浓度高相关——推测（经笔记，Hoyos-Santillan 2016 只读摘要）。后者"木质素高反而产量高"与东南亚的解释方向相反，二者都只读到摘要，不据此下结论。
+- 根源新鲜碳：热带泥炭环剥 14 天后 CH4 降 67 ± 14%，作者结论根系碳输入驱动热带泥炭产甲烷——已验证（`lit_models_wetland_260929.txt` 第 9 条，子任务读 PMC 全文，本文未重读）；根分泌物类似物加快热带泥炭 CO2 与 CH4 产生——推测（Girkin 2018 只核题名与著录）。
+- 途径：巴拿马 Changuinola 氢营养型为主，最高 100%——推测（经笔记，Holmes 2015 只读摘要）；秘鲁三处泥炭同位素分馏 α 1.067–1.075，按 Whiticar 判为氢营养为主，pH 约 3.5 的 SJO 深层泥浆培养 CH4 低于检出限——已验证（经笔记，Buessecker 2021 Discussion p.10–11、Fig. 6）。
+- 受体：Segers 1998 表 3 厌氧 CO2:CH4 摩尔比贫营养泥炭 4–882、富营养 0.6–630，作者把大量厌氧矿化碳用于还原替代受体作为解释之一——已验证（经笔记，本地全文 p.32）；Keller and Bridgham 2007 密歇根泥炭产甲烷只占厌氧碳矿化 3–70%——推测（只读摘要）。热带泥炭受体的数量未看（第 0 节第 6 条）。
+
+### 1.4 温度
+
+- 巴拿马泥炭厌氧 CH4 产率 Q10 = 6.8，CO2 产率 Q10 < 2——推测（经笔记，Sjögersten 2018 只读摘要）。若成立，热带恒温 26–28 °C 下温度不是东南亚偏低的原因，反而应偏高——推测。模式产量温度因子 Q10 1.33、基准 295 K，热带约 1.1——已验证（`v2/config/v2_oo5/ch4_parameter.nml` 第 91–92 行；读码 Physics.F90:2270）。
+
+### 1.5 树：管道而非汇
+
+- 实测方向：Sebangau 树干排放占生态系统 62–87%（第 1.2 节）；树通道绕过表层泥炭的氧化层，净作用是加排放——推测。理由：Pangala 2013 同址积水洼地土面只有 32.9 μg m−2 h−1，而树干占大头。
+- 模式方向一致：把有林份额孔隙度由 1/3 降到 1/15，MY-MLM β 11.75 → 12.80，植株送氧少了、氧化降（110 → 99 g C m−2 yr−1）、多出的走冒泡；排放受产量限制，即使氧化九成仍为实测两倍——已验证（账本 V-53）。
+- 判断：在本模式里"改树的传输与氧化"压不下一个数量级，且与树干是管道的实测方向相反；东南亚偏低须在产率侧找——推测。理由：V-53 与第 1.2 节。
+- 未看：热带泥炭树的根际泌氧与氧化份额（第 0 节第 6 条）。候选池第 4 条（湿地根际氧化固定份额）已覆盖这一侧，本文不另立。
+
+### 1.6 pH：站点与全球口径不同，且 pH 图分不开东南亚与北方
+
+- 全球 case 开着 pH 因子并读 pH 图：`use_spatial_ph = .true.`、`usephfact = .true.`——已验证（`cases/paper_v2/v260928k/g2_fi/bld/run/ch4_parameter.nml` 第 75、182 行）；pH 取 GSDE 系 PHH2O1 上四层厚度加权——已验证（读码 `main/TRACER/MOD_Tracer_Reactive_Methane_pH.F90` 头注释；`mksrfdata/Aggregation_MethanePH.F90:114`）；因子按 Dunfield 拟合、6.2 处归一——已验证（读码 Physics.F90:2296–2312）。
+- 站点 case 关 pH 图、pH 恒 6.2、因子恒 1——已验证（`v2/config/v2_oo5/ch4_parameter.nml` 第 86、194 行；读码 pH.F90 `methane_ph_fallback`）。账本第 522 行已记此口径不一致、待定。
+- GSDE pH 与因子（5×5 像元中位）：MY-MLM 4.27 / 0.15，ID-Pag 4.30 / 0.16，秘鲁 Quistococha 4.34 / 0.17，刚果盆地中部两点 4.63–4.66 / 0.28–0.30，FI-Sii 4.51 / 0.23，SE-Deg 4.80 / 0.36，CA-SCB 6.40 / 0.98——已验证（逐点读 `PHH2O1.nc`）；苏门答腊 Kampar 附近 4.80 / 0.36、巴布亚新几内亚两个取点 4.78 / 0.36 与 5.74 / 0.89——已验证（同法；坐标为主会话估的代表点，非站点）。塔上实测泥炭 pH 3.4（Maludam）、3.42（ID-Pag）——已验证（经笔记）。
+- 判断一：pH 图上东南亚、秘鲁、刚果与北方酸性泥沼的因子同在 0.15–0.36，pH 分不开要分的区域，C-29 记的"无选择性"在全球 pH 图上同样成立——已验证（上条读数）。
+- 判断二：MY-MLM 的 β 11.75 是在因子 1 下得到的；同一点在全球 case 里因子为 0.15。按 V-49 的排放随 f 约 1.17 次方变，因子 0.15 约使该站排放乘 0.11，β 约 1.3——推测。理由：离线按 V-49 的幂律推，未跑。所以站点上的 11.75 倍不能直接当作全球东南亚的偏差倍数；全球印尼单位面积 69 对集合÷WAD2M 33（账本 V-77）约 2 倍、巴布亚新几内亚 168 对 43 约 4 倍，才是全球口径下的偏差——已验证（账本 V-77 数）。巴布亚新几内亚可能因 pH 图偏高（取点之一因子 0.89）加常年积水（账本 V-77 `f_wetwat` 3.8 mm）而最高——推测。
+
+### 1.7 小结
+
+- 东南亚泥炭林单位分解碳产甲烷低，文献给的解释依次是：木质与芳香族底物（Hodgkins 2018、Wong 2018 与 Sakabe 2018 作者讨论）、产甲烷依赖根源新鲜碳而非老泥炭（Girkin 2025）、表层与丘面好氧氧化（Wong 2018、Sakabe 2018）、强酸（pH 约 3.4）——推测。理由：多为作者讨论或只读摘要，只有 Girkin 2025 的环剥是直接的受控证据。
+- 新热带棕榈泥炭实测排放高于东南亚两到三倍（第 1.2 节），刚果无实测；任何"全部热带泥炭一刀切"的压法都会重演 V-78（东南亚区一级与巴西跌出反演下限）——已验证（账本 V-78）。
+
+## 2. 模式做法
+
+1. CLM4Me/CTSM：P = RH × f × fT × fpH × fpE × S，f = 0.2 全球一律，Riley 2011 表 1 不给出处与范围——已验证（经笔记，Riley 2011 Eq. 2 p.1929、Table 1 p.1930）。
+2. LPJ-wsl：E = β F(x) Rh S，β 0.03，F 在热带 0.175、北方 0.025，按亚马孙泛滥平原标定——已验证（经笔记，Hodson 2011 Sect. 2；Zhang 2016 Eq. 1）。它把热带调高而不是调低，是亚马孙洪泛标定的结果——推测。
+3. LPX-Bern：热带泥炭并入淹水湿地类，净比 2.40%（SC1）、4.15%（SC2），反演后 5.37%——已验证（经笔记，Spahni 2011 Sect. 3.1–3.2 p.1647–1648、Table 1、p.1653）。
+4. ORCHIDEE-WET：活性碳库 × α0，α0 热带约为寒温带 5 倍，作者疑因未计分泌物库——已验证（`lit_models_wetland_260929.txt` 第 3 节第 10 条，子任务读 Ringeval 2010）；ORCHIDEE-PCH4 泥炭版只做北方——已验证（Salmon 2022 题名 "northern peatlands"，Crossref）。
+5. WetCHARTs、CLASS-CTEM、LPJ-GUESS：无热带或泥炭分项——已验证（经笔记，Bloom 2017 Eq. 1、Arora 2018 Eq. 2、Kallingal 2024 Sect. 2.2.1）。
+6. GCP 模式在 FLUXNET-CH4 评估里热带只有 2 站 5 站年（含 MY-MLM）；小波评估中湿地 PFT、通量分量、产甲烷代理对温带与热带的误差方差作用"modest and inconsistent"——已验证（经笔记与 `lit_models_wetland_260929.txt` 第 3 节，Zhang 2023 Table 1、Sect. 5、p.14–17）。
+7. 综合：已读到的大尺度模式没有一个按"东南亚木质泥炭"单独降产率；分热带的两个（LPJ-wsl、ORCHIDEE-WET）都是把热带调高——已验证（第 1–5 条）。JULES、TEM、VISIT、DLEM、HPM 热带版、ecosys 未看（第 0 节第 6 条），此条结论只对已读模式成立。
+
+## 3. 本模式候选
+
+现状（读码）：产量底物是斑块异养呼吸 `base_decomp = (somhr+lithr)/catomw`（Physics.F90:2198），按 `hr_vr` 分层（2254–2259），乘 f × 温度 × 液态水 × pH × 盐度 × 氧化还原滞后（2267–2335）；`somhr` 与 `lithr` 在 BgcLink.F90:325–361 按分解转移的供体库归类；湿地斑块植物输入 = 同化 × `wetland_npp_frac`，15% 作分泌物直接呼吸并记在代谢凋落物转移上（BgcShim.F90:221–230、272–277），其余按 25 / 50 / 25 进代谢、纤维素、木质素凋落物，不分有林无林、无粗木质残体（BgcShim.F90:291–300）——已验证（读码，本树 HEAD `2acfaf47`）。
+MY-MLM 碳库（2015 年均，0–0.29 m）：代谢 54、纤维素 874、木质素 437、粗木质残体 0、soil1 548、soil2 16 216、soil3 8 454 g C m−2（0–3.8 m soil3 69 666）；基准周转 0.054、0.204、0.204、3.33、0.137、5.0、222 年，呼吸份额 0.55、0.5、0.5、0、0.51、0.55、0.55——已验证（`sites_v2_oo5/MY-MLM` 历史与常数重启文件）。按库存 ÷ 周转 × 呼吸份额粗估（各层环境因子视为相同），异养呼吸约凋落物 49%、soil1 27%、soil2 23%、soil3 1–2%——推测。理由：未计各层温湿、深度与缺氧因子的差别，只作量级。
+
+### 3.1 候选 A：产甲烷底物按来源分（新鲜碳全额，老碳低产）
+
+- 借自：Girkin 2025（环剥降 67%，根源碳驱动热带泥炭产甲烷；经 `lit_models_wetland_260929.txt` 第 9 条）；Wright 2011（碳水化合物解释 CH4 产率方差 63%，只读摘要）；Wania 2010 LPJ-WHyMe 分泌物份额 fexu 0.15（候选池第 6 条依据）；ORCHIDEE-WET 作者把热带 α0 高归于缺分泌物库（第 2 节第 4 条）。
+- 物理依据：泥炭里产甲烷受新鲜可发酵碳供给限制，木质素、芳香族与老泥炭主要走 CO2（发酵不完全、受体、好氧层分解）——推测。理由：见第 1.3 节，直接证据只有 Girkin 2025。
+- 改哪：BgcLink.F90:325–361 在归类处另累一个"产甲烷有效呼吸" `hr_ch4_vr(j) = Σk w(donor_k) × decomp_hr_vr(j,k)`，w 对代谢凋落物（含分泌物）为 1，纤维素 1，木质素、soil2、soil3 为 `w_old`；Physics.F90:2198 与 2254–2259 改用它作底物与分层，CO2 仍按总呼吸记账（2398–2400 已由碳守恒接住）；新键默认 1 即不变。
+- 参数：`w_old` 无直接文献值；Girkin 2025 的 67% 若读作"约三分之二来自根源碳"，对应老碳贡献约三分之一——推测。建议先扫 0.1、0.3。
+- 预期：MY-MLM 若木质素、soil2 占异养呼吸约三成（上文粗估），`w_old` 0.1 使产量降约 30%——推测；不足以单独解决 11.75 倍，但与第 1.6 节 pH 口径合看，全球口径下只差约 2 倍时量级相当——推测。东南亚、南美、刚果同向下降，幅度取决于各地老碳在异养呼吸中的份额；北方莎草泥沼预计降得少（新鲜莎草碳占比高）——推测。
+- 风险：选择性未证。先做诊断再定：给 77 站输出按供体库分的异养呼吸（`somhr`、`lithr` 已有年均历史量 `f_annavg_somhr`，Hist.F90:1152；木质素与 soil2、soil3 需加输出），看热带泥炭的"老碳份额"是否明显高于北方泥沼；若不高，本候选无选择性、只是换 f 的写法，不做。与候选池第 6 条（淹水子柱植物源底物）同一思路、作用于不同斑块，不重复。
+
+### 3.2 候选 B：有林份额的植物输入分出木质部分
+
+- 借自：CLM/CTSM 的木本 PFT 把木质凋落物经粗木质残体、按纤维素与木质素份额进入凋落物（宿主 `main/BGC` 已有 `i_cwd`，湿地斑块未用）；Hodgkins 2018 东南亚泥炭芳香族与木质素高（经笔记）。
+- 物理依据：泥炭沼泽林的地上输入以木材为主，木质残体周转慢、木质素多；湿地斑块现把树与莎草的输入都按 25 / 50 / 25 放——已验证（读码 BgcShim.F90:291–300）。
+- 改哪：BgcShim.F90:291–300 对有林份额 `wetveg_forest`（C-13）的地上部分，按宿主木本 PFT 的木材份额放进 `i_cwd`；与候选 A 合用时，木质素与粗木质残体供体的 w 取 `w_old`。
+- 参数：木材份额取宿主常绿阔叶树 PFT 值（待读 `MOD_Const_PFT`）；未在本次读到——推测。
+- 预期：只改变有林湿地的底物质量；单独开时影响分解快慢与碳库，不直接降 CH4，须与 A 合用——推测。
+- 风险：秘鲁棕榈泥炭与刚果泥炭在 GLWD 也是 26 类有林泥炭，本候选同样压它们，而那里实测高、区域偏低（第 1.1、1.2 节）；D-38 已因"按有林份额降产率全球不成立"撤掉 C-30。棕榈是单子叶，无次生木质部，要区分须有棕榈与阔叶的分布图，本次未找——推测。
+
+### 3.3 候选 C：站点改用与全球相同的 pH（口径统一，不是新机制）
+
+- 借自：本模式全球 case 现行做法（第 1.6 节）；CTSM 同式但默认关——已验证（经笔记，CTSM ch4varcon.F90:33）。
+- 物理依据：同一套机制在站点与全球取同一 pH 来源；站点用 6.2 使站点标定的 f 在全球被 pH 图再乘 0.15–0.36。
+- 改哪：站点 nml 的 `use_spatial_ph` 置真并给站点 pH（站点无 mksrf 的 pH 向量时，由站点表写 GSDE 读数，`data/_tmp/分析_260828_pH两图对比/ph_77sites.csv` 已有 77 站 `ph_gsde`）；或反过来全球关 pH 因子。二选一，属用户定的口径。
+- 预期：站点口径改为 GSDE pH 后，MY-MLM 约 β 1.3、ID-Pag 同比例下降，但北方酸性泥沼（FI-Sii 0.23、FI-Si2 0.17、SE-Deg 0.36、FI-Lom 0.23，`ph_77sites.csv` 的 `f_gsde` 列）一起降 3–6 倍，须重标 f——推测。反向（全球关 pH）则全球湿地总量与各区上升，东南亚更高——推测。
+- 风险：不是热带专属机制；做了只让站点结论能外推到全球，东南亚偏高要看口径统一后的全球单位面积再判。
+
+### 3.4 两类思路对比
+
+| 思路 | 文献方向 | 本模式里的效果 | 结论 |
+| --- | --- | --- | --- |
+| 按泥炭底物质量降产率（A、B） | 支持：木质芳香族（Hodgkins 2018）、根源碳驱动（Girkin 2025）、培养 0.2–0.3%（Girkin 2020） | 未测；MY-MLM 粗估老碳约占异养呼吸三成，单靠 A 降约三成 | 可做，先跑按供体库的诊断定选择性——推测 |
+| 木本植物的传输与根际氧化 | 反向：树干是管道，占 62–87%（Pangala 2013） | 降树的孔隙度反使排放升（V-53）；氧化九成仍为实测两倍 | 不作为压低东南亚的手段——已验证（V-53 与第 1.5 节） |
+| 按热带泥炭一刀切降 f（C-29） | 塔支持，反演与新热带实测不支持 | f 0.025 使东南亚与巴西跌出反演下限（V-78） | 已撤，不重复——已验证（账本 D-46） |
+
+## 4. 给下一步的判据
+
+- 先把第 1.6 节的口径定下来：站点与全球 pH 同一来源之后，东南亚偏高剩多少，再决定要不要做候选 A——推测。理由：站点 11.75 倍里约九成可能是 pH 口径差。
+- 候选 A 的准入条件：按供体库诊断显示热带泥炭"老碳份额"高于北方泥沼至少两倍；否则不做。
+- 第 0 节第 6 条的缺口（刚果实测、JULES/TEM/VISIT/DLEM/HPM/ecosys 热带做法、反演）补齐前，不据本文定"以塔还是以反演为准"（D-46）。
+
+## 5. 著录（2026-09-29 逐条查 Crossref，题名、刊、卷、页、年一致）
+
+- Wong et al., 2018｜Micrometeorological measurement of methane flux above a tropical peat swamp forest｜Agricultural and Forest Meteorology 256-257: 353-361｜10.1016/j.agrformet.2018.03.025
+- Sakabe et al., 2018｜Ecosystem-scale methane flux in tropical peat swamp forest in Indonesia｜Global Change Biology 24(11): 5123-5136｜10.1111/gcb.14410
+- Hirano et al., 2012｜Effects of disturbances on the carbon balance of tropical peat swamp forests｜Global Change Biology 18(11): 3410-3422｜10.1111/j.1365-2486.2012.02793.x
+- Pangala et al., 2013｜Trees are major conduits for methane egress from tropical forested wetlands｜New Phytologist 197(2): 524-531｜10.1111/nph.12031
+- Pangala et al., 2017｜Large emissions from floodplain trees close the Amazon methane budget｜Nature 552(7684): 230-234｜10.1038/nature24639
+- Deshmukh et al., 2020｜Impact of forest plantation on methane emissions from tropical peatland｜Global Change Biology 26(4): 2477-2495｜10.1111/gcb.15019
+- Asyhari et al., 2024｜Quantifying the fluxes of carbon loss from an undrained tropical peatland ecosystem in Indonesia｜Scientific Reports 14(1): 11459｜10.1038/s41598-024-62233-6
+- Delwiche et al., 2021｜FLUXNET-CH4: a global, multi-ecosystem dataset and analysis of methane seasonality from freshwater wetlands｜Earth System Science Data 13(7): 3607-3689｜10.5194/essd-13-3607-2021
+- Girkin et al., 2018｜Root exudate analogues accelerate CO2 and CH4 production in tropical peat｜Soil Biology and Biochemistry 117: 48-55｜10.1016/j.soilbio.2017.11.008
+- Girkin et al., 2020｜Interactions between labile carbon, temperature and land use regulate carbon dioxide and methane production in tropical peat｜Biogeochemistry 147(1): 87-97｜10.1007/s10533-019-00632-y
+- Girkin et al., 2025｜Plant root carbon inputs drive methane production in tropical peatlands｜Scientific Reports 15(1): 3244｜10.1038/s41598-025-87467-w
+- van Lent et al., 2019｜Greenhouse gas emissions along a peat swamp forest degradation gradient in the Peruvian Amazon: soil moisture and palm roots effects｜Mitigation and Adaptation Strategies for Global Change 24(4): 625-643｜10.1007/s11027-018-9796-x
+- Griffis et al., 2020｜Hydrometeorological sensitivities of net ecosystem carbon dioxide and methane exchange of an Amazonian palm swamp peatland｜Agricultural and Forest Meteorology 295: 108167｜10.1016/j.agrformet.2020.108167
+- Teh et al., 2017｜Seasonal variability in methane and nitrous oxide fluxes from tropical peatlands in the western Amazon basin｜Biogeosciences 14(15): 3669-3683｜10.5194/bg-14-3669-2017
+- Lupascu et al., 2020｜Post-fire carbon dynamics in the tropical peat swamp forests of Brunei reveal long-term elevated CH4 flux｜Global Change Biology 26(9): 5125-5145｜10.1111/gcb.15195
+- Couwenberg et al., 2010｜Greenhouse gas fluxes from tropical peatlands in south-east Asia｜Global Change Biology 16(6): 1715-1732｜10.1111/j.1365-2486.2009.02016.x
+- Hodgkins et al., 2018｜Tropical peatland carbon storage linked to global latitudinal trends in peat recalcitrance｜Nature Communications 9(1): 3640｜10.1038/s41467-018-06050-2
+- Hoyos-Santillan et al., 2016｜Quality not quantity: Organic matter composition controls of CO2 and CH4 fluxes in neotropical peat profiles｜Soil Biology and Biochemistry 103: 86-96｜10.1016/j.soilbio.2016.08.017
+- Wright et al., 2011｜Contribution of subsurface peat to CO2 and CH4 fluxes in a neotropical peatland｜Global Change Biology 17(9): 2867-2881｜10.1111/j.1365-2486.2011.02448.x
+- Holmes et al., 2015｜CO2 and CH4 isotope compositions and production pathways in a tropical peatland｜Global Biogeochemical Cycles 29(1): 1-18｜10.1002/2014GB004951
+- Buessecker et al., 2021｜Microbial Communities and Interactions of Nitrogen Oxides With Methanogenesis in Diverse Peatlands of the Amazon Basin｜Frontiers in Microbiology 12: 659079｜10.3389/fmicb.2021.659079
+- Sjögersten et al., 2018｜Temperature response of ex-situ greenhouse gas emissions from tropical peatlands: Interactions between forest type and peat moisture conditions｜Geoderma 324: 47-55｜10.1016/j.geoderma.2018.02.029
+- Treat et al., 2015｜A pan-Arctic synthesis of CH4 and CO2 production from anoxic soil incubations｜Global Change Biology 21(7): 2787-2803｜10.1111/gcb.12875
+- Segers, 1998｜Methane production and methane consumption: a review of processes underlying wetland methane fluxes｜Biogeochemistry 41(1): 23-51｜10.1023/A:1005929032764
+- Keller and Bridgham, 2007｜Pathways of anaerobic carbon cycling across an ombrotrophic-minerotrophic peatland gradient｜Limnology and Oceanography 52(1): 96-107｜10.4319/lo.2007.52.1.0096
+- Ye et al., 2012｜pH controls over anaerobic carbon mineralization, the efficiency of methane production, and methanogenic pathways in peatlands across an ombrotrophic-minerotrophic gradient｜Soil Biology and Biochemistry 54: 36-47｜10.1016/j.soilbio.2012.05.015
+- Dunfield et al., 1993｜Methane production and consumption in temperate and subarctic peat soils: Response to temperature and pH｜Soil Biology and Biochemistry 25(3): 321-326｜10.1016/0038-0717(93)90130-4
+- Riley et al., 2011｜Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM｜Biogeosciences 8(7): 1925-1953｜10.5194/bg-8-1925-2011
+- Meng et al., 2012｜Sensitivity of wetland methane emissions to model assumptions: application and model testing against site observations｜Biogeosciences 9(7): 2793-2819｜10.5194/bg-9-2793-2012
+- Spahni et al., 2011｜Constraining global methane emissions and uptake by ecosystems｜Biogeosciences 8(6): 1643-1665｜10.5194/bg-8-1643-2011
+- Hodson et al., 2011｜The El Niño-Southern Oscillation and wetland methane interannual variability｜Geophysical Research Letters 38(8): L08810（Crossref 页码字段 n/a）｜10.1029/2011GL046861
+- Zhang et al., 2016｜Modeling spatiotemporal dynamics of global wetlands: comprehensive evaluation of a new sub-grid TOPMODEL parameterization and uncertainties｜Biogeosciences 13(5): 1387-1408｜10.5194/bg-13-1387-2016
+- Wania et al., 2010｜Implementation and evaluation of a new methane model within a dynamic global vegetation model: LPJ-WHyMe v1.3.1｜Geoscientific Model Development 3(2): 565-584｜10.5194/gmd-3-565-2010
+- Salmon et al., 2022｜Assessing methane emissions for northern peatlands in ORCHIDEE-PEAT revision 7020｜Geoscientific Model Development 15(7): 2813-2838｜10.5194/gmd-15-2813-2022
+- Bloom et al., 2017｜A global wetland methane emissions and uncertainty dataset for atmospheric chemical transport models (WetCHARTs version 1.0)｜Geoscientific Model Development 10(6): 2141-2156｜10.5194/gmd-10-2141-2017
+- Arora et al., 2018｜An assessment of natural methane fluxes simulated by the CLASS-CTEM model｜Biogeosciences 15(15): 4683-4709｜10.5194/bg-15-4683-2018
+- Kallingal et al., 2024｜Optimising CH4 simulations from the LPJ-GUESS model v4.1 using an adaptive Markov chain Monte Carlo algorithm｜Geoscientific Model Development 17(6): 2299-2324｜10.5194/gmd-17-2299-2024
+- Zhang et al., 2023｜Characterizing Performance of Freshwater Wetland Methane Models Across Time Scales at FLUXNET-CH4 Sites Using Wavelet Analyses｜Journal of Geophysical Research: Biogeosciences 128(11): e2022JG007259｜10.1029/2022JG007259
+- Ringeval et al., 2010（ORCHIDEE-WET α0）：本文经 `lit_models_wetland_260929.txt` 转引，著录未在本次重查，引用时以该文件第 6 节为准。

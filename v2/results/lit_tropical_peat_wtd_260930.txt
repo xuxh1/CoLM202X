@@ -1,0 +1,305 @@
+# lit_tropical_peat_wtd_260930：热带泥炭水位与单位面积 CH4 排放——文献调研
+
+- **日期**：2026.09.30-02:39
+- **读者**：下一会话
+- **来源**：中控派活（methane-tpwt，只读调研）；承接 `v2/results/lit_tropical_peat_260929.txt`、`lit_tropical_mech_260929.txt`、`lit_woody_conduit_260929.txt`、`lit_ph_response_260929.txt`（已核内容只引行号，不重复），`design_wetland_class_260930.txt` 第 1.2 节，`class_eval_g2_o6_2009-2012.log`，`diag_swamp_260929.txt`，`diag_tropics_regions_260929.txt`；读码树 `CoLM202X-paper-v2`（`main/`）；第 7 节 DOI 于 2026-09-30 全部重查 Crossref
+- **状态**：四问已答；建议只到依据、取值与优先次序，未动代码与配置；`diag_tropical_peat_260930.txt` 写作时不存在，未引用
+
+口径：单位面积排放统一写 g CH4 m-2 yr-1，原文为碳时乘 1.336 折算并注"折"；箱式的小时通量按全年连续外推时注"外推"。水位写"地表下 x m"或"地表上 x m"，不用正负号，避免与模式（地表下为正）混淆。
+读法："全文"给页码或节号；"摘要"指只读到摘要（Crossref、Semantic Scholar 或出版社页）；"转引"写经哪篇或哪份兄弟报告的第几行；"读图约值"指从图上读的近似值。
+
+## 0. 覆盖面
+
+1. 检索词：tropical peat swamp forest water table / groundwater level（Palangkaraya、Sebangau、Maludam、Kampar、Mendaram）；undrained vs drained peat water table；Cuvette Centrale / Congo peatland water table logger；Pastaza-Marañón / Quistococha water table；Changuinola / San San Pond Sak water table；tropical peat methane emission factor；IPCC Wetlands Supplement tropical CH4；eddy covariance methane tropical peat（oil palm、Acacia）；tree stem methane Mauritia；Congo swamp forest methane；PEATCLSM tropical；Hooijer subsidence water table；Wösten peat-water；Dommain self-regulation；Kurnianto HPM tropical；Hergoualc'h Verchot 2014。
+2. 渠道：WebSearch、WebFetch（Crossref、Semantic Scholar、Europe PMC 公开接口，匿名请求，URL 与请求头不含任何个人信息）；出版社或机构仓储 PDF（WebFetch 存盘后用 Read 逐页读）；scratchpad 里兄弟会话已抽取的全文文本（`mine/{herg2020,teh2017,griffis2020,congo2026}.txt`、`sjog2014.txt`、`kurnianto2015.txt`、`lit_bogfen/sub_obs/evans_whiterose.txt`、`mine/crossref_abs.txt`，用 grep 与 sed 读）。
+3. 读码（只读）：`main/MOD_SoilSnowHydrology.F90:1286–1400`（三种湿地侧向补水分支）、`main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90:646–660`（下限注释与键）、`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90:4603–4642`（按类取下限）。
+4. 读到全文或全文相关页的：Apers 2022（JAMES 出版版 PDF，p.1–21、24–29 逐页读）；Dargie 2017（White Rose 接受稿 p.1–15）；Garcin 2022（NORA 出版版 p.1–5）；IPCC 2014 湿地增补第 3 章（p.3.15–3.18、3.32–3.37）与第 2 章（p.2.21–2.30）；Koarashi 2026（PMC 全文经 WebFetch 摘原句）；Sjögersten 2014（PMC 全文文本 grep）；Teh 2017、Griffis 2020、Hergoualc'h 2020（兄弟会话抽取全文，grep 后逐段读）；Kurnianto 2015（抽取全文第 400–440 行）；Evans 2021（White Rose 接受稿第 176–200 行）；Barthel 2022（PMC 全文经 WebFetch 摘原句）。
+5. 只读摘要的：Hirano 2015、Hooijer 2012、Couwenberg 2010、Deshmukh 2020、Sakabe 2018、Jauhiainen 2005（Crossref 摘要）；Wong 2020、Hoyos-Santillan 2019（Semantic Scholar 摘要）；van Haren 2021（ASU 机构页摘要）；Georgiou 2023（White Rose 记录页摘要）；Cobb 2017（Europe PMC 摘要与 PMC 摘原句，无水位数值）；Dommain 2010（Crossref 摘要）。
+6. 未读（已试路径）：
+   - Hergoualc'h & Verchot 2014 全文：Springer 跳转登录、CIFOR 仓储 403、Semantic Scholar 无摘要；其数值只经 Hergoualc'h 2020 p.7212 转引。
+   - Georgiou 2023 全文：MDPI 403，White Rose PDF 两次超时，mdpi-res 直链超过 10 MB 上限；刚果的水位绝对低点因此没有一手数值。
+   - Wösten 2008 全文：无开放版本，"地表下 40 cm 至地表上 100 cm"的管理带只见检索页转述。
+   - Page 1999（PMC1692688）：PMC 页只有摘要，Europe PMC 全文接口 500。
+   - Dommain 2010 PDF：证书错误。
+   - Hirano 2012 全文与 Hirano 2015 全文：付费；UF 的年均与干旱年水位改由 Koarashi 2026 取得。
+   - Crezee 2023 EGU 摘要（刚果季节淹水泥炭林）：ADS 405。
+   - Lähteenoja 2009：只经 Griffis 2020 第 163–165 行转引。
+7. 不入项：Evans 2021 的水位-CH4 关系来自温带与北方被管理泥炭，本文只作对照，不作热带目标；Murguia-Flores 2023 已在 class_eval 日志引用，不重复。
+8. 存疑项（要跑或要拿到原文才能定）见第 6 节，共五项。
+
+## 1. 结论
+
+1. 水位（问一）。
+   - 未排水东南亚泥炭沼泽林年均在地表下 0.08–0.24 m（Palangkaraya 未排水林 2005–2016 年均 0.15 ± 0.13 m、正常年 0.08 m、2014 年厄尔尼诺 0.23 m；元分析 0.18 ± 0.06 m；Kampar 0.24 m）——已验证（第 2.2 节）。
+   - 旱季低点正常年约地表下 0.4–0.55 m（ID-Pag 最低 0.53 m），厄尔尼诺年约 0.8–1.2 m；湿季多在地表附近，29 个自然站里只有 2 个出现约 0.5 m 的短暂积水——已验证（第 2.2 节，厄尔尼诺年为读图约值）。
+   - 排水林年均 0.46 m，人工林约 0.7 m（沟深均值 0.68 m），旱季可深到 2 m——已验证（第 2.2 节）。
+   - 秘鲁棕榈与混合泥炭年均在地表上约 0.03 m，旱季很少深于地表下 0.2 m，湿季积水 0.3–1.8 m——已验证（第 2.3 节）。
+   - 刚果为雨养，年内振幅约 0.23 m，绝对低点未取到——存疑。巴拿马水位量值未取到——存疑。
+   - 模式热带泥炭类下限 0.75 m 落在"东南亚未排水林厄尔尼诺年低点"与"排水人工林年均"之间，出处上更像后者——推测。理由：数值与 0.7 m、0.68 m 几乎相同，账本无出处。
+   - 模式四个热带区斑块逐月水位最深只到 0.20–0.40 m，下限在区尺度上从未触发，改它不会改变单位面积排放——已验证（第 2.1 节，转引 `diag_tropics_regions_260929.txt`）。
+   - 建议取值：东南亚与刚果雨养穹顶 0.6–1.0 m（保留 0.75 m 并写明出处即可），秘鲁类矿养棕榈沼泽 0.2–0.3 m（现分类分不出来）——推测。理由见第 2.7 节。
+2. 单位面积排放（问二，g CH4 m-2 yr-1）。
+   - 东南亚未排水林：塔（含树干）0.12–12.3，三塔中位 9.1；箱式只测地表 0.9–17.9，IPCC 以 11 个湿态站定的均值 5.5，元分析 3.9；树干在 Sebangau 湿季占生态系统 62–87%，绝对量 0.2–1.0——已验证（第 3.1 节）。
+   - 东南亚排水：塔上 2.9（油棕）与 4.7（金合欢）；IPCC 地表缺省 0–0.7——已验证（第 3.2 节）。排水沟使景观多出约 4.5——推测（按 IPCC 沟 EF 与沟面积份额算）。
+   - 秘鲁棕榈泥炭：塔 22.7–29.4，箱式 15.4–30.2——已验证（第 3.3 节）。巴拿马：箱式外推 4.9–10.5——推测（外推）。
+   - 刚果泥炭无原位值；同盆地矿质沼泽林淹水处 45.6、不淹处 0.36——已验证（第 3.4 节）。
+   - 与水位：地表下约 0.1–0.3 m 以深基本为零或吸收，近地表与浅积水时随水位指数上升，积水 0.3–0.4 m 以上又下降——已验证（第 3.5 节）。东南亚即使积水也低，低不来自水位位置——推测。理由：第 3.5 节末条。
+   - 按模式三区的 GLWD 26 面积加权，目标 8–22、中心约 14；模式 O-6 为 73（高 3–9 倍），加 C-65、C-66 后 40（高 2–5 倍）——推测（区代表值与加权为本文自算）。
+3. 为何低（问三）。
+   - 定量证据一致指向"单位分解碳的产甲烷份额低"：厌氧培养 CH4 占 0.2–0.9%，北方 5%，低 6–25 倍；塔上 E/(Reco/2) 东南亚 0.5%、北方 6.4%，秘鲁约 1.7–3.6%；IPCC 湿态 EF 热带 41 kg CH4-C ha-1 yr-1，与北方贫养相同，比温带低 2–5 倍——已验证（第 4.1 节）。
+   - 温度不是原因（产甲烷 Q10 6.8）——已验证（第 4.2 节，转引 Sjögersten 2018 摘要）。pH 最多解释 2–4 倍——已验证（第 4.2 节，转引 Ye 2012）。替代电子受体没有定量收支——存疑。木质素高是作者解释，但热带内部木质素差不对应产率差——推测。理由：刚果棕榈与硬木对比。
+   - 最直接的定量证据是产甲烷依赖新鲜根源碳（环剥降 67%，CH4 为现代碳）——已验证（第 4.2 节）。
+   - 能直接约束模式的：热带泥炭有效 P/HR 目标东南亚约 0.01–0.03、秘鲁约 0.05–0.1（以模式 f 0.2 在北方塔上对得上为锚）；热带与北方单位面积比约 1–3，模式 6.3——推测。理由：第 4.3 节比值算术，假定氧化份额相当。
+4. 建议（问四）。
+   - 下限不是降排放的手段；保留 0.75 m 并写出处（东南亚未排水林旱季极端低点，Apers 2022、Koarashi 2026、Kurnianto 2015），或按"雨养穹顶不应被侧向补水托住"改为 1.0 m——推测。理由：第 2.7 节。
+   - 若要把 GLWD 26 从 40–73 降到 8–22，优先次序为：第一，产率（按底物来源区分新鲜根源碳与老泥炭，即 `lit_tropical_peat_260929.txt` 候选 A，不一刀切降 f）；第二，东南亚旱季落水不足（模式东南亚逐月最深 0.20 m，实测正常年 0.4–0.55 m），改泥炭出流与蒸散而不是下限；第三，根际氧化保持或加强；第四，不削植物通道——推测。理由：第 5.3 节。
+   - 按站点目标，东南亚泥炭总量约 1.5–4.4 Tg，比反演隐含值低一个数量级，与 D-46 的"以塔还是以反演为准"是同一冲突——存疑。
+
+## 2. 问一：实测水位与下限取值
+
+### 2.1 模式里的下限是什么
+
+- 下限的定义：湿地斑块水位深于下限时，从侧面以负的地下径流补水，直到水位回到下限，替代封闭湿地桶收不到的侧向来水；负值为关——已验证（读码 `Const.F90:646–653` 注释）。
+- 代码路径：`SoilSnowHydrology.F90:1360–1374` 在"动态湿地、非积水目标、非 C-17 侧向来水"分支里取 `wetland_max_wtd_of`，把下限到当前水位之间的孔隙亏缺一步补齐，雨养份额（C-38）不补；水位在下限以上时斑块按泥炭导水率侧向排水——已验证（读码 `SoilSnowHydrology.F90:1360–1400`）。按类取值在 `Physics.F90:4617–4629`，热带泥炭类取 `wetland_max_wtd_tropical_peat`——已验证（读码）。
+- 现值：站点与全球 O-7 都开 `use_biome_wetland_max_wtd`，热带泥炭 0.75 m、热带洪泛 0.13、温带沼泽 0.10、北方 0.13 m；0.75 m 在账本与参数审计里查不到出处——已验证（转引 `design_wetland_class_260930.txt` 第 1.2 节表第 3 行与第 5 条）。
+- 模式水位：全球 2017–2018 热带泥炭斑块面积加权年均与逐月最深为巴西 0.17 / 0.40 m、西南南美 0.14 / 0.25、赤道非洲 0.23 / 0.40、东南亚 0.13 / 0.20，子区新几内亚 0.09 / 0.13、苏门答腊—婆罗洲 0.13 / 0.24——已验证（转引 `diag_tropics_regions_260929.txt` 第 4.3 节表与第 186 行）。新几内亚 0.75 m 下限从未触发——已验证（转引同文件第 298 行）。其余区按面积加权最深也不到 0.40 m，推断下限在区尺度上都没触发；单个斑块是否偶尔触发未查——推测。
+- 站点：MY-MLM 模式逐月 0.02–0.20 m、ID-Pag −0.01–0.26 m（地表下为正），塔上 ID-Pag 8–10 月 0.38–0.44 m——已验证（转引 `diag_swamp_260929.txt` 第 2.2 节表）。
+
+### 2.2 东南亚
+
+未排水：
+- Palangkaraya 未排水林（UF，即 ID-Pag 塔址）：2005–2016 年均地表下 0.15 ± 0.13 m（年际标准差）；正常年（2002–2018 中 7 年）均值 0.08 m，2014 年厄尔尼诺干旱年均 0.23 m——已验证（Koarashi 2026 表 1 注 b 与 Results 原句，PMC 全文经 WebFetch 摘取）。
+- ID-Pag 塔：CH4 源汇转换水位地表下 0.112 m，观测期最低 0.53 m——已验证（转引 `lit_tropical_peat_260929.txt` 第 37 行，经笔记读 Sakabe 2018 Sect. 3.1、3.4）；塔上月均 1–12 月为地表下 0.11、0.12、0.08、0.07、0.08、0.07、0.23、0.38、0.44、0.31、0.11、0.15 m——已验证（转引 `diag_swamp_260929.txt` 第 41 行，Sitedata `WTD_daily`）。
+- 同一 UF 2004–2007 日值（含 2006 年厄尔尼诺）分布约在地表上 0.1 m 到地表下 1.1 m；拟合出的植物干旱胁迫起点地表下 0.70 m、渍水胁迫起点地表下 0.29 m——已验证（Apers 2022 p.12 正文与图 7a，范围为读图约值）。
+- 上 Sebangau 自然林 2000–2008 年（含 2002、2004、2006 年厄尔尼诺）实测水位旱季约落到地表下 0.8–1.2 m，湿季回到地表附近——已验证（Apers 2022 图 11f，读图约值；站点即表 B1 的 IN_UpperSebangau_PSF）。
+- Sebangau 1995–2005 月均水位与累计水分亏缺线性相关：水位（cm，地表下）= 0.20 × 亏缺（mm），亏缺按月降水低于 100 mm 累加；即累计亏缺 250–300 mm 时约地表下 0.5–0.6 m——已验证（Kurnianto 2015 式 2–3 与图 1，抽取全文第 413–440 行；换算为算术）。
+- 东南亚未排水泥炭沼泽林元分析年均地表下 0.18 ± 0.06 m——已验证（转引 Hergoualc'h 2020 p.7212，`herg2020.txt` 第 1008 行，原始出处 Hergoualc'h & Verchot 2014 未读）。
+- Kampar（苏门答腊）原始林年均地表下 0.24 m——已验证（转引 `lit_tropical_peat_260929.txt` 第 38 行，经笔记读 Deshmukh 2020 表 4）。
+- Maludam（MY-MLM）：月均从洼地面起算为地表上 0.12 m 到地表下 0.30 m；洼地比丘顶低 0.30–0.40 m——已验证（转引 `diag_swamp_260929.txt` 第 49 行，读 Wong 2018 Sect. 2.1–2.2）。
+- 积水：东南亚 29 个自然站只有 2 个出现过短暂地表积水，高约 0.5 m，都在湿季末——已验证（Apers 2022 p.21）。
+- 自我调节：穹顶泥炭的水位起落主要限于上层（地上根、凋落物与洼地），丘与板根起堰的作用——已验证（Dommain 2010 摘要，Crossref）。维持"地表下 0.40 m 到地表上 1.0 m"以防沉降与火——推测（Wösten 2008，只见检索页转述）。
+
+排水：
+- Palangkaraya 排水林（DF）2005–2016 年均地表下 0.46 ± 0.13 m；排水烧毁地（DB）0.17 ± 0.19 m——已验证（Koarashi 2026 表 1）。
+- 人工林平均水位地表下 0.7 m 时沉降仍约 5 cm yr-1——已验证（Hooijer 2012 摘要，Crossref）。金合欢、橡胶、油棕与强度采伐林 73 个沟深值均值 0.68 m，分布 0.2–1.2 m——已验证（Apers 2022 p.11、附录 A 图 A1a）。排水泥炭旱季水位可深到地表下 2 m——已验证（Apers 2022 p.3）。排水后微地形起伏变小，σ 由自然林的 0.16 m 降到 0.13 m——已验证（Apers 2022 p.6–7、表 1、图 4）。
+
+### 2.3 秘鲁与亚马孙西部（Pastaza-Marañón）
+
+- Quistococha 棕榈沼泽（涡度塔）：2018、2019 年年均都在地表上 0.034 m；年内变幅 0.32 m（2018）与 0.35 m（2019）；2019 年 8 月 3 日至 11 月 26 日间断落到地表下——已验证（Griffis 2020 接受稿第 288–294 行）。站点描述："湿季后期常在地表以上（5、6 月 80–150 cm），很少落到地表下 20 cm 以深"——已验证（Griffis 2020 第 163–165 行，转引 Hergoualc'h 2020、Kelly 2017）。
+- Quistococha 退化梯度三样地：站尺度年均在地表上 0.2–7 cm；2015 年 5–6 月（厄尔尼诺前强降水）积水 80–150 cm，2017 年 6 月 16–46 cm；2016 年 9 月等时段落到地表下——已验证（Hergoualc'h 2020 p.7212 与结果段，`herg2020.txt` 第 491–498、1008 行）。
+- PMFB 四类植被（Teh 2017 表 2，地表以上为正的原值换写）：旱季均值有林沼泽地表下 0.132 m、矮林（pole forest）地表下 0.047 m、Mauritia 棕榈沼泽地表上 0.061 m、混合棕榈沼泽地表下 0.024 m；湿季分别地表上 1.108、0.269、0.372、1.837 m——已验证（`teh2017.txt` 第 405–421 行表 2、第 609–616 与 684–694 行）。
+- 正常湿季积水一般不超过地表上 0.2 m，2012 年一次洪水近 1 m——已验证（Apers 2022 p.21，转引 Lawson 2014、Kelly 2014）。
+- 小结：秘鲁泥炭多为矿养或混合型，有河流与侧向来水，旱季低点很少深于地表下 0.2 m——已验证（上列各条）。
+
+### 2.4 刚果中部（Cuvette Centrale）
+
+- 四条样带一年连续水位记录没有洪水波，水位上升与 TRMM 降雨一致；表层泥炭 Ca 0.3 g kg-1、pH 3.2，作者判为"雨养、类雨养"——已验证（Dargie 2017 接受稿 p.4）。
+- 20 个月、卫星与原位记录合成的区域平均年内振幅 22.8 ± 10.1 cm——已验证（Georgiou 2023 摘要，White Rose 记录页）。
+- 年降水约 1,700 mm，低于伊基托斯约 3,000 与中加里曼丹约 2,900 mm；穹顶很缓（约 3 m / 40 km）；四个原位站 2013–2018 年，PEATCLSM 旱季偏干——已验证（Apers 2022 p.20、表 B1）。
+- 绝对低点（旱季落到地表下多深）：本次未取到原文数值——存疑。按振幅约 0.23 m、湿季近地表推，旱季低点约地表下 0.2–0.3 m——推测。
+
+### 2.5 中美洲（巴拿马 Changuinola、San San Pond Sak）
+
+- 水位是泥炭表面 CO2 与 CH4 的首要控制，水位升到地表以上时 CH4 增 81%——已验证（Hoyos-Santillan 2019 摘要，Semantic Scholar）。2014 年 10 月至 2015 年 1 月水位在地表以上，其余时段在地表以下——已验证（Sjögersten 2020 Results，转引 `sj2020.txt`）。
+- 水位量值：Apers 2022 用了 10 个测井 2014 年数据（表 B1 PA_Dipwell_avg，Baird 2017），但正文不给数；本次没有取到巴拿马的水位年均与低点——存疑。
+
+### 2.6 汇总（地表下为"下"，地表上为"上"）
+
+| 地区与状态 | 年均 | 旱季低点 | 湿季高点 | 状态 | 证据 |
+| --- | --- | --- | --- | --- | --- |
+| 东南亚未排水 | 下 0.08–0.24 | 正常年下 0.4–0.55；厄尔尼诺年下 0.8–1.2 | 近地表，少数站上 0.5 | 已验证 | 第 2.2 节 Koarashi 2026、Sakabe 2018、Apers 2022、Kurnianto 2015、Hergoualc'h 2020 |
+| 东南亚排水 | 林下 0.46；人工林下 0.7 | 下 2 | 未取到 | 已验证 | Koarashi 2026、Hooijer 2012、Apers 2022 p.3 |
+| 秘鲁棕榈与混合泥炭 | 上 0.03；站尺度上 0.002–0.07 | 下 0.05–0.2 | 上 0.3–1.8 | 已验证 | Griffis 2020、Hergoualc'h 2020、Teh 2017 |
+| 刚果中部 | 未取到 | 未取到（推约下 0.2–0.3） | 未取到 | 存疑 | 振幅 0.23 m（Georgiou 2023） |
+| 巴拿马 | 未取到 | 未取到 | 季节性积水 | 存疑 | Sjögersten 2020、Hoyos-Santillan 2019 |
+
+### 2.7 下限该取多少
+
+- 0.75 m 的来历：与排水人工林的年均水位 0.7 m、沟深均值 0.68 m 几乎相同，也落在东南亚未排水林厄尔尼诺年低点 0.8–1.2 m 的下缘——推测。理由：第 2.2 节两组数；账本无出处。
+- 物理上：东南亚与刚果是雨养穹顶，没有侧向来水，旱季水位按蒸散与累计亏缺一路下落（Kurnianto 式 3），模式用"下限以下侧补"托住水位，在雨养穹顶上没有对应过程；所以下限应深于实测的极端低点，只起数值保护作用，推荐 0.6–1.0 m——推测。理由：第 2.2、2.4 节。
+- 秘鲁式矿养棕榈沼泽确有河水与侧向来水，旱季很少深于 0.2 m，下限取 0.2–0.3 m 与实测相符——推测。理由：第 2.3 节。但现分类（|纬度| ≤ 23.5° 且第 1 层有机碳 ≥ 80）分不出雨养与矿养——已验证（转引 `design_wetland_class_260930.txt` 第 1.1 节第 1 条）。
+- 对排放的影响：模式四区斑块逐月最深 0.20–0.40 m，从未到 0.75 m；把下限改到 0.6–1.0 m 结果不变；改到 0.3 m 会在巴西、刚果旱季开始托水，使其更湿、排放更高，而东南亚最深只到 0.20 m 仍不触发——推测。理由：第 2.1 节模式水位与下限定义。
+- 结论：保留 0.75 m（或 1.0 m）并写明出处"东南亚未排水泥炭沼泽林旱季极端低点（Apers 2022 图 7a、11f；Koarashi 2026；Kurnianto 2015）"；下限不作为调排放的旋钮——推测。
+
+## 3. 问二：单位面积 CH4 排放
+
+### 3.1 东南亚未排水
+
+涡度塔（生态系统通量，含树干与植物通道）：
+- MY-MLM（Maludam，沙捞越）：三年均值 8.46 g C（折 11.3）——已验证（Wong 2020 摘要，Semantic Scholar）；另一时段 9.2 g C（7.5–10.8，折 12.3）——已验证（转引 `lit_tropical_peat_260929.txt` 第 36 行，经笔记读 Wong 2018）。
+- Kampar（苏门答腊）原始林 9.1 ± 0.9——已验证（Deshmukh 2020 摘要，Crossref）。
+- ID-Pag（Palangkaraya）0.09–0.17 g C（折 0.12–0.23），旱季为汇（低到 −8.9 mg C m-2 d-1），湿季为源（高到 10.7）——已验证（Sakabe 2018 摘要，Crossref）。
+- 三座未排水塔中位 9.1（0.12–12.3）——已验证（上三条算术）。
+- 同地区受扰动次生林（沙捞越）4.17 g C（折 5.6）——已验证（Wong 2020 摘要）。
+
+箱式（只测地表）：
+- IPCC 2014 湿地增补热带湿态泥炭 EF：41 kg CH4-C ha-1 yr-1（n = 11 站，95% 区间 7–134），全部取自东南亚未排水泥炭沼泽林；表 3A.3 只收水位不深于地表下 0.30 m 的测次，均值 0.47（0.05–1.53）mg CH4-C m-2 h-1——已验证（IPCC 2014 第 3 章表 3.3 p.3.18、表 3A.3 p.3.33）。折 5.5（0.9–17.9）——已验证（算术）。
+- 同表的使用说明：EF 假定全年水位近地表；有明显旱季、水位落到地表下 0.20 m 以深的地区，EF 乘湿月数除以 12——已验证（IPCC 2014 p.3.18）。原文还写"因木质泥炭难分解，东南亚热带沼泽林有机土的 CH4 通量比北方与温带低得多"——已验证（IPCC 2014 p.3.33，引 Couwenberg 2010）。
+- Hergoualc'h & Verchot 2014 元分析：29 kg C ha-1 yr-1（折 3.9）——已验证（转引 Hergoualc'h 2020 p.7212，`herg2020.txt` 第 1002 行）。Griffis 2020 把同一元分析写成 28.6 g C m-2 yr-1，比 2.9 g C 大 10 倍；IPCC 独立汇编的同区湿态均值 4.1 g C 与 2.9 g C 同量级，所以 Griffis 的 28.6 很可能是换算错——推测。理由：IPCC 表 3A.3 的年通量 41.2 kg CH4-C ha-1 yr-1。
+- Sebangau 林地地面年排放 < 1.36 ± 0.57——已验证（Jauhiainen 2005 摘要，Crossref）。东加里曼丹 Muara Siran 1.61 g C（折 2.15）——已验证（转引 `lit_tropical_mech_260929.txt` 第 189 行）。
+- 东南亚有林泥炭箱式通量一般 < 2 mg CH4 m-2 h-1——已验证（Sjögersten 2014 第 4.2 节，PMC 全文 grep）；高水位时最高约 3 mg CH4 m-2 h-1——已验证（Couwenberg 2010 摘要）；二者全年外推上限 17.5 与 26.3——推测（外推）。
+- 文莱未过火林 4.0 ± 2.0 mg CH4 m-2 h-1（外推 35）是东南亚的高值例外，测点水位与季节覆盖未知——存疑（转引 `lit_tropical_mech_260929.txt` 第 190–195 行，Lupascu 2020 只读摘要）。
+
+树干：
+- Sebangau 湿季两周：下 3 m 树干 6.7 ± 0.7 g CH4 ha-1 d-1（外推 0.24），外推到 15 m 为 28.5（外推 1.04）；占生态系统 62–87%；洼地地面 3.9 g ha-1 d-1（外推 0.14）——已验证（转引 `lit_woody_conduit_260929.txt` 第 50 行，读 Pangala 2013 p.524–528）。
+- 读法：树干在份额上占大头，在绝对量上只有 0.2–1.0；塔上 9–12 已含树干——推测。理由：涡度塔测的是冠层以上的净通量。
+
+### 3.2 东南亚排水
+
+- 沙捞越油棕人工林涡度塔 2.19 g C（折 2.9），与水位无关——已验证（Wong 2020 摘要）。苏门答腊金合欢人工林涡度塔 4.7 ± 1.5，约为同区原始林一半——已验证（Deshmukh 2020 摘要）。
+- IPCC 地表缺省 EF（kg CH4 ha-1 yr-1）：排水林与灌丛 4.9（2.3–7.5，n 7）、金合欢 2.7（−0.9–6.3，n 5）、油棕 0（n 1）、西米 26.2（7.2–45.3，n 6）、农田 7.0（0.3–13.7，n 5）；折 0–0.7（西米 2.6）——已验证（IPCC 2014 第 2 章表 2.3 p.2.25）。
+- 排水沟：热带沟面 EF 2259（599–3919）kg CH4 ha-1 yr-1，指示性沟面积份额 0.02——已验证（IPCC 2014 表 2.4 p.2.30）；折到景观约 4.5，与地表合计约 5——推测（算术，沟面积份额因地而异）。所以塔上的 2.9–4.7 很可能多半来自沟——推测。理由：地表 EF 为 0–0.5。
+
+### 3.3 新热带
+
+- 秘鲁 Quistococha 涡度塔：2019 年 22（20–24）g C（折 29.4，26.7–32.1）；ANN 插补 17（12–23）g C（折 22.7）——已验证（转引 `lit_tropical_mech_260929.txt` 第 202–206 行，Griffis 2020 全文）。
+- Quistococha 箱式（地表）：未退化 22.6 g C（折 30.2）、中度退化 16.1（21.5）、重度退化 16.9（22.6）；逐年 7.9–31.9 g C（折 10.6–42.7），厄尔尼诺年是中性年的 1.5–4 倍——已验证（Hergoualc'h 2020 表 6 与第 4.2 节，`herg2020.txt` 第 755–759 行）。
+- PMFB 扩散通量（Teh 2017，只测地表，另有间歇冒泡）：全体 13.2 g C（折 17.6）；Mauritia 棕榈 17.9、矮林 15.4、混合棕榈 25.4（均折）——已验证（转引 `lit_tropical_mech_260929.txt` 第 213–216 行）。
+- Mauritia 树干：高 0.23 m 处最高 84 mg C m-2 h-1（按树干表面），0.5 m 处是 1.4 m 的 3–10 倍——已验证（van Haren 2021 摘要，ASU 机构页）。树干占生态系统的份额未给——存疑。
+- 巴拿马 Changuinola：一个月均值 0.56–1.2 mg CH4 m-2 h-1（外推 4.9–10.5）——推测（转引 `lit_tropical_mech_260929.txt` 第 221 行，外推）；2007 年范围 −1.0 到 12.6 mg m-2 h-1——已验证（Wright 2013 摘要）。树干在 Campnosperma 林淹水期占净通量约 30%、混合林 0.5%——已验证（转引 `lit_woody_conduit_260929.txt` 第 54 行）。
+
+### 3.4 刚果
+
+- 刚果中部泥炭：无原位 CH4 通量——已验证（转引 `lit_tropical_mech_260929.txt` 第 226–227 行，Byrne 2026 原句"scarce"）。离体淹水厌氧 CH4/(CH4+CO2) 0.89%——已验证（转引同文件第 133–138 行，Girkin 2026 全文 p.5）。
+- 同盆地 Eala（姆班达卡附近）季节淹水沼泽林，矿质土（Eutric Gleysols）：淹水处 341（147–798）kg CH4-C ha-1 yr-1（折 45.6，19.6–106.6），不淹处 2.68（−3.03–12.09）（折 0.36）——已验证（Barthel 2022，PMC 全文经 WebFetch 摘原句）。这是矿质土，不能直接当泥炭值——推测。
+- 刚果河淹水林 12.6–25.1 g C（折 16.8–33.5），未区分泥炭——已验证（转引 `lit_tropical_mech_260929.txt` 第 228–230 行，Tathy 1992 摘要）。
+
+### 3.5 与水位的关系
+
+- 深水位下为零或吸收：ID-Pag 在地表下约 0.11 m 以深转为汇——已验证（第 3.1 节 Sakabe 2018）；IPCC 把旱季水位深于地表下 0.20 m 的月份按零计，EF 只收水位不深于 0.30 m 的测次——已验证（IPCC 2014 p.3.18、p.3.33）；温带与北方被管理泥炭在地表下 0.30 m 以深排放可忽略（≤ 0.3 t CO2e ha-1 yr-1，约 1.1）——已验证（Evans 2021 接受稿第 184–186 行；折算按 GWP100 28，推测）。
+- 近地表与浅积水时随水位上升：秘鲁月均 CH4 随水位指数上升，Ln(CH4 + 115) = 0.01 × WT + 6.14（CH4 为 g C ha-1 d-1，WT 为 cm、地表上为正），年排放随年降水指数上升——已验证（Hergoualc'h 2020 图 9，`herg2020.txt` 第 742–751、806–807 行）。沙捞越未排水林与次生林的周均通量与地下水位正相关，油棕不相关——已验证（Wong 2020 摘要）。巴拿马水位升到地表以上时 CH4 增 81%——已验证（Hoyos-Santillan 2019 摘要）。
+- 深积水时下降：PMFB 扩散通量在积水 0.30–0.40 m 时最高，更深后骤降——已验证（Teh 2017 第 4.1 节，`teh2017.txt` 第 734–738 行）。
+- 东南亚即使积水也低：Muara Siran 水位地表上 0.19 m 时 CH4:CO2 仍约 0.54%——已验证（转引 `lit_tropical_peat_260929.txt` 第 39 行）；对照温带与北方，水位 0 m 时约 25——推测（Evans 2021 第 186 行"再抬 30 cm 约增 7 t CO2e"，按 GWP 28 折）。所以东南亚低不是水位位置造成的——推测。理由：同在近地表水位，东南亚塔 9–12、秘鲁 22–29、温带约 25。
+
+### 3.6 汇总（g CH4 m-2 yr-1）
+
+| 地区与状态 | 测法 | 中位或代表值 | 区间 | 是否含树干 | 状态 | 证据 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 东南亚未排水 | 涡度（3 塔） | 9.1 | 0.12–12.3 | 含 | 已验证 | 第 3.1 节 |
+| 东南亚未排水 | 箱式地表 | 5.5（IPCC 湿态）；3.9（元分析） | 0.9–17.9 | 不含 | 已验证 | IPCC 2014 表 3.3；Hergoualc'h 2020 转引 |
+| 东南亚未排水 | 树干（湿季） | 0.24（下 3 m） | 0.24–1.04 | 只树干 | 已验证 | Pangala 2013 转引 |
+| 东南亚排水 | 涡度 | 2.9（油棕）、4.7（金合欢） | 2.9–4.7 | 含 | 已验证 | Wong 2020；Deshmukh 2020 |
+| 东南亚排水 | IPCC 地表 + 沟 | 约 5 | 地表 0–0.7，沟折约 4.5 | 不含 | 推测 | IPCC 表 2.3、2.4 与算术 |
+| 秘鲁 | 涡度 | 29.4（2019） | 22.7–29.4 | 含 | 已验证 | Griffis 2020 |
+| 秘鲁 | 箱式地表 | 22.6（三样地中位） | 15.4–30.2（逐年 10.6–42.7） | 不含 | 已验证 | Hergoualc'h 2020；Teh 2017 |
+| 巴拿马 | 箱式地表外推 | 约 7 | 4.9–10.5 | 不含 | 推测 | Girkin 2019 转引，外推 |
+| 刚果泥炭 | 无 | — | — | — | 存疑 | Byrne 2026 转引 |
+| 刚果矿质沼泽林 | 箱式 | 淹水 45.6；不淹 0.36 | 19.6–106.6 | 不含 | 已验证 | Barthel 2022 |
+
+## 4. 问三：热带泥炭产甲烷潜力为何低
+
+### 4.1 定量对比
+
+- 厌氧培养 CH4 份额：北方有机土 CO2:CH4 中位 19，即 5.0%——已验证（转引 `lit_tropical_peat_260929.txt` 第 31 行，Treat 2015 p.2793–2794）；巴拿马与马来西亚泥炭 0.2–0.3%（25 °C）——已验证（同行，Girkin 2020 Biogeochemistry p.91）；刚果 0.89%——已验证（第 3.4 节）。热带低 6–25 倍——已验证（算术）。
+- 原位 E/HR：北方到温带无树塔 E/(Reco/2) 中位 6.4%，模式 6.2%——已验证（转引 `lit_tropical_peat_260929.txt` 第 31 行，账本 Q-24）；MY-MLM 0.5%、ID-Pag 约 0——已验证（同文件第 29–30 行）；秘鲁涡度 CH4/Reco 约 0.8–0.9%（即 E/(Reco/2) 约 1.7%）、箱式 CH4/Rh 3.6%——已验证（转引 `lit_tropical_mech_260929.txt` 第 205、211 行，前者为作者外推 Reco 的推算）。东南亚比北方低约 13 倍，秘鲁低 2–4 倍——推测（比值算术，E/HR 含氧化）。
+- 单位面积：IPCC 湿态 EF 热带 41、北方贫养 41、北方富养 137、温带贫养 92、温带富养 216 kg CH4-C ha-1 yr-1——已验证（IPCC 2014 表 3.3）。热带温度高 15–20 °C，EF 却只与北方贫养相当——推测（温差为常识量级，未取数）。塔上东南亚 9.1 对北方年中位 7.2（Treat 2018）比值约 1.3，秘鲁 29 对 7.2 约 4——已验证（`class_eval_g2_o6_2009-2012.log` 第 56 行与第 3.1、3.3 节，算术）。模式 GLWD 26 对北方泥炭 73.0 / 11.6 = 6.3——已验证（同日志 per class group 行，算术）。
+
+### 4.2 各因子的证据
+
+- 温度：巴拿马泥炭厌氧产甲烷 Q10 = 6.8，CO2 < 2；20 到 35 °C 产率由 42 升到 2166 ng CH4 g-1 h-1——已验证（转引 `lit_tropical_mech_260929.txt` 第 166–169 行，Sjögersten 2018 摘要）。热带暖不是低的原因，反而应偏高——推测。模式产量 Q10 1.33、基准 295 K，热带约 1.1–1.17——已验证（转引 `lit_tropical_peat_260929.txt` 第 54 行）。
+- 酸度：东南亚塔址 pH 约 3.4；按 Ye 2012，效率在 pH 3.5 为 pH 5.5 的 0.23–0.49，即最多压 2–4 倍——已验证（转引 `lit_ph_response_260929.txt` 第 96 行）。秘鲁雨养矮林 pH 2.5–2.9 仍有 15.4——推测（pH 取自 Finn 2020 的 WebFetch 摘取，见 `lit_ph_response_260929.txt` 第 174 行）。酸度不足以解释 6–25 倍——推测。理由：上两条。
+- 电子受体：雨养穹顶孔隙水硫酸盐 0.1–1.7 mg L-1，只有矿养站 16.4；巴拿马孔隙水 CO2 是 CH4 的 7–100 倍，部分来自非产甲烷途径；没有一篇给出按电子当量的受体收支——已验证（转引 `lit_tropical_mech_260929.txt` 第 101–116 行）。能否约束产率：不能，缺数——存疑。
+- 底物质量：东南亚泥炭芳香族与木质素高，作者用来解释东南亚产甲烷低——已验证（转引 `lit_tropical_peat_260929.txt` 第 46 行，Hodgkins 2018）；泰国沼泽植物叶的厌氧矿化与木质素负相关——推测（Miyajima 1997，只见转述）；刚果棕榈与硬木泥炭木质素:碳水化合物 0.56 对 0.66，产甲烷潜力无差异（p = 0.549）；酶锁元分析效应弱——已验证（转引 `lit_tropical_mech_260929.txt` 第 64–70、89–90 行）。木质素在热带内部不对应产率差——推测。理由：刚果对比。
+- 新鲜根源碳：环剥后 14 天表面 CH4 降 67 ± 14%；文莱 CH4 为现代碳；巴拿马表层占潜在产量 92%——已验证（转引 `lit_tropical_mech_260929.txt` 第 144–162 行）。
+- 根际供氧：挡根后表面 CH4 高 85–92%——已验证（转引 `lit_woody_conduit_260929.txt` 第 120 行，Girkin 2020 ERL PDF）。但 Girkin 2020 摘要写"root exclusion can reduce methane fluxes by a maximum of 92%"，与正文方向相反——存疑（Crossref 摘要原句，见 scratchpad `mine/crossref_abs.txt` 第 24–26 行；绝对量的单位问题见 `lit_woody_conduit_260929.txt` 第 120 行）。
+
+### 4.3 能约束模式产率的量
+
+- 模式 P = HR × f × fT × fpH × …，f = 0.2；MY-MLM 异养呼吸 1705 与塔上 Reco/2 相符，产量占 14.1%、排放占 7.6%，偏高全在产率——已验证（转引 `lit_tropical_peat_260929.txt` 第 29 行）。全球东南亚斑块 pH 因子 0.41（排放加权 0.53），新几内亚 0.62，即有效 f × fpH 约 0.08–0.12——已验证（转引 `diag_tropics_regions_260929.txt` 第 43、242 行）。
+- 目标有效产率（P/HR）：以"模式 f = 0.2 在北方塔上对得上"为锚，按原位 E/HR 比值折，东南亚约 0.2 × 0.5 / 6.4 ≈ 0.016，秘鲁约 0.2 × (1.7–3.6) / 6.4 ≈ 0.05–0.11；按培养份额比值折为 0.2 × (0.2–0.9) / 5 ≈ 0.008–0.036——推测。理由：假定热带与北方的氧化份额相当，未计氧化差。
+- 目标单位面积比：热带泥炭 / 北方泥炭约 1–3（塔与 IPCC），模式 6.3——推测。理由：第 4.1 节第 3 条。
+- 结构上的约束：原位产甲烷更接近"新鲜根源碳 × 份额"，而不是"老泥炭 HR × 份额"；模式若按供体库区分底物，老碳（木质素、soil2、soil3）的产甲烷权重应远低于新鲜碳——推测。理由：第 4.2 节新鲜根源碳三条；定量权重无文献值（`lit_tropical_peat_260929.txt` 第 96 行）。
+
+## 5. 问四：对模式的建议
+
+### 5.1 水位下限
+
+- 取值：东南亚与刚果雨养穹顶 0.6–1.0 m；现值 0.75 m 在此区间内，可保留并在账本写出处；若要"不托住雨养穹顶"的语义更干净，取 1.0 m——推测。理由：第 2.7 节。
+- 秘鲁矿养棕榈沼泽 0.2–0.3 m 更符实测，但要先有雨养与矿养之分（`design_wetland_class_260930.txt` 第 2.3 节维度二）；在分不开之前不动——推测。
+- 下限不是降排放的旋钮：模式区尺度最深 0.20–0.40 m，从未触发——已验证（第 2.1 节）。
+
+### 5.2 单位面积目标（g CH4 m-2 yr-1）
+
+- 东南亚未排水泥炭林：3–12，中心约 9（塔中位）；只测地表的比较用 4–6——推测。理由：第 3.6 节表。
+- 秘鲁与亚马孙西部棕榈泥炭：15–30，中心约 22——推测。
+- 巴拿马：5–10——推测（短期箱式外推）。
+- 刚果泥炭：无实测，暂取 5–25——存疑。理由：离体份额 0.89% 约为巴拿马与马来西亚的 3–4 倍，若 HR 与东南亚相当则高于东南亚；上界取同盆地淹水矿质沼泽林与淹水林的量级。
+- GLWD 26 全体：按模式三区面积（东南亚 0.37、南美 0.38、非洲 0.13 Mkm2，`model_per_area_glwd_g2_v2w.log` 第 11–13 行）加权，低端 (0.37×4 + 0.38×12 + 0.13×5)/0.88 ≈ 7.6，中心 (0.37×8 + 0.38×20 + 0.13×15)/0.88 ≈ 14，高端 (0.37×12 + 0.38×30 + 0.13×30)/0.88 ≈ 22——推测（区代表值为本文所取）。模式 O-6 73.0 高 3–9 倍——已验证（`class_eval_g2_o6_2009-2012.log` 第 26 类行，倍数为算术）；加 C-65、C-66 后 40（中控给的数，未核）高 2–5 倍——推测。
+- 注意：模式南美 GLWD 26 面积 0.38 Mkm2 约为 Pastaza-Marañón 泥炭 35,600 km2（Dargie 2017 表 1）的 10 倍，南美大部分"热带泥炭"格点并不在有实测的棕榈沼泽里，秘鲁的高值能否代表全南美未知——存疑。
+
+### 5.3 若要降低，优先改哪一项
+
+1. 产率（底物）优先。证据最强、最定量（第 4.1 节：6–25 倍）；做法取 `lit_tropical_peat_260929.txt` 第 3.1 节候选 A（产甲烷底物按供体库分，新鲜碳全额、老碳低权），而不是 C-29 式的一刀切降 f（V-78 已示一刀切把东南亚与巴西压出反演下限，转引同文件第 74 行）——推测。
+2. 东南亚旱季落水。模式东南亚逐月最深 0.20 m、ID-Pag 0.26 m，实测正常年 0.4–0.55 m，年均模式 0.13 对实测 0.15–0.24 m；按 `diag_swamp_260929.txt` 第 176 行，ID-Pag 旱季再落 0.1–0.2 m 约降一半——推测。改的是泥炭出流与蒸散（PEATCLSM 热带版用 Ivanov 式出流、地表下 0.70 m 起干旱胁迫，Apers 2022 p.10–12），不是下限。秘鲁与刚果方向相反（模式可能偏干），不宜同一参数全热带改——推测。理由：第 2.3、2.4 节对第 2.1 节。
+3. 根际氧化：保持或加强（D-59 定额氧化），依据挡根实验与现代碳，但它对全热带同向作用——推测。
+4. 通道：不削。树干是出口（东南亚 62–87%，秘鲁 Mauritia 树干高通量），把植物通道压小只会把 CH4 挪到扩散与冒泡（V-53 已示反向）——推测（转引 `lit_tropical_peat_260929.txt` 第 58–60 行与 `lit_woody_conduit_260929.txt` 第 187 行）。
+5. 下限：不动或只补出处（第 5.1 节）。
+
+### 5.4 与反演的冲突
+
+- 按站点目标，东南亚 GLWD 26 约 0.37 Mkm2 × (4–12) ≈ 1.5–4.4 Tg；而东南亚湿地加洪泛的反演中位 24.9（14.0–28.9）、22 模式中位 21.6——已验证（反演与模式数转引 `lit_tropical_peat_260929.txt` 第 32 行；乘积为算术）。站点目标与反演隐含值差一个数量级，文献本身解不开，属 D-46 的口径决定——存疑。
+
+## 6. 未读与存疑（附定案所需）
+
+1. 刚果中部泥炭的水位绝对低点与季节：需读 Georgiou 2023 全文图表或 Dargie 2017 Extended Data 图 1。
+2. 巴拿马 Changuinola 水位年均与低点：需读 Baird 2017 或 Hoyos-Santillan 2019 全文。
+3. Hergoualc'h & Verchot 2014 的东南亚元分析是 2.9 g C 还是 28.6 g C：需读原文表；IPCC 的独立汇编支持前者。
+4. Girkin 2020 ERL 摘要与正文方向相反、绝对量单位存疑：需作者补充材料。
+5. 模式单个热带泥炭斑块是否偶尔触发 0.75 m 下限：需在 O-6 或 O-7 历史里对 26 类斑块取逐月 `f_wetzwt` 的最大值（实验，不属本调研）。
+
+## 7. 著录（2026-09-30 逐条查 Crossref：题名、作者、刊名、卷、页或文章号、年一致；兄弟报告已核的本次也重查）
+
+水位与水文
+- Apers et al., 2022｜Tropical Peatland Hydrology Simulated With a Global Land Surface Model｜Journal of Advances in Modeling Earth Systems 14(3): e2021MS002784｜10.1029/2021MS002784
+- Koarashi et al., 2026｜Progressive release of long-stored carbon from tropical peatland disturbances｜Nature Communications 17(1): 4369｜10.1038/s41467-026-72890-y
+- Hirano et al., 2015｜Evapotranspiration of tropical peat swamp forests｜Global Change Biology 21(5): 1914-1927｜10.1111/gcb.12653
+- Hooijer et al., 2012｜Subsidence and carbon loss in drained tropical peatlands｜Biogeosciences 9(3): 1053-1071｜10.5194/bg-9-1053-2012
+- Wösten et al., 2008｜Peat–water interrelationships in a tropical peatland ecosystem in Southeast Asia｜CATENA 73(2): 212-224｜10.1016/j.catena.2007.07.010（未读全文）
+- Dommain et al., 2010｜Hydrological Self-Regulation of Domed Peatlands in South-East Asia and Consequences for Conservation and Restoration｜Mires and Peat 6: 128357（Crossref 文章号）｜10.19189/001c.128357
+- Kurnianto et al., 2015｜Carbon accumulation of tropical peatlands over millennia: a modeling approach｜Global Change Biology 21(1): 431-444｜10.1111/gcb.12672
+- Cobb et al., 2017｜How temporal patterns in rainfall determine the geomorphology and carbon fluxes of tropical peatlands｜Proceedings of the National Academy of Sciences 114(26)（Crossref 页码字段缺，Europe PMC 记 E5187-E5196）｜10.1073/pnas.1701090114
+- Dargie et al., 2017｜Age, extent and carbon storage of the central Congo Basin peatland complex｜Nature 542(7639): 86-90｜10.1038/nature21048
+- Georgiou et al., 2023｜Mapping Water Levels across a Region of the Cuvette Centrale Peatland Complex｜Remote Sensing 15(12): 3099｜10.3390/rs15123099
+- Garcin et al., 2022｜Hydroclimatic vulnerability of peat carbon in the central Congo Basin｜Nature 612(7939): 277-282｜10.1038/s41586-022-05389-3（读 p.1–5，无现代水位数值）
+- Hoyos-Santillan et al., 2019｜Evaluation of vegetation communities, water table, and peat composition as drivers of greenhouse gas emissions in lowland tropical peatlands｜Science of The Total Environment 688: 1193-1204｜10.1016/j.scitotenv.2019.06.366
+- Evans et al., 2021｜Overriding water table control on managed peatland greenhouse gas emissions｜Nature 593(7860): 548-552｜10.1038/s41586-021-03523-1
+
+CH4 通量
+- Wong et al., 2018｜Micrometeorological measurement of methane flux above a tropical peat swamp forest｜Agricultural and Forest Meteorology 256-257: 353-361｜10.1016/j.agrformet.2018.03.025
+- Wong et al., 2020｜How do land use practices affect methane emissions from tropical peat ecosystems?｜Agricultural and Forest Meteorology 282-283: 107869｜10.1016/j.agrformet.2019.107869
+- Deshmukh et al., 2020｜Impact of forest plantation on methane emissions from tropical peatland｜Global Change Biology 26(4): 2477-2495｜10.1111/gcb.15019
+- Sakabe et al., 2018｜Ecosystem-scale methane flux in tropical peat swamp forest in Indonesia｜Global Change Biology 24(11): 5123-5136｜10.1111/gcb.14410
+- Jauhiainen et al., 2005｜Carbon fluxes from a tropical peat swamp forest floor｜Global Change Biology 11(10): 1788-1797｜10.1111/j.1365-2486.2005.001031.x
+- Couwenberg et al., 2010｜Greenhouse gas fluxes from tropical peatlands in south-east Asia｜Global Change Biology 16(6): 1715-1732｜10.1111/j.1365-2486.2009.02016.x
+- Hergoualc'h and Verchot, 2014｜Greenhouse gas emission factors for land use and land-use change in Southeast Asian peatlands｜Mitigation and Adaptation Strategies for Global Change 19(6): 789-807｜10.1007/s11027-013-9511-x（未读，转引）
+- Sjögersten et al., 2014｜Tropical wetlands: A missing link in the global carbon cycle?｜Global Biogeochemical Cycles 28(12): 1371-1386｜10.1002/2014GB004844
+- Asyhari et al., 2024｜Quantifying the fluxes of carbon loss from an undrained tropical peatland ecosystem in Indonesia｜Scientific Reports 14(1): 11459｜10.1038/s41598-024-62233-6
+- Lupascu et al., 2020｜Post-fire carbon dynamics in the tropical peat swamp forests of Brunei reveal long-term elevated CH4 flux｜Global Change Biology 26(9): 5125-5145｜10.1111/gcb.15195
+- Pangala et al., 2013｜Trees are major conduits for methane egress from tropical forested wetlands｜New Phytologist 197(2): 524-531｜10.1111/nph.12031
+- Griffis et al., 2020｜Hydrometeorological sensitivities of net ecosystem carbon dioxide and methane exchange of an Amazonian palm swamp peatland｜Agricultural and Forest Meteorology 295: 108167｜10.1016/j.agrformet.2020.108167
+- Hergoualc'h et al., 2020｜Spatial and temporal variability of soil N2O and CH4 fluxes along a degradation gradient in a palm swamp peat forest in the Peruvian Amazon｜Global Change Biology 26(12): 7198-7216｜10.1111/gcb.15354
+- Hergoualc'h et al., 2023｜Major carbon losses from degradation of Mauritia flexuosa peat swamp forests in western Amazonia｜Biogeochemistry 167(4): 327-345（在线 2023，印刷 2024）｜10.1007/s10533-023-01057-4
+- Teh et al., 2017｜Seasonal variability in methane and nitrous oxide fluxes from tropical peatlands in the western Amazon basin｜Biogeosciences 14(15): 3669-3683｜10.5194/bg-14-3669-2017
+- van Lent et al., 2019｜Greenhouse gas emissions along a peat swamp forest degradation gradient in the Peruvian Amazon: soil moisture and palm roots effects｜Mitigation and Adaptation Strategies for Global Change 24(4): 625-643｜10.1007/s11027-018-9796-x（本文未引数值，承兄弟报告）
+- van Haren et al., 2021｜A versatile gas flux chamber reveals high tree stem CH4 emissions in Amazonian peatland｜Agricultural and Forest Meteorology 307: 108504｜10.1016/j.agrformet.2021.108504
+- Wright et al., 2013｜Environmental controls of temporal and spatial variability in CO2 and CH4 fluxes in a neotropical peatland｜Global Change Biology 19(12): 3775-3789｜10.1111/gcb.12330
+- Girkin et al., 2019｜Spatial variability of organic matter properties determines methane fluxes in a tropical forested peatland｜Biogeochemistry 142(2): 231-245（在线 2018，印刷 2019）｜10.1007/s10533-018-0531-1
+- Sjögersten et al., 2020｜Methane emissions from tree stems in neotropical peatlands｜New Phytologist 225(2): 769-781｜10.1111/nph.16178
+- Barthel et al., 2022｜Low N2O and variable CH4 fluxes from tropical forest soils of the Congo Basin｜Nature Communications 13(1): 330｜10.1038/s41467-022-27978-6
+- Tathy et al., 1992｜Methane emission from flooded forest in central Africa｜Journal of Geophysical Research: Atmospheres 97(D6): 6159-6168｜10.1029/90JD02555
+
+机理
+- Treat et al., 2015｜A pan-Arctic synthesis of CH4 and CO2 production from anoxic soil incubations｜Global Change Biology 21(7): 2787-2803｜10.1111/gcb.12875
+- Girkin et al., 2020a｜Interactions between labile carbon, temperature and land use regulate carbon dioxide and methane production in tropical peat｜Biogeochemistry 147(1): 87-97｜10.1007/s10533-019-00632-y
+- Girkin et al., 2020b｜Root oxygen mitigates methane fluxes in tropical peatlands｜Environmental Research Letters 15(6): 064013｜10.1088/1748-9326/ab8495
+- Girkin et al., 2025｜Plant root carbon inputs drive methane production in tropical peatlands｜Scientific Reports 15(1): 3244｜10.1038/s41598-025-87467-w
+- Girkin et al., 2026｜Environmental controls over greenhouse gas dynamics of tropical peatlands of the Central Congo Basin｜Philosophical Transactions of the Royal Society B 381(1956): 20240482｜10.1098/rstb.2024.0482
+- Hodgkins et al., 2018｜Tropical peatland carbon storage linked to global latitudinal trends in peat recalcitrance｜Nature Communications 9(1): 3640｜10.1038/s41467-018-06050-2
+- Sjögersten et al., 2018｜Temperature response of ex-situ greenhouse gas emissions from tropical peatlands: Interactions between forest type and peat moisture conditions｜Geoderma 324: 47-55｜10.1016/j.geoderma.2018.02.029
+- Ye et al., 2012｜pH controls over anaerobic carbon mineralization, the efficiency of methane production, and methanogenic pathways in peatlands across an ombrotrophic–minerotrophic gradient｜Soil Biology and Biochemistry 54: 36-47｜10.1016/j.soilbio.2012.05.015
+- Miyajima et al., 1997｜Anaerobic mineralization of indigenous organic matters and methanogenesis in tropical wetland soils｜Geochimica et Cosmochimica Acta 61(17): 3739-3751｜10.1016/S0016-7037(97)00189-0（未读原文）
+- Birch and Bell, 2026｜Beyond the Enzyme-Latch: A Narrative and Systematic Review of Enzymic Controls on Carbon Cycling in Peatlands｜Global Change Biology 32(5): e70937｜10.1111/gcb.70937
+- Finn et al., 2020｜Methanogens and Methanotrophs Show Nutrient-Dependent Community Assemblage Patterns Across Tropical Peatlands of the Pastaza-Marañón Basin, Peruvian Amazonia｜Frontiers in Microbiology 11: 746｜10.3389/fmicb.2020.00746
+
+无 DOI
+- IPCC, 2014｜2013 Supplement to the 2006 IPCC Guidelines for National Greenhouse Gas Inventories: Wetlands，第 2 章 Drained Inland Organic Soils（表 2.3 p.2.25、表 2.4 p.2.30）、第 3 章 Rewetted Organic Soils（表 3.3 p.3.18、表 3A.3 p.3.33）｜无 DOI｜https://www.ipcc-nggip.iges.or.jp/public/wetlands/pdf/Wetlands_separate_files/WS_Chp3_Rewetted_Organic_Soils.pdf 与同目录 WS_Chp2_Drained_Inland_Organic_Soils.pdf

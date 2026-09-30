@@ -1,0 +1,228 @@
+# 文献调研：湿地/泥炭地斑块的周边来水表示（6 项）
+
+## 0. 覆盖面
+
+- **读的方式**：GMD 类论文从 Copernicus 下 PDF，用 pdftotext 或 PyMuPDF 抽文字，页码取印刷页码。AGU 论文走开放仓库：Bechtold 取自 KIT，Apers 取自 IIAP。本地 PDF 在 `~/mode/Methane/docs/refs/models/`。CTSM 看的是本地源码和技术手册（`~/mode/Wetland/CTSM`，commit 7409d32）。
+- **著录**：全部 DOI 都从 mgt01 匿名查 Crossref 核过，请求里不带邮箱或 mailto。题名、卷、页、年与下文一致。结果存在 `.../scratchpad/hydro/crossref_all.txt`。
+- **读不到全文的 4 篇**：
+  - Swenson et al. 2019、Swenson & Lawrence 2025、Fan et al. 2019：Wiley 在 mgt01 和 WebFetch 上都返回 403；UCAR OpenSky 弹人机验证；Bristol 和 UNL 仓库 403；Europe PMC 503；OSTI 无记录。
+  - Miguez-Macho & Fan 2012：闭源。
+  - 这 4 篇只读了摘要（取自 OpenAlex）。
+- **调用方给的出处有两处要改正**：
+  - JULES 第 1 部分是 Best et al. 2011，不是 Clark et al. 2011（Clark 是第 2 部分）。
+  - "Fan et al. 2019 PNAS" 实为 Water Resources Research 55, 1737–1772。
+- **临时文件**：PDF 与抽出的文字在 `<scratch>/hydro/`。
+
+### 总览
+
+| 模式 | 来水从哪来 | 核心式 |
+|---|---|---|
+| PEAT-CLSM | 无来水，只吃格点降水 | Q = c·T_a(z̄_WT)（Bechtold 式 9） |
+| ORCHIDEE-PEAT | 同格点其他土壤瓦片的径流全部导入泥炭瓦片，底部排水为 0 | W_supply = TF + S_runoff + R_stagnant（Largeron 式 1） |
+| CLASS-CTEM 泥炭 | 无来水，一维柱，10 层以下视为基岩 | 水位式（Wu 式 19） |
+| JULES（TOPMODEL） | 格点内隐式重分配，诊断出湿地份额，湿地没有独立水库 | Gedney & Cox 式 (4)–(14)；Best 式 (68)–(70) |
+| JULES-Peat | 无来水；要"更湿"时把侧向流设为 0 | 无新式 |
+| CTSM 坡地 | 坡上列的饱和壤中流进坡下列；坡脚列可从河道渗入（河道比地下水位高时） | 论文式未读到；实现为 Q = T·w·∇H |
+| Fan & Miguez-Macho | 地下水在格点间侧流，在低地汇聚 | Q = wT(h − h_n)/l（式 3） |
+
+## 1. PEAT-CLSM
+
+### 1.1 Bechtold et al. 2019
+
+- **著录**：JAMES 11(7), 2130–2162，DOI 10.1029/2018MS001574。
+- **做法**：无来水。原文："we treat all peatlands as being fully decoupled from surrounding catchment hydrology and as being only fed by direct precipitation over the peat grid cell"（p. 2135，§2.2.1）。
+  - 需要矿质地下水或邻近泥炭补水的 fen 类系统，文中明说不处理（p. 2135）。
+  - 原 CLSM 本身也不模拟 run-on，所有径流立即移出系统（p. 2135，§2.1.3）。
+- **微地形储量**：原 CLSM 用 TOPMODEL 式 (1) z_WT = z̄_WT + (1/υ)(ln(A/tanβ) − x̄)（p. 2133）。
+  - PEAT-CLSM 把 ln(A/tanβ) 的分布换成微地形高程的正态分布，令 υ = 1，σ = 0.11 m（p. 2136–2137）。
+  - 允许 F_sat 上方积水，积水面与未淹区地下水位始终平衡（p. 2136）。
+- **出流**（Hortonian 产流关闭，冻结时按表层冰比例线性削减 Q）：
+  - 式 (6)：K_s,macro(z) = K_s,macro,z=0 / (1 − 100z)^m（p. 2137）。
+  - 式 (7)：T_a(z̄_WT) = ∫_{z_ac}^{z̄_WT} K_s,macro(z) dz（p. 2138）。
+  - 式 (8)：T_a = K_s,macro,z=0 (1 − 100 z̄_WT)^{1−m} / [100(m − 1)]，m > 1（p. 2138）。
+  - 式 (9)：Q(z̄_WT) = c·T_a(z̄_WT)（p. 2138）。
+  - 参数：c 是平均水力梯度除以 acrotelm 平均流程长度；K_s,macro,z=0 = 10 m/s，m = 3，c = 1.5×10⁻⁷ m⁻¹（p. 2138）。
+- **对其他模式的归纳**（p. 2132）：CLASS、LPJ、CLM 的泥炭方案都按 bog 处理，忽略侧向来水。ORCHIDEE-PEAT 则把非泥炭部分的全部地表径流转成泥炭部分的额外来水，并把地下排水设为 0。
+- 以上——已验证（全文 PDF：https://publikationen.bibliothek.kit.edu/1000096687/38640345 ；另有 PMC7580791 作者稿）。
+
+### 1.2 Apers et al. 2022（热带版）
+
+- **著录**：JAMES 14(3), e2021MS002784，DOI 10.1029/2021MS002784。
+- **做法**：无来水，与北方版相同。bog（fen 程度较轻）被视为与集水区地下水水力解耦；全部穿透降水只改变水位，再由非线性出流函数控制 Q；Hortonian 和 Dunne 坡面流都关闭（p. 5，§2.1.2）。
+- **出流**：
+  - 式 (3)：T_a(z̄_WL) = K_S,macro,z=0 (1 − 100 z̄_WL)^{1−α} / [100(α − 1)]，α > 1，z̄_WL ≤ 0。
+  - 式 (4)：Q = c·T_a（p. 10，§2.2.4）。
+  - 天然热带：K_S,macro,z=0 = 7.3 m/s，α = 3，拟合 Cobb & Harvey (2019)；σ = 0.16 m（p. 6、p. 8 表 1）。
+  - 排水泥炭用式 (5)，即 Dupuit–Forchheimer 沟渠排水：K_S,hrz = 52 m/d，L_ditch = 0.0318 m m⁻²，w_strip = 31.4 m，z_ditch = −0.68 m（p. 10–11）。
+- **自述局限**（p. 20–21）：模拟的是 "almost purely rainfed" 泥炭，季节性洪泛泥炭没有覆盖；建议今后结合河道汇流（Getirana et al. 2012）引入洪泛来水。
+- 以上——已验证（全文 PDF：https://repositorio.iiap.gob.pe/bitstreams/f6a800ad-7401-40b8-8e91-f368941fdcc8/download ；PMC9285420）。
+
+### 1.3 c 值两篇对不上
+
+- Apers 表 1（p. 8）给 PEATCLSM North,Nat 和 Trop,Nat 都写 c = 1.5×10⁻⁵ m⁻¹，而 Bechtold 正文（p. 2138）写 1.5×10⁻⁷ m⁻¹——已验证（两份 PDF 原文）。
+- 在 K = 10 m/s、m = 3、z̄ = 0 时 T_a = 0.05 m²/s：取 10⁻⁷ 得 Q ≈ 0.65 mm/d，取 10⁻⁵ 得 Q ≈ 65 mm/d。按正文"水位到地表时半地表径流很大"的描述，10⁻⁵ 更像实际用值——推测。
+- 要定下来得查 GEOS Catchment 源码——存疑。
+
+## 2. ORCHIDEE-PEAT
+
+### 2.1 Qiu et al. 2018
+
+- **著录**：GMD 11, 497–519，DOI 10.5194/gmd-11-497-2018。
+- **做法**：同格点其他土壤瓦片的产流导入泥炭瓦片。
+  - 摘要："Runoff from non-peat vegetation within a grid cell containing a fraction of peat is routed to this peat soil tile"（p. 497）。
+  - §2.2.2：泥炭瓦片 "assumed to receive surface runoff from the other three soil tiles (bare soil, trees, grasses) and has a drainage flux reduced to zero"（p. 501）。
+  - 地表设 10 cm 积水库：超渗水先进积水库，满了才作为径流离开格点，积水下一步回渗（p. 501）。
+- **水位式** (4)：WT = H_tot − Σ_{i=1}^{11} θ_f,i·dz_i − H_ab，其中 θ_f,i = (θ_i − θ_r)/(θ_s − θ_r)，H_tot = 2.0 m，H_ab 为地表以上积水高度（p. 501–502）。
+- **面积比**：文中没有写成式子，只有文字："the greater the peatland fraction in the grid cell, the smaller the runoff input from other soils to the peatland, hence resulting in a deeper water table"（p. 507）。
+- **评估**：WT 的 r² < 0.10。原因之一是模式把所有站点都当成 fen 在补水，而 Yu et al. (2010) 的泥炭份额不能代表真正给 fen 供水的面积（p. 506–507）。
+- 以上——已验证（全文：https://gmd.copernicus.org/articles/11/497/2018/gmd-11-497-2018.pdf ）。
+
+### 2.2 Largeron et al. 2018（ORC-HL-PEAT）
+
+- **著录**：GMD 11, 3279–3297，DOI 10.5194/gmd-11-3279-2018。
+- **导入**："we choose to infiltrate the soil column of peatlands with the entire runoff generated in the non-peatland soil columns of the same grid box at the same time step"；底部排水 q_N = 0（p. 3282）。
+- **式 (1)**：W_supply = TF + S_runoff + R_stagnant（p. 3283）。
+  - 同页原文："The total mass of water in the grid cell must be conserved … if the peatland fraction is small, peatlands receive a larger amount of water per square metre"。积水库上限 10 cm，超出即产流。
+  - 按单位泥炭面积，S_runoff = Σ_j f_j R_j / f_peat（f_j、R_j 为各非泥炭瓦片的面积份额和径流），由质量守恒推出，文中没有显式写——推测。
+- **措辞差异**：摘要写 "partially directed towards the peatlands"（p. 3279），正文写 "entire"。"partially" 可能指 bog 格点不导入——推测。
+- **bog/fen 开关**（p. 3287）：
+  1. 先关掉径流转移跑一次。
+  2. 1990–2010 平均年里水位浅于 30 cm 连续 ≥ 4 个月的格点判为 bog，保持关闭。
+  3. 其余判为 fen，打开径流转移。
+- **站点模拟**：泥炭占格点 100%，只吃降水；文中说站点真实的侧向来水因地下径流量未知而无法表示（p. 3285）。
+- 以上——已验证（全文：https://gmd.copernicus.org/articles/11/3279/2018/gmd-11-3279-2018.pdf ）。
+
+### 2.3 Salmon、Qiu 2019、Ringeval 的相关句
+
+- **Salmon et al. 2022**（GMD 15, 2813–2838，DOI 10.5194/gmd-15-2813-2022，本地全文）：
+  - "water supply by precipitation and runoff collected from other soils surrounding the peatland in the same grid cell. The deep drainage is blocked"（p. 2815）。
+  - 为了让泥炭水位够高，专门调了泥炭份额："modifying the prescribed values … in order to collect enough water to fill the peatland by runoff from the other soil fractions"（p. 2818）。
+  - ——已验证（读本地 PDF）。
+- **Qiu et al. 2019**（r5488，GMD 12, 2961–2982，DOI 10.5194/gmd-12-2961-2019）："surface runoff of non-peatland areas in the grid cell is routed into peatland"（p. 2963）。泥炭面积由逐格点标定的简化 TOPMODEL（Stocker 2014）给出——已验证（全文 PDF）。
+- **Ringeval et al. 2012**（GMD 5, 941–962，DOI 10.5194/gmd-5-941-2012）：属格点内 TOPMODEL 重分配，为诊断性。
+  - 式 (3)：D_t − d_{i,t} = −M(λ_m − λ_i)；F_max 为局地亏缺为 0 的面积份额（p. 944）。
+  - ——已验证（读本地 PDF）。
+
+## 3. CLASS-CTEM 泥炭（Wu, Verseghy and Melton 2016）
+
+- **著录**：GMD 9, 2639–2663，DOI 10.5194/gmd-9-2639-2016。
+- **做法**：无来水，也不用 TOPMODEL 或坡度产流。
+  - 土柱为 9 层 10 cm 有机层，第 10 层从 90 cm 到有机土底；"the substrate below the 10th soil layer was considered as bedrock. Mineral soil was not included"（p. 2641）。
+  - 全文检索 lateral、TOPMODEL、baseflow、runoff、inflow、groundwater、topograph，模型描述中都没有侧向进出水的表述。底边界通量式未读到。
+- **水位式** (19)：z_wt = z_b,j − Δz·(θ_l,j + θ_i,j − θ_ret,j)/(θ_p,j − θ_ret,j)（p. 2646）。
+- **积水**：模拟了积水，但输出的水位不含积水深度（p. 2648）。
+- Bechtold 2019（p. 2132）补充：CLASS 泥炭沿用 Letts et al. (2000) 的底部排水削减因子 0–0.3，且按 bog 处理，忽略侧向来水。
+- 以上——已验证（全文：https://gmd.copernicus.org/articles/9/2639/2016/gmd-9-2639-2016.pdf ）。
+- **附：CLASS-CTEM 的湿地份额**（Arora et al. 2018，BG 15, 4683–4709，DOI 10.5194/bg-15-4683-2018，本地全文）。只诊断份额，不搬水：
+  - 式 (A1)：f_w = max[0, min(f_s, (w − w_low)/(w_high − w_low)·f_s)]（p. 4702）。
+  - f_s 为 1′ ETOPO1 上坡度 < 0.2% 的平坦面积份额；w 为表层 θ_l/θ_p。
+  - 表 A1：40–90°N 取 w_low/w_high = 0.45/0.90，35°S–40°N 取 0.55/0.99，90–35°S 取 0.70/0.99。
+  - ——已验证（读本地 PDF）。
+
+## 4. JULES
+
+### 4.1 Gedney & Cox 2003
+
+- **著录**：J. Hydrometeorol. 4, 1265–1275，DOI 10.1175/1525-7541(2003)004<1265:TSOGCM>2.0.CO;2。
+- **做法**：格点内隐式重分配。各瓦片共用一个格点平均土壤水库（p. 1266），湿地没有独立水量。
+- **关键式**：
+  - 式 (1)–(2)：3 m 土层下加 12 m 深层储水，格点平均水位由入渗与基流 Q_i 预报（p. 1266）。
+  - TOPMODEL 部分（p. 1267）：
+    - 式 (3)：K_sat(z) = K_sat(0)·exp(−f z)。
+    - 式 (4)：q_l = T(z_wl)·tanβ_l。
+    - 式 (5)：T = ∫ K_sat dz。
+    - 准平衡假设原文 "local downslope flow, q_l, is balanced by a spatially uniform recharge rate R from a local upslope area, a_l (q_l = a_l R)"。高地水向低地的重分配就隐含在这条假设里。
+    - 式 (6)：f(z_wl − z̄_w) = Λ̄ − Λ_l。
+    - 式 (7)：Λ_l = ln(a_l / tanβ_l)。
+    - 式 (9)：Q = T(z̄_w)·exp(−Λ̄)。
+  - 份额部分（p. 1268）：
+    - 式 (11)：ln[T(z_wl)/T(z̄_w)] = Λ̄ − Λ_l。
+    - 式 (12)：Λ_cr^min = ln[T(0)/T(z̄_w)] + Λ̄；F_s 为 Λ_l ≥ Λ_cr^min 的面积份额。
+    - 式 (13)：I_1 = (1 − F_s)·I_H1。
+    - 式 (14)：湿地为 Λ_cr^max ≥ Λ_l ≥ Λ_cr^min 的部分，Λ_cr^max 按 Aselmann & Crutzen 标定。
+    - 式 (15)：冻土修正。
+  - 参数：f = 0.5 m⁻¹，地形指数分布取 gamma 分布。
+- 以上——已验证（本地全文：`docs/refs/models/2003_Gedney_TOPMODEL_wetland_extent.pdf`）。
+
+### 4.2 Best et al. 2011（JULES 第 1 部分）
+
+- **著录**：GMD 4, 677–699，DOI 10.5194/gmd-4-677-2011。
+- **做法**（§4.7.1，p. 691–692）：用 TOPMODEL 时，自由排水下边界改为零通量，地下径流改为侧向基流。
+  - 式 (68)：R_b = T̄(z̄_w)·exp(−λ̄_i)。
+  - 临界指数：λ̄_ic = ln(R_b,max / R_b)。
+  - 式 (69)：f_sat = a_s·exp(−c_s f λ̄_ic)。
+  - 式 (70)：R_se = f_sat·W_0。
+  - 湿地为 λ_ic ≤ λ_i ≤ λ_i,max 的部分，f_wet = a_wt·exp(−c_wt f λ_ic)（该式无编号）。
+- 以上——已验证（全文：https://gmd.copernicus.org/articles/4/677/2011/gmd-4-677-2011.pdf ）。
+- **Clark et al. 2011（第 2 部分）**：GMD 4, 701–722，DOI 10.5194/gmd-4-701-2011。只在甲烷式 (74) F_CH4 = f_wet·k_CH4·C_eff·Q10^{0.1(T_soil − T_0)} 中使用 f_wet，f_wet 的算法指向第 1 部分（p. 714）——已验证（全文 PDF）。
+
+### 4.3 Chadburn et al. 2022（JULES-Peat）
+
+- **著录**：GMD 15, 1633–1657，DOI 10.5194/gmd-15-1633-2022。
+- **做法**：无来水。标准 TOPMODEL 方案按地形指数算格点的侧向出流；要模拟"地形控制的更湿泥炭"时，"we simply set the lateral flow to zero (JULES-Peat-W …)"（p. 1640，表 2 在 p. 1642）。
+- **效果**：表 4（p. 1647）的水位中位数，例如 Auchencorth 基线 6.5 m，把侧向流设为 0 后为 0.076 m。
+- **作者自述**："there is no mechanism for lowland grid cell soils to receive water from the surrounding uplands"；建议下一步 "simulate the hydrological connection between the tiles in the grid cell"（p. 1650）。
+- 以上——已验证（全文：https://gmd.copernicus.org/articles/15/1633/2022/gmd-15-1633-2022.pdf ）。
+
+## 5. CLM5 / CTSM 坡地水文
+
+### 5.1 Swenson et al. 2019
+
+- **著录**：JAMES 11(12), 4044–4065，DOI 10.1029/2019MS001833。只读了摘要，论文式号未读到。
+- **摘要要点**：每个格点拆成一条或多条多列坡面，"the lateral saturated subsurface flow from each column is passed to its downslope neighbor"。模式复现了坡上与坡下列的蒸散差异；坡下蒸散增幅在干旱半干旱区最大，湿润热带和高纬很小。
+- **实现式**（读本地 CTSM 源码与技术手册代替论文）：
+  - **手册**：
+    - hh.eqn.1：q = −K_s·dΨ/dx，水头 = 列高程 h 减去水位埋深。
+    - hh.eqn.2：河道宽 W = c_w A^0.6，深 D = c_d A^0.4。
+    - 河道流用 Manning 公式；超过满槽体积时假设坡度恒定的洪泛区。
+  - **源码** `src/biogeophys/SoilHydrologyMod.F90`，子程序 SubsurfaceLateralFlow（第 2029 行起）：
+    - 列间水头梯度 ∇H = [(h_c − z∇,c) − (h_d − z∇,d)] / (d_c − d_d)（L2203–2205）。
+    - 最低列对河道：∇H = [(h_c − z∇,c) − min(D_stream − D_bankfull, 0)] / d_c；为负时再减 1/k_aniso，即河道向坡脚列渗水（L2218–2233）。
+    - 梯度限幅在 ±2（L2242）。
+    - T 取源列水位以下、并高于下游水头或河床的各层 K_sat·dz 之和，再乘 k_anisotropic（L2253–2292）。
+    - Q_vol = T·w·∇H（L2300）。
+    - 下坡列入流 += Q_vol / A_down（L2326–2330）；坡顶列无入流（L2322）。
+    - 河道向坡脚列渗水受河道存水量限制（L2304–2309）。
+    - 默认 Darcy 梯度 + LayerSum 透水率（`bld/namelist_files/namelist_defaults_ctsm.xml` L716–717）。
+  - **地表径流不在列间传递**：各列的 qflx_surf、qflx_drain、qflx_drain_perched 直接进河道存水（`HillslopeHydrologyMod.F90` L1113–1125）。漫滩处理只改变河道流量，不淹坡脚列（L1014–1030）。
+  - 以上——已验证（读码与 `doc/source/tech_note/Hillslope_Hydrology/CLM50_Tech_Note_Hillslope_Hydrology.rst`）。
+- **坡脚列能否成湿地**：论文里是否有明确表述，未读到。机制上坡脚列接收坡上饱和壤中流，还可能有河道渗入，可以维持饱和——推测。
+- **手册引用有误**：锚点 Swensonetal2019b 在 References 里指向另一篇论文（生物量储热，10.1029/2018MS001476），SwensonLawrence2025 条目题名也串了——已验证（读 `CLM50_Tech_Note_References.rst` L1577–1583）。
+- 读取尝试：Wiley 全文 403，https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019MS001833 。
+
+### 5.2 Swenson & Lawrence 2025（HAND 参数）
+
+- **著录**：JAMES 17, e2024MS004410，DOI 10.1029/2024MS004410。只读了摘要，式号未读到。这就是调用方要找的"CTSM 坡地参数论文"。
+- **摘要要点**：
+  - 每个坡面单元由六个几何量描述：离最近河道的高差（HAND）、到河道距离、宽度、坡度、坡向、面积。
+  - 用谱分析为每个 ESM 格点定河网分辨尺度，据此定出从 DEM 划分集水区所用的河流级数。
+  - 输入是 3″（约 90 m）DEM；集水区按高程和坡向离散成单元，单元内取平均。
+
+## 6. 地下水侧流汇入低地
+
+### 6.1 Miguez-Macho & Fan 2012
+
+- **著录**：JGR Atmos. 117, 2012JD017539，DOI 10.1029/2012JD017539（第 1 篇）；第 2 篇为 10.1029/2012JD017540。闭源，只读了摘要，式号未读到。
+- **摘要要点**：LEAF-Hydro-Flood 模式，2 km 与 4′ 两种分辨率，模拟 2000–2010 年；洪水与地下水双向交换（湿季入渗、旱季渗出）；"large areas of wetlands that are rarely under floodwater … maintained by a persistently shallow water table"。
+
+### 6.2 Fan & Miguez-Macho 2011（2012 系列所用框架）
+
+- **著录**：Clim. Dyn. 37, 253–278（2010 年在线），DOI 10.1007/s00382-010-0829-8。
+- **做法**：地下水在格点间侧流。
+  - 式 (1)：R·Δx·Δy = ΣQ，高地格点的补给等于流向低邻格的侧向发散（p. 261）。
+  - 式 (2)：ΣQ = Q_r，谷地或海岸格点的侧向汇聚等于涌出到河流和湿地的量（p. 261）。
+  - 式 (3)：Q = w·T·(h − h_n)/l，Darcy + Dupuit–Forchheimer（p. 261）。
+  - 式 (4a–c)：T = T₁ + T₂，T₁ = K₀(d₀ − d₁)，T₂ = K₀·f。
+  - 式 (5)：K = K₀·exp(−z′/f)（p. 262）。
+- **补给与湿地判据**：R = P − ET − Q_s（取自 GLDAS），最小 10 mm/yr（p. 265）；平衡水位 < 0.25 m 判为湿地（p. 270）。
+- **原文批评**：现有模式里湿地 "only 'wetted' from above but not from below"（p. 254）。
+- 以上——已验证（本地全文：`docs/refs/models/2011_Fan_wetland_hydrologic_framework.pdf`）。
+
+### 6.3 Fan et al. 2019
+
+- **著录**：WRR 55, 1737–1772，DOI 10.1029/2018WR023903。只读了摘要，式号未读到。
+- **摘要要点**：提出假设，"3-D, lateral ridge-to-valley flow through shallow and deep paths" 与阴阳坡日照差异，是格点内组织水和能量的两大因子；纳入后会增加大陆储水和滞留时间。
+
+### 6.4 CoLM 自身相关模块（只看了文件头）
+
+CoLM202X-paper-v2 的 `main/HYDRO/` 下有 `MOD_Catch_HillslopeFlow.F90`（文件头写"Shallow water equation solver over hillslopes"）、`MOD_Catch_SubsurfaceFlow.F90`、`MOD_Catch_LateralFlow.F90`，属集水区网格模式。正文未读。

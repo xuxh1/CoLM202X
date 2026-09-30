@@ -1,0 +1,225 @@
+From 1eb3704a65c7d53e83e3e70523c656c593c2e534 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Mon, 28 Sep 2026 09:29:17 +0800
+Subject: [PATCH] feat(routing): open-water evaporation from the grid routing
+ floodplain (C-44)
+
+DEF_FLOODPLAIN_EVAP (default off): Penman open-water evaporation
+(Shuttleworth 1993 form) from the forcing, accumulated per unit catchment
+and taken off the flooded area beyond the channel at each routing step,
+at most the water above bankfull; reservoirs and levee cells untouched.
+The routing water balance counts it as negative input; the master logs the
+yearly total.
+
+---
+ main/HYDRO/MOD_Grid_RiverLakeFlow.F90 | 114 +++++++++++++++++++++++++-
+ share/MOD_Namelist.F90                |   5 ++
+ 2 files changed, 116 insertions(+), 3 deletions(-)
+
+diff --git a/main/HYDRO/MOD_Grid_RiverLakeFlow.F90 b/main/HYDRO/MOD_Grid_RiverLakeFlow.F90
+index 1f2f275c..fcdfcb8e 100644
+--- a/main/HYDRO/MOD_Grid_RiverLakeFlow.F90
++++ b/main/HYDRO/MOD_Grid_RiverLakeFlow.F90
+@@ -58,6 +58,13 @@ MODULE MOD_Grid_RiverLakeFlow
+    ! MOD_Grid_RiverLakeTimeVars (imported via the module-wide USE above)
+    ! so their mid-period state is serialised by WRITE/READ_GridRiverLakeTimeVars.
+    logical,  allocatable :: filter_rnof (:)
++
++   ! C-44 (paper V2): open-water evaporation depth accumulated per unit
++   ! catchment between routing steps [m]; not in the restart file, so at most
++   ! one routing step (DEF_GRIDBASED_ROUTING_MAX_DT) of it is lost at a restart
++   real(r8), allocatable :: acc_evp_uc (:)
++   real(r8), save :: fpevp_year_total = 0._r8   ! [m3], master only
++   integer,  save :: fpevp_year = -1
+ CONTAINS
+ 
+    ! ---------
+@@ -262,7 +269,8 @@ CONTAINS
+    logical :: loop_active, next_loop_active
+    real(r8) :: totalvol_bef, totalvol_aft, totalrnof, totaldis
+    real(r8) :: water_balance_err, water_balance_tol
+-   real(r8) :: water_balance_vec(4)
++   real(r8) :: water_balance_vec(5)
++   real(r8) :: fpevp, totalfpevp
+ #ifdef CoLMDEBUG
+    real(r8) :: totalclip
+    real(r8), allocatable :: trc_mass_bef(:), trc_mass_aft(:)
+@@ -296,6 +304,7 @@ CONTAINS
+       totalvol_aft = 0._r8
+       totalrnof = 0._r8
+       totaldis = 0._r8
++      totalfpevp = 0._r8
+       water_balance_err = 0._r8
+       water_balance_tol = 0._r8
+ 
+@@ -409,6 +418,8 @@ CONTAINS
+          ENDIF
+ #endif
+ 
++         IF (DEF_FLOODPLAIN_EVAP) CALL accumulate_floodplain_evap (deltime)
++
+       ENDIF
+ 
+ 
+@@ -601,6 +612,21 @@ CONTAINS
+ 
+             volwater = volwater + acc_rnof_uc(i)
+ 
++            ! C-44: open-water evaporation from the flooded area beyond the
++            ! channel (the channel surface is part of the land water patches,
++            ! which evaporate on their own), at most the water above bankfull;
++            ! reservoirs and levee cells are left alone
++            IF (DEF_FLOODPLAIN_EVAP .and. allocated(acc_evp_uc)) THEN
++               IF ((.not. is_built_resv(i)) .and. (.not. (DEF_USE_LEVEE .and. has_levee(i)))) THEN
++                  fpevp = max(acc_evp_uc(i), 0._r8) * floodplain_curve(i)%floodarea (wdsrf_ucat(i))
++                  fpevp = min(fpevp, max(volwater - floodplain_curve(i)%rivstomax, 0._r8))
++                  volwater   = volwater - fpevp
++                  totalrnof  = totalrnof - fpevp
++                  totalfpevp = totalfpevp + fpevp
++               ENDIF
++               acc_evp_uc(i) = 0._r8
++            ENDIF
++
+             IF (.not. is_built_resv(i)) THEN
+                IF (DEF_USE_LEVEE .and. has_levee(i)) THEN
+                   ! volwater already includes runoff, while the matching
+@@ -1361,15 +1387,27 @@ CONTAINS
+       ENDIF
+ 
+ #ifdef USEMPI
+-      water_balance_vec = (/ totalvol_bef, totalvol_aft, totalrnof, totaldis /)
++      water_balance_vec = (/ totalvol_bef, totalvol_aft, totalrnof, totaldis, totalfpevp /)
+       IF (.not. p_is_worker) water_balance_vec = 0._r8
+-      CALL mpi_allreduce (MPI_IN_PLACE, water_balance_vec, 4, MPI_REAL8, MPI_SUM, p_comm_glb, p_err)
++      CALL mpi_allreduce (MPI_IN_PLACE, water_balance_vec, 5, MPI_REAL8, MPI_SUM, p_comm_glb, p_err)
+       totalvol_bef = water_balance_vec(1)
+       totalvol_aft = water_balance_vec(2)
+       totalrnof    = water_balance_vec(3)
+       totaldis     = water_balance_vec(4)
++      totalfpevp   = water_balance_vec(5)
+ #endif
+ 
++      ! C-44: one log line per year with the floodplain evaporation total
++      IF (DEF_FLOODPLAIN_EVAP .and. p_is_master) THEN
++         IF (fpevp_year /= year) THEN
++            IF (fpevp_year > 0) write(*,'(A,I5,A,ES12.4,A)') ' C-44 floodplain evaporation', &
++               fpevp_year, ':', fpevp_year_total*1.e-9_r8, ' km3'
++            fpevp_year = year
++            fpevp_year_total = 0._r8
++         ENDIF
++         fpevp_year_total = fpevp_year_total + totalfpevp
++      ENDIF
++
+       water_balance_err = totalvol_aft - totalvol_bef - totalrnof + totaldis
+       water_balance_tol = max(1.e-6_r8, 1.e-10_r8 * max(abs(totalvol_bef), abs(totalvol_aft), &
+          abs(totalrnof), abs(totaldis), 1._r8))
+@@ -1767,6 +1805,76 @@ CONTAINS
+    END SUBROUTINE sync_global_routing_dt
+ 
+    ! ---------
++   SUBROUTINE accumulate_floodplain_evap (deltime)
++   ! C-44 (paper V2): Penman (1948) open-water evaporation in the form of
++   ! Shuttleworth (1993), E = [Delta Rn + gamma 6.43 (1 + 0.536 u2) D] /
++   ! [lambda (Delta + gamma)] in mm d-1 (Rn in MJ m-2 d-1, D in kPa), for a
++   ! water surface at air temperature (albedo 0.06, emissivity 0.97), u2 from
++   ! the forcing wind by the FAO-56 log profile, none below freezing. Night-time
++   ! negative values are kept, so a routing step takes the net demand. The
++   ! patch values go to unit catchments the way precipitation does for tracers.
++
++   USE MOD_LandPatch,      only: numpatch
++   USE MOD_Vars_1DForcing, only: forc_t, forc_q, forc_psrf, forc_us, forc_vs, forc_hgt_u, &
++      forc_sols, forc_soll, forc_solsd, forc_solld, forc_frl
++   USE MOD_Const_Physical, only: tfrz, stefnc
++   IMPLICIT NONE
++
++   real(r8), intent(in) :: deltime
++
++   real(r8), allocatable :: e_pch(:), e_gd(:), e_uc(:)
++   real(r8) :: tc, pkpa, es, ea, delta, gamma, rn, u2, z
++   integer  :: ip
++
++      IF (.not. allocated(acc_evp_uc)) THEN
++         allocate (acc_evp_uc (max(numucat,0)))
++         acc_evp_uc = 0._r8
++      ENDIF
++
++      allocate (e_pch (max(numpatch,0)))
++      allocate (e_gd  (max(numinpm, 0)))
++      allocate (e_uc  (max(numucat, 0)))
++
++      DO ip = 1, numpatch
++         e_pch(ip) = 0._r8
++         IF (.not. filter_rnof(ip)) CYCLE
++         tc = forc_t(ip) - tfrz
++         IF (tc <= 0._r8) CYCLE
++         pkpa  = forc_psrf(ip) * 1.e-3_r8
++         es    = 0.6108_r8 * exp(17.27_r8 * tc / (tc + 237.3_r8))
++         ea    = forc_q(ip) * pkpa / (0.622_r8 + 0.378_r8 * forc_q(ip))
++         delta = 4098._r8 * es / (tc + 237.3_r8)**2
++         gamma = 0.000665_r8 * pkpa
++         rn    = 0.94_r8 * (forc_sols(ip) + forc_soll(ip) + forc_solsd(ip) + forc_solld(ip)) &
++               + 0.97_r8 * (forc_frl(ip) - stefnc * forc_t(ip)**4)
++         z     = max(forc_hgt_u(ip), 2.1_r8)
++         u2    = sqrt(forc_us(ip)**2 + forc_vs(ip)**2) * 4.87_r8 / log(67.8_r8 * z - 5.42_r8)
++         e_pch(ip) = (delta * rn * 0.0864_r8 + gamma * 6.43_r8 * (1._r8 + 0.536_r8 * u2) &
++                   * max(es - ea, 0._r8)) / (2.45_r8 * (delta + gamma))          ! [mm d-1]
++      ENDDO
++
++      CALL worker_remap_data_pset2grid (remap_patch2inpm, e_pch, e_gd, &
++         fillvalue = 0., filter = filter_rnof)
++      IF (numinpm > 0) THEN
++         WHERE (push_ucat2inpm%sum_area > 0)
++            e_gd = e_gd / push_ucat2inpm%sum_area
++         END WHERE
++      ENDIF
++      CALL worker_push_data (push_inpm2ucat, e_gd, e_uc, fillvalue = 0., mode = 'sum')
++
++      IF (numucat > 0) THEN
++         WHERE (topo_area > 0._r8)
++            e_uc = e_uc / topo_area
++         ELSEWHERE
++            e_uc = 0._r8
++         END WHERE
++         acc_evp_uc = acc_evp_uc + e_uc * 1.e-3_r8 / 86400._r8 * deltime        ! [m]
++      ENDIF
++
++      deallocate (e_pch, e_gd, e_uc)
++
++   END SUBROUTINE accumulate_floodplain_evap
++
+    SUBROUTINE grid_riverlake_flow_final ()
+ 
+       CALL riverlake_network_final ()
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 62bd1b24..362d109a 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -375,6 +375,9 @@ MODULE MOD_Namelist
+    logical  :: DEF_USE_EstimatedRiverDepth  = .true.
+    integer  :: DEF_Reservoir_Method         = 0
+    real(r8) :: DEF_GRIDBASED_ROUTING_MAX_DT = 3600.
++   ! C-44 (paper V2): open-water evaporation from the flooded area of the
++   ! grid-based routing floodplain (beyond the channel), Penman open water
++   logical  :: DEF_FLOODPLAIN_EVAP = .false.
+ 
+    ! ----- levee module -----
+    logical  :: DEF_USE_LEVEE           = .false.
+@@ -1259,6 +1262,7 @@ CONTAINS
+       DEF_USE_EstimatedRiverDepth,            &
+       DEF_Reservoir_Method,                   &
+       DEF_GRIDBASED_ROUTING_MAX_DT,           &
++      DEF_FLOODPLAIN_EVAP,                    & !C-44 (paper V2)
+ 
+       DEF_USE_LEVEE,                          &
+       DEF_USE_BIFURCATION,                    &
+@@ -1969,6 +1973,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_USE_EstimatedRiverDepth            ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_Reservoir_Method                   ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_GRIDBASED_ROUTING_MAX_DT           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_FLOODPLAIN_EVAP                    ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_LEVEE                          ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_BIFURCATION                    ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

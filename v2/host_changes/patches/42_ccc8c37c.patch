@@ -1,0 +1,65 @@
+From ccc8c37c898a7bb470dc9bf8bb5e27e8550b3396 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 13:34:00 +0800
+Subject: [PATCH] feat(hydrology): open-bog share takes no lateral inflow and
+ keeps its own floor (candidate 32)
+
+With DEF_WETLAND_LATERAL_INFLOW the inflow r R_up of a dynamic wetland tile falls to the share that is neither rain-fed nor open bog, wetland_inflow_share - wetland_bog_share. Below DEF_METHANE%wetland_max_wtd_bog_share the bog share is refilled as the floor branch refills, scaled by its share, and the refill is booked in wetinflow. wetland_bog_share is 0 unless the methane key is set, which leaves the branch as before.
+
+---
+ main/MOD_SoilSnowHydrology.F90 | 25 +++++++++++++++++++++++--
+ 1 file changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index e3c27d33..6b0c0355 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -608,7 +608,9 @@ ENDIF
+ #endif
+    USE MOD_Opt_Baseflow,        only: scale_baseflow
+ #ifdef TRACER
+-   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_max_wtd_of, wetland_peat_outflow, wetland_inflow_share
++   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_max_wtd_of, wetland_peat_outflow, wetland_inflow_share, &
++      wetland_bog_share
++   USE MOD_Tracer_Reactive_Methane_Const,   only: DEF_METHANE
+    USE MOD_Vars_TimeInvariants, only: OM_density
+    USE MOD_Vars_TimeVariables,  only: wetdef_noinfl, wetlatin
+    USE MOD_Vars_1DFluxes,       only: wetinflow
+@@ -772,6 +774,7 @@ ENDIF
+    real(r8) :: zwtmm
+    real(r8) :: zwt_floor, wsupply, ztop, zbot   ! wetland water-table floor (mm)
+    real(r8) :: finfl, wrefill                   ! share taking lateral inflow (-), its refill (mm)
++   real(r8) :: fbog                             ! open-bog share of a wetland tile (-)
+    real(r8) :: qpond                            ! overland outflow of wetland ponding (mm s-1)
+    real(r8) :: sp_zc(1:nl_soil), sp_zi(0:nl_soil), sp_dz(1:nl_soil) ! in mm
+    logical  :: is_permeable(1:nl_soil)
+@@ -1253,7 +1256,25 @@ IF((patchtype<=1) .or. is_dry_lake &
+          ! water table up and passes what is left to the ponding store; the
+          ! wetland bucket below spills ponding above wetwatmax as surface
+          ! runoff in the same step, so the column is never oversaturated.
+-         wetinflow(ipatch) = wetland_inflow_share(ipatch) * max(wetlatin(ipatch), 0._r8)
++         ! Candidate 32: the open-bog share fbog of the tile (0 unless
++         ! DEF_METHANE%wetland_max_wtd_bog_share is set) is rain-fed as well
++         ! and takes none of r R_up; below its own floor, the base of the
++         ! acrotelm, it is refilled as the floor branch below refills, scaled
++         ! by its share. The refill is booked in wetinflow with r R_up.
++         fbog = wetland_bog_share(ipatch)
++         wetinflow(ipatch) = (wetland_inflow_share(ipatch) - fbog) * max(wetlatin(ipatch), 0._r8)
++         zwt_floor = DEF_METHANE%wetland_max_wtd_bog_share * 1000.
++         IF ((fbog > 0._r8) .and. (zwtmm > zwt_floor)) THEN
++            wsupply = max(-wa, 0.)
++            DO j = 1, nl_soil
++               ztop = max(sp_zi(j-1), zwt_floor)
++               zbot = min(sp_zi(j), zwtmm)
++               IF ((zbot > ztop) .and. is_permeable(j)) THEN
++                  wsupply = wsupply + max(eff_porosity(j) - vol_liq(j), 0.) * (zbot - ztop)
++               ENDIF
++            ENDDO
++            wetinflow(ipatch) = wetinflow(ipatch) + fbog * wsupply / deltim
++         ENDIF
+          rsubst = wetland_peat_outflow(nl_soil, zi_soisno(0:nl_soil), hksati(1:nl_soil), &
+             OM_density(1:nl_soil,ipatch), zwtmm / 1000.) - wetinflow(ipatch)
+       ELSEIF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2)) THEN
+-- 
+2.53.0
+

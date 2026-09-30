@@ -1,0 +1,245 @@
+# lit_lake_productivity_260930：湖泊产甲烷底物按生产力——文献与数据调研
+
+- **日期**：2026.09.30-03:18
+- **读者**：下一会话
+- **来源**：文献线只读调研，为 C-75 活性沉积碳库的第二档补给 S 找式子、数据与量级（账本 V-133 末句"下一档补给按湖泊生产力另议"）；承接 `v2/results/lit_lake_substrate_260929.txt`（埋藏、沉积矿化、FLaMe 与 ALBM 的做法、Lakes_cci / CGLS LWQ / Filazzola / LakeATLAS 等数据集不重复，只引其节号）；模式数取 `v2/results/lake_regions_g2_lk_2018-2018.log`、`lake_regions_g2_lp_2018-2019.log` 与 Methane 仓 `data/_tmp/分析_260923_湖泊/gap_split.log`、`igbp17_glwd.log`；四个只读子任务分读经验回归式、生产力到沉积的链条、数据集、热带参照与实测，主会话抽核关键原句并对全部新引 DOI 查 Crossref / DataCite
+- **状态**：第 0 至 5 节成文；第 5 节新引 DOI 于 2026-09-30 逐条查过注册库；第 4 节只到式子与离线估算，未动代码与配置
+
+单位：碳通量 g C m⁻² yr⁻¹（按湖面积）；CH₄ 通量 g CH₄ m⁻² yr⁻¹；CH₄-C 换 CH₄ 乘 16/12。"全文"指读了原文并给页码、式号或表号；"只读摘要"指只读到摘要；"转引"指数值取自另一篇的转述。下文 f 指 CoLM `f_methane`（CH₄ 占全部矿化的份额，现值 0.2），r 指模式湖泊排放与产量之比（E/P）。
+
+## 0. 覆盖面
+
+1. 检索词：各篇题名原文；chlorophyll methane lakes regression / total phosphorus methane lake / trophic state methane sediment；sediment respiration chlorophyll total phosphorus；sinking flux primary production lakes；conversion efficiency GPP methane；global lake primary production latitude；global lake trophic state dataset Landsat / Sentinel-2 / HydroLAKES；global lake chlorophyll small lakes；lake Secchi global；LimnoSat、GLORIA、AquaSat；global lake TP model、IMAGE-GNM、Fink 2018、Mekonnen 2018；LakeATLAS attribute keys；tropical lake methane Africa / Amazon floodplain / Southeast Asia；Johnson 2022 tropical；future methane emissions lakes reservoirs；CH4:CO2 production ratio temperature sediments。
+2. 渠道：Crossref、DataCite、OpenAlex（均不带邮箱与 mailto）、Europe PMC REST 与 fullTextXML、PMC、出版社开放页、机构库（Linköping DiVA、jlimnol.it、USGS pubs、NSF PAR、EarthArXiv）、Zenodo / EDI / PANGAEA / figshare 落地页、CLMS 与 EEA 元数据、HydroATLAS 技术文档；本地 `docs/refs/`（`ls -R` 按文件名筛，读了 Moser 2026 首三页）。
+3. 读到全文或相关全节：Beaulieu 2019（Table 3 与补充图 1，主会话在 Europe PMC XML 抽核 Table 3）；DelSontro 2018（作者稿正文，补充表 S6 未得）；Rinta 2017（第 52–63 页）；Sanches 2019 与 2021 更正；Pace & Prairie 2005（第 103–118 页）；Bertolet 2020（第 1–7 页）；Grasset 2018（PMC）；Marotta 2014（主会话读 Linköping 存本第 1–5 页与表 1）；Bastviken & Johnson 2025（PMC 正文与表 1，主会话读）；Chen 2015（PMC）；Shen 2026（PMC）；Meyer 2024 LTS-US（PMC Data Records）；HydroATLAS 技术文档 v1.0.1 附录 3、4 与表 2–4；Cael & Seekell 预印本（EarthArXiv 3149）；Johnson 2022（第 3–12 页，主会话另读本地 `docs/refs/data/2022_Johnson_global_lake_ch4.pdf` 第 5 页表 2）；Rosentreter 2021（正文、Methods 与 Extended Data Table 1）；Duvert 2025（第 1–12 页）；Borges 2022（PMC 全文 XML，主会话抽核表 1 与大湖面积句）；Peixoto 2015（PMC）。
+4. 只读摘要或落地页：Bastviken 2004（另读正文第 1 页）、Li 2020、Deemer & Holgerson 2021、Stanley 2016、Zhou 2020、Holgerson & Raymond 2016（只见检索摘要片段，未引）、West 2012、West 2016、Kelly & Chynoweth 1981、Rudd & Hamilton 1978、Baines & Pace 1994、Baines et al. 1994、Brylinsky & Mann 1973、Smith 1979、Hecky & Fee 1981、Darchambeau 2014、Morant 2026、Yang 2026（另读全文 XML 摘句）、Xie 2025（Crossref 摘要与 Zenodo 说明）、Yvon-Durocher 2014、Aben 2017、Zhu 2023、FLaMe（ESD 摘要与文章页）、Kumar 2023（全文，只取其转引的 Rodhe 与 Vollenweider 分级）、Bastviken 2010、Borges 2011、Barbosa 2021、Melack 2004（后四篇为 OpenAlex 倒排索引还原的摘要）。
+5. 读不到与已试路径：Lewis 2011 全文（T&F 403，archive.org 拦截）；Lewis 1987 与 Wetzel 2001、Kalff 2002（书或无摘要）；West 2016 全文、Bastviken 2004 全文、Deemer & Holgerson 2021 全文、Li 2020 全文（Wiley / ScienceDirect 403）；DelSontro 2018 补充表 S6（403）；Sanches 2019 补充表 S1；Zhu 2023 全文（Wiley 403，只取 OpenAlex 摘要）；Xie 2025 全文（Wiley 403，TSI 定义式未读）；Song 2022 与 Zhang 2025 的数据发布（未见公开）；Shen 2025 湖色数据（TPDC 打不开）；Sayers 2015 与 2021 的数据（未见公开）；Bastviken 2011、Saunois 2020 与 2025 的湖泊热带份额、Lauerwald 2023、Zhuang 2023 与 Tan 2024 的热带单位面积、Barbosa 2016 与 2020 全文；坦噶尼喀、马拉维、维多利亚的单湖通量，印尼与印度湖泊、洞里萨湖的通量（洞里萨只见分压）。这些来源的数值未采用，或按"只读摘要""转引""存疑"标出。
+6. 未看：无。存疑（要跑实验或拿到原文才能定）：Xie 2025 的 TSI 定义与 Carlson 叶绿素 TSI 能否直接互换（第 2.2 节第 3 条）；Pace & Prairie 式 9 在热带与冰封湖的外推（第 4.4 节第 1 条，要回代实测）；f 取 0.4–0.5 时模式 r 的变化（第 4.3 节第 4 条，要跑）；早一版代码的格点拆差在现版上是否仍成立（第 3.1 节第 4 条，要重跑拆分脚本）。
+
+## 1. 底物补给 S 与生产力的经验关系
+
+### 1.1 排放对叶绿素 a、总磷的经验式
+
+1. Beaulieu 2019 Table 3（DelSontro 2018 的上推模型）："log10(diffusive CH4 emission rate + 1) = −0.167*log10(SA) + 0.530*log10(chla) + 0.098*log10(SA)*log10(chla) + 0.705"，r² = 0.29，n = 423；"log10(ebullitive CH4 emission rate + 1) = 0.758*log10(chla) + 0.752"，r² = 0.32，n = 65；"log10(total CH4 emission rate) = 0.778*log10(chla) + 0.940"，r² = 0.38，n = 74；单位 mg CH₄-C m⁻² d⁻¹、km²、µg L⁻¹——已验证（主会话读 Europe PMC PMC6435651 全文 XML 的 Table 3 与表注）。
+2. DelSontro 2018 的筛选：log10 变换后以面积加 chla、TP、TN 之一（含交互项）做多元回归，"The only factor retained in the best models for ebullitive and total CH4 emission rates was a positive effect of chla"；扩散随 chla 升高 "stronger for large rather than small systems"；日值乘 365 年化，冰期照算——已验证（子任务读 PMC7029703 Methods 与 Results）。
+3. TP 换 chla："log10(chla) = (0.7246777624 * log10(TP)) - 0.1313111819"（µg L⁻¹，McCauley et al. 1989 的 1058 个系统）——已验证（子任务读 Beaulieu 2019 补充 PDF 第 2 页图 1 图注）。
+4. 全球量：湖库合计 112（71–177）Tg CH₄-C yr⁻¹（约 150 Tg CH₄），面积用 Downing 2006 的 4.42 百万 km²，面积均值约 25.3 g C m⁻² yr⁻¹；换 Messager 的 3.23 百万 km² 为 78 Tg C；"approximately 25% higher than the latest global estimates for lakes and impoundments (88.7 Tg C-CH4 y-1)"——已验证（主会话读 PMC6435651 Results；子任务读 DelSontro 2018 Table 1）。面积均值为 112/4.42 的算术——推测。
+5. 按 Table 3 总量式换算（×365、不做对数回代校正）：chla 2、5、10、20、50 µg L⁻¹ 对应总排放 7.3、14.8、25.5、43.7、89.1 g CH₄ m⁻² yr⁻¹，冒泡 4.2、8.8、15.3、26.2、52.9——推测（按式算，主会话复算 chla 10 得 10^1.718 = 52.2 mg C m⁻² d⁻¹ 与子任务一致）。Johnson 2022 的全球单位面积 14.8 恰对应 chla 约 5 µg L⁻¹——推测。
+6. Bastviken 2004：开放水面排放可由 "lake area, water depth, concentrations of total phosphorus, dissolved organic carbon, and methane, and the anoxic lake volume fraction" 预测；全球 8–48 Tg CH₄ yr⁻¹；"the ebullition flux component should be related primarily to the net methane production rate in the sediments"——已验证（子任务读摘要与正文第 1 页）。回归系数未读到。
+7. Rinta 2017（J. Limnol. 76(1):52–67，不是 JGR）：30 个中欧与 17 个北方小湖晚夏标准化观测；只检验 TN（与 TP 相关），经 FDR 校正后通量与营养、温度均无显著关系，"no significant relationships between daily diffusive or ebullitive fluxes and variables related to temperature and nutrients were found"；扩散北方 0.2、中欧 1.2 mmol m⁻² d⁻¹，冒泡 0.03 与 0.8——已验证（子任务读第 57、59、62 页）。
+8. Sanches 2019（297 湖）：总通量与最低月气温负相关，扩散与最低、最高月气温正相关，DOC 恒为正，TP 只在组合中显著；回归树 "diffusion flux in lakes with total phosphorous concentration higher than 0.9 mol L-1 was 5 times higher"（单位疑为 µmol L⁻¹ 笔误）；热带与南温带单位面积最高；式子系数只在补充表 S1——已验证（子任务读 Europe PMC XML）；2021 年更正把通道占比改为扩散 30.9%、储存 35.7%、冒泡 33.4%——已验证（主会话读 PMC8545977）。
+9. Li 2020（744 湖）：扩散通量与最大水深负相关（R² = 0.50），全球湖泊扩散 11.2（6.2–19.5）Tg CH₄ yr⁻¹，84% 以上来自均深 < 5 m 的湖；无生产力项——已验证（子任务读 Europe PMC 摘要；主会话读检索摘要）。
+10. Deemer & Holgerson 2021（313 个湖库）：湖泊以形态（面积、最大水深）为主，水库以 chla 为主，"productivity strongly predicted methane ebullition"——已验证（子任务读 USGS 摘要）。
+11. Stanley 2016 研究河流与溪流，不含湖泊的生产力关系——已验证（子任务读摘要）。
+12. Zhou 2020（长江中下游浅湖）：按营养指数四级，平均 CH₄ 通量 0.1、4.4、12.0、130.4 mg m⁻² h⁻¹，随营养级非线性上升——已验证（子任务读 Europe PMC 摘要）。
+13. Bastviken & Johnson 2025 的未来情景把 "the relationship between CH4 emissions and total phosphorous (P) concentrations developed by Beaulieu et al. (2016; data from their Table 2)" 与河流磷输出结合，得通量变化因子 0.90–1.19，自认 R² 约 0.3——已验证（主会话读 PMC12711573）。所引 Beaulieu 2016 的身份与表 2 未核——存疑。
+14. 小结：跨湖排放与 chla 的幂指数约 0.78（总量）与 0.76（冒泡），扩散随面积减弱；单湖或区域样本（Rinta、Bertolet 的年际）常测不出营养效应——推测。理由：第 1、7、10 条与第 1.2 节第 6 条。
+
+### 1.2 生产力到沉积产甲烷的链条
+
+1. 叶绿素与营养级：Wetzel 1983 的均值 chla 寡 1.7、中 4.7、富 14.3 mg m⁻³，TP 8、26.7、84.4 mg m⁻³——已验证（子任务读 Kevern 讲义第 3 页 Table I，非同行评审，转引）。
+2. 叶绿素到 PP：Brylinsky & Mann 1973 "Chlorophyll a concentration ... when combined with an energy-related variable constitutes a good estimator of primary production"——已验证（子任务读 Crossref 摘要）。分级 PP：寡 30–100、天然富 300–1 000 mg C m⁻² d⁻¹（Rodhe 1969），中 250–1 000、富 1 000–8 000（Vollenweider 1968）——已验证（子任务读 Kumar 2023 全文，转引）。全球湖泊 GPP 54 Tmol C a⁻¹、面积 2.69×10¹² m²（面积均值约 241 g C m⁻² yr⁻¹）——已验证（子任务读 Pace & Prairie 2005 第 116–117 页；均值为换算）。全湖（底栖加浮游）PP "520 (±70) Tg C y⁻¹"、面积均值 "193 g C m⁻² y⁻¹"——已验证（子任务读 Cael & Seekell 预印本第 5 页，未见期刊版）。Lewis 2011：辐照与温度对潜在生产 "strong and approximately equal effects globally"，冰期另有约一半的效应——已验证（检索摘要转引）；其按纬度的 PP 表未读到，检索摘要所称热带 GPP 中位 340–932 g C m⁻² yr⁻¹ 无原文可核——存疑。热带大湖：坦噶尼喀 "The mean annual daily rate of primary production for the lake was estimated to be 1 g C·m⁻²·d⁻¹, assuming cloudless weather"（约 365，晴天上限）——已验证（子任务读 Hecky & Fee 1981 摘要）；基伍 "from 143 to 278 g carbon m⁻² y⁻¹"，与坦噶尼喀、马拉维同一范围——已验证（子任务读 Darchambeau 2014 摘要）。
+3. PP 到沉降：下沉通量与变温层色素 R² 83–97%，"a slight negative relationship between production and the ratio of sinking flux to production"——已验证（子任务读 Baines & Pace 1994 Crossref 摘要）；"carbon sinking rates average 2–3-fold higher in the oceans than in lakes with similar concentrations of Chl"——已验证（子任务读 Baines et al. 1994 摘要）。Kinneret 到达湖底约占 PP 19–22%——已验证（前文第 2.1 节第 3 条）。
+4. 沉积物呼吸（SR）与营养（Pace & Prairie 2005，PQ = RQ = 1）：文献汇编 SR 1.6–33 mmol O₂ m⁻² d⁻¹、均值 10.9（约 45 g C m⁻² yr⁻¹）；式 8 "log10 SR(10 °C) = 0.17 + 0.58 log10 TP"（TP mg m⁻³，解释 69%）；式 9 "log10 SR = 0.63 + 0.40 log10 Chl"；式 11 "%Cresp = 71.4 Chl^−0.22"（沉降碳最终被呼吸的份额）；温度标准化 SR(10 °C) = SR/(T/10)^0.65；全球 SR 3.8 Tmol C a⁻¹，"sediments are responsible for only about 6% of total lake R"——已验证（子任务读第 110–112、116–117 页）。
+5. 按第 4 条逐级代入（10 °C、×365）：式 9 给寡、中、富 23.1、34.7、54.2 g C m⁻² yr⁻¹，式 8 给 21.7、43.6、85.0；式 11 给沉降碳被呼吸份额 64%、51%、40%——推测（算术，主会话复算式 9 三档一致）。
+6. GPP 到 CH₄：Wisconsin 5 湖 24 个湖年，下层水 CH₄ 储存 < 0.001–7.6 mmol m⁻² d⁻¹ 随夏季 GPP 升高，但 "GPP was not a significant predictor of interannual variability in CH4 storage at the lake scale"——已验证（主会话读 Crossref 摘要）；"conversion efficiency of GPP-C to CH4-C of 0.085"（只计下层水储存，产量应更高）——已验证（子任务读 Bertolet 2020 第 6 页）。Lake Washington 约 2% PP 以 CH₄ 返回——已验证（前文第 2.5 节第 5 条）。
+7. 沉积产甲烷速率与生产力：16 个北温带湖，产甲烷随生产力升高，但转为储存与冒泡、不增加扩散，"Ebullition most frequently occurred at sites less than 6 m deep"——已验证（子任务读 West 2016 摘要；主会话读 Crossref 摘要）；加藻后 "CH4 production rates were significantly elevated"——已验证（子任务读 West 2012 摘要）；Lake 227 产甲烷 1–10 mmol m⁻² d⁻¹（4.4–44 g C m⁻² yr⁻¹），"Fifty-five percent of total carbon input was regenerated as methane"——已验证（子任务读 Rudd & Hamilton 1978 摘要）；五湖 "the proportion of organic input released as methane (47 ± 9%)"——已验证（子任务读 Kelly & Chynoweth 1981 摘要）。
+8. 反例与限定：77 个湖沉积物宏基因组与培养，"methane (CH4) production appears to be multifactorial"——已验证（主会话读 Europe PMC 摘要，Yang 2026）；地中海浅湖潜在产甲烷 "correlated well with sediment organic matter content but not with other ecological status indicators"——已验证（子任务读 Morant 2026 摘要）。两篇都是潜在速率或基因丰度，不是现场年产量——推测。
+9. 新鲜藻源碳的 CH₄ 份额：CH₄/TCO₂ 自生碳 0.5–0.7、陆源叶 0.9（20–22 °C、136 d 完全缺氧），折成 CH₄ 占矿化碳 0.33–0.41 与 0.47——已验证（子任务读 Grasset 2018 PMC；折算为推测）。典型缺氧淡水 CH₄:CO₂ 产比 "lower ratios of 0.1:1 being typical"，升温使底物利用改善、比值指数上升——已验证（主会话读 OpenAlex 摘要，Zhu 2023）。
+10. 温度对 CH₄ 份额的作用：Amazon 与瑞典湖沉积厌氧培养 log10 F = S·T + I，CH₄ 全体 S = 0.047、I = 0.17，CO₂ 全体 S = 0.024、I = 1.73（µg C L⁻¹ d⁻¹），热带与北方斜率无显著差别——已验证（主会话读 Marotta 2014 存本表 1）。由此 CH₄/(CH₄ + CO₂) 在 4 °C 约 3%、26 °C 约 10%，每升 10 °C 产比乘 1.7——推测（按表 1 算术）。生态系统尺度 CH₄ 表观活化能 0.96 eV，"57-fold increase between 0 and 30°C"，高于呼吸约 0.65 eV——已验证（主会话读 Europe PMC 摘要，Yvon-Durocher 2014）。
+11. 小结：同一叶绿素梯度上，SR 的幂指数约 0.40（Pace & Prairie 式 9），排放的幂指数约 0.78（Beaulieu Table 3），两者之差意味着 CH₄ 占矿化的份额随生产力上升，与缺氧富营养湖 CH₄ 占输入 47–55% 而有氧寡营养沉积物 CH₄ 很少（前文第 2.5 节第 8 条）一致——推测。理由：幂指数相减约 0.38，即 chla 翻倍份额乘 1.3。
+
+### 1.3 外源有机碳
+
+1. 前文已读：ALBM 把陆源颗粒碳的 10%（论文）或 2%（公开代码）记入活性库，全球配置的陆源负荷由土壤侵蚀模式给；FLaMe v1.0 只算自生碳——已验证（前文第 3.2 节第 2 条、第 3.3 节第 1、3、7 条）。
+2. 流域 DOC 与面积比：Bastviken 2004 把 DOC 列为预测因子；Sanches 2019 的 DOC 效应恒为正——已验证（第 1.1 节第 6、8 条）。未检得以"湖面积与流域面积比"或流域 DOC 输入直接给沉积补给的全球经验式——已验证（检索无命中）。LakeATLAS 有土壤有机碳 `soc_th` 与侵蚀 `ero_kh` 列，可作外源负荷的代理——已验证（子任务读 HydroATLAS 技术文档附录 4）。
+3. 陆源叶片在完全缺氧下 CH₄ 份额 0.47 高于藻源，但可降解份额只 0.26（前文第 2.3 节第 5 条）——已验证（Grasset 2018）。外源碳的主要去向是水柱呼吸与 CO₂ 排放，进入沉积产甲烷的份额小——推测。理由：Pace & Prairie 全球沉积呼吸只占全湖呼吸约 6%。
+
+## 2. 全球可用的湖泊营养状态与叶绿素数据
+
+### 2.1 前文已列（不重复细节，见 lit_lake_substrate_260929 第 1.2、1.3 节）
+
+ESA Lakes_cci v2.1 / v3.0（2 024 湖，`chla_mean`，1/120°）；CGLS LWQ 300 m（4 264 水体，`trophic_state_index`，Carlson 分级）；Filazzola 2020（11 959 湖实测 chla 与 TP，CC0）；Sayers 2015（80 012 湖，数据未公开）；Beaulieu 2019 补充表（面积 × chla 联合分布，非空间）；Wang 2021 FUI（1 049 个 > 25 km² 湖）；HydroLAKES、LakeATLAS、GLCP、Lake-TopoCat（无水质）；GLORICH（河站 TN、TP）。
+
+### 2.2 新检得
+
+| 数据 | DOI 或落地页 | 覆盖 | 形式 | 时段 | 变量 | 许可与体量 | 对 Hylak_id |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Xie 2025 全球湖泊 TSI | 10.5281/zenodo.17100051（论文 10.1111/gcb.70510） | 14 189 湖，≥ 10 km² | 逐湖逐年表 | 2003–2023 | TSI、多年均值、趋势 | CC BY 4.0；xlsx 6.7 MB | 是 |
+| CLMS LWQ 100 m v2 | 10.2909/deae3db1-a214-4375-8d1a-63c42498050e | 全球，湖单取自 GLWD | 100 m 栅格，10 日 | 2024 起 | 浊度、TSI、反射率 | 免费开放；CDSE | 否 |
+| LTS-US（Meyer 2024） | 10.6073/pasta/212a3172ac36e8dc6e1862f9c2522fa4 | 美国本土 55 662 湖，≥ 10 ha | 逐湖逐年 | 1984–2020 | 寡、富、腐殖三类概率 | CC BY 4.0（论文）；EDI | 是 |
+| Shen 2026 GlakeWQ | 论文 10.1093/nsr/nwag445 | 16 409 湖，≥ 10 km²，145 国 | 逐湖 | 2019–2022 | chla、SPM、CDOM、SDD、水质类 | 数据未见公开 | 未读到 |
+| Song 2022 全球透明度 | 论文 10.1016/j.scitotenv.2021.151188 | ≥ 1 ha 湖 | Landsat 图 | 2019 | SDD | 数据未见公开 | 未读到 |
+| Chen 2015 湖水 TOC/TN/TP | 论文 10.1038/srep15043 | 约 8 300 湖、68 国 | 汇编点 | — | TP | 补充只有 PDF | 否 |
+| LAGOS-US LANDSAT、LimnoSat-US、AquaSat、GLORIA、CNLTSI | 著录未核（第 5 节末） | 美国、中国或点位 | 逐湖或点 | 1984 起 | chla、SDD 或反射率 | CC BY 4.0 | 部分 |
+
+1. Xie 2025："we reconstructed a 21-year time series (2003–2023) TSI for 14,189 global lakes with surface area ≥10 km². The global mean TSI was estimated to be 54.07±0.31. Among the lakes, 4.1% were classified as oligotrophic (TSI≤38), 18.9% as mesotrophic (38<TSI≤48), 56.8% as eutrophic (48<TSI≤61), and 20.2% as hypereutrophic (TSI>61)"——已验证（主会话读 Crossref 摘要）；Zenodo 版 CC BY 4.0、附 GEE 代码 Model.txt——已验证（主会话读 DataCite）；表头 `Hylak_id, Lake_name, …, Lake_area, 2003 … 2023, Mean, Rate1, Rate`——已验证（子任务读 Zenodo 文件说明）。
+2. CLMS LWQ 100 m v2："10-daily observations are available in near real time in the spatial resolution of 100 m ... from 2024 to present"，湖单 "according to the Global Lakes and Wetlands Database (GLWD)"——已验证（主会话读 DataCite 描述）；v1 100 m（2019–2024）只覆盖欧洲与非洲——已验证（子任务读 CLMS 落地页）。
+3. Xie 2025 的营养分界（寡 ≤ 38、中 38–48、富 48–61）与 Carlson / CGLS 的 40、50、70 分界不同，所用 TSI 公式未读到，换成 chla 前要读全文——存疑。
+4. 营养代理（全部 142.8 万个 ≥ 10 ha 湖）：LakeATLAS 可用 `crp_pc`（耕地 %）、`pst_pc`、`ire_pc`、`urb_pc`、`pop_ct`、`ppd_pk`（人/km²）、`nli_ix`、`hft_ix`（人类足迹）、`gdp_ud`、`soc_th`（t/ha）、`ero_kh`（kg/ha/yr）、`wet_pc`；空间键 l / p / v / u 为湖面、出口、3 km 缓冲、全上游；无施肥、牲畜、P 输入与 TP 列——已验证（子任务逐页读 HydroATLAS 技术文档 v1.0.1 附录 4 与表 2–4）；各列后缀组合与放大倍数在 54 MB 目录文件中，未读——存疑。
+5. 全球逐湖或格点"湖内 TP"公开产品：仍未检得；IMAGE-GNM（0.5°）、Fink 2018（最大 100 湖 TP 负荷）、Mekonnen 2018（5′ 人为 P 负荷）的数据发布未读到——存疑。
+6. 按纬带的营养统计：湖水 TP 均值北寒带 0.008、北温带 0.014、南温带 0.033 mg L⁻¹，热带数据太少未估——已验证（子任务读 Chen 2015 PMC 正文）；2019 年全球 ≥ 1 ha 湖按面积寡营养 63.6%、富营养 23.6%——已验证（子任务读 Song 2022 Europe PMC 摘要）；"水质良好"湖比例北美 80.6%、欧洲 73.1%、亚洲 41.7%、南美 27.4%、非洲 20.3%、大洋洲 16.1%——已验证（子任务读 Shen 2026 PMC）。面积加权的纬带叶绿素中位未检得——已验证（检索无命中）。
+7. 口径冲突：Xie 2025 按湖数 77% 富营养以上（≥ 10 km²），Song 2022 按面积 64% 寡营养（≥ 1 ha）；大湖占面积多且多为寡营养，面积加权与湖数加权结论相反——推测。理由：两者定义不同（TSI 与透明度），又一按湖数一按面积。
+
+### 2.3 对 2° 模式最实用的组合
+
+1. Xie 2025 TSI（按 Hylak_id 接 HydroLAKES 多边形，湖面积加权到 2°）给 ≥ 10 km² 湖；< 10 km² 湖与无值湖用 LakeATLAS 代理列对 Xie TSI 做回归外推，美国小湖用 LTS-US 独立检验——推测。理由：唯一全球、逐湖、公开、按 Hylak_id 键接的营养产品，体量小。
+2. CGLS LWQ 300 m 的 `trophic_state_index`（前文第 1.4 节第 2 条）与 Lakes_cci `chla_mean` 作第二来源与交叉检验——推测。
+3. 所有数据只给水体营养，不给沉积补给；从 TSI 到 S 必须走第 1.2 节的经验链——已验证（各数据集变量表）。
+
+## 3. 为什么模式热带湖泊偏高
+
+### 3.1 面积与单位面积拆开（g2_lk，2018，对 Johnson 2022）
+
+| 区 | 排放比 模式/Johnson | 面积比 | 单位面积比 |
+| --- | --- | --- | --- |
+| 巴西 | 8.6/1.7 = 5.1 | 0.091/0.024 = 3.8 | 94.3/70.3 = 1.34 |
+| 东南亚 | 4.7/1.7 = 2.8 | 0.050/0.021 = 2.4 | 93.5/80.1 = 1.17 |
+| 赤道非洲 | 7.5/4.1 = 1.8 | 0.139/0.166 = 0.84 | 53.8/25.0 = 2.15 |
+| 中美 | 2.3/1.4 = 1.6 | 1.12 | 80.8/54.7 = 1.48 |
+| 南美北部 | 1.6/0.8 = 2.0 | 2.38 | 85.8/95.1 = 0.90 |
+| 南亚 | 1.6/1.3 = 1.2 | 1.61 | 53.5/71.6 = 0.75 |
+| 加拿大 | 7.7/9.4 = 0.82 | 0.54 | 13.4/8.8 = 1.52 |
+| 俄罗斯 | 4.4/3.2 = 1.38 | 0.98 | 12.7/9.1 = 1.40 |
+
+1. 表中比值——已验证（`lake_regions_g2_lk_2018-2018.log` 各行相除）。
+2. 巴西与东南亚的超出主要是面积：按对数分解面积占 82% 与 85%，单位面积只高 17–34%——已验证（ln 3.8/ln 5.1、ln 2.4/ln 2.8 的算术）。上表六个热带区合计模式 26.3 对 Johnson 11.0 Tg、面积 0.357 对 0.263 Mkm²、单位面积 73.7 对 41.8；去掉赤道非洲后面积 2.25 倍、单位面积 1.21 倍——已验证（表中各行求和）。
+3. 模式"湖"面积是 IGBP 17 水体像元：30°S–30°N 的 0.507 Mkm² 中 GLWD 湖泊 56%、水库 12%、大河 13%、其他永久水体 8%——已验证（`igbp17_glwd.log`）。账本 Q-29 亦记"模式水体含河道"——已验证（读 `迭代账本.md` Q-29）。
+4. 2010–2019 的早一版代码（湖泊 66.0 Tg）按格点拆差：90°S–30°N 模式超出 31.8 Tg，其中"模式水面大于 Johnson 两倍"的格点占 22.2（70%，模式 0.216 对 Johnson 0.035 Mkm²），含 ≥ 5 000 km² 大湖的格点占 6.9（22%，单位面积 69 对 18.9），其余 2.7（8%）——已验证（`gap_split.log`）。现版代码未重拆——存疑，要按 g2_lk 重跑拆分脚本。
+5. 赤道非洲单位面积偏高 2.15 倍来自大湖：Johnson 给 ≥ 5 000 km² 的湖同区小湖的 10%（前文第 3.7 节第 1 条），维多利亚、坦噶尼喀等大湖占该区湖面积的大半，而模式对大湖不减——推测。理由：第 4 条大湖格点单位面积 69 对 18.9。
+6. 模式单位面积产量本身也过高：g2_lk 热带 P 93–105 g CH₄ m⁻² yr⁻¹，按 f = 0.2 需沉积矿化 350–390 g C m⁻² yr⁻¹，高于全部实测沉积矿化（最高 196）与 Pace & Prairie 汇编上限 33 mmol O₂ m⁻² d⁻¹（约 140）——推测。理由：P × 12/16 / 0.2 的算术；实测见第 1.2 节第 4 条与前文第 2.4 节。排放单位面积只高 1.2–1.5 倍，是因为 Johnson 的热带参照本身很高（第 3.2 节）。
+
+### 3.2 热带参照值的依据与不确定性
+
+1. Johnson 2022 表 2 热带/亚热带行：N = 86/34（扩散/冒泡聚合通量条数），面积 < 5 000 km² 为 204、≥ 5 000 km² 为 167（×10³ km²），排放季 363 与 365 d，排放季日均 235 与 23 mg m⁻² d⁻¹，年排放 18.8 Tg；温带 280/121、427 与 674、289 与 206 d、65 与 9、9.3 Tg；Other Boreal 407 与 218、65 与 7、4.2 Tg——已验证（主会话读本地 PDF 第 5 页表 2）。折合热带小湖 85.3、大湖 8.4、面积加权 50.7 g CH₄ m⁻² yr⁻¹；温带小湖 18.8、大湖 1.9；热带小湖是温带小湖的 4.5 倍——推测（日均 × 排放季的算术）。
+2. 分类与数据：热带/亚热带按 MERRA-2 年均土温 20.0 °C 划界（不确定性 ±2.5 °C）；通量库取自 Bastviken 2011、Li 2020、Rinta 2017、Wik 2016 等汇编，共 575 湖、881 条聚合通量；面积为 HydroLAKES（≥ 0.1 km²）加 ESA CCI 的 0.002–0.1 km² 小湖，共 2 806×10³ km²——已验证（子任务读第 4、7–9 页）。34°S–34°N 只含 80 个静水体——已验证（子任务读 Duvert 2025 第 10 页）。
+3. 不确定性：全球 ±18.3 Tg 中通量变异占 66%、大湖比例 14%、热带温带分界 11%、氧化比例 7%；原文 "Tropical/subtropical diffusion and ebullition emission rates contributed the most to uncertainty ... limited amount of measurement data in this region where lake flux magnitudes are large and variable"——已验证（子任务读第 9–10 页）。
+4. 作者自评："our classification of tropical/subtropical lakes is currently very simple"；"Defining tropical lakes is particularly difficult since many lie along large rivers, and thus are distinct from rivers in dry seasons and engulfed by rivers during flood seasons"——已验证（子任务读第 4、10 页）。
+5. 大湖规则："we assumed that lakes ≥5,000 km² have CH4 emission rates that are 10% of the fluxes observed from lakes <5,000 km² in comparable ecoclimatic regions"，依据 Bastviken 2004 的少量样本（0–25%）——已验证（子任务读第 9 页）。
+6. 独立的热带上推低得多：Duvert 2025 34°S–34°N 静水体（湖加水库）5.4（2.1–9.1）Tg CH₄ yr⁻¹——已验证（主会话读 OpenAlex 摘要）；原文 "3.5 times smaller than the 18.8 TgCH4 yr-1 ... not due to substantial differences in diffusive fluxes ... but rather to the upscaling method: Johnson et al. extrapolated mean fluxes, whereas we used medians ... That previous study also included floodplain lakes (excluded here)"，面积 616×10³ km²（SWOT PLD ≥ 0.01 km²）——已验证（子任务读第 5、11 页），合约 8.8 g CH₄ m⁻² yr⁻¹——推测（算术）。Borges 2022 泛热带（24°S–24°N）湖泊扩散 0.7 ± 0.2、冒泡 4.4（1.5–10.0）Tg，此前估计 3.1 与 22.2——已验证（主会话读 PMC9232103 表 1）。
+7. 均值与中位之争：Duvert 称冒泡改用均值总量升到 974.9 Tg yr⁻¹；Rosentreter 2021 全湖中位 55.8、均值 150.9 Tg，且 "we did not detect clear latitudinal trends of methane emissions from aquatic ecosystems, except for ... coastal wetlands"——已验证（子任务读 Duvert 第 5 页、Rosentreter 表 1 与第 228 页）。
+8. Bastviken & Johnson 2025 更新版：湖泊 46.0 Tg（HydroLAKES > 0.1 km² 共 3 099×10³ km²，另记 < 0.1 km² 小湖 405×10³ km²），热带–亚热带 376×10³ km²、20.0 Tg，温带 1 117、11.4，北方–北极 1 606、14.6；热带 θ 取温敏研究均值 1.09，温带与北方拟合 1.15 与 1.22——已验证（主会话读 PMC12711573 正文与表 1）。折合热带约 53、温带约 10、北方约 9 g CH₄ m⁻² yr⁻¹——推测（算术）。
+
+### 3.3 热带实测
+
+| 地区或湖 | g CH₄ m⁻² yr⁻¹ | 通道 | 样本 | 出处 |
+| --- | --- | --- | --- | --- |
+| Pantanal 16 个浅湖（低水期） | 48（均值 8.8 mmol m⁻² d⁻¹，范围 3.9–74.2） | 扩散加冒泡，冒泡 91% | 16 湖 | Bastviken 2010 摘要 |
+| Pantanal 一个漫滩湖（低水期） | 湖心 9.4、岸带 29.4（均值） | 冒泡 88% | 29 箱 × 5 d | Peixoto 2015 |
+| 亚马孙漫滩各生境 | 25.8（冒泡均值 4.4 mmol m⁻² d⁻¹，0–109） | 仅冒泡 | 两年 | Barbosa 2021 摘要 |
+| 基伍主湖 / Kabuno 湾 | 0.21 / 0.63（13 / 39 mmol m⁻² yr⁻¹） | 仅扩散 | 4 航次 | Borges 2011 摘要 |
+| 非洲 24 湖上推 | 总量扩散 0.4 ± 0.1、冒泡 1.8（0.6–4.1）Tg | 两者 | 24 湖 | Borges 2022 表 1 |
+
+1. 表中原值——已验证（子任务读各摘要或全文；Borges 2022 由主会话抽核）；g CH₄ m⁻² yr⁻¹ 为 ×16.04 × 365 的换算——推测。
+2. 形态差：浅湖、漫滩湖与岸带高（25–48），深大湖低（基伍扩散 < 1）；非洲浅而高产的 George、Nyamusingire 冒泡约为扩散 20 倍，深的 Edward、Victoria 两者相当；"The relative surface area of large lakes (>1000 km²) compared to the total was higher at the African scale (86%)"——已验证（主会话读 PMC9232103 大湖句；其余子任务读）。
+3. Borges 2022：CH₄ 与 CH₄:CO₂ 随 Chl-a 升高，归因浅而高产湖的沉积 CH₄；非洲 log(CH₄) = −0.6226 × log(mean depth) + 3.29（r² = 0.18，n = 24）——已验证（子任务读 PMC9232103）；叶绿素拟合系数在表 S3，未读到。冒泡外推用的中位 "4.4 (IQR: 1.5 to 10.7) mmol m⁻² year⁻¹"——已验证（主会话读 PMC9232103）；按年单位与 4.4 Tg 总量不合量级，疑为每日——存疑。
+4. 东南亚与南亚湖泊的现场通量未检得，洞里萨只见分压——已验证（子任务检索）。
+5. 热带实测集中在南美浅湖与漫滩，且多为低水期、白天、冒泡主导；这正是 Johnson 热带均值的主要来源类型——推测。理由：第 3.2 节第 2、4、6 条与本表。
+
+### 3.4 结论
+
+1. 模式热带偏高主要不是单位面积问题：巴西与东南亚 80% 以上来自面积（IGBP 水体把水库、大河、其他永久水体算作湖），赤道非洲来自大湖不减——推测。理由：第 3.1 节第 2–5 条。
+2. Johnson 的热带参照本身偏高且不确定：热带小湖 85 g m⁻² yr⁻¹ 是 86/34 条聚合通量的均值、含漫滩湖；两份独立的热带上推（Duvert 5.4、Borges 5.1 Tg）只有其 18.8 的 27–29%——推测。理由：第 3.2 节第 1、6 条；两者纬带、面积下限、是否含水库各不相同。
+3. 所以"单位面积接近 Johnson"不能说明模式热带合理：模式热带产量所需沉积矿化超出一切实测，排放接近只因两者都偏高——推测。理由：第 3.1 节第 6 条与第 3.2 节第 6 条。
+4. 对模式的含义：热带要分三件事——面积（水库、河道、漫滩水体移出湖斑块或另类）、大湖（深大湖沉积补给与排放低）、单位面积底物（第 4 节）——推测。
+
+## 4. 建议：第二档补给 S
+
+### 4.1 只动 S 够不够
+
+按稳态产量 P = f × S × 16/12、排放 E = r × P、模式湖面积 2.305 Mkm² 反推：
+
+| 目标 | r | f = 0.2 所需 S | f = 0.4 所需 S |
+| --- | --- | --- | --- |
+| Johnson 全球单位面积 14.8 g CH₄ m⁻² yr⁻¹ | 0.45（g2_lp） | 123 | 62 |
+| 同上 | 0.71（g2_lk） | 78 | 39 |
+
+1. 表中数——推测（算术）。r 取 g2_lp 全球 9.5/21.1 与 g2_lk 56.1/78.9，两个全球产量由两份 log 各区 P × 模式面积求和——已验证（主会话按 log 逐行求和）。
+2. 文献 S 量级：沉积矿化中位 40、均值 58（前文第 2.4 节）；Pace & Prairie 汇编 SR 均值约 45、范围 7–140，全球面积均值约 17（大湖只积分到 15 m）——已验证（第 1.2 节第 4 条）。C-75 第一档按 g2_fi 湖面积加权的均值 34.8——推测（(20×0.496 + 30×0.753 + 35×0.531 + 59×0.450 + 35×0.078)/2.308）。
+3. f = 0.2 时要到 Johnson 需 S 约 80–120，是实测沉积矿化中位的 2–3 倍；只抬 S 不改 f 会把 S 推出实测范围——推测。理由：第 1、2 条。
+4. f 的文献依据：缺氧富营养湖 CH₄ 占有机输入 47 ± 9% 与 55%（第 1.2 节第 7 条）；新鲜藻源碳完全缺氧 0.33–0.41（第 1.2 节第 9 条）；全湖矿化中 20–56%（前文第 2.5 节第 1 条）；Bertolet 的 GPP 到下层储存 8.5% 是产量下限，按 GPP 面积均值 193–241 折合产甲烷碳至少 16–20 g C m⁻² yr⁻¹，配 S 约 40 即 f ≥ 0.4——推测（算术）。有氧深湖低（Lake Washington 约 2% PP；有氧沉积物 CH₄ 中位 0.02%，前文第 2.5 节）——已验证（前文）。f 随氧化还原与营养状态变化，第 1.2 节第 11 条的幂指数差也指向同一方向——推测。
+
+### 4.2 第二档取法
+
+1. 式子（叶绿素给沉积呼吸，即稳态可降解补给）：
+   S₂ = 4.38 × 10^(0.63 + 0.40 · log10 Chl) × (T_b / 10)^0.65   [g C m⁻² yr⁻¹]
+   Chl 为湖泊叶绿素 a（µg L⁻¹），T_b 为湖底年均温（°C），4.38 把 mmol O₂ m⁻² d⁻¹ 按 RQ = 1、365 d 换成 g C m⁻² yr⁻¹。来源：Pace & Prairie 2005 式 9 与其温度标准化式——已验证（第 1.2 节第 4 条）。取作 S 的理由：稳态下沉积呼吸等于沉降碳扣除埋藏，正是 C-75 对 S 的定义（`main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90` 第 1138–1155 行注释 "S is the sediment mineralization that balances the organic carbon burial B"）——已验证（读码）。
+2. 有 TP 无 Chl 时：S₂ = 4.38 × 10^(0.17 + 0.58 · log10 TP) × (T_b / 10)^0.65（Pace & Prairie 式 8，TP µg L⁻¹），或经 Beaulieu 补充图 1 的式子把 TP 换成 Chl 再用第 1 条——推测。
+3. Chl 数据：≥ 10 km² 湖取 Xie 2025 逐湖多年均 TSI，按其 TSI 定义换成 Chl（若为 Carlson 式，Chl = exp((TSI − 30.6)/9.81)，TSI 54 对应约 11 µg L⁻¹）；< 10 km² 与无值湖用 LakeATLAS 代理列（`crp_pc`、`ppd_pk`、`hft_ix`、`soc_th`）对 Xie 值回归，或按纬带默认中营养 Chl 4.7；按湖面积加权聚到 2°，做成 rawdata `lake_cdep(lon, lat)`，走前文第 4.2 节第 4 条的 mksrfdata 路径——推测。Carlson 式与 CGLS 手册对照表一致（TSI 60 对 20 µg L⁻¹，exp(29.4/9.81) = 20.0）——已验证（前文第 1.3 节第 3 条与算术）。
+4. f：只改 S 时 f 维持 0.2；要接近参照须同时给湖泊活性库单独的 f（0.4，文献 0.33–0.55），这是新键，另与用户议——推测。理由：第 4.1 节。
+5. 参数：式 9 系数 0.63、0.40（解释方差与样本量未读到；式 8 解释 69%）；温度指数 0.65，原文不确定性 ±1；k20、θ 沿用 C-75——已验证（第 1.2 节第 4 条）。式 9 的 SR 是否与式 8 一样已标准化到 10 °C，摘句未明示，本文按 10 °C 处理——存疑，要读 Pace & Prairie 第 112 页原式上下文。
+6. T_b 可离线取模式湖底温度气候态，也可在线用当步湖底温度给瞬时补给率 S₂(t)；幂指数 0.65 < 1，在线的年均略低于离线——推测。在线会把冰期补给压低、夏季抬高，与 FLaMe 按月 F_PP 同向（前文第 3.2 节）。
+
+### 4.3 离线估算（模式湖面积 2.305 Mkm²）
+
+情景：面积加权 Chl 取 3（按面积寡营养居多，Song 2022）、5、10（Xie 2025 按湖数平均 TSI 54）；五纬带湖底年均温取 3、6、12、27、15 °C，温度因子 0.46、0.72、1.13、1.91、1.30，按 g2_fi 湖面积加权为 1.01——推测（温度为假设值；参照 Methane 仓 `data/_tmp/分析_260927_湖泊/notes.txt` 第 46 行的 >60°N 年均底温 2.5 °C、热带 26.8 °C）。
+
+| 面积加权 Chl | S₂ 面积均值 | 产量 f = 0.2 | 排放 f = 0.2、r = 0.45 | 产量 f = 0.4 | 排放 f = 0.4、r = 0.45–0.6 |
+| --- | --- | --- | --- | --- | --- |
+| 3 | 29 | 18.0 | 8.1 | 36.0 | 16.2–21.6 |
+| 5 | 36 | 22.1 | 9.9 | 44.3 | 19.9–26.6 |
+| 10 | 47 | 29.1 | 13.1 | 58.3 | 26.2–35.0 |
+
+1. 表中数（S 单位 g C m⁻² yr⁻¹，产量与排放单位 Tg CH₄ yr⁻¹）——推测（算术）。
+2. 参照：Johnson 41.6（按其单位面积换到模式面积为 34.1）；Bastviken & Johnson 2025 湖泊 46.0（换到模式面积约 34）；把 Johnson 热带 18.8 换成 Duvert 5.4 约 28；DelSontro 叶绿素式在 Messager 面积上湖库合计 78 Tg C，约 104 Tg CH₄；FLaMe（按 TP 算初级生产的过程模式）欧洲 108 407 湖 0.97 ± 0.23 Tg、面积 1.33×10⁵ km²，约 7.3 g m⁻² yr⁻¹，是 Johnson 欧洲区 17.1 的 0.43——已验证（ESD 摘要；面积取 ESD 文章页，经 WebFetch 摘录），换算与比值为推测。
+3. f = 0.2 时第二档排放 8–13 Tg，与第一档 9.5 同量级，只改 S 接近不了任何参照；f = 0.4 时 16–35 Tg，落在"Johnson 热带改用 Duvert"约 28 与 Johnson 34 之间——推测。
+4. r 会随产量升高：产量加倍后孔隙水 CH₄ 更快到冒泡阈值，冒泡比例升、氧化比例降，r 可能由 0.45 升向 0.6——推测，要跑。
+5. 纬带形状（f = 0.2，Chl 按 >60°N 3、45–60°N 5、其余 10）：S₂ 为 13、26、53、89、61，第一档为 20、30、35、59、35；热带与 >60°N 之比 6.7（第一档 3.0），与 Johnson 热带面积加权 50.7 对 Other Boreal 6.7 g m⁻² yr⁻¹ 之比 7.6 相近——推测（算术；Other Boreal 为 4.2 Tg / 0.625 Mkm²）。>60°N 的 S₂ 对底温假设最敏感：温度因子在 2 °C 为 0.35、5 °C 为 0.64——推测（算术）。
+
+### 4.4 风险
+
+1. Pace & Prairie 式 9 的样本以北温带湖为主，热带与冰封湖是外推——存疑，要用第 3.3 节热带浅湖与前文坦噶尼喀沉积矿化 10–20 回代检验。
+2. 深大湖：沉降途中矿化（贝加尔约 30%，前文第 2.1 节）与深水低温使 SR 更低，式 9 用于大湖会偏高；可加湖深因子，或依赖水柱氧化（C-57）削减排放——推测。
+3. 叶绿素对 CH₄ 的解释力有限：跨湖 r² 0.29–0.38（Beaulieu）；单湖年际不相关（Bertolet）；潜在产甲烷多因子（Yang 2026、Morant 2026）——已验证（第 1.1、1.2 节）。第二档改的是跨湖相对分布，绝对量仍由 f 与 r 定——推测。
+4. 同源：式 9 的因变量是沉积物 O₂ 消耗，不是 CH₄ 排放，用它定 S 再对 Johnson 评估不构成同源；若改用 DelSontro 排放式定 S 的形状，则与 Johnson 通量库部分同源（两者都用 Bastviken 2011 等汇编）——推测。理由：Pace & Prairie 第 110–112 页的变量定义；Johnson 第 4 页的数据来源。
+5. 第 3.1 节的面积与大湖问题不由 S 解决；在它们处理之前，热带各区对 Johnson 的比仍会偏高——推测。
+
+## 5. 著录（2026-09-30 由 DOI 查 Crossref / DataCite）
+
+格式：作者姓（注册库顺序，超过 4 位写首位 et al.），年：题名. 刊名 卷(期), 页或文章号. DOI。前文第 5 节已核、本文再引的不重列：DelSontro 2018、Beaulieu 2019、Johnson 2022、Maisonnier 2025、Kelly & Chynoweth 1981、Rudd & Hamilton 1978、Kuivila 1988、Grasset 2018、Sobek 2009、Lewis 2011、Filazzola 2020、Carrea 2023、Lehner 2022、Sayers 2015、Wang 2021，以及 CGLS LWQ、Lakes_cci、LakeATLAS 数据集。
+
+论文：
+
+- Baines, Pace, 1994: Relationships between Suspended Particulate Matter and Sinking Flux along a Trophic Gradient and Implications for the Fate of Planktonic Primary Production. Canadian Journal of Fisheries and Aquatic Sciences 51(1), 25–36. doi:10.1139/f94-005
+- Baines, Pace, Karl, 1994: Why does the relationship between sinking flux and planktonic primary production differ between lakes and oceans? Limnology and Oceanography 39(2), 213–226. doi:10.4319/lo.1994.39.2.0213
+- Barbosa et al., 2021: Large Seasonal and Habitat Differences in Methane Ebullition on the Amazon Floodplain. Journal of Geophysical Research: Biogeosciences 126(7), e2020JG005911. doi:10.1029/2020JG005911
+- Bastviken, Cole, Pace, Tranvik, 2004: Methane emissions from lakes: Dependence of lake characteristics, two regional assessments, and a global estimate. Global Biogeochemical Cycles 18(4), 2004GB002238. doi:10.1029/2004GB002238
+- Bastviken et al., 2010: Methane Emissions from Pantanal, South America, during the Low Water Season: Toward More Comprehensive Sampling. Environmental Science & Technology 44(14), 5450–5455. doi:10.1021/es1005048
+- Bastviken, Johnson, 2025: Future methane emissions from lakes and reservoirs. Nature Water 3(12), 1397–1410. doi:10.1038/s44221-025-00532-6
+- Bertolet et al., 2020: Methane and Primary Productivity in Lakes: Divergence of Temporal and Spatial Relationships. Journal of Geophysical Research: Biogeosciences 125(9), e2020JG005864. doi:10.1029/2020JG005864
+- Borges et al., 2011: Diffusive methane emissions to the atmosphere from Lake Kivu (Eastern Africa). Journal of Geophysical Research 116(G3), G03032. doi:10.1029/2011jg001673
+- Borges et al., 2022: Greenhouse gas emissions from African lakes are no longer a blind spot. Science Advances 8(25), eabi8716. doi:10.1126/sciadv.abi8716
+- Brylinsky, Mann, 1973: AN ANALYSIS OF FACTORS GOVERNING PRODUCTIVITY IN LAKES AND RESERVOIRS. Limnology and Oceanography 18(1), 1–14. doi:10.4319/lo.1973.18.1.0001
+- Chen et al., 2015: Global Landscape of Total Organic Carbon, Nitrogen and Phosphorus in Lake Water. Scientific Reports 5(1), 15043. doi:10.1038/srep15043
+- Darchambeau, Sarmento, Descy, 2014: Primary production in a tropical large lake: The role of phytoplankton composition. Science of The Total Environment 473–474, 178–188. doi:10.1016/j.scitotenv.2013.12.036
+- Deemer, Holgerson, 2021: Drivers of Methane Flux Differ Between Lakes and Reservoirs, Complicating Global Upscaling Efforts. Journal of Geophysical Research: Biogeosciences 126(4), e2019JG005600. doi:10.1029/2019JG005600
+- Duvert et al., 2025: Hydroclimate and landscape diversity drive highly variable greenhouse gas emissions from tropical and subtropical inland waters. Nature Water 3(11), 1303–1317. doi:10.1038/s44221-025-00522-8
+- Hecky, Fee, 1981: Primary production and rates of algal growth in Lake Tanganyika. Limnology and Oceanography 26(3), 532–547. doi:10.4319/lo.1981.26.3.0532
+- Kumar et al., 2023: Knowledge mining for the differentiation pattern with respect to the productivity and trophic status of some selected lakes of Western Himalayas. Frontiers in Environmental Science 11, 1009942. doi:10.3389/fenvs.2023.1009942
+- Li et al., 2020: The significant contribution of lake depth in regulating global lake diffusive methane emissions. Water Research 172, 115465. doi:10.1016/j.watres.2020.115465
+- Marotta et al., 2014: Greenhouse gas production in low-latitude lake sediments responds strongly to warming. Nature Climate Change 4(6), 467–470. doi:10.1038/nclimate2222
+- Morant et al., 2026: Balancing carbon fixation and potential rates of sediment methane production in Mediterranean inland shallow lakes and ponds. Biogeochemistry 169(3), 36. doi:10.1007/s10533-026-01320-4
+- Pace, Prairie, 2005: Respiration in lakes. In: Respiration in Aquatic Ecosystems, Oxford University Press, 103–121. doi:10.1093/acprof:oso/9780198527084.003.0007
+- Peixoto et al., 2015: Spatial versus Day-To-Day Within-Lake Variability in Tropical Floodplain Lake CH4 Emissions – Developing Optimized Approaches to Representative Flux Measurements. PLOS ONE 10(4), e0123319. doi:10.1371/journal.pone.0123319
+- Rinta et al., 2016: Higher late summer methane emission from central than northern European lakes. Journal of Limnology（Crossref 只给编号 1475，无卷期，年为 2016；PDF 页眉为 76(1), 52–67，正文按刊期称 Rinta 2017）. doi:10.4081/jlimnol.2016.1475
+- Rosentreter et al., 2021: Half of global methane emissions come from highly variable aquatic ecosystem sources. Nature Geoscience 14(4), 225–230. doi:10.1038/s41561-021-00715-2
+- Sanches et al., 2019: Global regulation of methane emission from natural lakes. Scientific Reports 9(1), 255. doi:10.1038/s41598-018-36519-5
+- Sanches et al., 2021: Author Correction: Global regulation of methane emission from natural lakes. Scientific Reports 11(1), 21294. doi:10.1038/s41598-021-00321-7
+- Shen et al., 2026: Satellite mapping exposes global inequities in lake water quality across 145 countries. National Science Review 13(15), nwag445. doi:10.1093/nsr/nwag445
+- Song et al., 2022: A unified model for high resolution mapping of global lake (>1 ha) clarity using Landsat imagery data. Science of The Total Environment 810, 151188. doi:10.1016/j.scitotenv.2021.151188
+- Stanley et al., 2016: The ecology of methane in streams and rivers: patterns, controls, and global significance. Ecological Monographs 86(2), 146–171. doi:10.1890/15-1027
+- West, Coloso, Jones, 2012: Effects of algal and terrestrial carbon on methane production rates and methanogen community structure in a temperate lake sediment. Freshwater Biology 57(5), 949–955. doi:10.1111/j.1365-2427.2012.02755.x
+- West, Creamer, Jones, 2015（在线 2015-12-30，印刷 2016-11）: Productivity and depth regulate lake contributions to atmospheric methane. Limnology and Oceanography 61(S1)（Crossref 无页码）. doi:10.1002/lno.10247
+- Xie et al., 2025: Multiple Impacts of Climate Change and Anthropogenic Activities on Lacustrine Trophic State. Global Change Biology 31(9), e70510. doi:10.1111/gcb.70510
+- Yang et al., 2026: Trophic status strongly regulates nitrous oxide but not methane production in global freshwater lake sediments. Nature Communications 17(1), 3791. doi:10.1038/s41467-026-72269-z
+- Yvon-Durocher et al., 2014: Methane fluxes show consistent temperature dependence across microbial to ecosystem scales. Nature 507(7493), 488–491. doi:10.1038/nature13164
+- Zhou et al., 2020: Nonlinear response of methane release to increased trophic state levels coupled with microbial processes in shallow lakes. Environmental Pollution 265, 114919. doi:10.1016/j.envpol.2020.114919
+- Zhu, Purdy, Martínez Rodríguez, Trimmer, 2023: A rationale for higher ratios of CH₄ to CO₂ production in warmer anoxic freshwater sediments and soils. Limnology and Oceanography Letters 8(3), 398–405. doi:10.1002/lol2.10327
+
+数据集（DataCite）：
+
+- Zhang Yibo, 2025: Dataset for Multiple impacts of climate change and anthropogenic activities on lacustrine trophic state. Zenodo. doi:10.5281/zenodo.17100051
+- Copernicus Land Monitoring Service, 2024: Lake Water Quality (raster 100 m), global, 10-daily - version 2. doi:10.2909/deae3db1-a214-4375-8d1a-63c42498050e
+- Meyer, Topp, King et al., 2023: National-scale, remotely sensed lake trophic state (LTS-US) 1984-2020. Environmental Data Initiative. doi:10.6073/pasta/212a3172ac36e8dc6e1862f9c2522fa4
+
+以上 38 条（论文 35、数据集 3）的题名、作者、刊名、卷、期、页或文章号、年由 WebFetch 取 api.crossref.org 或 api.datacite.org 得到——已验证（2026-09-30 匿名查询）。未核或只作转引：Cael & Seekell 预印本（EarthArXiv 3149，未见期刊 DOI）；Kevern 讲义（非同行评审，无 DOI）；McCauley 1989、Rodhe 1969、Vollenweider 1968、Wetzel 1983、Bastviken 2009、Bastviken 2011、Wik 2016、Downing 2006（均经所引文献转引）；Bastviken & Johnson 2025 所引 Beaulieu et al. 2016（身份未核）；Melack 2004 与 Miller 2022（著录未核）；LAGOS-US LANDSAT、LimnoSat-US、AquaSat、GLORIA、CNLTSI、GEMS/Water、IMAGE-GNM、Fink 2018、Mekonnen 2018（只在第 2.2 节表中提及，著录未核）。

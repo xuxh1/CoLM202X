@@ -1,0 +1,60 @@
+From 70db0d46256a67d5f20c0c99dc92a0efd0d4b234 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Sun, 27 Sep 2026 20:35:21 +0800
+Subject: [PATCH] feat(irrigation): start the irrigation state at zero when a
+ restart lacks it (C-32)
+
+---
+ main/MOD_Vars_TimeVariables.F90 | 36 +++++++++++++++++----------------
+ 1 file changed, 19 insertions(+), 17 deletions(-)
+
+diff --git a/main/MOD_Vars_TimeVariables.F90 b/main/MOD_Vars_TimeVariables.F90
+index e2cc7eac..c8a3843b 100644
+--- a/main/MOD_Vars_TimeVariables.F90
++++ b/main/MOD_Vars_TimeVariables.F90
+@@ -1459,23 +1459,25 @@ ENDIF
+       CALL ncio_read_vector (file_restart, 'fq   ', landpatch, fq   ) ! integral of profile FUNCTION for moisture
+ 
+ IF (DEF_USE_IRRIGATION) THEN
+-      CALL ncio_read_vector (file_restart, 'irrig_rate            ' , landpatch, irrig_rate            )
+-      CALL ncio_read_vector (file_restart, 'sum_irrig             ' , landpatch, sum_irrig             )
+-      CALL ncio_read_vector (file_restart, 'sum_deficit_irrig     ' , landpatch, sum_deficit_irrig     )
+-      CALL ncio_read_vector (file_restart, 'sum_irrig_count       ' , landpatch, sum_irrig_count       )
+-      CALL ncio_read_vector (file_restart, 'n_irrig_steps_left    ' , landpatch, n_irrig_steps_left    )
+-      CALL ncio_read_vector (file_restart, 'waterstorage          ' , landpatch, waterstorage          )
+-      CALL ncio_read_vector (file_restart, 'irrig_method_corn     ' , landpatch, irrig_method_corn     )
+-      CALL ncio_read_vector (file_restart, 'irrig_method_swheat   ' , landpatch, irrig_method_swheat   )
+-      CALL ncio_read_vector (file_restart, 'irrig_method_wwheat   ' , landpatch, irrig_method_wwheat   )
+-      CALL ncio_read_vector (file_restart, 'irrig_method_soybean  ' , landpatch, irrig_method_soybean  )
+-      CALL ncio_read_vector (file_restart, 'irrig_method_cotton   ' , landpatch, irrig_method_cotton   )
+-      CALL ncio_read_vector (file_restart, 'irrig_method_rice1    ' , landpatch, irrig_method_rice1    )
+-      CALL ncio_read_vector (file_restart, 'irrig_method_rice2    ' , landpatch, irrig_method_rice2    )
+-      CALL ncio_read_vector (file_restart, 'irrig_method_sugarcane' , landpatch, irrig_method_sugarcane)
+-      CALL ncio_read_vector (file_restart, 'irrig_gw_alloc        ' , landpatch, irrig_gw_alloc        )
+-      CALL ncio_read_vector (file_restart, 'irrig_sw_alloc        ' , landpatch, irrig_sw_alloc        )
+-      CALL ncio_read_vector (file_restart, 'zwt_stand             ' , landpatch, zwt_stand             )
++      ! C-32 (paper V2): a run that switches irrigation on from a restart written
++      ! without it starts the irrigation state at zero instead of stopping.
++      CALL ncio_read_vector (file_restart, 'irrig_rate            ' , landpatch, irrig_rate            , defval = 0._r8)
++      CALL ncio_read_vector (file_restart, 'sum_irrig             ' , landpatch, sum_irrig             , defval = 0._r8)
++      CALL ncio_read_vector (file_restart, 'sum_deficit_irrig     ' , landpatch, sum_deficit_irrig     , defval = 0._r8)
++      CALL ncio_read_vector (file_restart, 'sum_irrig_count       ' , landpatch, sum_irrig_count       , defval = 0._r8)
++      CALL ncio_read_vector (file_restart, 'n_irrig_steps_left    ' , landpatch, n_irrig_steps_left    , defval = 0)
++      CALL ncio_read_vector (file_restart, 'waterstorage          ' , landpatch, waterstorage          , defval = 0._r8)
++      CALL ncio_read_vector (file_restart, 'irrig_method_corn     ' , landpatch, irrig_method_corn     , defval = 0)
++      CALL ncio_read_vector (file_restart, 'irrig_method_swheat   ' , landpatch, irrig_method_swheat   , defval = 0)
++      CALL ncio_read_vector (file_restart, 'irrig_method_wwheat   ' , landpatch, irrig_method_wwheat   , defval = 0)
++      CALL ncio_read_vector (file_restart, 'irrig_method_soybean  ' , landpatch, irrig_method_soybean  , defval = 0)
++      CALL ncio_read_vector (file_restart, 'irrig_method_cotton   ' , landpatch, irrig_method_cotton   , defval = 0)
++      CALL ncio_read_vector (file_restart, 'irrig_method_rice1    ' , landpatch, irrig_method_rice1    , defval = 0)
++      CALL ncio_read_vector (file_restart, 'irrig_method_rice2    ' , landpatch, irrig_method_rice2    , defval = 0)
++      CALL ncio_read_vector (file_restart, 'irrig_method_sugarcane' , landpatch, irrig_method_sugarcane, defval = 0)
++      CALL ncio_read_vector (file_restart, 'irrig_gw_alloc        ' , landpatch, irrig_gw_alloc        , defval = 0._r8)
++      CALL ncio_read_vector (file_restart, 'irrig_sw_alloc        ' , landpatch, irrig_sw_alloc        , defval = 0._r8)
++      CALL ncio_read_vector (file_restart, 'zwt_stand             ' , landpatch, zwt_stand             , defval = 0._r8)
+ ENDIF
+ 
+ #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
+-- 
+2.53.0
+

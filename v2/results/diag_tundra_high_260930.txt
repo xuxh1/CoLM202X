@@ -1,0 +1,237 @@
+# diag_tundra_high_260930：湿苔原三塔（US-A10、US-ICs、US-Atq）量级偏高的诊断
+
+- **日期**：2026.09.30-05:06
+- **读者**：下一会话
+- **来源**：文献线 L-2 只读诊断任务（中控派，`v2/三线.tsv` 第 19 行），承接 `v2/迭代账本.md` Q-49、V-143、Q-61、C-88 与 `v2/results/diag_tundra_260929.txt`、`lit_tundra_260929.txt`；基线 tag `v2_p9a`（树 `cases/paper_v2/v260930/sp_v2_c90`，代码 24061070，配置 `v2/config/v2_p8a`）；脚本与原始输出在 `v2/_scratch/tundra_high/`
+- **状态**：四问均有结论；改法候选只到依据与预期，未改代码、配置与正本数据；候选 1 动数据正本，须用户定
+- **失效于**：US-A10 强迫气温被替换，或湿地斑块加入冻土上方侧向排水之后
+
+口径：CH4 通量 mg CH4 m−2 d−1；呼吸与 GPP mg C m−2 d−1；"比值"一律模式除以塔；"单位呼吸排放"塔上写 E/(Reco/2)、模式写 E/HR（碳比，%）；"偏高三塔"指 US-A10、US-ICs、US-Atq，"正常四塔"指 US-Beo、US-Bes、US-NGB、US-A03。塔上月值按 `score_series_v2.py` 门槛（日内有效半小时 ≥ 50 %、月内 ≥ 10 天）。文献著录见第 6 节，均由 Crossref 查得。
+
+## 0. 覆盖面
+
+1. 读过的账本与文献件：`v2/迭代账本.md` Q-49、V-143、Q-61、C-88 四行，另按行首编号读 C-26、C-38、C-64 至 C-67、C-71、C-76、C-77、C-80 至 C-94、D-59、D-62、D-63、V-98、V-99、V-109、V-110、V-127、V-128、V-134 至 V-170；`lit_tundra_260929.txt` 全文 467 行；`lit_boreal_perarea_260929.txt`（文件头、第 1.4、1.5、3.3 节）；`diag_tundra_260929.txt` 全文 305 行；`v2/三线.tsv` L-2 行；`v2/候选池.tsv` 第 13 至 16 条（检索"枯落物|苔原"，命中 5 行）。
+2. 计分：`v2/results/scores77_*.csv` 全部 94 个含九座苔原塔的 tag，逐 tag 列 β（`tag_beta.py`）；`scores77_v2_p9a.txt` 苔原十行。
+3. 配置：`v2/config/v2_p8a` 的 `SITE_PARAMS.csv`、`SITE_MAIN.csv`、`template.nml` 全文、`ch4_parameter.nml` 有效键全列；case `_conf/ch4_param/US-A10.nml` 与 US-Bes、US-ICs 逐行 diff（无差），`_conf/site_nml/US-A10.nml` 与 US-Bes、US-Beo、US-A03 逐行 diff（只差塔名、年份、路径与 `USE_SITE_LAI`）。
+4. 读码（case 树快照 24061070）：`main/MOD_SoilSnowHydrology.F90`:1276–1405（积水上限、水位下限补水、泥炭外排分支）；`main/MOD_Thermal.F90`:656–663（C-82 枯落物下限乘挺水份额）；`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90`:2575–2606（pH 因子）、4707–4742（`wetland_peat_outflow`）、4745–4777（温带沼泽判定与挺水份额）；`main/TRACER/MOD_Tracer_Reactive_Methane_pH.F90`:58、67–74（缺省 pH 6.2）；`main/TRACER/MOD_Tracer_Reactive_Methane_BgcLink.F90`:91–95（类号）；`mkinidata/MOD_Initialize.F90`:1845–1918（泥炭份额整柱替换土壤参数）；检索 `perch` 于 `main/*.F90`，只命中 `MOD_SoilSnowHydrology.F90` 的一处注释。另读 CTSM 技术手册 `doc/source/tech_note/Hydrology/CLM50_Tech_Note_Hydrology.rst`:842–866。
+5. 数据：`data/FLUXNET-CH4/Observation/` 11 塔 `*_Flux.nc`（FCH4、Resp_DT、GPP_DT、Qle_f、Qh_f、Rnet_f、Qg_f、SWup、SWdown、LWup、TS_k、SnowDepth）；`Forcing/` 9 塔 `*_Met.nc` 全变量与属性；`raw/FLX_*_HH_*.csv` 8 塔的 TA、SWC_k 列；`Sitedata/` 9 塔变量表；`data/_tmp/分析_260925_站点测量高度/badm/` 的 US-A10、US-A03、US-ICs 变量说明；`data/FLUXNET-CH4/build_colm_dataset.py`:22–25、65–70。
+6. 模式输出：`sites_v2_p9a/` 下 11 塔（9 座苔原加 FI-Sii、SE-Deg）全部完整年的 `*_hist_YYYY.nc` 与 `*_hist_tracer_YYYY.nc`。
+7. 文献（本地 pdftotext 文本 `data/_tmp/分析_260926_苔藓蒸发阻抗/txt/`）：US-A10 四篇（Bao、Delwiche、Davidson、Sullivan）检索 footprint|upland|drain|soil moisture|SWC|ERA|fetch|air temperature；US-ICs 三篇（Euskirchen 2012、2016、Miller 2023）检索 water table|slope|drain|saturat|CH4；Swenson 2012 检索 perched|runoff ratio。
+8. 脚本（`v2/_scratch/tundra_high/`，经 `v2/scripts/run_on_node.sh node114`）：`diag_p9a.py`（逐塔月分解、能量、水、热、碳、甲烷收支、链条、巴罗四塔同月对比，输出 `out_diag_p9a.txt`）、`forcing_cmp.py`（`out_forcing_cmp.txt`）、`swc_obs.py`（`out_swc_obs.txt`）、`month_ratio.py`（`out_month_ratio.txt`）、`site_setup.py`（`out_site_setup.txt`）、`tag_beta.py`、`varlist.py`。
+9. 未看：无。
+10. 存疑（要跑才能定）：
+    - ① US-A10 换成实测气温后 β 降多少：本文按模式 US-A10 对 US-NGB 的同月比值 1.40 推算，但两塔强迫还差长波（+10.6 W m−2，两塔均为实测）与短波（−8.7 W m−2）。实验：只替换 US-A10 的 Tair（与由它导出的 Qair）跑单塔诊断 tag，比 β、7–8 月土温与融深。
+    - ② 冻土上方侧向排水能把 US-ICs 8 月的水位回升压掉多少、会不会压低巴罗平地四塔：实验见第 5 节候选 2。
+    - ③ 塔上 SWC 探头深度：原始表与 BADM 未给深度，第 3.2 节只作塔间排序。
+
+## 1. 结论
+
+- US-A10：β 2.39；多出量 93 % 在 7–9 月——已验证（`out_diag_p9a.txt` US-A10 段 A）。最大的偏离是强迫气温：FLUXNET-CH4 该塔无实测气温，TA_F 全由再分析插补，6–8 月比 5 km 外实测的 US-NGB 高 3.6 °C（21 个月逐月 +1.8 至 +5.3 °C），模式 2.5 cm 与 10 cm 土温比塔上高 2.9、2.5 °C——已验证（`out_forcing_cmp.txt` Barrow 段；`out_swc_obs.txt` "no measured TA"；`out_diag_p9a.txt` T 偏差行）。同配置同气候带下，模式 US-A10 是 US-NGB 的 1.40 倍而塔上是 0.65 倍，约 1.4 倍来自暖强迫、其余约 1.5 倍来自足迹更干（塔上 SWC 7–9 月 35–43 %，文献称该塔砂质、低含水）——推测。依据是第 2.4 节同月对比与第 3.2、4.1 节。
+- US-ICs：β 2.16；多出量 63 % 在 8 月（比值 3.92），24 % 在 7 月——已验证（`out_diag_p9a.txt` US-ICs 段 A）。模式 8 月水位由 7 月 0.154 m 升到 0.046 m、单位呼吸排放由 3.5 % 升到 6.3 %，塔上同期 1.3–1.7 % 不变；湿地斑块全年径流近零、蒸散约等于降水，夏末降水无处可去——已验证（`out_month_ratio.txt`；`out_diag_p9a.txt` 段 C）。强迫气温为实测，土温 6–8 月只偏 +0.9 °C——已验证（`out_forcing_cmp.txt`；`out_diag_p9a.txt`）。
+- US-Atq：β 1.80；多出量 6–9 月都有（6 月 20 %、7 月 30 %、8 月 49 %、9 月 25 %），冬季抵回 18 %——已验证（`out_diag_p9a.txt` US-Atq 段 A）。模式 7 月起单位呼吸排放就在 5.1–5.9 %，塔上 2.3–2.7 %；足迹以草丘为主，土壤 0–19 cm 有机层下为约 95 % 砂，模式却按整柱泥炭——已验证（`out_month_ratio.txt`；`site_facts.csv` US-Atq 土壤质地行；`MOD_Initialize.F90`:1871–1911）。
+- US-Beo 0.85、US-Bes 0.86、US-NGB 0.96、US-A03 0.69——已验证（`scores77_v2_p9a.txt`）。其中 US-A03 与 US-A10 同为 ARM 塔、同样无实测气温，模式土温 6–8 月偏高 4.3 °C，修正后它会更低；该塔塔上 Reco/2 在 9–11 月达 1722–2872 mg C m−2 d−1、通量受建筑与取风区影响，不宜作"正常"参照——推测。依据是 `out_diag_p9a.txt` US-A03 段 D、E 与 `site_facts.csv` US-A03 扰动史行（Sullivan 2025 表 B4）。
+
+总判断：
+1. 模式里偏高三塔与正常四塔的链条系数相同：6–9 月 HR/(Reco/2) 中位 1.06 对 1.00、产量/HR 8.9 % 对 9.4 %、排放/产量 0.49 对 0.52、全年氧化占产量 45 % 对 46 %、LAI 0.47 对 0.46（上限 0.6）——已验证（`out_diag_p9a.txt` group medians）。偏高不落在底物、氧化或通道任一环节，而落在"单位呼吸产多少甲烷"：塔上偏高三塔 1.4–2.3 %、正常四塔 2.7–8.0 %，模式一律 3.9–5.6 %——已验证（同上，ch_Ew_o 与 ch_Ew_m 行）。
+2. 塔上能测到而模式没有的差别有两项：US-A10（与 US-A03）的暖强迫，以及土壤含水：塔上 SWC 7–9 月偏高三塔 35–72 %、US-Bes 62–93 %，模式 2–9 cm 液态含水 7–8 月在所有苔原塔都在 57–93 %（整柱泥炭、无出流，蒸散约等于降水）——已验证（`out_swc_obs.txt`；`out_diag_p9a.txt` 段 C）。这两项都不是 Q-49 所说的"足迹高处份额"。
+3. "积水期枯落物阻抗"不成立：`v2_p9a` 中它在九座苔原塔上不起作用（全为类号 4，挺水份额 0，积水 90–180 mm 的月份 rss 0–3 s m−1），偏高照样存在；V-142 把它加到苔原时 US-A10 由 2.19 升到 3.44、US-Atq 1.93 升到 2.89，方向与要修的相反——已验证（`MOD_Thermal.F90`:656–663；`out_site_setup.txt`；`out_diag_p9a.txt` US-Bes、US-Beo 段 C；`tag_beta.py` 输出 `v2_p7`、`v2_p7lr80` 两行）。
+4. 改法按把握排序：① US-A10（及 US-A03）强迫气温换成实测，数据正本修正；② 湿地斑块冻土上方的侧向排水（CLM 的 perched drainage），全局机制；③ US-A10、US-Atq 的泥炭份额按"薄有机层压砂"改，按塔物理区别——推测。见第 5 节。
+
+## 2. 问 1：偏高落在哪个环节、哪几个月
+
+### 2.1 逐塔总量与链条（6–9 月配对月）
+
+下表 β、α、r 取计分文件；其余为 `diag_p9a.py` 在同一门槛下的 6–9 月配对月——已验证（`scores77_v2_p9a.txt`；`out_diag_p9a.txt` summary）。
+
+| 塔 | β | α | r | 塔上 E/(Reco/2) % | 模式 E/HR % | HR/(Reco/2) | GPP 模/塔 | 模式 P/HR % | 模式 E/P | 全年 O/P % | 通气组织 % |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| US-A10 | 2.39 | 2.46 | 0.70 | 1.64 | 4.11 | 1.06 | 0.81 | 8.85 | 0.46 | 50 | 70 |
+| US-ICs | 2.16 | 3.24 | 0.75 | 1.44 | 3.88 | 0.87 | 0.82 | 7.85 | 0.49 | 42 | 56 |
+| US-Atq | 1.80 | 2.84 | 0.80 | 2.25 | 5.17 | 1.10 | 0.91 | 9.53 | 0.54 | 45 | 73 |
+| US-Beo | 0.85 | 1.40 | 0.86 | 2.67 | 5.16 | 0.64 | 0.58 | 9.29 | 0.56 | 43 | 95 |
+| US-Bes | 0.86 | 0.97 | 0.93 | 7.97 | 5.55 | 1.36 | 1.05 | 10.38 | 0.53 | 45 | 92 |
+| US-NGB | 0.96 | 0.94 | 0.74 | 4.48 | 4.13 | 1.10 | 0.65 | 8.53 | 0.48 | 49 | 79 |
+| US-A03 | 0.69 | 0.96 | 0.72 | 5.39 | 4.72 | 0.89 | 0.81 | 9.48 | 0.50 | 48 | 56 |
+
+- 底物：HR/(Reco/2) 偏高三塔 0.87–1.10、正常四塔 0.64–1.36；GPP 比 0.81–0.91 对 0.58–1.05；两组重叠——已验证（上表）。
+- 产量因子与氧化：模式 P/HR、E/P、O/P 两组几乎相同；pH 因子在所有站点都是 1（缺省 pH 6.2，`MOD_Tracer_Reactive_Methane_pH.F90`:58、73；`Physics.F90`:2594–2605），塔上 pH 多在 3.8–5.6、两组相近（RU-Ch2 未见）——已验证（读码；`site_facts.csv` 各塔 pH 行）。pH 若接上会同比压低全部苔原塔，分不开两组——推测。
+- 通道：通气组织占比偏高三塔 56–73 %、正常四塔 56–95 %，E/P 相同，通道不是偏高的原因——已验证（上表）。
+- 结论：模式的单位呼吸排放在九塔都是 3.9–6.2 %，塔上从 1.4 % 到 8.0 %；偏高落在"单位呼吸产多少甲烷"这一环，由水（缺氧份额）与温度（US-A10）两项驱动——推测。依据是第 2.3 节逐月比值与第 3 节塔上对照。
+
+### 2.2 偏高集中的月份
+
+配对月的月均比值与多出量分摊（模式减塔上乘天数，占全部配对月多出量）——已验证（`out_diag_p9a.txt` 各塔段 A）：
+
+| 塔 | 5 月 | 6 月 | 7 月 | 8 月 | 9 月 | 10 月 | 11–4 月 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| US-A10 比值（分摊） | 0.74（−0.01） | 2.17（0.08） | 2.34（0.36） | 2.57（0.29） | 4.28（0.28） | 1.24（0.01） | 0.00–0.49（−0.02） |
+| US-ICs 比值（分摊） | 0.49（−0.01） | 1.15（0.02） | 1.80（0.24） | 3.92（0.63） | 2.15（0.16） | 0.63（−0.01） | 0.04–0.32（−0.03） |
+| US-Atq 比值（分摊） | 1.79（0.03） | 3.01（0.20） | 2.28（0.30） | 2.63（0.49） | 2.45（0.25） | 0.67（−0.04） | 0.02–1.65（−0.18） |
+
+- US-A10 9 月塔上实测半小时占比 0.00，比值 4.28 全靠插补值；只用实测半小时的 7–8 月仍偏高 2.2–2.5 倍（`diag_tundra_260929.txt` 第 2.1 节）——已验证（`out_diag_p9a.txt` measured share 行）。
+- α 2.46–3.24 与此同源：模式 8 月峰（US-A10、US-ICs）比塔上 7 月峰高且晚——已验证（`out_month_ratio.txt` 峰值月行）。
+
+### 2.3 单位呼吸排放逐月（塔上 E/(Reco/2) 对模式 E/HR，%）
+
+——已验证（`out_month_ratio.txt`）：
+
+| 塔 | 5 月 | 6 月 | 7 月 | 8 月 | 9 月 | 10 月 |
+| --- | --- | --- | --- | --- | --- | --- |
+| US-A10 塔/模 | 0.79/2.40 | 1.13/3.09 | 1.98/4.01 | 1.69/4.32 | 1.31/4.62 | 1.97/1.90 |
+| US-ICs 塔/模 | 0.92/0.90 | 1.09/1.36 | 1.72/3.52 | 1.31/6.27 | 1.59/3.94 | 1.63/1.62 |
+| US-Atq 塔/模 | 1.29/3.57 | 1.40/4.18 | 2.47/5.14 | 2.34/5.92 | 2.70/4.90 | 1.91/2.50 |
+| US-Bes 塔/模 | 1.91/3.08 | 7.03/4.19 | 12.90/6.09 | 7.37/6.17 | 4.73/4.72 | 4.55/1.95 |
+| US-NGB 塔/模 | 0.81/3.38 | 2.87/2.72 | 5.59/3.67 | 5.73/4.99 | 2.96/5.03 | 2.65/2.40 |
+
+- 塔上偏高三塔整季平在 0.8–2.7 %，积水的 US-Bes 与低心多边形 US-NGB 在 7–8 月升到 5.6–12.9 %；模式五塔 7–8 月都在 3.5–6.3 %——已验证（上表）。
+- US-ICs 8 月模式跳到 6.27 %，同时水位 0.154 → 0.046 m、淹水份额 0.33 → 0.39——已验证（`out_month_ratio.txt`）。若 8 月单位呼吸排放停在 7 月的 3.52 %，US-ICs β 由 2.16 降到约 1.73——推测。由配对月均值替换算出。
+
+### 2.4 巴罗四塔同月对比（相距约 5 km，配置相同）
+
+以 US-NGB 为分母，只取两塔都有计分月的同一年月——已验证（`out_diag_p9a.txt` Barrow 段）：
+
+| 塔 | 同月数（6–9 月） | 塔上 CH4 比 | 模式 CH4 比 | 6–8 月塔上 Reco/2 比 | 模式 HR 比 | 塔上 GPP 比 | 模式 GPP 比 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| US-A10 | 11（8） | 0.67（6–9 月 0.63） | 1.39（1.40） | 1.66 | 1.43 | 1.38 | 1.45 |
+| US-Beo | 8（5） | 1.12（1.17） | 0.98（0.98） | 2.56 | 1.03 | 1.49 | 1.20 |
+| US-Bes | 15（9） | 1.17（1.28） | 1.02（1.03） | 0.76 | 0.87 | 0.65 | 1.04 |
+
+- 模式对三座同气温的巴罗塔给出几乎相同的排放（0.98–1.03），对 US-A10 高 40 %；塔上 US-A10 反而只有 US-NGB 的 0.63–0.67——已验证（上表）。
+- US-A10 塔上呼吸是 US-NGB 的 1.66 倍、GPP 1.38 倍，排放却只有 0.65 倍：塔下呼吸更旺而产甲烷更少，符合更干、更好氧的足迹——推测。依据是上表与第 3.2 节 SWC。
+- 模式 US-A10 的 1.43 倍 HR 与 4.7 °C 产量处温度（US-NGB 2.6 °C）来自 +3.6 °C 的强迫（第 3.1 节）；模式 E/HR 两塔同为 4.1 %——已验证（`out_diag_p9a.txt` summary 的 Tprod、ch_Ew_m 行）。
+
+## 3. 问 2：与塔上实测对照
+
+### 3.1 强迫气温与土温
+
+| 塔 | 塔上有无实测 TA | 6–8 月强迫气温 °C | 与 US-NGB 同步差 | 模式减塔上土温，6–8 月 | 9–10 月 |
+| --- | --- | --- | --- | --- | --- |
+| US-A10 | 无（TA_F 全为再分析插补） | 6.1 / 9.6 / 6.1 | +3.60 °C（n 30912 半小时） | 2.5 cm +2.9、10 cm +2.5、30 cm 0.0 | −1.8、−0.5、0.0 |
+| US-NGB | 有（61 %） | 2.1 / 5.4 / 3.4 | — | 无土温 | — |
+| US-Beo | 有（10 %） | 2.7 / 5.2 / 3.0 | +0.61 °C | 探头深度未给 | — |
+| US-Bes | 有（98 %） | 2.6 / 4.2 / 3.0 | −0.08 °C | 探头深度未给 | — |
+| US-A03 | 无 | 7.6 / 11.2 / 6.7 | — | 2.5 cm +4.3、10 cm +3.2、30 cm +1.2 | −0.8、−0.3、+0.2 |
+| US-ICs | 有（96 %） | 7.0 / 9.5 / 6.4 | — | 5 cm +0.9、7.5 cm +0.9 | −4.2、−3.8 |
+| US-Atq | 有（88 %） | 6.7 / 8.9 / 5.1 | — | 探头深度未给 | — |
+| US-Ivo | 有（85 %） | 8.0 / 10.2 / 6.3 | — | 5 cm −2.1、30 cm −1.1 | −1.8、−0.6 |
+| RU-Ch2 | 有（100 %） | 10.8 / 13.5 / 11.4 | — | 4 cm −0.1、16 cm +3.5 | +1.2、+1.2 |
+
+- 出处：TA 列有无与实测占比——已验证（`out_swc_obs.txt`，读 `raw/FLX_*_HH_*.csv` 表头）；强迫气温与同步差——已验证（`out_forcing_cmp.txt`）；土温偏差——已验证（`out_diag_p9a.txt` paired bias 行）。
+- FLUXNET-CH4 的气温、辐射、降水缺测用 ERA-Interim 插补——已验证（Delwiche 2021 第 2.1.1 节，p. 3611，本地文本第 341–342 行；方法见 Vuichard and Papale 2015）；BADM 定义 TA_F_QC = 2 为"downscaled from ERA"——已验证（`AMF_US-A10_FLUXNET_BIFVARINFO_HH_2011-2022_v1.3_r1.csv` 第 6 组）。
+- 强迫 Qair 由 VPD_F、TA_F、PA_F 导出，US-A10 的湿度随气温一起偏——已验证（`build_colm_dataset.py`:65–70）。长波与短波在 US-A10 与塔上实测逐步相同——已验证（`out_forcing_cmp.txt` identical share 0.99–1.00）。
+- 实测气温的塔，模式 6–8 月浅层土温偏差在 −2.1 至 +0.9 °C；两座无实测气温的 ARM 塔偏 +2.9、+4.3 °C——已验证（上表）。
+- 暖强迫的连带：US-A10 模式融深 0.50 m（巴罗文献 0.38–0.45 m）、同步期 US-NGB 0.34 m；产量处温度 4.7 对 2.6 °C；6 月塔上反照率 0.40（仍有雪），模式 0.16——已验证（`out_diag_p9a.txt` US-A10、US-NGB 段 D 与 albedo 行；文献值见 `site_facts.csv` US-A10 活动层深度行）。
+
+### 3.2 土壤含水（塔上 SWC，% 体积）
+
+7–9 月月均——已验证（`out_swc_obs.txt`）：
+
+| 塔 | 塔上 SWC_1 | SWC_2 | SWC_3 | 模式液态含水 1.75–4.5 cm / 4.5–9 cm（×100） |
+| --- | --- | --- | --- | --- |
+| US-A10 | 40.2 / 41.5 / 41.4 | 35.5 / 43.4 / 42.9 | — | 64.9–75.9 / 75.3–89.3 |
+| US-ICs | 65.5 / 67.8 / 69.9 | 67.8 / 68.1 / 71.7 | — | 27.2–75.1 / 39.2–87.0 |
+| US-Atq | 43.1 / 40.3 / 43.7 | 58.0 / 56.3 / 57.5 | 40.7 / 43.1 / 43.6 | 46.6–77.7 / 59.3–91.5 |
+| US-Bes | 61.6 / 73.6 / 74.5 | 90.0 / 92.3 / 93.3 | — | 48.7–92.9 / 61.9–92.9 |
+| US-A03 | 30.2 / 32.0 / 35.4 | 29.9 / 42.1 / 41.6 | — | 57.2–80.1 / 74.6–89.6 |
+
+- 塔上排序 US-Bes 最湿（SWC_2 90–93 %），US-ICs 次之，US-Atq、US-A10、US-A03 最干；模式各塔 7–8 月都在 57–93 %，不随塔变——已验证（上表）。
+- US-A10 "with sparse vegetation showed the lowest shoulder season flux rates, likely due to low SWC (about 10% and 29% during spring thaw and autumn freeze, respectively) and sandy soils"——已验证（Bao 2021 第 4 节，p. 383，本地文本第 1006–1015 行）。
+- US-A03 同样干却在正常组，与第 1 节所述数据质量问题一起，说明 SWC 只能作排序证据——推测。探头深度见第 0 节存疑③。
+
+### 3.3 能量分配与水量
+
+6–8 月配对月（W m−2；EF = LE/(LE+H)）——已验证（`out_diag_p9a.txt` 各塔段 B、C）：
+
+| 塔 | LE 塔/模 | H 塔/模 | EF 塔/模 | Rn 塔/模 | 反照率 塔/模 | 模式全年 降水 / 蒸散 / 侧向来水 mm |
+| --- | --- | --- | --- | --- | --- | --- |
+| US-A10 | 29 / 42 | 51 / 47 | 0.38 / 0.49 | 103 / 109 | 0.26 / 0.16 | 256 / 246 / 3 |
+| US-ICs | 36 / 50 | 23 / 39 | 0.62 / 0.57 | 78 / 106 | 0.22 / 0.15 | 252 / 247 / 16 |
+| US-Atq | 26 / 57 | 45 / 37 | 0.35 / 0.57 | 106 / 113 | — | 269 / 276 / 2 |
+| US-Beo | 20 / 50 | 42 / 54 | 0.33 / 0.50 | 90 / 123 | — | 281 / 231 / 0 |
+| US-Bes | 8 / 55 | 40 / 44 | 0.17 / 0.58 | 101 / 113 | 0.20 / 0.17 | 250 / 247 / 0 |
+| US-NGB | 31 / 50 | 41 / 56 | 0.44 / 0.51 | 113 / 125 | 0.22 / 0.16 | 256 / 238 / 0 |
+| US-A03 | 28 / 39 | 65 / 58 | 0.30 / 0.45 | 116 / 114 | 0.20 / 0.13 | 284 / 273 / 10 |
+
+- 模式在九座苔原塔上蒸散约等于降水、侧向来水 0–23 mm、地下径流逐月 ≤ 0：湿地斑块是一个只靠蒸散出水的闭口盆——已验证（`out_diag_p9a.txt` annual 行与 subsurf ro 行）。
+- 九座苔原塔中，模式 EF 在 7 座高于塔上（另两座 US-ICs、RU-Ch2 低），Rn 在 7 座高 6–33 W m−2，有反照率的 5 座夏季反照率低 0.03–0.10；这些偏差两组都有，不分开两组——已验证（上表与 `out_diag_p9a.txt` US-Ivo、RU-Ch2 段 B）。US-Bes 塔上 LE 只有 8 W m−2，与其全年积水不相称，该塔能量数据不宜用——推测。
+
+### 3.4 其他
+
+- 融深：模式 US-A10 0.50、US-ICs 0.57、US-Atq 0.46、US-Beo 0.33、US-Bes 0.31、US-NGB 0.34 m；文献巴罗 0.38–0.45、Imnavait 约 0.60、Atqasuk 最大 0.58、BEO 0.40–0.60、BES 约 0.30、NGEE 0.40–0.50 m——已验证（`out_diag_p9a.txt` model ALT 行；`site_facts.csv` 各塔活动层深度行）。只有 US-A10 偏深，与暖强迫同向——推测。
+- 雪：US-ICs 塔上雪深 10–5 月 0.27–0.54 m，模式 0.00–0.03 m（C-76 补雪后仍如此），只影响冷季，与夏季偏高无关——已验证（`out_diag_p9a.txt` US-ICs 段 D）。
+- 水位：九塔无塔上水位（`diag_tundra_260929.txt` 第 3.1 节）；模式 6–8 月液态水位 0.10–0.16 m，两组相同——已验证（`out_diag_p9a.txt` zwt_JJA 行）。
+
+## 4. 问 3：足迹组成与模式把整格当成什么
+
+### 4.1 塔足迹
+
+| 塔 | 足迹（出处） | 底质（出处） | 塔上 E/(Reco/2) % |
+| --- | --- | --- | --- |
+| US-A10 | 份额未见；与 US-Brw 同址，"moist upland tundra containing the driest soils"，NDWI −0.204（Hashemi 2021 第 2 节） | 砂质、低含水（Bao 2021 p. 383）；有机层 0 至 >0.30 m（Davidson 2016 p. 1118，Barrow 区域值） | 1.64 |
+| US-ICs | 湿薹草 52 %、草丘 47 %（Euskirchen 2012 p. 3） | 15–20 cm 多孔泥炭压粉砂与冰碛，"The surface organic layer is porous and drains when saturated"（Euskirchen 2012 p. 3）；塔位有机层 0.34 m（`site_facts.csv`） | 1.44 |
+| US-Atq | 草丘苔原 63.5–83.9 %、湿薹草 12.6–32.5 %（Davidson 2017 表 3） | 0–19 cm 有机层下约 95 % 砂至 1 m（Davidson 2016 p. 1118） | 2.25 |
+| US-Beo | 湿薹草 39.8–47.1 %、中湿 38.8–52.5 %（Davidson 2017 表 3） | 黏壤与粉壤（`site_facts.csv`） | 2.67 |
+| US-Bes | 湿薹草 62.7–66.1 %；淹水 67–90 %（Davidson 2017；Sturtevant 2012） | 12–15 cm 有机层压粉砂黏土（`site_facts.csv`） | 7.97 |
+| US-NGB | 北低心、南西平心与高心（Dengel 2021） | 10–30 cm 有机层压黏壤（`site_facts.csv`） | 4.48 |
+| US-A03 | 份额未见；取风区受建筑影响（Sullivan 2025 表 B4） | 湿润酸性土，黏壤至砂质黏壤（区域代理） | 5.39 |
+
+- 足迹份额行出自 `lit_tundra_260929.txt` 第 1.1 节——已验证（该节已逐条核原文）；底质行——已验证（括号内出处，Bao 2021 与 Euskirchen 2012 原句见本地文本第 1006–1015 行与第 196–202 行）。
+- 偏高三塔中两座（US-A10、US-Atq）是砂质底，一座（US-ICs）在丘坡上、有机层"饱和即排水"；正常组的三座巴罗塔是黏壤或粉砂黏土的排干湖盆与多边形——已验证（上表）。这是"排水条件"的差别，与 Q-49 的"高处份额"（微地形的高低两团）不是同一件事——推测。
+- US-ICs 的塔作者也注意到：该湿薹草站"we would expect to see the greatest CH4 release given the saturated soil conditions … but nevertheless, the emissions … were low"，7 月 11 日至 9 月 16 日合计 1.4 ± 0.3 g CH4 m−2——已验证（Euskirchen 2016 p. 972，本地文本第 940–955 行）。
+
+### 4.2 模式把整格当成什么
+
+- 九塔都是整格一个湿地斑块（湿地面积份额 1.00），类号 4（boreal fen），`wetland_max_wtd` 0.13 m 下限补水、微地形 σ 0.11 m 定淹水份额——已验证（`out_site_setup.txt`；`BgcLink.F90`:94；`v2_p8a/ch4_parameter.nml`）。
+- 七座湿苔原塔甲烷参数文件逐行相同，站点 nml 只差 `USE_SITE_LAI`（US-A10、US-ICs、US-Atq、US-Bes、US-NGB 用站点 LAI）——已验证（`_conf/ch4_param` 与 `_conf/site_nml` 的 diff）。
+- `DEF_WETLAND_PEAT_SHARE_SITE` 九塔都为 1，初始化时整柱十层都换成泥炭水力与热参数（孔隙度 0.93–0.83、砂份额置 0、有机导热），不论塔下是砂还是黏土——已验证（`v2_p8a/SITE_MAIN.csv`；`MOD_Initialize.F90`:1871–1911）。
+- 湿地斑块在水位高于下限时按泥炭透水率外排（`MOD_SoilSnowHydrology.F90`:1399–1403；`Physics.F90`:4707–4742），但外排经求解器的含水层交换出柱，冻土层不透水，模式各塔逐月地下径流 ≤ 0——已验证（读码与 `out_diag_p9a.txt` subsurf ro 行）。宿主没有 CLM 那样的冻土上方侧向排水——已验证（`main/*.F90` 检索 `perch` 只命中注释）。
+- 北方单位面积调研已把这种柱称为"湿型柱"：水位被下限托在约 0.1 m，站点取泥炭份额 1，模拟的是湿 fen——已验证（`lit_boreal_perarea_260929.txt` 第 3.3 节）。苔原三塔的问题是同一件事：塔下是砂或丘坡，模式仍是湿型柱——推测。依据是第 4.1 节底质列。
+
+### 4.3 "积水期枯落物阻抗"是否成立
+
+- 写法：C-82 的下限 `DEF_WETLAND_POND_LITTER_RSS` 在积水 > 1 mm 时生效，再乘挺水份额；未开 C-88 时挺水份额只在温带沼泽类为 1、其余为 0（C-86）——已验证（`MOD_Thermal.F90`:656–663；`Physics.F90`:4745–4777）。
+- `v2_p9a` 中九座苔原塔全为类号 4，下限为 0；积水 90–180 mm 的 US-Bes、US-Beo 6–8 月 rss 0–3 s m−1——已验证（`out_site_setup.txt`；`out_diag_p9a.txt` 两塔段 C）。现存的偏高与它无关——已验证（同上）。
+- 它加到苔原上时（V-142，`v2_p7` → `v2_p7lr80`）US-A10 2.19 → 3.44、US-Atq 1.93 → 2.89、US-NGB 0.95 → 1.31、US-A03 0.62 → 0.88、US-ICs 2.06 → 2.13；C-86 撤回后回到 2.39、2.07、0.96、0.74、2.33——已验证（`tag_beta.py` 输出 `v2_p7`、`v2_p7lr80`、`v2_p8a`、`v2_p8m` 四行）。
+- 物理依据只来自香蒲沼泽的立枯层（Goulden et al. 2007）；苔原塔上 EF 多低于模式，说明苔原地面也许需要一些蒸发阻抗，但湿地斑块没有出水口，减下来的蒸发全部留成积水与高水位，所以任何蒸发阻抗都会抬高全部苔原塔，春季有积水的 US-A10（5 月 30 mm）、US-Atq（5–6 月 52 mm）抬得最多——推测。依据是第 3.3 节闭口盆与上一条的 V-142 数。
+- 判断：作为偏高的原因与改法都不成立；只有在第 5 节候选 2 给出出水口之后，才值得按苔藓面（C-26）而非香蒲立枯重议——推测。
+
+## 5. 问 4：改法候选（按把握排序）
+
+### 5.1 候选 1：US-A10（及 US-A03）强迫气温换成实测（数据正本，把握高）
+
+- 作用对象：`data/FLUXNET-CH4/Forcing/US-A10_2012-2018_FLUXNET-CH4_Met.nc` 的 Tair 与由它导出的 Qair；US-A03 同理。
+- 依据：第 3.1 节，TA_F 全为 ERA-Interim 插补（Delwiche 2021 第 2.1.1 节；Vuichard and Papale 2015），比 5 km 外实测的 US-NGB 6–8 月高 3.6 °C，而同在巴罗的 US-Beo、US-Bes 与 US-NGB 相差 ≤ 0.6 °C；模式土温对塔上偏 +2.9 °C——已验证（第 3.1 节各出处）。
+- 替换来源二选一：US-NGB 同时段 TA（实测 61 %，其余为该塔自身校正过的插补）；或 AmeriFlux FLUXNET v1.3 的 US-A10 与 US-A03 产品，其变量表列有 TA_F_MDS（塔上实测气温的插补序列），盘上尚无——已验证（BADM 变量表）；需下载——推测。
+- 预期：US-A10 β 2.39 → 约 1.7（按模式 US-A10 对 US-NGB 同月比 1.40），融深 0.50 → 约 0.34 m，6–8 月浅层土温偏差回到 ±1 °C；US-A03 β 0.69 → 约 0.5；其余塔不变——推测。由第 2.4 节同月比值推算，见第 0 节存疑①。
+- 不用塔参数，不动模式；改正本须用户定（C-76 的先例是改前 md5 登记、脚本化替换）。
+
+### 5.2 候选 2：湿地斑块冻土上方的侧向排水（全局机制，把握中）
+
+- 作用对象：宿主湿地斑块水文（`MOD_SoilSnowHydrology.F90` 湿地分支 1335–1405 行附近），在冻土层之上、饱和带之内加一项侧向出流。
+- 依据：CLM4.5 起的 perched drainage，Q = α K_p (z_frost − z_perch) sin β，α = 0.6 m−1，K_p 为冻土顶到饱和带顶之间的厚度加权饱和导水率——已验证（Swenson 2012 式 6、7，本地文本第 772–786 行；CTSM 技术手册 Hydrology 式 7.166–7.167）；原文称加入后活动层"typically wetter than the control run, but not saturated throughout the summer"——已验证（Swenson 2012 第 36 段）。模式现状是闭口盆（第 3.3 节）、8 月水位回升把 US-ICs 的单位呼吸排放推到 6.3 %（第 2.3 节）——已验证。
+- 预期：按坡度与导水率分塔：丘坡上的 US-ICs 8 月回升被压住，β 约 2.16 → 1.7；巴罗平地的 US-Bes、US-Beo、US-NGB 坡度近零、几乎不变；无冻土的北方泥沼（FI-Sii、SE-Deg）不受影响；US-A10、US-Atq 坡度小，只有与候选 3 同开、导水率按砂取值时才有明显作用——推测。US-ICs 数由第 2.3 节替换算出，其余按式中 sin β 与 K 的量级判断。
+- 风险：站点需要坡度（`USE_SITE_topography` 现为关）；泥炭下层导水率 1e−4 mm s−1（`MOD_Initialize.F90`:1888）会把整柱泥炭的排水压到很小；会与下限补水互相抵消，需同时看补水量——推测。
+
+### 5.3 候选 3：US-A10、US-Atq 的泥炭份额按"薄有机层压砂"（按塔物理区别，把握中偏低）
+
+- 作用对象：`SITE_MAIN.csv` 的 `DEF_WETLAND_PEAT_SHARE_SITE`（已有键，1 为整柱泥炭）；更贴合的做法是只把上层有机层换成泥炭（需新的深度参数）。
+- 依据：两塔砂质底（Bao 2021 p. 383；Davidson 2016 p. 1118），塔上 SWC 7–9 月 35–58 %，低于 US-Bes 的 62–93 %（第 3.2 节）；现写法把整柱换成泥炭、砂份额置 0（`MOD_Initialize.F90`:1871–1911）——已验证。按塔给值有物理区别（底质），正常组的黏壤或粉砂黏土塔保持 1——推测。
+- 预期：单开时作用小，因为没有出水口，水仍滞在冻土之上；与候选 2 同开才会降低 US-A10、US-Atq 的夏季水位与单位呼吸排放——推测。砂的导热高于泥炭，融深可能加深（US-Atq 文献最大 0.58 m，模式 0.46 m），对甲烷的净方向——存疑。实验：单塔诊断 tag，泥炭份额 1 对 0 各跑一次，候选 2 开与不开交叉。
+
+### 5.4 不采用或不单列
+
+- 积水期枯落物阻抗（C-82）用于苔原：方向相反（第 4.3 节）——推测。
+- pH 因子接上塔上 pH：九塔 pH 相近，只能整类压低——推测。依据是第 2.1 节。
+- 氧化份额、通道截面、f：模式两组相同，改它们等比例动所有苔原塔——推测。依据是第 2.1 节表与 V-145、V-159 的已测结果（账本）。
+- 高处份额（候选 15、C-78）：Q-49 与 V-136 已测，压过正常四塔，本文不重复——已验证（账本 V-136 行）。
+
+## 6. 文献（字段取自 Crossref，2026-09-30 查询；已在 `lit_tundra_260929.txt` 第 6 节核过的只列 DOI）
+
+- Bao, 2021｜Much stronger tundra methane emissions during autumn freeze than spring thaw｜Global Change Biology 27(2): 376-387｜10.1111/gcb.15421
+- Euskirchen, 2016｜Long-Term Release of Carbon Dioxide from Arctic Tundra Ecosystems in Alaska｜Ecosystems 20(5): 960-974｜10.1007/s10021-016-0085-9
+- Goulden, 2007｜Factors that control Typha marsh evapotranspiration｜Aquatic Botany 86(2): 97-106｜10.1016/j.aquabot.2006.09.005
+- Sullivan, 2025｜Over three decades, and counting, of near-surface turbulent flux measurements from the Atmospheric Radiation Measurement (ARM) user facility｜Earth System Science Data 17(9): 5007-5038｜10.5194/essd-17-5007-2025
+- Swenson, 2012｜Improved simulation of the terrestrial hydrological cycle in permafrost regions by the Community Land Model｜Journal of Advances in Modeling Earth Systems 4(3): 2012MS000165｜10.1029/2012MS000165
+- Vuichard, 2015｜Filling the gaps in meteorological continuous data measured at FLUXNET sites with ERA-Interim reanalysis｜Earth System Science Data 7(2): 157-171｜10.5194/essd-7-157-2015
+- 已在 `lit_tundra_260929.txt` 第 6 节：Davidson 2016（10.1007/s10021-016-9991-0）、Davidson 2017（10.3390/rs9121227）、Delwiche 2021（10.5194/essd-13-3607-2021）、Dengel 2021（10.1029/2021JG006262）、Euskirchen 2012（10.1890/ES11-00202.1）、Hashemi 2021（10.1088/1748-9326/abe2d1）、Sturtevant 2012（10.5194/bg-9-1423-2012）
+- 无 DOI：CTSM 技术手册 Hydrology 章（本地 `~/mode/Wetland/CTSM/doc/source/tech_note/Hydrology/CLM50_Tech_Note_Hydrology.rst`）

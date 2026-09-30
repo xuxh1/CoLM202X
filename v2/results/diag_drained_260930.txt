@@ -1,0 +1,166 @@
+# diag_drained_260930：排干类七座塔甲烷的季节与来源（文献 L-20）
+
+- **日期**：2026.09.30-08:32
+- **读者**：下一会话
+- **来源**：只读诊断子任务 methane-lit-drained（未改码、未改配置与数据、未投作业）；tag `v2_p9i`（树 `cases/paper_v2/v260930/sp_v2_c96` @bb24bfcf）；脚本与输出在 `v2/_scratch/drained/`（`drn_inventory.py` → `inventory.txt`，`drn_clim.py` → `clim_v2_p9i_US-Snd_US-MAC_NL-Hor_RU-Che_RU-Ch2_US-Bi1_US-Bi2_US-Tw3.txt`，`drn_raw.py` → `raw_US-Bi1_US-Bi2_US-Tw3_US-Snd_US-MAC_NL-Hor_RU-Che.txt`，`drn_year.py` → `year_v2_p9i_US-MAC.txt`，`drn_reweight.py` → `reweight_v2_p9i.txt`，`drn_pdftext.py` → `txt/`，均 node112 直跑）；承接 `v2/results/scores77_v2_p9i.txt`、`v2/results/lai_from_gpp_260930.txt`、`scripts/sites/site_facts.csv`、`docs/refs/sites/<塔>/`
+- **状态**：三问已答；改法候选六条，均未实跑，量级效果须跑实验定（第 0 节第 6 条）
+- **失效于**：七塔任一塔的站点作物、淹水序列或站点水位键改动并重跑之后
+
+口径：
+- 通量 mg CH4 m-2 d-1；水位 m，一律换成地表以下为正（FLUXNET-CH4 的 WTD_f 以地表以下为负，已取反）。
+- 塔上月值取 score_series_v2 的观测闸门（FCH4_f，日有效步 ≥ 50 %，月有效日 ≥ 10），气候态为各年同月之均；"未插补"为 FCH4 原始半小时的月均（月内至少 48 个有效半小时）。
+- 模式：E 排放（`f_methane_surf_flux_tot_active`，计分量），P 产量，O 氧化，f_inund 淹水份额（`f_methane_finundated`），Esat / Eunsat 为饱和子柱与非饱和子柱的单位面积排放，E = f_inund·Esat + (1 − f_inund)·Eunsat（NL-Hor 1 月 0.36 × 47.65 + 0.64 × 14.33 = 26.3，对 E 27.07）——已验证（clim 文件第 81–89 行）。Esat 即"该斑块整柱饱和时会排多少"，f_inund 为 0 时照样算出。多斑块塔按 srfdata 的 pctcrop 加权，与 score77.py 第 55–66 行同法。
+- 计分四数（KGE_ln / β / α / r）取 `scores77_v2_p9i.txt`；该文件只用整年模式历史，逐月表里的气候态用全部年份，二者 r 可差 0.1 以内（US-MAC 计分 −0.13，全部月 −0.20）。
+
+## 0. 覆盖面
+
+1. 类名单：`scripts/sites/LIST_sites_77.csv` 中 SITE_CLASSIFICATION = Drained 的恰为 7 座（NL-Hor、RU-Che、US-Bi1、US-Bi2、US-MAC、US-Snd、US-Tw3）；计分 5 座，NL-Hor 与 US-Tw3 观测月少于 8 个不计分——已验证（grep ",Drained," 命中 7 行；scores77_v2_p9i.txt 第 39–43、67 行）。
+2. 站点事实：`site_facts.csv` 七塔 × 11 个变量（管理状态、扰动史、季节形态、水位均值、水位范围、年CH4通量、常年积水面积比例、植物功能型、优势种、湿地水文地貌类型、稻田移栽与收获日期）共 107 行全读。
+3. 文献：`docs/refs/sites/` 七塔目录下 19 篇 PDF 全部抽成文本（`_scratch/drained/txt/`），检索词 CH4、methane、winter、flood、irrigat、ditch、cattle、cow、wet season、dry season、lag、drain、Eriophorum、aerenchym，按命中读原段；Delwiche 2021、Merbold 2009、Kasak 2021、He 2025 只经 site_facts.csv 转引其表格行，未另开。全球对应物两篇（Peacock 2021、Fluet-Chouinard 2023）只读摘要。著录 19 条全部经 Crossref 取回。
+4. 模式：七塔加对照 RU-Ch2 的 `history/`（主历史与 tracer 历史）、`landdata/srfdata.nc`、站点文件、`_conf/site_nml/`、`SITE_MAIN.csv`、`SITE_PARAMS.csv`、`ch4_parameter.nml`、`ch4_param/<塔>.nml`、`v2/data/site_flood_giems.nc`。
+5. 读码（树 `CoLM202X-paper-v2`）：`main/TRACER/MOD_Tracer_Reactive_Methane_Driver.F90` 380–520（土壤斑块分支、站点淹水调用 409–410、漫滩判定 414–425）；`MOD_Tracer_Reactive_Methane_State.F90` 2708–2805（`set_methane_site_flood`）；`mksrfdata/MOD_SingleSrfdata.F90` 340–380（单点作物读法）；`main/MOD_SoilSnowHydrology.F90` 910–940 与 `MOD_Tracer_Reactive_Methane_Physics.F90` 965–995（USE_SITE_WTD）；`MOD_Tracer_Reactive_Methane_Const.F90` 648–712、1460–1475（wetland_max_wtd、wetland_peat_drainage、colm 模式）；`v2/scripts/score77.py`、`mk_site_flood.py`；`scripts/sites/add_site_croptyp.py`。`main/` 与 `main/TRACER/` 全部 .F90 里 ditch 0 处；TRACER 里 drained 8 处，全是稻田烤田与 bog 酸层注释——已验证（grep 计数）。
+6. 未看：无。存疑（要跑才能定）：第 4 节六条改法的量级。实验：在 `v2_p9i` 上只跑这七塔加 RU-Ch2，逐条单开（C-a 站点作物、C-b 冬灌序列、C-c 站点水位、C-d 牧场淹水序列、C-e 沟渠份额、C-f 环沟水位底），比四数与 DJF、JJA 均值。
+
+## 1. 结论
+
+1. 类中位 r −0.13 就是 US-MAC 一塔的 r；五座计分塔的 r 为 −0.68（US-Bi2）、−0.34（US-Bi1）、−0.13（US-MAC）、0.52（US-Snd）、0.83（RU-Che），两座相位真反、一座春夏错位、两座不反——已验证（scores77_v2_p9i.txt 第 39–43 行）。
+2. "排干"是 FLUXNET-CH4 的管理标签，七塔物理上分四种：三角洲排干泥炭农田与牧场（US-Bi1 苜蓿、US-Bi2 玉米、US-Tw3 苜蓿、US-Snd 放牧牧场）、佛州排水矿质土牧场带季节淹水（US-MAC，Spodosol 非泥炭）、西伯利亚环沟排干湿苔原（RU-Che）、1998 年已复湿的荷兰泥炭草甸（NL-Hor）——已验证（site_facts.csv 第 13–107 行；Chamberlain 2015 Study site）。
+3. 塔上季节：三角洲四塔冬季高、夏季低或为汇（US-Bi1 1 月 10.5、6–8 月 −1.9；US-Bi2 2 月 16.7、8 月 −0.5；US-Snd 2 月 41.3、7 月 15.1），未插补原始值同样冬高；US-MAC 与 RU-Che 夏秋高（8 月 227、37）——已验证（clim 文件与 raw 文件）。
+4. 三角洲冬季源的文献解释：US-Bi2 为 11–3 月水禽栖息淹水期排放；US-Snd 为沟渠（<5 % 面积、>84 % 排放）、冬雨积水与冬季在塔旁的牛群；US-Bi1 箱式四年土壤恒为弱汇，塔上冬季为正的来源文献未解释——前两句已验证（Anthony & Silver 2023 Table 1；Hemes 2019 p. 207；Teh 2011 摘要；Knox 2015 站点节），第三句存疑。
+5. US-Bi1、US-Bi2（US-Tw3 同）相位反的原因：单点没开 USE_SITE_pctcrop，作物取全球 CFT 图，格点里 10–14 % 是灌溉稻（PFT 62），模式 5–9 月的排放全部来自这块稻田（稻斑块 JJA 150–188、淹水份额 1.0），塔下的苜蓿或玉米从不排——已验证（inventory.txt 第 14–18、95–99 行；clim 文件第 189–191、229、240–242、284 行）。
+6. 只把权重换成塔下作物（US-Bi1 取 PFT 15，US-Bi2 取 PFT 18）离线重算：US-Bi1 β 6.76 → −0.73、r −0.34 → −0.03，US-Bi2 β 1.70 → −0.00、r −0.68 → 0.03；相位不再反，但冬季源仍没有——已验证（reweight_v2_p9i.txt，第一行复现计分文件四数）。
+7. 模式的产甲烷动力学本身冬高：饱和子柱 Esat 在 US-Bi1 1–4 月 98–147、6–9 月 31–52，US-Snd 1–3 月 24–32、6–9 月 13–17，与塔上同向；缺的是冬季淹水面积，模式三角洲各斑块水位 2.7–4.3 m，塔上 US-Snd 0.54–1.10 m——已验证（clim 文件第 15、21、195、205、246、256 行）。
+8. US-MAC 的错位：模式在旱季末水位开始下降的一个月内一次放出深层饱和带攒下的 CH4（2013-05 E 18.9、2014-05 19.1、2015-03 16.7，柱存量在一到两个月内降约一半），湿季水位反而最深（6–7 月 2.7 m），塔上湿季水位 0.18–0.28 m、通量 8 月 227；文献明言深层积累的 CH4 不到地表、在剖面内被氧化——已验证（year_v2_p9i_US-MAC.txt 第 3–4、16–17、28–29 行；clim 文件第 42、61 行；Chamberlain 2016 摘要）。
+9. US-Snd 模式全年只有氧化（P = 0、E −0.4 至 −0.7），r 0.52 只因冬季汇小一些，量级全丢（β −0.02）——已验证（clim 文件第 9–14 行）。
+10. RU-Che 相位对（r 0.83），问题在量级（β 1.63）；它与对照 RU-Ch2 的甲烷参数文件逐字相同，模式两塔年均比 0.81，塔上 0.54、文献 0.51（3.6 对 7.0 g C），环沟排水在模式里没有表示；11–12 月偏低两塔都有，与排水无关——已验证（diff ch4_param/RU-Ch2.nml RU-Che.nml；clim 文件第 111–117、147–153 行；Kittler 2017 Table 3 经 site_facts 第 32 行）。
+11. NL-Hor 不计分，模式与文献都是夏季最高，相位无问题；FLUXNET-CH4 仅 4 个月约 26，与文献年排放 114–122 mg CH4 m-2 d-1 相差约四倍，观测本身不一致——前半已验证（clim 文件第 75、81 行；Hendriks 2010 摘要），后半存疑。
+12. 改法优先序：C-a 塔下作物（三塔，有稻田塔先例、无全球改动）> C-c 站点水位（US-MAC、US-Snd 诊断）> C-d 牧场淹水序列（US-MAC，全球有路由淹水对应）> C-e 沟渠份额（US-Snd，全球无表示、全球量小）> C-b 冬灌（US-Bi2 一塔）> C-f 环沟水位底（RU-Che 一塔，须加站点键）——推测。排序理由：受影响计分塔数、是否已有机制可用、有无全球对应物。
+
+## 2. 问题一：各塔站点事实
+
+| 塔 | 土地利用与管理 | 排水与水位（地表下为正） | 灌溉与淹水时段 | 沟渠与湿斑份额 | 塔上 CH4 月气候态（DJF / JJA / 峰月） | 文献对季节与来源的解释 |
+| --- | --- | --- | --- | --- | --- | --- |
+| US-Bi1 | 多年生苜蓿（立苗 5 年以上），一年刈割 5–7 次，不施氮；排干泥炭农田，塔址高程 −2.7 m；土壤 C 5.3 %（同管理同土壤的箱式点，距塔 < 1 km） | 文献未报 | 5–9 月约每月漫灌一次 | 常年积水 0；沟渠未报 | 6.9 / −1.9 / 1 月 10.5（未插补 18.7） | 箱式四年土壤恒为弱汇 −53.5 mg CH4 m-2 yr-1，夏末最干时吸收最强，降水与灌溉未造成产甲烷；EC 年总量可忽略 1 ± 3 g C；季度 JFM 0.45、OND 0.17、AMJ −0.07、JAS −0.13 g C m-2 |
+| US-Bi2 | 一年生玉米连作，施氮 118 kg N ha-1 yr-1；土壤 C 15.2 % | 文献未报 | 冬季约 11–3 月为迁徙水禽淹水（Hemes 记 12–2 月） | 未报 | 11.1 / 1.5 / 2 月 16.7（未插补 21.6） | 低排放主要出在冬季淹水期，2 ± 1 g C yr-1；冬季淹水休耕田与 CH4、N2O 热时刻同期 |
+| US-Tw3 | 32 ha 苜蓿，2010 起连作，此前 10 年玉米；刈割 5–7 次；地下灌溉，间或放羊 | 始终在地表以下（无数值） | 地下灌溉 | 常年积水 0 | 仅 1 年 6 个月、FCH4 覆盖 4–29 %，不可用 | 站点论文注明该站不测 CH4；FLUXNET-CH4 仅 OND 一季有值 0.29 g C |
+| US-Snd | 排干泥炭放牧牧场，约 100 头牛常年放牧；胡椒草与鼠大麦（非通气组织入侵种）；25–92 cm 氧化层下为 151–292 cm 泥炭 | 0.30–0.70（泵与沟渠维持）；塔上 WTD_f 气候态 0.54–1.10，夏深冬浅 | 夏季胡椒草靠地下灌溉或浅地下水；冬雨后周期积水 | 常年积水（沟）< 5 %，周期淹没 22 %，无积水 73 % | 33.5 / 17.7 / 2 月 41.3 | 沟渠 < 5 % 面积占 > 84 % 排放，沟渠 466.4、丘凹 9.5、坡 3.9、丘顶 1.0 mg CH4-C m-2 d-1，时间变化小；EC 干季（4–10 月）日均 0–50、雨季 50–400 nmol m-2 s-1；牛群冬季与傍晚常经塔旁，夜间足迹伸到沟渠与湿处；冬雨积水期周期厌氧，9 ± 2 g C yr-1 |
+| US-MAC | 92.1 ha 改良牧场，巴伊亚雀稗，轮牧约 1.6 头 ha-1；贫排水 Spodosol（非泥炭）；年雨 1300 mm，75 % 在夏湿季；上游 riser board 蓄水使表土每年平均多淹 10.75 天 | 湿季升到地表并淹没牧草地，旱季（11–4 月）退到约 1 m；塔上 WTD_f 气候态 0.18（9 月）至 1.03（3 月） | 无灌溉；湿季（6–10 月）淹水 | 牧草地 74.2 %、洼地湿地 10.9 %、菜棕林 9.2 %、排水沟 4.0 %、运河 1.7 % | 21.0 / 176.6 / 8 月 227.1 | 湿季淹水驱动高排放，洼地湿地贡献湿季通量 53.5 %；旱季运河 1.7 % 面积占旱季排放 97.7 %；牛占年排放 19–30 %；通量滞后淹水事件，峰在水位回落期，表层有机土淹水主导，深层积累的 CH4 不到地表、在剖面内被氧化 |
+| NL-Hor | 圩田上的农业泥炭草甸，1998 退耕复湿，沟渠水位抬到地表下约 10 cm，只调沟渠水位，无放牧无刈割；芦苇为主 | 七箱址均值 0.01–0.17，夏季场地中部最低 0.51，秋冬回到地表 | 无 | 沟渠 10 % | 仅 4–7 月各 1 年，约 26（不计分） | 夏季最高、秋冬最低，偶有吸收；箱式面积加权年排放 31.27 与 32.27 g C（约 114 mg CH4 m-2 d-1）；EC 年排放 444 kg CH4 ha-1 yr-1（约 122） |
+| RU-Che | 湿苔原（草丘薹草、羊胡子草），0.15–0.20 m 有机层覆冲积矿质土，连续冻土；2004 年秋塔周直径约 200 m 环沟排水 | 比对照低 4–15 cm（2014），夏季最多低 30 cm；融雪期积水可达地表以上 0.5 m | 无 | 2014-07 最低水位时 10 个观测点仅 1 个仍湿 | 6.7 / 26.1 / 8 月 36.7；11 月 19.4 | 排水使 CH4 约减半（3.6 对 7.0 g C）；机理为厌氧层变冷、好氧层变暖、产甲烷菌减少、通气组织植物减少（羊胡子草相对丰度 43.3 → 18.6）；非生长季占年 30 %，零幕期通量高 |
+
+出处（按表行）：
+1. US-Bi1——已验证（site_facts.csv 第 38–49 行；Anthony & Silver 2023 Table 1 p. 465 与 Methods p. 464–465；Anthony et al. 2023 Results "Soil CH4 emissions" 节；Hemes et al. 2019 p. 207–208；季度值为 site_facts 第 49 行转引 Delwiche 2021 Table B3(c)）。
+2. US-Bi2——已验证（site_facts.csv 第 50–62 行；Anthony & Silver 2023 Table 1 与 Introduction p. 463；Hemes et al. 2019 p. 207 "We measured low CH4 emissions at Bouldin corn, primarily occurring during the flooded winter period"）。
+3. US-Tw3——已验证（site_facts.csv 第 97–107 行，转引 Eichelmann 2018 Sect. 2.1 与 Table 1 脚注、Hemes 2019 Sect. 2.1；raw 文件第 13–18 行）。
+4. US-Snd——已验证（Teh et al. 2011 摘要、Study Site、Results "Methane Emissions" 节；site_facts.csv 第 77–96 行；Baldocchi et al. 2012 Sect. 3.1；Knox et al. 2015 Methods 站点节；Hemes et al. 2019 p. 207；塔上水位为 clim 文件第 6 行）。
+5. US-MAC——已验证（Chamberlain et al. 2015 摘要与 Study site；Chamberlain et al. 2016 摘要；site_facts.csv 第 63–76 行，蓄水天数转引 Chamberlain et al. 2017；塔上水位为 clim 文件第 42 行）。
+6. NL-Hor——已验证（site_facts.csv 第 1–21 行；Hendriks et al. 2010 摘要；Hendriks et al. 2007 摘要；Buzacott et al. 2024 讨论节）。换算：31.27 g C × 16.04/12.01 ÷ 365 = 114 mg CH4 m-2 d-1；444 kg ha-1 yr-1 ÷ 365 = 122。
+7. RU-Che——已验证（site_facts.csv 第 22–37 行；Kittler et al. 2017 摘要与 Sect. 4.2；Göckede et al. 2017 摘要）。
+
+补充：
+1. 三角洲四塔冬季高不是插补造成的：未插补原始值 US-Bi1 1 月 18.7、7–8 月 −1.4 至 −2.4，US-Bi2 2 月 21.6、12 月 19.0、7–8 月 0.4–0.7，US-Snd 1–2 月 34、5–7 月 15–17——已验证（raw 文件第 1–24 行）。但 US-Bi1、US-Bi2 冬季各月只有 1–2 年、FCH4 覆盖 18–27 %——已验证（同文件）。
+2. 荷兰排干奶牛草地泥炭不是大源、可为弱汇，例外是沟渠、沟边带与短期高地下水位；16 塔年排放随年均地下水位线性增（FCH4 = 390.5 + 9.5 GWL，kg CH4 ha-1 yr-1，GWL 单位 cm，R2 0.80）——已验证（Buzacott et al. 2024 Introduction 与 Fig. 7 注）。这与三角洲、US-MAC 各塔的"来自沟渠与湿斑"一致。
+
+## 3. 问题二：模式侧
+
+### 3.1 斑块、水位与排放来源
+
+| 塔 | 斑块与 PFT/CFT（权重） | 模式水位 zwt | f_inund | 模式 E（DJF / JJA / 峰月） | E 从哪来 | 计分（KGE_ln / β / α / r） |
+| --- | --- | --- | --- | --- | --- | --- |
+| US-Bi1 | IGBP 12，7 个作物斑块，取全球 CFT 图：PFT 15 雨养 C3 作物 0.496、17 玉米 0.063、18 灌溉玉米 0.177、19 春小麦 0.030、20 灌溉春小麦 0.093、61 雨养稻 0.042、62 灌溉稻 0.099 | 3.41–3.63（稻斑块夏季 1.51） | 5–9 月加权 0.05–0.10，全部来自稻斑块（JJA 1.00） | −0.25 / 18.6 / 7 月 19.7 | 5–9 月全部来自 PFT 62 灌溉稻（斑块 JJA 188）；其余六斑块全年弱汇 −0.1 至 −0.6 | −1.35 / 6.76 / 1.33 / −0.34 |
+| US-Bi2 | IGBP 12，9 个作物斑块：15 0.475、17 0.029、18 0.143、19 0.052、20 0.138、41 0.000、42 0.008、61 0.015、62 0.140 | 2.69–3.25（稻斑块夏季 1.53） | JJA 0.14 | 0.37 / 21.2 / 7 月 22.9 | 同上，稻斑块 JJA 150 | −0.89 / 1.70 / 1.96 / −0.68 |
+| US-Tw3 | 与 US-Bi2 同一 CFT 组合 | 3.45–3.65 | JJA 0.14 | 0.82 / 23.8 / 7 月 25.4 | 同上，稻斑块 JJA 172 | 不计分 |
+| US-Snd | IGBP 10 单斑块，全球 PFT 图：裸地 0.025、温带常绿针叶 0.0375、温带落叶阔叶 0.0375、PFT 15 C3 作物 0.90 | 4.25–4.29 | 0 | −0.42 / −0.68 / 无峰 | P = 0，只有氧化 0.4–0.7 | nan / −0.02 / 0.01 / 0.52 |
+| US-MAC | IGBP 10 单斑块：温带常绿针叶 0.075、温带落叶阔叶 0.075、C3 草 0.295、C4 草 0.555 | 2.18–2.71，6–7 月最深 | 0（不在站点淹水文件） | −0.20 / 0.47 / 5 月 12.9（3 月 8.3） | 深层饱和带每天产 1.4–3.0，攒在剖面里，旱季末水位开始下降的一个月内放出 | −4.06 / 0.02 / 0.05 / −0.13 |
+| NL-Hor | IGBP 11 湿地斑块（站点文件定地类，FLUXNET 标 GRA），类 BF（水位底 0.13 m、τ 30 d），泥炭份额 1.0，LAI 上限 0.6 | 0.04–0.09 | 0.21–0.36 | 32.3 / 111.4 / 8 月 116.8 | 湿地斑块，P 66–195 | 不计分 |
+| RU-Che | IGBP 11 湿地斑块，类 BF，泥炭份额 1.0，LAI 上限 0.6；甲烷参数与 RU-Ch2 逐字相同 | 0.03–0.24 | 0.23–0.48 | 2.1 / 58.9 / 7 月 78.2（11 月 4.7） | 湿地斑块，P 夏季 75–135 | −0.11 / 1.63 / 2.67 / 0.83 |
+
+出处：斑块与权重——已验证（inventory.txt 第 14–18、95–99、179–181、248–252、330–332 行；US-Bi1、US-Bi2 等站点 nml 第 7 行 `USE_SITE_pctcrop = .false.`；读法见 `MOD_SingleSrfdata.F90` 345–376，站点文件无 croptyp 时读全球 `global_CFT_surface_data.nc`）。类与水位底——已验证（`design_wetland_class_260930.txt` 第 88–90 行；`ch4_parameter.nml` wetland_max_wtd_boreal_fen = 0.13）。水位、淹水、排放与来源——已验证（clim 文件各塔段；每斑块行 US-Bi1 第 217–229 行、US-Bi2 第 268–284 行、US-Tw3 第 323–339 行）。站点淹水文件只含 BR-Npw、BW-Nxr、BW-Gum——已验证（inventory.txt 第 1 行）。计分——已验证（scores77_v2_p9i.txt 第 39–43 行）。RU-Che 与 RU-Ch2 参数相同——已验证（diff 两份 `ch4_param/*.nml` 无差异；站点 nml 只差塔名、站点文件与强迫）。
+
+### 3.2 相位为什么反
+
+1. US-Bi1、US-Bi2：塔上冬高夏低（夏季为汇或近零），模式 5–9 月由全球 CFT 图里 10–14 % 的灌溉稻斑块按 5–9 月淹水排放，其余斑块全年弱汇，所以相关为负；塔下是苜蓿与玉米，没有稻田——已验证（第 3.1 节表；Anthony & Silver 2023 Table 1）。三角洲确有稻田（同区稻田塔 US-Twt），全球图在格点尺度并不错，错在单点把格点混合当成塔下田块——前半已验证（Hemes et al. 2019 Sect. 2.1 列出 Twitchell rice US-Twt），后半推测。
+2. US-Bi1、US-Bi2 冬季缺源不是动力学问题：模式异养呼吸冬高夏低（US-Bi1 HR 1 月 2026、7 月 965 mg C m-2 d-1），整柱饱和时的排放 Esat 同样冬高（US-Bi1 1–4 月 98–147，US-Bi2 1–4 月 82–119、11 月 103），只是各斑块水位 2.7–3.6 m、冬季表层含水量 0.29–0.34（孔隙度 0.48–0.56）从不饱和，f_inund 冬季为 0——已验证（clim 文件第 195–214、246–265 行；inventory.txt 第 51、134 行 soil_theta_s）。模式水位比塔上深数倍的原因推测是单点没有岛外河道向下沉岛的侧渗补给；依据是三角洲岛面在海平面以下、水位靠持续抽水维持（Teh 2011 Study Site；Knox 2015 站点节 "maintained below the soil surface throughout the year by continual pumping"）——推测。
+3. US-MAC：模式峰在 3–5 月，来源是深层饱和带（水位 2.2–2.7 m 以下）全年每天 1.4–3.0 的产量积在剖面里，水位开始下降的那个月一次放出（2013-05 柱存量 0.064 → 0.032 mol m-2、E 18.9）；湿季模式水位反而最深（6–7 月 2.7 m，同期雨 196–241 mm/月），表层从不饱和，湿季无排放——已验证（year_v2_p9i_US-MAC.txt；clim 文件第 45–67 行）。塔上湿季由洼地湿地、沟渠与被淹的牧草地排放，且"深层积累的 CH4 不到地表"，与模式的深层脱气正好相反——已验证（Chamberlain et al. 2015 摘要；Chamberlain et al. 2016 摘要）。
+4. US-Snd：模式无产量、全年弱汇，r 0.52 只是冬季汇略小，不是相位对；塔上排放来自沟渠、冬雨积水与牛群，模式三者都没有——已验证（clim 文件第 9–17 行；Teh 2011；Knox 2015）。
+5. RU-Che：不反。夏季偏高（7 月 78 对 29），11–12 月偏低（4.7、0.7 对 19.4、9.7）；后者 RU-Ch2 同样（5.3、0.6 对 22.3、13.2），属零幕期问题，不在本类——已验证（clim 文件第 111–117、147–153 行）。
+6. 附带发现：三角洲两塔土壤有机质与塔上相反，US-Bi2 srfdata 表层有机质质量分数 0.03（塔上玉米地土壤 C 15.2 %），US-Bi1 0.62（塔上苜蓿地 5.3 %）——已验证（inventory.txt 第 45、128 行；Anthony & Silver 2023 Table 1）。影响 Esat 量级，不影响相位——推测。
+7. 附带发现：非湿地斑块塔 GPP 普遍偏低，US-Snd 模式/塔上 0.40、rstfac 0.58，US-Bi2 0.52，US-MAC 0.62，US-Tw3 0.53——已验证（lai_from_gpp_260930.txt 第 29–33 行）。US-Snd 的水分胁迫与模式水位 4.3 m 对塔上 0.5–1.1 m 一致，胡椒草靠浅地下水维持夏季生长——已验证（Hemes et al. 2019 p. 207 "pepperweed was able to tap subsurface irrigation or shallow groundwater"）。
+
+## 4. 问题三：改法候选
+
+总原则：七塔分四种物理情形（第 1 节第 2 条），不宜用一个"排干类"参数统一处理；下列按塔设置只在塔间有第 2 节所列物理区别时给出。所有量级预期均未实跑。
+
+### 4.1 C-a 塔下作物代替全球 CFT 混合（US-Bi1、US-Bi2、US-Tw3）
+
+1. 改法：三塔站点文件写 croptyp / pctcrop（US-Bi1、US-Tw3 苜蓿取 CFT 1，即 PFT 15 雨养 C3 作物；US-Bi2 取 CFT 4，即 PFT 18 灌溉温带玉米），三塔 `USE_SITE_pctcrop = .true.`。与稻田七塔同一机制——已验证（`scripts/sites/add_site_croptyp.py` 与 commit 13a451e；`MOD_SingleSrfdata.F90` 345–376）。
+2. 依据：塔下田块单一作物，无稻——已验证（Anthony & Silver 2023 Table 1；Eichelmann 2018 Sect. 2.1 经 site_facts 第 101、103 行）。
+3. 预期：离线重加权 US-Bi1 β −0.73、r −0.03，US-Bi2 β −0.00、r 0.03；类中位 r 由 −0.13 升到 0.03（US-MAC −0.13、US-Bi1 −0.03、US-Bi2 0.03、US-Snd 0.52、RU-Che 0.83）；两塔模式均值变负，KGE_ln 无定义——已验证（reweight_v2_p9i.txt）。实跑与离线一致的前提是作物斑块之间不交换水碳——推测。
+4. 存疑：苜蓿用 PFT 15 还是 PFT 16（灌溉 C3 作物）或 PFT 45/46（foddergrass，PFT 表里有此名）；后者在本树是否有独立物候参数未查——存疑。
+5. 全球对应物：不需要。全球格点的稻田份额是对的，问题只在单点代表性——推测。
+6. 计分口径（供中控）：US-Bi1 塔上年均 0.66、文献"可忽略"，改后与 upland 塔同性质，宜按 upland 的符号与差值口径计——推测。
+
+### 4.2 C-b US-Bi2 冬季淹水序列
+
+1. 改法：借 C-48 站点淹水机制（`State.F90` 2708–2805，土壤斑块按月读淹水份额与深度），给 US-Bi2 一条按管理日历的序列：11–3 月淹水、其余月 0，不用 GIEMS。
+2. 依据：Anthony & Silver 2023 Table 1 "Flooded in winter (approximately November-March) for migrating waterfowl habitat"；Hemes 2019 p. 207 冬季淹水期排放 2 ± 1 g C yr-1——已验证（原文）。
+3. 预期：冬季出源，r 转正；但模式 11–3 月 Esat 78–115（均约 95）而塔上同期 4–17（未插补 7–22，均约 9），全田淹水会高约 10 倍——推测（数字已验证于 clim 文件第 234、246 行与 raw 文件第 9–10 行，倍数为推断）。量级要么取部分淹水份额，要么暴露冬季低温下饱和产量偏高，须实跑判别。
+4. 全球对应物：无。模式非稻作物从不淹水，稻田只在插秧到收获间保水（站点 nml 第 146–147 行 "bunds hold water from planting to harvest"）；按塔设置，只一塔、20 个月，优先级低——前半已验证（nml 注释），后半推测。
+
+### 4.3 C-c 站点水位（US-MAC、US-Snd，诊断用）
+
+1. 改法：两塔 `USE_SITE_WTD = .true.`；两塔站点文件已有 WTD_daily（US-Snd 2010–2015，US-MAC 2013–2015）——已验证（inventory.txt 第 172、323 行）。该键让柱体按实测水位诊断，水位在地表或以上时 f_inund = 1——已验证（`MOD_SoilSnowHydrology.F90` 917–935；`Physics.F90` 974–980）。
+2. 预期：US-MAC 湿季水位 0.18–0.28 m 且有积水日，产甲烷移到表层有机土（srfdata 表层有机质密度 91 kg m-3）的湿季，春季深层脱气随之消失，相位向 7–9 月——推测。US-Snd 水位 0.54–1.10 m 仍在 25–92 cm 氧化层之下，量级改善有限，GPP 的水分胁迫可减轻——推测。
+3. 全球对应物：无，单点诊断键（有 B-3 先例）；用来把"水位错"与"缺湿斑"两个原因分开。
+
+### 4.4 C-d US-MAC 牧场淹水序列
+
+1. 改法：把 US-MAC 加进站点淹水文件，份额由塔上水位与地类面积构成：运河 0.017 常年；水位浅于某阈值时加洼地湿地 0.109 与排水沟 0.040；水位在地表或以上的日子按全场淹水。
+2. 依据：地类份额与"湿季洼地湿地与排水沟淹水、大湿季全场淹水"——已验证（Chamberlain et al. 2015 Table 1 与 Introduction，经 site_facts 第 66 行）。阈值取值无文献，须按塔上 WTD_f 与淹水记录定——存疑。
+3. 不用 GIEMS 的理由：`mk_site_flood.py` 取塔周 3 × 3 个 0.25° 格的最大淹水比，该窗口跨到奥基乔比湖西北缘，份额会被湖面主导——推测（窗口 26.79–27.54°N、80.81–81.56°W 由塔坐标算出，湖位置未核）。
+4. 预期：湿季出源、相位转对；量级按 Esat 7–9 月 104–113 × 份额 0.167 约 18，全场淹水日可更高，仍低于塔上 184–227；牛（年排放 19–30 %）模式没有——推测（Esat 已验证于 clim 文件第 51 行）。
+5. 全球对应物：有。全球 colm 模式下土壤斑块吃路由淹水份额（`ch4_parameter.nml` use_routing_for_soil = .true.；`Driver.F90` 414–425），C-48 注明站点序列是单点替代路由漫滩——已验证（读码 `State.F90` 2709–2711 注释）。
+
+### 4.5 C-e US-Snd 沟渠份额
+
+1. 改法：同 C-48 机制给 US-Snd 常年淹水份额 0.05（沟渠），另加冬雨季周期淹没份额（最多 0.22，11–3 月）。
+2. 依据：Teh 2011 摘要与 Fig. 1 注（沟 < 5 %、周期淹没 22 %）；Baldocchi 2012 Sect. 3.1 雨季排放高——已验证（原文）。
+3. 预期：模式 Esat 本身冬高（1–3 月 24–32、6–9 月 13–17），加份额后相位与塔上同向；量级：0.05 × Esat 约 1，塔上 25；实测沟渠 466.4 mg CH4-C m-2 d-1（约 622 mg CH4）是模式饱和柱的 20–30 倍，缺口来自沟底沉积有机质与排水带入的溶解 CH4，模式没有单独的沟渠底物——推测（Esat 已验证于 clim 文件第 15 行）。所以只加份额改相位不改量级。
+4. 全球对应物：无。代码里没有沟渠（第 0 节第 5 条）；全球沟渠排放约 3.5 Tg CH4 yr-1（0.6–10.5）——已验证（Peacock et al. 2021，只读摘要）。全球实现需要排干土地面积图（Fluet-Chouinard et al. 2023 重建了 1700–2020 年湿地转为七种人类土地利用的空间分布，只读摘要）乘沟渠份额，全球量小，优先级低——推测。
+
+### 4.6 C-f RU-Che 环沟水位底
+
+1. 改法：新增站点键，把 RU-Che 湿地斑块的水位底由类值 0.13 m 放深（`Const.F90` 656–664：水位低于此深度时从侧向补水到此深度）；幅度按 Göckede 2017 取排水区比对照深 0.15–0.30 m。须改码（现只有按类的 wetland_max_wtd）。
+2. 依据：环沟排水（Merbold 2009，经 site_facts 第 29 行）；水位低 4–15 cm（2014）、夏季最多 30 cm（Göckede 2017 摘要）；CH4 约减半与机理（Kittler 2017 Table 3 与 Sect. 4.2）——已验证。
+3. 预期：β 由 1.63 向对照塔的 1.11 靠，r 不变；通气组织植物减少（羊胡子草相对丰度 43.3 → 18.6，site_facts 第 27 行）是另一半原因，现有站点键里没有对应的通气组织份额键——推测。
+4. 全球对应物：无，北方排干泥炭（林业、农业排水）全球不表示；一塔、r 已 0.83，优先级低——推测。
+
+### 4.7 不改的
+
+1. NL-Hor：已复湿、模式按 fen 湿地斑块处理在类别上是对的，相位一致，不给排水改法；量级问题归观测不一致（第 1 节第 11 条）与 LAI 上限（lai_from_gpp 建议 0.6 → 2.2），不在本诊断——推测。
+2. US-Bi1 冬季源：文献没有机制（箱式恒为汇），不按塔造源——推测。
+3. US-Tw3：无可用 CH4 观测，只随 C-a 改作物——推测。
+
+## 5. DOI 列表
+
+著录字段全部取自 Crossref（api.crossref.org/works/<doi>），年份取 published-print，无则取 issued。
+
+1. Anthony, T. L., and Silver, W. L. 2023. Hot spots and hot moments of greenhouse gas emissions in agricultural peatlands. Biogeochemistry 167(4): 461–477. doi:10.1007/s10533-023-01095-y
+2. Anthony, T. L., Szutu, D. J., Verfaillie, J. G., Baldocchi, D. D., and Silver, W. L. 2023. Carbon-sink potential of continuous alfalfa agriculture lowered by short-term nitrous oxide emission events. Nat Commun 14(1): 1926. doi:10.1038/s41467-023-37391-2
+3. Hemes, K. S., Chamberlain, S. D., Eichelmann, E., Anthony, T., Valach, A., Kasak, K., Szutu, D., Verfaillie, J., Silver, W. L., and Baldocchi, D. D. 2019. Assessing the carbon and climate benefit of restoring degraded agricultural peat soils to managed wetlands. Agricultural and Forest Meteorology 268: 202–214. doi:10.1016/j.agrformet.2019.01.017
+4. Delwiche, K. B., Knox, S. H., Malhotra, A., Fluet-Chouinard, E., McNicol, G., 等（共 137 人）. 2021. FLUXNET-CH4: a global, multi-ecosystem dataset and analysis of methane seasonality from freshwater wetlands. Earth Syst. Sci. Data 13(7): 3607–3689. doi:10.5194/essd-13-3607-2021
+5. Eichelmann, E., Hemes, K. S., Knox, S. H., Oikawa, P. Y., Chamberlain, S. D., Sturtevant, C., Verfaillie, J., and Baldocchi, D. D. 2018. The effect of land cover type and structure on evapotranspiration from agricultural and wetland sites in the Sacramento–San Joaquin River Delta, California. Agricultural and Forest Meteorology 256–257: 179–195. doi:10.1016/j.agrformet.2018.03.007
+6. Teh, Y. A., Silver, W. L., Sonnentag, O., Detto, M., Kelly, M., and Baldocchi, D. D. 2011. Large Greenhouse Gas Emissions from a Temperate Peatland Pasture. Ecosystems 14(2): 311–325. doi:10.1007/s10021-011-9411-4
+7. Baldocchi, D., Detto, M., Sonnentag, O., Verfaillie, J., Teh, Y. A., Silver, W., and Kelly, N. M. 2012. The challenges of measuring methane fluxes and concentrations over a peatland pasture. Agricultural and Forest Meteorology 153: 177–187. doi:10.1016/j.agrformet.2011.04.013
+8. Knox, S. H., Sturtevant, C., Matthes, J. H., Koteen, L., Verfaillie, J., and Baldocchi, D. 2015. Agricultural peatland restoration: effects of land-use change on greenhouse gas (CO2 and CH4) fluxes in the Sacramento-San Joaquin Delta. Global Change Biology 21(2): 750–765. doi:10.1111/gcb.12745
+9. Chamberlain, S. D., Boughton, E. H., and Sparks, J. P. 2015. Underlying Ecosystem Emissions Exceed Cattle-Emitted Methane from Subtropical Lowland Pastures. Ecosystems 18(6): 933–945. doi:10.1007/s10021-015-9873-x
+10. Chamberlain, S. D., Gomez-Casanovas, N., Walter, M. T., Boughton, E. H., Bernacchi, C. J., DeLucia, E. H., Groffman, P. M., Keel, E. W., and Sparks, J. P. 2016. Influence of transient flooding on methane fluxes from subtropical pastures. Journal of Geophysical Research: Biogeosciences 121(3): 965–977. doi:10.1002/2015JG003283
+11. Chamberlain, S. D., Groffman, P. M., Boughton, E. H., Gomez-Casanovas, N., DeLucia, E. H., Bernacchi, C. J., and Sparks, J. P. 2017. The impact of water management practices on subtropical pasture methane emissions and ecosystem service payments. Ecological Applications 27(4): 1199–1209. doi:10.1002/eap.1514
+12. Hendriks, D. M. D., van Huissteden, J., Dolman, A. J., and van der Molen, M. K. 2007. The full greenhouse gas balance of an abandoned peat meadow. Biogeosciences 4(3): 411–424. doi:10.5194/bg-4-411-2007
+13. Hendriks, D. M. D., van Huissteden, J., and Dolman, A. J. 2010. Multi-technique assessment of spatial and temporal variability of methane fluxes in a peat meadow. Agricultural and Forest Meteorology 150(6): 757–774. doi:10.1016/j.agrformet.2009.06.017
+14. Buzacott, A. J. V., Kruijt, B., Bataille, L., van Giersbergen, Q., Heuts, T. S., Fritz, C., Nouta, R., Erkens, G., Boonman, J., van den Berg, M., van Huissteden, J., and van der Velde, Y. 2024. Drivers and Annual Totals of Methane Emissions From Dutch Peatlands. Global Change Biology 30(12): e17590. doi:10.1111/gcb.17590
+15. Merbold, L., Kutsch, W. L., Corradi, C., Kolle, O., Rebmann, C., Stoy, P. C., Zimov, S. A., and Schulze, E.-D. 2009. Artificial drainage and associated carbon fluxes (CO2/CH4) in a tundra ecosystem. Global Change Biology 15(11): 2599–2614. doi:10.1111/j.1365-2486.2009.01962.x
+16. Kittler, F., Heimann, M., Kolle, O., Zimov, N., Zimov, S., and Göckede, M. 2017. Long-Term Drainage Reduces CO2 Uptake and CH4 Emissions in a Siberian Permafrost Ecosystem. Global Biogeochemical Cycles 31(12): 1704–1717. doi:10.1002/2017GB005774
+17. Göckede, M., Kittler, F., Kwon, M. J., Burjack, I., Heimann, M., Kolle, O., Zimov, N., and Zimov, S. 2017. Shifted energy fluxes, increased Bowen ratios, and reduced thaw depths linked with drainage-induced changes in permafrost ecosystem structure. The Cryosphere 11(6): 2975–2996. doi:10.5194/tc-11-2975-2017
+18. Peacock, M., Audet, J., Bastviken, D., Futter, M. N., Gauci, V., Grinham, A., Harrison, J. A., Kent, M. S., Kosten, S., Lovelock, C. E., Veraart, A. J., and Evans, C. D. 2021. Global importance of methane emissions from drainage ditches and canals. Environmental Research Letters 16(4): 044010. doi:10.1088/1748-9326/abeb36（只读摘要）
+19. Fluet-Chouinard, E., Stocker, B. D., Zhang, Z., Malhotra, A., Melton, J. R., 等（共 21 人）. 2023. Extensive global wetland loss over the past three centuries. Nature 614(7947): 281–286. doi:10.1038/s41586-022-05572-6（只读摘要）

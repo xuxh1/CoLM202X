@@ -1,0 +1,41 @@
+From a3ec57a0031315974339d08a2dbeff0cca03a244 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Fri, 25 Sep 2026 08:28:36 +0800
+Subject: [PATCH] feat(methane): site overrides for the C-13 wetland make-up
+
+SITE_wetland_forest_share and SITE_wetland_lai_cap (< 0 by default: use the
+gridded file). A tower sits in one wetland, while the 2-degree GLWD share
+describes the cell's mix; open fens in forested landscapes (FI-Sii, SE-Deg)
+carry cell forested shares above 0.8.
+
+---
+ share/MOD_Namelist.F90 | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 39c7d400..eeece2ec 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -64,6 +64,10 @@ MODULE MOD_Namelist
+    real(r8) :: SITE_lat_location = -1.e36_r8
+ 
+    integer  :: SITE_landtype             = -1
++   ! C-13 (paper V2) single-point overrides of the gridded GLWD wetland make-up:
++   ! the tower's woody share and the LAI peak of its non-woody share (< 0: use the file)
++   real(r8) :: SITE_wetland_forest_share = -1._r8
++   real(r8) :: SITE_wetland_lai_cap      = -1._r8
+ 
+    logical  :: USE_SITE_landtype         = .false.
+    logical  :: USE_SITE_pctpfts          = .true.
+@@ -1088,6 +1092,8 @@ CONTAINS
+       SITE_lon_location,                      &
+       SITE_lat_location,                      &
+       SITE_landtype,                          &
++      SITE_wetland_forest_share,              &
++      SITE_wetland_lai_cap,                   &
+       USE_SITE_landtype,                      &
+       USE_SITE_pctpfts,                       &
+       USE_SITE_pctcrop,                       &
+-- 
+2.53.0
+

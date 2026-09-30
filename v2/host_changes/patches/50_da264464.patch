@@ -1,0 +1,41 @@
+From da264464093f545592d434a034be253de76f95bc Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 18:40:57 +0800
+Subject: [PATCH] fix(thermal): ponded water adds its whole heat capacity to
+ the surface layer
+
+On a snow-free column the solver scales the first-layer heat capacity by 0.5*(z1 + capr*z2)/dz1 (0.47 with the default nodes) so the node follows the surface; adding the pond to cv(1) before that scaling counted only 47 % of it. The pond heat capacity is now added to the effective capacity deltim/fact(1) after the scaling; under snow it still joins cv(1), which is not scaled. Key off: unchanged.
+
+---
+ main/MOD_GroundTemperature.F90 | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/main/MOD_GroundTemperature.F90 b/main/MOD_GroundTemperature.F90
+index a3841e02..66ff92dd 100644
+--- a/main/MOD_GroundTemperature.F90
++++ b/main/MOD_GroundTemperature.F90
+@@ -213,8 +213,9 @@ CONTAINS
+          cv(i) = hcap(i)*dz_soisno(i)
+       ENDDO
+       IF(lb==1 .and. scv>0.) cv(1) = cv(1) + cpice*scv
+-      ! ponded water stores heat with the first soil layer (DEF_PONDING_HEAT)
+-      IF(wpond>0.) cv(1) = cv(1) + cpliq*wpond
++      ! ponded water under snow stores heat with the first soil layer
++      ! (DEF_PONDING_HEAT); on a snow-free surface layer see fact below
++      IF(lb<1 .and. wpond>0.) cv(1) = cv(1) + cpliq*wpond
+ 
+ ! Snow heat capacity
+       IF(lb <= 0)THEN
+@@ -336,6 +337,9 @@ CONTAINS
+       j       = lb
+       fact(j) = deltim / cv(j) * dz_soisno(j) &
+               / (0.5*(z_soisno(j)-zi_soisno(j-1)+capr*(z_soisno(j+1)-zi_soisno(j-1))))
++      ! ponded water on a snow-free surface layer adds its whole heat
++      ! capacity, not the capr-scaled share of the surface soil layer
++      IF(lb==1 .and. wpond>0.) fact(j) = deltim / (deltim/fact(j) + cpliq*wpond)
+ 
+       DO j = lb + 1, nl_soil
+          fact(j) = deltim/cv(j)
+-- 
+2.53.0
+

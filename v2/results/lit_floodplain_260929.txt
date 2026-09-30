@@ -1,0 +1,402 @@
+# lit_floodplain_260929：洪泛湿地单位面积排放为何偏低——文献调研
+
+- **日期**：2026.09.29-08:51
+- **读者**：下一会话
+- **来源**：文献线只读调研，承接 `v2/迭代账本.md` 的 Q-30、Q-42、Q-43、D-50、D-55、D-56、C-48 至 C-50、V-86 至 V-90；三个只读子任务分读实测（第 1、2 节）、模式（第 3 节）、通气组织（第 4 节），主会话读三塔塔位论文与通气组织一手文献、抽核子任务的关键数与原句、并对全部 DOI 重查 Crossref
+- **状态**：第 0 至 6 节成文；第 6 节所列 DOI 逐条查过 Crossref（2026-09-29）；第 5 节候选只到文献依据、改法与预期，未动代码与配置
+
+单位约定：排放一律 CH₄ 质量；1 g CH₄-C = 1.336 g CH₄；mg m⁻² d⁻¹ 与 g m⁻² yr⁻¹ 之间按 365 d 换算；换算式写在该句里。
+出处简写"作者 年 位置"，完整著录见第 6 节。"全文"指读了原文并给页码或表号；"只读摘要"指只读到摘要；"转引"指数值取自另一篇的转述。
+
+## 0. 覆盖面
+
+1. 检索词与命中文件数（本地文本抽取 `data/_tmp/分析_260925_模拟年份/txt/{models,reviews,observations,data}` 共 194 个文件，不分大小写）：
+   - 实测线：Amazon 91，floodplain 77，Congo 40，Sudd 31，Pantanal 25，Okavango 11，Orinoco 11，varzea 2，Melack 47，Devol 12，Bartlett 46，Pangala 22，Tonle 或 Mekong 16，Echinochloa 0。
+   - 模式线：inundat 117，flooded 91，macrophyte 43，seasonal inundation 13，GIEMS 23，SWAMPS 61，CaMa 20，floating 21，open water 34，flooded forest 20；"SIF" 子串命中 120 个全为噪声，按 seasonal inundation 与源码变量 `sif` 查。
+   - 通气组织线：porosit 68，tiller 25，aerench 82，rhizosph 56，radial oxygen 19，exodermis 3，barrier to 7，foxid 6；另对 `docs/refs/sites/_traits/` 中 22 篇 PDF 抽文本检索：porosit 10，aerench 21，rhizosph 17，radial oxygen 11，exodermis 5，barrier to 6。
+   - 网络主题词：Devol、Bartlett、Crill、Wassmann、Engle & Melack 亚马孙洪泛；Melack 2004 分区；Barbosa 冒泡与氧化；Sawakuchi 河流；Pangala、Gauci 树干；Smith 奥里诺科；Marani、Bastviken、Hamilton 潘塔纳尔；Shaw 赞比亚；Gondwe 奥卡万戈；Pandey、Lunt 苏德；Tathy、Borges 刚果；Tonle Sap；孟加拉与印度洪泛；Echinochloa NPP；C4 δ13C；无氧培养 CO₂:CH₄；Ringeval 2014；Laanbroek 2010；papyrus 与 Echinochloa 的 ROL；淹水后土壤 pH。
+2. 范围：`docs/refs/{models,reviews,observations,data,WFT,sites}`（塔位论文 `sites/BR-Npw`、`BW-Nxr`、`BW-Gum` 由主会话读）；`scripts/sites/site_facts.csv`；CTSM 源码与技术手册（`~/mode/Wetland/CTSM`）；E3SM ELM 源码（GitHub master，子任务取到 scratch）；本树 `main/TRACER` 与 `v2/config/v2_oo4fpi`；网络：Copernicus、Frontiers、PMC、nature.com、Springer 摘要页、NSF PAR、Crossref。
+3. 读法：
+   - 全文：三塔的 Dalmagro 2018、2019，Helfter 2022（Nat Commun）与 Helfter 2022（Phil Trans A），Gondwe 2021，Marani & Alvalá 2007；Ringeval 2014；Melack 2022；Barbosa 2020；Pandey 2021；Lunt 2019；Conrad 2011；Basso 2021；Peixoto 2015；Gauci 2022；Miller 2022；Pangala 2017（本地 `_traits/2017_Pangala.pdf`）；Colmer 2003；Kankaala 2004；Laanbroek 2010（PMC 页，表 1 由主会话解析 HTML 核过）；McNicol & Silver 2014；模式论文 20 余篇（本地 PDF，页码见各条）。
+   - 只读摘要：Devol 1988、1990，Bartlett 1988、1990，Crill 1988，Wassmann 1992，Engle & Melack 2000，Smith 2000，Hamilton 1995，Bastviken 2010，Tathy 1992，Melack 2004，Barbosa 2018、2021，Koschorreck 2000，Sawakuchi 2014、2016，Shaw 2022，Gondwe & Masamba 2014，Borges 2019，Piedade 1991，Engle 2008，Chanton & Smith 1993，Hernández 2019，Nahlik & Mitsch 2011，Murguia-Flores 2023，Li 2024，Ström 2005，Frenzel & Rudolph 1998，Visser 2000，Bhullar 2013，Ejiri & Shiono 2019（网页转述，含图表号）。
+   - 主会话抽核子任务的项：Ringeval 2014 原句 5 处（p.1525、1527、1545、1547、1548），Melack 2022 表 1 与第 7.1 节原句，CTSM `anoxia` 强制与 `sif` 代码，Conrad 2011 p.803，Hamilton 1995 摘要，Barbosa 2018 摘要，Smith 2000 摘要，Riley 2011 p.1931 与 p.1944 原句，Morel 2019 的 αO₂ 原句，van Bodegom 2001 的铁氧化原句，Spahni 2011 表 1 的 r 值，Arora 2018 的 αw δs——均与子任务所记一致。
+4. 未看：无。付费墙读不到全文的都按"只读摘要"或"转引"标出，不当全文用：Melack 2004 分生境通量表、Barbosa 2021、Shaw 2022、Amaral 2025、Potter 2014（摘要被出版社屏蔽，只有 Melack 2022 与 Barros 2020 的转述，本文不采其数值）、Petrescu 2010 补充材料 Text S1、Gedney 2019 补充材料。
+5. 检索有结果但为零的：湄公河与洞里萨、印度自然洪泛区的单位面积箱式实测未检出；热带漂浮草（Echinochloa polystachya、Paspalum repens）、纸莎草、Oryza longistaminata、洪泛林树种的根际氧化份额实测未检出；除三塔外，未检出热带洪泛区用涡度或箱式同时测 CH₄ 与 Reco 的研究。
+6. 不入项（理由）：Joabsson 1999、Ding 2005、Sutton-Grier & Megonigal 2011——植物对净排放的方向问题已由 Laanbroek 2010 表 1、Bhullar 2013 与 Riley 2011 的敏感性试验覆盖；Rosentreter 2021、Kirschke 2013、Bridgham 2013 只 grep 未深读——相关结论已被 Saunois 2020、2025 覆盖；Ponnamperuma 1972（淹水土 pH 收敛）付费且只见检索引擎转述，改用可读全文的 McNicol & Silver 2014。
+7. 存疑（需实验）：第 5 节各候选对三塔与全球的量级，见各候选"预期"。
+
+## 1. 热带与亚热带洪泛湿地单位淹水面积的排放实测
+
+### 1.1 三座塔自身
+
+1. BR-Npw（潘塔纳尔季节洪泛林，优势种 Combretum lanceolatum）：淹水厌氧期 0.10–0.12 g CH₄-C m⁻² d⁻¹（换算 134–160 mg CH₄ m⁻² d⁻¹），落干好氧期 0.002–0.003；淹水期约为落干期的 50 倍——已验证（Dalmagro 2019 表 1 p.1973、摘要 p.1967，全文）。
+2. BR-Npw 年排放 19.21 ± 2.45 g CH₄-C m⁻² yr⁻¹（换算 25.7 g CH₄）——已验证（Delwiche 2021 表 B3(c) p.3639，经 `site_facts.csv` BR-Npw 年CH4通量行）。
+3. BR-Npw 淹水期厌氧段每年 138–219 d；淹水深小于 1 m；淹水期 0.10 m 深土壤 O₂ 为 0.1–0.2 %，落干期约 15 %；淹水期水柱溶解氧 1.3–1.4 mg L⁻¹——已验证（Dalmagro 2019 表 1 p.1973、p.1968–1969、p.1972，全文）。
+4. BR-Npw 淹水期水面扩散通量均值 20 mg CH₄ m⁻² d⁻¹，涨水初与退水末最高 75，洪峰最低 3——已验证（Dalmagro 2018 p.11，全文）。与第 1 条塔上 134–160 相比，水面扩散约占 13–15 %，其余走冒泡、树干与植物——推测（两篇不同年份，按均值相除）。
+5. BW-Gum（奥卡万戈永久纸莎草沼泽）：年排放 115.9 ± 14.9（2018）与 122.1 ± 14.4（2019）g CH₄ m⁻² yr⁻¹，干旱年不降——已验证（Helfter 2022 Phil Trans A 表 1，全文）；换算日均 318–335 mg m⁻² d⁻¹；月均 0.10–0.64 g m⁻² d⁻¹——已验证（Helfter 2022 Nat Commun p.2，全文）。
+6. BW-Nxr（奥卡万戈季节洪泛草地，Panicum repens、Cynodon dactylon、Sporobolus spicatus）：年排放 36.3 ± 2.8（2018）与 8.7 ± 3.2（2019 大旱）g CH₄ m⁻² yr⁻¹——已验证（Helfter 2022 Phil Trans A 表 1，全文）；月中位 0.006–0.262 g m⁻² d⁻¹——已验证（Helfter 2022 Nat Commun p.4，全文）。
+7. BW-Nxr 塔足迹含河道与岸边芦苇带：只取 90 % 通量来自塔周 200 m 内的数据，2018 年收支降 34 %，2019 年降 78 %——已验证（Helfter 2022 Nat Commun p.6，全文）。所以 BW-Nxr 的塔上值有一部分来自单一草地土壤斑块表示不了的水面与岸带——推测（按足迹筛选的降幅推）。
+8. BW-Nxr 足迹内箱式：沿土壤湿度梯度 Site 2–7 平均 44.89 ± 10.80 nmol m⁻² s⁻¹（原文折 2.61 mg h⁻¹，即 62 mg m⁻² d⁻¹）；最干的 Site 1 为净吸收 −0.79；有机质 7–8 % 处升到 300–400 nmol m⁻² s⁻¹——已验证（Gondwe 2021 p.7、p.13，全文）。
+
+### 1.2 亚马孙（按生境与水位期）
+
+1. 干流洪泛区早落水期（1985 年 7–8 月）：大型植物水面 590，洪泛林 110，开阔湖 120 mg m⁻² d⁻¹，湿地平均 390，冒泡占 85 %——已验证（Devol 1988，只读摘要）。
+2. 同期中部洪泛区：漂浮草垫 230 ± 72，洪泛林 192 ± 27，开阔湖 27 ± 5 mg m⁻² d⁻¹；冒泡份额草垫 64 %、林 54 %、开阔水 49 %——已验证（Bartlett 1988，只读摘要）。
+3. 涨水与高水期（1987 年 4–5 月）：草垫 201 ± 35，洪泛林 126 ± 20，开阔水 74 ± 14 mg m⁻² d⁻¹，与落水期多数差异不显著，涨水期冒泡份额低于落水期——已验证（Bartlett 1990，只读摘要）。
+4. 干流洪泛区三生境合计：低水期 68 ± 20，高水期 184 ± 41 mg m⁻² d⁻¹，高低差来自漂浮植物生境——已验证（Devol 1990，只读摘要）。
+5. várzea 湖全年：冒泡均值洪泛林 69、永久水面 29、漂浮草垫 23 mg m⁻² d⁻¹，冒泡占全年排放 80 %；漂浮 Paspalum repens 草垫未测到植物介导传输——已验证（Wassmann 1992，只读摘要；草垫一句转引 Melack 2022 §5.5）。
+6. Calado 湖落水期（9 月）总通量 53–328、均值 163 mg m⁻² d⁻¹，冒泡占 69 %；涨水高水期扩散均值仅 6.6——已验证（Engle & Melack 2000，只读摘要）。
+7. Janauacá 湖两年逐月：港湾开阔水冒泡低水期 22.1 mmol m⁻² d⁻¹（换算 354 mg），其余水位期 1.6–2.4 mmol（26–38 mg）；洪泛林冒泡涨水 2.5、高水 3.2、落水 4.5 mmol（40、51、72 mg）——已验证（Barbosa 2020 表 1 p.137，全文）。
+8. 冒泡占（扩散＋冒泡）的比例随水位与生境从 1 %（高水与涨水期开阔水）到 93 %（落水期洪泛林）；落水越快冒泡越强——已验证（Barbosa 2021，只读摘要）。
+9. 索利蒙伊斯—亚马孙干流段分生境取值：河道 20，漫滩湖开阔水 42，漂浮草本 118，洪泛林水面 58，树干 145（按地面积）mg m⁻² d⁻¹——已验证（Melack 2022 表 1，全文）。
+10. 洪泛林树干（13 个地点、2357 株）：成树树干单位树皮面积 0.33–337 mg m⁻² h⁻¹；树干与叶片占样地总排放 44–65 %，水面 27–41 %；δ13C −66.2 ± 6.4 ‰，与土壤水 CH₄ 一致，说明树干排的是土壤产的 CH₄；洪泛区树木 15.1–21.2 Tg yr⁻¹，其他来源 20.5 Tg yr⁻¹，自上而下 42.7 ± 5.6 Tg yr⁻¹——已验证（Pangala 2017 p.231–232、表 1，全文）。
+11. 全流域飞机廓线：2010–2018 年 46.2 ± 10.3 Tg yr⁻¹，按 725 万 km² 陆地平均湿地 12.7 ± 4.3 mg m⁻² d⁻¹——已验证（Basso 2021 表 1 p.6，全文）。
+12. 区域汇总：亚马孙中部 177 万 km² 6.8 Tg C yr⁻¹（换算 9.1 Tg CH₄），外推到 500 m 以下全流域约 22 Tg C yr⁻¹（换算 29 Tg CH₄）——已验证（Melack 2004，只读摘要）。
+
+### 1.3 奥里诺科、潘塔纳尔（塔外）
+
+1. 奥里诺科 14 000 km² 边缘洪泛区与三角洲：7.1 mmol m⁻² d⁻¹（换算 114 mg），冒泡占 65 %，洪泛林约为开阔水或草垫的 5 倍；原文结论：水浅、淹水短、沉积物上方常有氧，热带洪泛区排放被高估——已验证（Smith 2000，只读摘要）。
+2. 潘塔纳尔 Miranda 河 5 点 320 次箱式：均值 142 ± 314 mg m⁻² d⁻¹，冒泡约占 90 %（冒泡均值 292，中位 153），扩散 10（中位 5）；洪泛地高于湖泊；区域面积通量 5.4×10⁷ g CH₄ km⁻² yr⁻¹（即 54 g m⁻² yr⁻¹）——已验证（Marani & Alvalá 2007 p.1627、表 1 p.1630、p.1631，全文）。
+3. 潘塔纳尔 16 个浅湖低水期：均值 8.8 mmol m⁻² d⁻¹（换算 132 mg），冒泡占 91 %——已验证（Bastviken 2010，只读摘要）。
+4. 潘塔纳尔有植被水体：溶解氧中位 35 μM（大气平衡 230–290 μM）；产甲烷约占水柱与沉积物总异养代谢的 20 %——已验证（Hamilton 1995，只读摘要）。
+
+### 1.4 非洲
+
+1. 赞比亚 Bangweulu、Kafue、Lukanga 雨季飞机观测 5–28 mg m⁻² h⁻¹（换算 120–672 mg m⁻² d⁻¹），陆面模式 0.6–3.9 mg m⁻² h⁻¹（14–94）——已验证（Shaw 2022，只读摘要）。
+2. 奥卡万戈水面扩散（河道、洪泛地、泻湖）均值 23.2 ± 2.2 mg m⁻² h⁻¹（换算 558 mg m⁻² d⁻¹），永久沼泽高于季节沼泽，暖湿季 20–300、冬季 0.2–3.0 mg m⁻² h⁻¹——已验证（Gondwe & Masamba 2014，只读摘要）。
+3. 苏德（TROPOMI 反演，2017-12 至 2019-11）：7.4 ± 3.2 Tg yr⁻¹，比过程模式高一个数量级；按观测最大淹水 99 000–164 000 km² 折 45–75 g m⁻² yr⁻¹（本文换算，按最大面积为下限）；排放低谷在 6–8 月而模式在此时最高，因为实际淹水由白尼罗河来水驱动——已验证（Pandey 2021 p.557、p.563–564，全文）。
+4. 刚果：淹水洪泛林土壤 4.59×10¹² molecules cm⁻² s⁻¹（换算约 106 mg m⁻² d⁻¹），年均 45–90 mg m⁻² d⁻¹——已验证（Tathy 1992，只读摘要）；卫星反演后验 3.3 Tg yr⁻¹，只有先验 8.5 的 40 % 左右——已验证（Lunt 2019 p.14727，全文）。
+
+### 1.5 其他与泛热带汇总
+
+1. 热带湿地汇编 101 篇 328 点：中位 35 mg m⁻² d⁻¹（四分位 5–160）——已验证（Murguia-Flores 2023，只读摘要）。
+2. 24° 以内热带湖泊 26.6 Tg yr⁻¹、面积 585 536 km²（换算 45 g m⁻² yr⁻¹），冒泡占 83 %——已验证（Bastviken 2011 表 1 p.50，全文）。
+3. 哥斯达黎加季节性河滨湿地均值 719（中位 257）mg CH₄-C m⁻² d⁻¹，水深 30–50 cm 时最高——已验证（Nahlik & Mitsch 2011，只读摘要）。
+
+### 1.6 小结：按生境、水深、水位期
+
+1. 典型量级（mg CH₄ m⁻² d⁻¹）：漂浮草本 118–590，洪泛林水面 58–192（另加树干按地面积 145），开阔水 27–120，河道 20；潘塔纳尔洪泛地箱式均值 142；与三塔塔上汛期 134–335 同量级——已验证（第 1.1–1.3 节各条）。
+2. 水深：冒泡频次在水深 4 m 以内较高（Marani 2007 p.1631 引 Bastviken 2004）；哥斯达黎加 30–50 cm 最高——已验证（Marani & Alvalá 2007 p.1631，全文；Nahlik & Mitsch 2011，只读摘要）。
+3. 洪水期与退水期：退水、水体变浅时冒泡增强，落水期总通量常高于涨水期（Engle & Melack 2000；Barbosa 2020、2021）；但也有高水期高于低水期的（Devol 1990）；湖底出露后排放近零（Koschorreck 2000）——已验证（各篇，Barbosa 2020 为全文、其余只读摘要）。归纳为"脉冲出现在仍有水但正在变浅的水域，出露即停"——推测（多篇拼合，无单篇直述）。
+4. BR-Npw 与 BW-Nxr 的塔上季节都是"淹水即开、退水即关"：BR-Npw 厌氧一建立排放即迅速升到峰值，Eh 从 +472 mV 降到 −189 mV 只用几天——已验证（Dalmagro 2019 p.1972，全文）。
+
+## 2. 控制因素
+
+### 2.1 底物：洪水期的新鲜有机碳
+
+1. 漂浮草群落 NPP 64 ± 12 g 干物质 m⁻² d⁻¹，每月损失生物量 31–75 %，2–8 月有机碳损失 30–34 g C m⁻² d⁻¹——已验证（Engle 2008，只读摘要）；Echinochloa polystachya 年 NPP 99 Mg 干物质 ha⁻¹——已验证（Piedade 1991，只读摘要）。
+2. C4 同位素指纹：涨水初沉积物气泡 CH₄ 的 δ13C 随根系植物变化，C3 Oryza 下 −61.3 ‰，C4 Paspalum 下 −52.0 ‰，Echinochloa 下 −48.3 ‰，说明底物来自当季根系植物——已验证（Chanton & Smith 1993，只读摘要）。
+3. "these plants supply most of the organic carbon subsequently released as methane"；同节批评现有模式的植物功能型不代表水生植物、用土层分子扩散而不适用于湍流控制的水气交换——已验证（Melack 2022 §7.1，全文）。
+4. 低水期出露湖底长满 Luziola 与 Oryza rufipogon，涨水后腐解，次年 CH₄ 明显升高——已验证（Barbosa 2020 p.146，全文）。
+5. BW-Gum 月排放与月最大 GPP 线性相关（FCH4 = −0.71 + 1.68 GPPmax，g m⁻² d⁻¹，R² = 0.89），作者判为根际光合产物沉积控制季节——已验证（Helfter 2022 Nat Commun p.2–3 与图 1，全文）。
+6. BR-Npw 淹水刚开始的高排放推测由旱季积累的凋落物与活性 DOC 供给——已验证（Dalmagro 2019 p.1977，原文为作者推断）。
+7. 热带湖泊沉积物 CH₄ 产率随有机碳线性增加——已验证（Conrad 2011 p.803，全文）；BW-Nxr 箱式排放随有机质升高、7–8 % 时达 300–400 nmol m⁻² s⁻¹——已验证（Gondwe 2021 p.13，全文）。
+8. 热带 Ultisol 淹水比仅隔绝氧（N₂ 顶空）产更多 CO₂ 与 CH₄，作者归因于淹水使团聚体解体、有机—矿物复合体溶出活性碳——已验证（McNicol & Silver 2014 摘要与讨论，全文）。
+9. 河水颗粒有机碳直接驱动洪泛区产甲烷的定量证据未检出；刚果河网高 CH₄ 由洪泛林与水生植物湿地的侧向碳输入维持——已验证（Borges 2019，只读摘要）。
+
+### 2.2 淹水时长与缺氧建立
+
+1. 热带洪泛土"淹水到开始产甲烷要几天"的直接定量未检出；BR-Npw 实测 Eh 数日内转负、排放随即达峰——已验证（Dalmagro 2019 p.1972，全文）。
+2. 常淹的 igapó 土壤中产甲烷菌常在，从未淹水的旱地林土壤要经无氧培养 mcrA 才增加——已验证（Hernández 2019，只读摘要）。
+3. 奥里诺科淹水短、沉积物上方常有氧，排放明显低于亚马孙——已验证（Smith 2000，只读摘要）。
+4. 淹水后酸性土 pH 上升：热带 Ultisol 对照 5.8，淹水或 N₂ 处理 6.3–6.6——已验证（McNicol & Silver 2014 表 2，全文）。
+
+### 2.3 氧化（水柱与表层；根际见第 4 节）
+
+1. várzea 湖产生的 CH₄ 有 34 % 到约 100 %、平均 80 % 被氧化，体积速率 1–132 mg C m⁻³ d⁻¹——已验证（Barbosa 2018，只读摘要）。
+2. 亚马孙大河中氧化使扩散通量减少 28–96 %——已验证（Sawakuchi 2016，只读摘要）；七条大河氧化去除 59–96 %——已验证（Borges 2026，全文）。
+3. 洞里萨湖溶解 CO₂ 的 47–67 % 来自 CH₄ 氧化，产生与氧化主要发生在淹水土壤与洪泛生境——已验证（Miller 2022，全文）。
+4. 出露沉积物表层氧化最多消耗上行 CH₄ 的 75 %——已验证（Koschorreck 2000，只读摘要）。
+5. 走溶解扩散路径的 CH₄ 大多被氧化，而冒泡与树干绕过氧化——推测（由第 2.3 节第 1 条与第 2.4、2.5 节拼合）。
+
+### 2.4 冒泡份额
+
+1. 各研究冒泡占总排放：49–64 %（Bartlett 1988）、65 %（Smith 2000）、69 %（Engle & Melack 2000）、80 %（Wassmann 1992）、83 %（Bastviken 2011 热带湖）、85 %（Devol 1988）、约 90 %（Marani & Alvalá 2007）、91 %（Bastviken 2010）、1–93 % 随水位与生境（Barbosa 2021）——已验证（各篇，Marani 与 Bastviken 2011 为全文，其余只读摘要）。
+
+### 2.5 植物传输
+
+1. 亚马孙洪泛林树干排放约占样地总排放一半（44–65 %）——已验证（Pangala 2017 p.232，全文）；Negro 河 igapó 高水期树干 83 µmol m⁻² h⁻¹，占（树干＋冒泡＋扩散）的约 60 %——已验证（Amaral 2025，只读摘要；占比为本文换算）。
+2. 漂浮草垫与洪泛林以冒泡与扩散为主，根茎传输份额较小；漂浮草只在近岸扎根处才走植物通道——已验证（Bartlett 1988，只读摘要；Marani & Alvalá 2007 p.1629，全文）。
+3. 纸莎草幼株与衰老株秆几乎不排 CH₄，BW-Gum 夜间排放比白天高 52 ± 26 %；纸莎草根际 O₂ 夜间可降 30 %，作者提出夜间根际氧化减弱使净排放升高——已验证（Helfter 2022 Nat Commun p.3，全文）。
+
+### 2.6 CH₄ 与呼吸之比（对照模式排放占 HR 1.1–1.5 %）
+
+1. 潘塔纳尔有植被洪泛水体：产甲烷约占总异养代谢 20 %——已验证（Hamilton 1995，只读摘要）。
+2. 16 个潘塔纳尔与亚马孙湖泊沉积物无氧培养：计入溶解态后总 CO₂ 产率约为 CH₄ 的 2 倍，即 CH₄ 约占无氧矿化的三分之一——已验证（Conrad 2011 p.803，全文；三分之一为本文换算）。
+3. 亚马孙中部 CH₄-C 排放约为 CO₂-C 排放的 3–5 %——推测（Melack 2004 与 Abril 2014、Engle 2008 两组区域口径拼合）。
+4. 塔上排放占 Reco/2 为 3.8–21 %（账本 V-88），与第 1、2 条同量级；模式 1.1–1.5 % 比这些实测份额低 3–15 倍——推测（口径不同：塔上是排放对 Reco/2，文献第 1、2 条是产量对呼吸）。
+5. 其他全球模式在淹水区的排放对 HR 之比：LPJ-Bern 的淹水湿地 r = 2.40 %、4.15 %，按反演修订为 5.37 %——已验证（Spahni 2011 表 1 p.1646、p.1657，全文）；CLASS-CTEM αw δs = 0.061（格点 HR 的 6.1 %，δs 已含氧化）——已验证（Arora 2018 p.4686，全文）。本模式三塔 1.1–1.5 % 比这两个模式低 2–5 倍——推测（按比值相除，HR 口径各模式不同）。
+
+### 2.7 与本模式对上
+
+1. 模式淹水子柱：产量 96 % 在 0.29 m 以上，氧化占产量 58–90 %，冒泡与水层扩散近零，通气组织送氧（2.0–3.1×10⁻⁵）多于分解耗氧（1.7–2.5×10⁻⁵，mol m⁻³ s⁻¹ 按层求和）——已验证（`data/_tmp/分析_260927_洪泛/notes.txt` 第 2、3 节；账本 V-87、V-88）。
+2. 模式淹水子柱 O₂ 为 0.38–0.8 mol m⁻³，湿地斑块塔 US-Myb 0.07–0.09、FI-Sii 0.02–0.04（同一变量）——已验证（账本 V-86、V-87）；而 BR-Npw 实测淹水期土壤 O₂ 只有落干期的 1 %（0.1–0.2 % 对 15 %）——已验证（Dalmagro 2019 表 1 p.1973，全文）。模式淹水子柱比实测富氧得多——推测（模式量与实测量口径不同，一为浓度、一为体积分数，只能比相对量）。
+3. 实测排放以冒泡为主（第 2.4 节），模式冒泡近零；模式把本该冒泡逸出的 CH₄ 留在表层被氧化——推测（冒泡为零造成多少损失未做定量归因）。
+
+## 3. 其他模式怎么处理洪泛区
+
+### 3.1 要点
+
+1. 几乎所有全球模式都不单独处理洪泛区：季节淹水区与永久湿地共用同一产率方程与参数，差别只在淹水面积来源——已验证（第 3.2 节表中各篇）。
+2. 没有一个全球模式给洪泛区加河水有机碳或水生植物底物；底物一律取宿主 HR、土壤碳或 NPP——已验证（同上）。ORCHIDEE-Clateral 把河流 POC、DOC 沉积进洪泛区土壤碳，但不接甲烷——已验证（Zhang 2022 p.1122、1128、1133，全文）。
+3. Ringeval 2014 批评"用全格点平均 HR 算洪泛甲烷通量密度"：原文 "the mean value of the heterotrophic respiration over the entire grid cell is used to compute the CH4 flux density"——已验证（Ringeval 2014 p.1547，全文）。这正是本模式淹水子柱借宿主 HR 的做法——已验证（notes 第 2 节第 1–3 条）。
+4. 陆面模式都没有显式水柱氧化；LPJ-WHyMe 与 LPX 把地表水层并入顶层土壤，水越深氧化越多、排放越少——已验证（Ringeval 2014 p.1527、p.1545，全文）。
+5. TOPMODEL 类淹水方案按定义排除河道与洪泛：JULES 限于 "stagnant water"（Gedney & Cox 2003 p.1268）、JSBACH 排除 "running water"（Kleinen 2012 p.239）、ICON-XPP 明写不模拟河漫滩短时淹水（Wilkenskjeld 2025 p.11）、UKESM1 "not fluvial flooding"（Folberth 2022 p.8）——已验证（子任务读全文，页码如列）。用河网汇流给洪泛面积并接甲烷的只有 Ringeval 2014 与 Petrescu 2010（均用 PCR-GLOBWB）——已验证（同上）。
+6. CLM4Me 的季节淹水因子 SIF 在当前 CTSM 与 ELM 中实际不生效：开甲烷模块即强制 `anoxia = .true.`，`sif` 恒为 1——已验证（CTSM `src/main/controlMod.F90:483–487`、`src/biogeochem/ch4Mod.F90:2518–2528`，主会话读码；ELM 见子任务 `ELMBuildNamelist.pm:1082–1084`）。本树 C-41 的 `floodplain_sif` 是把 Riley 2011 原式恢复到淹水子柱——已验证（`main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90` C-41 注释）。
+7. CTSM 的 pH 因子 `usephfact` 默认 `.false.`，定义里标 "EXPERIMENTAL, UNSUPPORTED, and UNTESTED"——已验证（CTSM `src/biogeochem/ch4varcon.F90:33`、`bld/namelist_files/namelist_definition_ctsm.xml:2754–2757`，主会话读码）；本树 `usephfact = .true.`——已验证（`v2/config/v2_oo4fpi/ch4_parameter.nml:194`）。
+
+### 3.2 逐模式（六问压缩为一表，数值均带出处）
+
+| 模式 | 洪泛与永久湿地同一产率 | 额外底物 | 另设淹水地块与面积来源 | 单位面积常数 | 关键数值与出处 |
+|---|---|---|---|---|---|
+| LPJ-wsl | 同，E = F·b·Rh·S | 无（Rh） | 否；Prigent、GIEMS 或 TOPMODEL | 否，F_T、F_B 按气候插值 | b = 0.03 mol/mol，F_T = 0.152–0.175（Hodson 2011 p.1–2；Wania 2013 p.627；Zhang 2016 式 1 p.1389） |
+| LPJ-Bern（Spahni 2011） | 不同：60°S–45°N 淹水湿地 r·HR，泥炭地用过程式 | 无 | 否；Prigent 2007 气候态 | 否，r 全球常数 | r = 2.40 / 4.15 / 5.37 %（表 1 p.1646、p.1657） |
+| LPX-Bern（Ringeval 2014） | 同一例程改 4 处 | 洪泛区自有耐淹 PFT 的碳 | 是，洪泛区土地单元；PCR-GLOBWB | 否（建议开阔水用常数） | Rmoist 0.5；只 C4 耐淹草有植物传输（p.1525–1527） |
+| LPJ-WHyMe、LPJ-GUESS | 只算泥炭地 | — | — | — | CH₄/CO₂ 0.1（Wania 2010 表 4 p.573），后验 0.055、0.14（Kallingal 2024 表 5；2025 表 C1） |
+| ORCHIDEE（2010、2011） | 同，热带另标 a₀ | 无 | 否；Prigent 或 TOPMODEL，"floodplain storage … not included" | 否 | 热带 a₀ 13.75–15.77×10⁻⁶，Q10 1.2 或 3（Ringeval 2010 p.3–4；2011 p.2141–2142） |
+| PEATLAND-VU（Petrescu 2010） | 同式，洪泛区另一套土壤与植被参数 | 未写 | 是；PCR-GLOBWB + HYDRO1k | 否 | 参数在 Text S1，读不到（p.3–6） |
+| CLM4Me / CTSM | 同 | 无（格点 HR） | 否；Prigent 拟合或 TWS/ZWT 反演 | 否 | f_CH4 0.2，Q10 2（Riley 2011 表 1 p.1930）；SIF 默认不生效（第 3.1 节第 6 条） |
+| ELM-Wet（Yazbeck 2025） | 按湿地斑块类型分参数 | 无 | 是，独立湿地地类；水深 50 cm 或实测水位 | 否 | f_CH4 0.110–0.500，Q10 1.934–2.674（表 2 p.9）；通气组织 0.53、冒泡 0.37、水柱扩散 0.09（表 4 p.18） |
+| JULES | 同 | 无（土壤碳或 NPP） | 否；TOPMODEL 截掉河流 | 否 | k 7.41×10⁻¹²（Parker 2022 p.5781）；苏德在加 SWAMPS 掩膜后仍 "significantly too low"（p.5792） |
+| TEM | 同，按三类湿地分参数 | NPP 调制 | 否；Matthews & Fung | 否 | M_G0 0.45–1.3 μmol L⁻¹ h⁻¹，PQ10 3.5–4.5（Zhuang 2004 表 1） |
+| WetCHARTs | 同，经验式 s·A·R·q10 | 无（HR） | 否；GLWD 或 GLOBCOVER × SWAMPS | 否 | q10 1–3；亚马孙占全球 29 %（Bloom 2017 p.2143–2145） |
+| JSBACH / ICON | 同 | 无 | 否；TOPMODEL 排除河道湖泊 | 否 | 淹水分解为好氧的 35 %，f_CH4 0.35，Q10 1.8（Kleinen 2020 p.577） |
+| VISIT | 同 | 无（分解或 NPP） | 否；M&F 或 GLWD + Prigent | 否 | Cao 方案氧化 60–90 %（Ito 2012 式 1–2 p.761） |
+| CLASS-CTEM | 同 | 无 | 否；坡度加湿度 | 否 | αw δs = 0.061（Arora 2018 p.4686） |
+| SatWetCH4 | 同 | NPP 衍生 | 否；WAD2M 或 TOPMODEL | 否 | 热带偏低，作者归因于标定站缺热带洪泛站（Bernard 2025 p.873） |
+| Cao 1996 | 同（含冲积湿地） | 无 | 否 | 否 | 淹水区氧化 60–90 %（式 8 p.14402）；0–10°S 冲积湿地 200.9 mg m⁻² d⁻¹（表 2 p.14405） |
+
+以上各行——已验证（模式子任务读全文，页码如列；主会话抽核 Spahni、Arora、Ringeval、CTSM 四项）。
+
+### 3.3 Ringeval 2014（亚马孙洪泛区专文，模式为 LPX-Bern 1.1）
+
+1. 甲烷按整个洪泛区土地单元算，不按 PFT 分；新增 3 个耐淹热带 PFT；漂浮植物未表示，"would require a more fundamental recoding of LPX"，只做了一个把耐淹 C4 草分蘖孔隙度设 0 并去掉根系分泌物的敏感性试验——已验证（Ringeval 2014 p.1525、p.1532，全文）。
+2. 水柱不单算，"the water column above the soil surface is added to the top soil layer"；因此淹水加深使排放减少——已验证（p.1527、p.1545）。
+3. 流域排放对各因素的敏感性（基准 88.4 Tg yr⁻¹）：植被空间分布 +20.2 %，按 MODIS 校 NPP −11.3 %，淹水面积年际变化 +6.6 %，水深算法 −3.6 %，漂浮植物特性 −0.7 %（冒泡几乎全部顶替植物传输），O₂ 抑制产甲烷 +0.1 %；面积掩膜影响最大（不掩膜 89.1、GLC2000 掩膜 44.4 Tg yr⁻¹）——已验证（表 5、表 7，p.1534、p.1543–1545，子任务读）。
+4. 与观测：主河道区漂浮植物观测 240.7、洪泛林 69.4 mg m⁻² d⁻¹，LPX 草 225.0、林 349.3，林的偏差方向相反；开阔水 LPX 远高于观测；作者建议开阔水用常数通量密度——已验证（p.1540–1541、p.1548）。
+5. 作者用"富氧河水侧向输入"解释涨水期洪泛林低通量，建议给近主河道洪泛区提高 O₂——已验证（p.1538、p.1548，子任务读）。
+
+### 3.4 区域偏差：模式偏低还是偏高
+
+1. 偏低：苏德模式低一个数量级（Pandey 2021 p.557）；赞比亚观测比陆面模式高一个数量级（Shaw 2022，只读摘要）；潘塔纳尔旱季模式低 2–3 倍（Li 2024，只读摘要）；GCP 集合在潘塔纳尔与苏德偏低、模式间可差两个数量级（Zhang 2025 p.311）——已验证（各篇）。
+2. 偏高或相符：刚果反演后验只有先验的约 40 %（Lunt 2019 p.14727）；奥里诺科作者认为热带洪泛排放被高估（Smith 2000，只读摘要）；亚马孙 GCP 集合均值与反演大体相符（Zhang 2025 p.311）——已验证（各篇）。
+3. 热带全体：WETCHIMP 模式 126 ± 31 Tg yr⁻¹，反演 91——已验证（Melton 2013 表 3 p.765，子任务读）。90°S–30°N 湿地加内陆水体：自下而上 151 [85–234]，自上而下 128 [112–155] Tg yr⁻¹——已验证（Saunois 2025 表 6 p.1903，子任务读）。
+4. 结论：偏低集中在"河来水驱动、淹水面积或季节在模式里错"的系统（苏德、奥卡万戈、潘塔纳尔、赞比亚），偏高出现在水浅淹水短或雨养的系统（奥里诺科、刚果）——推测（由第 1、2 条归纳）。
+
+## 4. 植物通气组织送氧与根际氧化
+
+### 4.1 根际氧化份额（稻田之外）
+
+1. 汇总表：Carex rostrata 20–40 %，Equisetum fluviatile 40 %，Eriophorum vaginatum 0（离体部件）与 >90 %（整体），Juncus effusus >90 %，Phragmites australis 16 %，Scirpus lacustris 35 %，Pontederia cordata 63 %，Sparganium eurycarpum 88 %，混合淡水植被年均 43 %，混合杂草 95 %——已验证（Laanbroek 2010 表 1，全文，主会话解析 PMC 页）。
+2. Equisetum fluviatile：有机沉积物 27–52 %、砂底 0–41 %；盆栽高根密度实验会因供氧偏多得出 60–100 % 的偏高值——已验证（Kankaala 2004 p.34，全文）。
+3. Eriophorum 不伴随 CH₄ 氧化——已验证（Frenzel & Rudolph 1998 摘要 p.27）；Carex 20–40 %、Eriophorum 与 Juncus >90 %——已验证（Ström 2005 摘要 p.65）。
+4. 根径向氧损失在根尖后几厘米外常测不到——已验证（Laanbroek 2010 "Methane oxidation in the rhizosphere" 节，全文）。
+5. 热带漂浮草、纸莎草、Oryza longistaminata 与洪泛林树种的根际氧化份额：未检出一手实测——已验证（第 0 节第 5 条）。
+
+### 4.2 孔隙度、ROL 与 ROL 屏障
+
+1. 根孔隙度可达 55 %；许多湿地种根基部有阻止径向氧损失的屏障，有的为组成型、有的由滞水诱导——已验证（Colmer 2003 摘要 p.17，全文）。
+2. 经根通气组织供给的 O₂ 最多有 30–40 % 损失到土壤（Armstrong 1979）——已验证（Colmer 2003 p.22，全文）。
+3. 屏障强度（ROL，nmol m⁻² s⁻¹，距根尖 5 mm 对 60–80 mm）：Oryza sativa 175 对 <1，Phragmites australis 390 对 10（"tight"）——已验证（Colmer 2003 表 4 p.25，全文）。
+4. 单子叶湿地种 Carex acuta、Juncus effusus 根基部有强的组成型 ROL 屏障；五种湿地植物在滞水中孔隙度由 10–30 % 升到 20–45 %——已验证（Visser 2000，只读摘要）。
+5. 野生稗属（Echinochloa crus-galli、E. colona、E. oryzicola）在滞水中 73–87 % 的根形成 ROL 屏障，屏障处基部 ROL 3.4–9.7 nmol m⁻² s⁻¹，根孔隙度 11.9–22.7 %——已验证（Ejiri & Shiono 2019 图 4、表 2，网页转述；E. polystachya 不在其中）。
+6. 三塔代理性状（均为同属文献值，非本站实测）：Cyperus（纸莎草同属）秆孔隙度 37 %；纸莎草单秆碳 161 g C；Cynodon 根空腔率约 36 %；Phragmites 单秆 0.707 g C、基径中位 6.2 mm；Combretum lanceolatum 孔隙度未见——已验证（`scripts/sites/site_facts.csv` BW-Gum、BW-Nxr、BR-Npw 对应行，原文由 csv 注明）。
+
+### 4.3 送氧与耗氧的净效应、树
+
+1. 稻根际 ROL 来的 O₂ 起初 97 %、两天后 80 % 被 Fe²⁺ 再氧化消耗，甲烷氧化菌只占小份——已验证（van Bodegom 2001 p.157–158，全文）。CLM4Me 的 O₂ 汇只有甲烷氧化、异养呼吸、根呼吸三项，无还原性无机物再氧化——已验证（Riley 2011 p.1929、p.1932，子任务读）。
+2. CLM4Me 在 Michigan 站增大通气组织面积时，饱和条件下通气组织 CH₄ 通量下降，因为多送进的 O₂ 增加了氧化；全球通量加权的根际氧化份额约 0.6——已验证（Riley 2011 p.1937、p.1939，全文）。
+3. Riley 2011：孔隙度 0.3（草）与 0.1（乔灌）依 Colmer 2003 取，"developed for sedges and may not be appropriate for woody pfts"；"Using aerenchyma parameterizations appropriate for trees might lead to lower aerenchyma area and CH4 oxidation in inundated systems"——已验证（Riley 2011 p.1931、p.1944，全文）。
+4. Walter 2001 的传输效率 τveg：乔木 1、灌木 0、短草 10、长草 15、沼泽 15——已验证（Walter 2001 表 2 p.34192，全文）。
+5. HIMMELI：高 LAI 带来的植物送氧把产甲烷压到潜势的 38 %，总排放下降；同页指出"没有研究把模拟的植物 O₂ 传输与实测比过"——已验证（Raivonen 2017 p.4679，子任务读）。
+6. 亚马孙洪泛林树干排放的 CH₄ 源自土壤（δ13C 一致），树干是土壤 CH₄ 的出口——已验证（Pangala 2017 p.232，全文）；树干通道同时向根送多少 O₂ 未检出实测——已验证（第 0 节第 5 条）。
+
+### 4.4 各模式的取值与依据
+
+1. CLM4Me：孔隙度 0.3 / 0.1，半径 2.9 mm，每分蘖 0.22 g C（取自 Wania 2010 的北极莎草）——已验证（Riley 2011 p.1931；Wania 2010 p.571，全文）。本树孔隙度 0.3、非禾草比 1/3、半径 2.9 mm 同值——已验证（`v2/config/v2_oo4fpi/ch4_parameter.nml:230–234`）；分蘖碳 0.22 g C 为缺省——已验证（`main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90:337`）。
+2. ISBA：αO₂ = 0.3，"most of the O2 transported by aerenchyma is used by plant roots and only a fraction is lost to the soil (Colmer, 2003)"；CH₄ 的 α = 1——已验证（Morel 2019 p.304，全文，主会话核原句）。
+3. JSBACH：根外皮层作扩散屏障（厚 0.06 mm，扩散系数取水中的 80 %），视为植物传输主控；土壤 O₂ 只有 50 % 可用于甲烷氧化——已验证（Kaiser 2017 p.338–339、p.350；Castro-Morales 2018 p.2695，子任务读）。
+4. 固定根际氧化份额类：Walter 0.5（依 39–98 %、65 ± 24 % 与 79 ± 20 % 三组实测），TEM 0.4，TRIPLEX-GHG 0.5（范围 20–100 %），LPJ-WHyMe foxid 0.5（定义为可用 O₂ 中用于甲烷氧化的份额）——已验证（Walter 2000 p.750；Zhuang 2004；Zhu 2014 p.986；Wania 2010 表 3 p.572，子任务读）。
+5. 同化结果：ORCHIDEE-PCH4 逐站 Mrox 0–1、均值 44 %，多站联合 70 %，排放 >150 mg m⁻² d⁻¹ 的站均值 22 %——已验证（Salmon 2022 p.2828，子任务读）；LPJ-GUESS 同化后 foxid 0.76、孔隙度 0.77，二者正相关——已验证（Kallingal 2025 p.4073，子任务读）。
+
+### 4.5 对照本模式
+
+1. 本模式淹水子柱的通气组织 O₂ 按大气到土层的浓度差全额进入土层，没有根自耗与 ROL 屏障项——已验证（`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90` SiteOxAere 中 `oxaere` 段，HEAD f5920654 约 2790–2800 行）。实测与其他模式只让 30–40 % 或更少的 O₂ 漏入根际（第 4.2 节第 2 条、第 4.4 节第 2 条）——已验证。
+2. 本模式分蘖截面按每 0.22 g C 一个半径 2.9 mm 的分蘖算；按代理性状，纸莎草每克碳的通气截面约为模式的 1/22（π(15 mm)² × 0.37 ÷ 161 g C 对 π(2.9 mm)² × 0.3 ÷ 0.22 g C）——推测（秆半径由秆围折算，孔隙度为同属代理）。
+3. 氧化占产量 58–90 % 本身落在实测 10–100 % 的范围内；偏的是"送氧多于耗氧"与"冒泡被压没"这两点——推测（份额可比，O₂ 收支无实测对照）。
+
+## 5. 候选机制（开关一律默认关）
+
+下列候选按"先站点、后全球"的检验顺序排：候选②最便宜且三塔都受影响，候选①补产量，候选④在候选①、候选②使土中 CH₄ 升起来之后才起作用，候选③只影响全球。
+改法里的行号按 `CoLM202X-paper-v2` HEAD f5920654；笔记里的 P/L/R 行号按 96834449（`data/_tmp/分析_260927_洪泛/notes.txt` 文首），动手前须重新定位。
+
+### 5.1 候选① 淹水子柱的植物源活性底物
+
+1. 物理依据：洪泛区产甲烷的碳主要来自当季植物（第 2.1 节第 1–6 条）；BW-Gum 排放跟 GPPmax 走（Helfter 2022）；BR-Npw 汛初峰由凋落物与活性 DOC 供给（Dalmagro 2019）；Ringeval 2014 指出用格点平均 HR 的缺陷（第 3.1 节第 3 条）；本模式淹水子柱的底物是宿主旱地斑块的有氧 HR（notes 第 2 节第 1–3 条）——已验证（各条出处）。
+2. 落到模式：新键 `DEF_METHANE%flood_exudate_frac`（默认 0）：土壤斑块被洪水淹的子柱，当步把宿主斑块 NPP 的这一份额按根分布释放进淹水子柱、当步分解并计入产甲烷底物，同量从该斑块进凋落物的碳里扣掉以守恒；照 C-23 `wetland_exudate_frac` 在湿地斑块上的写法（Const.F90 C-23 注释：当步呼吸、不进碳库、计入 litter HR）；底物入口在 BgcLink 汇 somhr + lithr 处（notes L:330–365）——推测（改法设计）。
+3. 文献数值：LPJ-WHyMe 根系分泌份额 fexu = 0.15（Wania 2010 表 4 p.573）；BW-Gum FCH4 = −0.71 + 1.68 GPPmax（Helfter 2022 图 1）；BR-Npw 实测 TNPP 1080 g C m⁻² yr⁻¹（`site_facts.csv`，出自 Vourlitis 2022 预印本 §3.4）——已验证（各条出处）。
+4. 预期（三塔）：BR-Npw 按 0.15 × 1080 × 180/365 ≈ 80 g C m⁻² yr⁻¹ 进淹水子柱，× f 0.2 × (1 − 氧化 0.58–0.90) ≈ +1.6–6.7 g CH₄-C m⁻² yr⁻¹；现模式约 0.42 × 19.2 ≈ 8 g C，β 可由 0.42 升到 0.5–0.77——推测（按式代数，未跑）。BW-Nxr、BW-Gum 方向同为升，季节形态向"随 GPP"靠——推测（模式 NPP 未取）。
+5. 预期（全球）：增量正比于淹水比例 × NPP；按巴西土壤主导格点淹水比例均值 0.029（notes 第 1 节第 10 条）、NPP 1000 g C m⁻² yr⁻¹、E/P 0.2 估，斑块平均约 +0.17 g CH₄-C m⁻² yr⁻¹，折每单位年最大淹水面积约 +3.9 g CH₄ m⁻² yr⁻¹，对照现"洪泛 6.8"——推测（按式代数，E/P 取 g2_v2w 值）。
+6. 风险：宿主是旱地 PFT，NPP 不是水生植物的 NPP，漂浮草那部分补不上；木本分泌物缺实测（证据多来自莎草与纸莎草）；碳守恒要在 BGC 的凋落物输入端扣，否则重复计碳——推测。
+
+### 5.2 候选② 通气组织送氧打折（根自耗与 ROL 屏障）
+
+1. 物理依据：根通气组织里的 O₂ 大部分被根自身消耗，最多 30–40 % 漏入土壤，湿地种根基部常有屏障（Colmer 2003 p.22、p.25）；稗属在滞水中多数根形成屏障（Ejiri & Shiono 2019）；实测根际氧化多在 16–63 %，盆栽偏高（第 4.1 节）；BR-Npw 淹水期土壤 O₂ 近零（Dalmagro 2019）、潘塔纳尔有植被水体溶解氧中位 35 μM（Hamilton 1995）；Riley 2011 自己说乔木用本套参数会高估通气截面与氧化——已验证（各条出处）。本模式淹水子柱送氧多于耗氧、O₂ 高出湿地斑块 4–40 倍（第 2.7 节第 1、2 条）——已验证（账本 V-86、V-87）。
+2. 落到模式：新键 `DEF_METHANE%aere_o2_frac`（默认 1）：只乘在 SiteOxAere 的 `oxaere(j)` 上（Physics.F90 HEAD f5920654 约 2790–2800 行），不乘 CH₄ 的 `aere(j)`；作用范围限土壤斑块的淹水子柱（patchtype 0、非稻田、sat == 1）；木本可另设更低值——推测（改法设计）。
+3. 文献数值：0.3（ISBA αO₂，Morel 2019 p.304）；上限 0.3–0.4（Armstrong 1979 经 Colmer 2003 p.22）；"tight" 屏障种基部 ROL 为根尖的 <1–3 %（Colmer 2003 表 4：Oryza <1/175，Phragmites 10/390）——已验证（各条出处）。
+4. 预期（三塔）：送氧 2.0–3.1×10⁻⁵ 乘 0.3 得 0.6–0.9×10⁻⁵，低于分解耗氧 1.7–2.5×10⁻⁵，淹水子柱转为 O₂ 受限，氧化份额下降；若由 58–90 % 降到 30–50 %，排放对产量之比由 0.10–0.42 升到 0.5–0.7，排放 ×1.2–1.7（BW-Nxr，现 58 %）到 ×3–7（现 85–90 % 的塔）；土中 CH₄ 升高后冒泡开始出现——推测（按比例代数，未跑）。
+5. 预期（全球）：巴西淹水子柱 E/P 0.20（g2_v2w）向湿地斑块 0.57 靠，淹水子柱排放约 ×2–3；g2_v2w 中淹水子柱只占区域"洪泛"排放 11 %，区域洪泛量约 +10–25 %；C-50 回渗之后这一占比未重算——推测（notes 第 5 节第 3 条的占比属 C-50 之前）。
+6. 风险：同一 SiteOxAere 也用于湿地斑块与稻田，只限淹水土壤子柱会与湿地斑块处理不一致，若全开则湿地斑块须重看（C-30 记过"林地湿地减植物传输反而增排放"）；硝化反硝化开着（`use_nitrif_denitrif = .true.`），O₂ 降低会连带氮过程——推测。
+
+### 5.3 候选③ 淹水子柱的 pH 按淹水后取值
+
+1. 物理依据：淹水还原消耗质子，酸性土淹水后 pH 上升，热带 Ultisol 由 5.8 升到 6.3–6.6（McNicol & Silver 2014 表 2）；CTSM 默认关 pH 因子并标为实验性（第 3.1 节第 7 条）；本树 pH 因子来自泥炭土（Dunfield 1993，Riley 2011 式 2 所引）——已验证（各条出处）。本模式全球淹水子柱用斑块表层 30 cm 的旱地 pH，巴西 pH 4.0–5.5 给 0.08–0.78 的折扣——已验证（notes 第 2 节第 8 条）。
+2. 落到模式：新键 `DEF_METHANE%flood_ph_shift`（默认 0）：土壤斑块淹水子柱的 pH 因子按 min(pH + shift, 6.2) 取值，非淹水子柱与湿地斑块不变；位置在 methane_prod 的 pH 因子段（notes P:2219–2232）——推测（改法设计）。
+3. 文献数值：shift 0.5–0.8（McNicol & Silver 2014 表 2）；按 CoLM 式，pH 4.0 → 4.7 因子 0.08 → 0.31，4.5 → 5.1 由 0.23 → 0.54，5.1 → 5.7 由 0.54 → 0.88——已验证（McNicol & Silver 2014；因子按 notes 所记式计算）。
+4. 预期（三塔）：无变化，站点跑 `use_spatial_ph = .false.`，pH 取常数 6.2，因子为 1——已验证（`v2/config/v2_oo4fpi/ch4_parameter.nml:77–86`）。
+5. 预期（全球）：亚马孙、刚果酸性洪泛土的淹水子柱产量 ×2–4，notes 第 2 节第 12 条"剩余约 ×0.25"中 pH 那份被部分解除——推测（按式代数）。
+6. 风险：证据只有一项培养实验加教科书转述；pH 因子本身来自泥炭；刚果反演已嫌先验偏高（Lunt 2019），此项会把刚果推高——推测。
+
+### 5.4 候选④ 淹水水层：漫滩均深、水气交换与冒泡直出
+
+1. 物理依据：实测排放以冒泡为主（第 2.4 节）；BR-Npw 水面扩散只占塔上约 13–15 %（第 1.1 节第 4 条）；水柱溶解 CH₄ 平均 80 % 被氧化（Barbosa 2018）；Melack 2022 批评模式用土层分子扩散代替湍流控制的水气交换；Ringeval 2014 把水层并入顶层土壤，水越深氧化越多——已验证（各条出处）。本模式冒泡近零、水层按 pondz / 分子扩散系数封死，水深取河岸处最深值（巴西淹水面积加权 5.6–5.9 m）——已验证（notes 第 1 节第 9、11 条，第 3 节第 6、7 条）。
+2. 落到模式：新键 `DEF_METHANE%flood_water_layer`（默认关）：（a）淹水子柱水深改用漫滩均深（漫滩储量 ÷ 漫滩面积，notes R:1225–1229、N:1163–1271）；（b）水层交换改用湖泊分支已有的 k600（Physics.F90 HEAD f5920654 约 3477–3481 行），O₂ 边界取低氧水体而非大气平衡；（c）冒泡照现写法直出——推测（改法设计）。
+3. 文献数值：有植被水体 O₂ 35 μM（Hamilton 1995）、BR-Npw 1.3–1.4 mg L⁻¹（Dalmagro 2019 p.1968）；冒泡份额 49–93 %；冒泡在 4 m 以内水深较频（Marani & Alvalá 2007 p.1631）——已验证（各条出处）。
+4. 预期（三塔）：站点水深按 0.5 m × 淹水比例给（C-48 的假定），静水压影响小；现土中 CH₄ 低、冒泡阈值到不了，单开本项增量小，须在候选①、候选②之后看——推测。
+5. 预期（全球）：均深低于河岸深，冒泡阈值随之降低；k600 打开后 CH₄ 更易出，但若 O₂ 边界取大气平衡会加氧化，净方向取决于 O₂ 边界——推测（notes 第 7 节第 3 条同判）。
+6. 风险：水层氧化若不加，扩散通道会绕过实测 80 % 的水柱氧化而高估；漫滩均深要从汇流多发布一个量；冒泡与水层扩散可能重复计——推测。
+
+### 5.5 未列为候选的（理由）
+
+1. 只调产率 f：文献 f 范围宽（ELM-Wet 0.11–0.50，JSBACH 0.35，热带沉积物约三分之一，第 2.6 节与第 3.2 节），但单调 f 没有新机制，留作候选①、候选②之后的残差项——推测。
+2. 另设洪泛区地块与独立碳库（Ringeval 2014、ELM-Wet）：物理最完整，但 2° 网格上斑块结构大改，与 D-56 已选的回渗路线冲突——推测。
+3. 按生境给单位面积常数（Ringeval 2014 对开阔水的建议）：与 D-50"洪泛面积由河网模拟、物理决定"的路线不符——推测。
+4. SIF（C-41）：站点未开 C-14，淹水子柱本无 β 折扣，开 SIF 只会压低，对三塔无增益——已验证（账本 V-87"站点配置未开 C-14、C-41"）。
+5. 树干通道：本模式木本已有植物 CH₄ 通道（孔隙度 0.1），Pangala 2017 说明的是"CH₄ 从土壤经树干出"，候选②只减 O₂ 不减 CH₄ 即与之相符，不另设——推测。
+
+### 5.6 三塔另需记住的
+
+1. BW-Nxr 的缺口里有足迹代表性的一份：塔上 2018 年收支按 200 m 足迹筛选即降 34 %（Helfter 2022 Nat Commun p.6）——已验证。
+2. BW-Nxr 2019 年是有记录以来最干年，年排放由 36.3 降到 8.7 g CH₄ m⁻²（Helfter 2022 Phil Trans A 表 1）——已验证；按年评分时这一年的量级比受洪泛序列本身影响大——推测。
+
+## 6. 文献清单（字段取自 Crossref，2026-09-29 查询；格式：第一作者，年｜题名｜刊 卷：页或文章号｜DOI）
+
+三塔
+- Dalmagro, 2019｜Radiative forcing of methane fluxes offsets net carbon dioxide uptake for a tropical flooded forest｜Global Change Biology 25: 1967–1981｜10.1111/gcb.14615
+- Dalmagro, 2018｜Carbon biogeochemistry of a flooded Pantanal forest over three annual flood cycles｜Biogeochemistry 139: 1–18｜10.1007/s10533-018-0450-1
+- Helfter, 2022｜Phenology is the dominant control of methane emissions in a tropical non-forested wetland｜Nature Communications 13: 133｜10.1038/s41467-021-27786-4
+- Helfter, 2022｜From sink to source: high inter-annual variability in the carbon budget of a Southern African wetland｜Philosophical Transactions of the Royal Society A 380: 20210148｜10.1098/rsta.2021.0148
+- Gondwe, 2021｜Methane flux measurements along a floodplain soil moisture gradient in the Okavango Delta, Botswana｜Philosophical Transactions of the Royal Society A 379: 20200448｜10.1098/rsta.2020.0448
+- Marani, 2007｜Methane emissions from lakes and floodplains in Pantanal, Brazil｜Atmospheric Environment 41: 1627–1633｜10.1016/j.atmosenv.2006.10.046
+- Delwiche, 2021｜FLUXNET-CH4: a global, multi-ecosystem dataset and analysis of methane seasonality from freshwater wetlands｜Earth System Science Data 13: 3607–3689｜10.5194/essd-13-3607-2021
+- Vourlitis, 2022｜Net primary production and ecosystem carbon flux of Brazilian tropical savanna ecosystems from eddy covariance and inventory methods｜ESSOAr 预印本（Crossref 无卷页）｜10.1002/essoar.10510005.1
+
+实测与控制因素
+- Devol, 1988｜Methane emissions to the troposphere from the Amazon floodplain｜J. Geophys. Res. Atmos. 93: 1583–1592｜10.1029/JD093iD02p01583
+- Bartlett, 1988｜Methane flux from the central Amazonian floodplain｜J. Geophys. Res. Atmos. 93: 1571–1582｜10.1029/JD093iD02p01571
+- Bartlett, 1990｜Methane flux from the Amazon River floodplain: Emissions during rising water｜J. Geophys. Res. Atmos. 95: 16773–16788｜10.1029/JD095iD10p16773
+- Devol, 1990｜Seasonal dynamics in methane emissions from the Amazon River floodplain to the troposphere｜J. Geophys. Res. Atmos. 95: 16417–16426｜10.1029/JD095iD10p16417
+- Crill, 1988｜Tropospheric methane from an Amazonian floodplain lake｜J. Geophys. Res. Atmos. 93: 1564–1570｜10.1029/JD093iD02p01564
+- Wassmann, 1992｜Methane emissions from the Amazon Floodplain: Characterization of production and transport｜Global Biogeochemical Cycles 6: 3–13｜10.1029/91GB01767
+- Engle, 2000｜Methane emissions from an Amazon floodplain lake: Enhanced release during episodic mixing and during falling water｜Biogeochemistry 51: 71–90｜10.1023/A:1006389124823
+- Barbosa, 2020｜Dissolved methane concentrations and fluxes to the atmosphere from a tropical floodplain lake｜Biogeochemistry 148: 129–151｜10.1007/s10533-020-00650-1
+- Barbosa, 2021｜Large Seasonal and Habitat Differences in Methane Ebullition on the Amazon Floodplain｜J. Geophys. Res. Biogeosci. 126: e2020JG005911｜10.1029/2020JG005911
+- Barbosa, 2018｜High rates of methane oxidation in an Amazon floodplain lake｜Biogeochemistry 137: 351–365｜10.1007/s10533-018-0425-2
+- Melack, 2022｜Challenges Regionalizing Methane Emissions Using Aquatic Environments in the Amazon Basin as Examples｜Frontiers in Environmental Science 10: 866082｜10.3389/fenvs.2022.866082
+- Melack, 2004｜Regionalization of methane emissions in the Amazon Basin with microwave remote sensing｜Global Change Biology 10: 530–544｜10.1111/j.1365-2486.2004.00763.x
+- Pangala, 2017｜Large emissions from floodplain trees close the Amazon methane budget｜Nature 552: 230–234｜10.1038/nature24639
+- Amaral, 2025｜Methane and carbon dioxide evasion from a mosaic of Amazon lakes, river channels, and inundated forests｜Inland Waters 15: 2432804｜10.1080/20442041.2024.2432804
+- Abril, 2014｜Amazon River carbon dioxide outgassing fuelled by wetlands｜Nature 505: 395–398｜10.1038/nature12797
+- Gauci, 2022｜Non-flooded riparian Amazon trees are a regionally significant methane source｜Philosophical Transactions of the Royal Society A 380: 20200446｜10.1098/rsta.2020.0446
+- Koschorreck, 2000｜Methane turnover in exposed sediments of an Amazon floodplain lake｜Biogeochemistry 50: 195–206｜10.1023/A:1006326018597
+- Sawakuchi, 2014｜Methane emissions from Amazonian Rivers and their contribution to the global methane budget｜Global Change Biology 20: 2829–2840｜10.1111/gcb.12646
+- Sawakuchi, 2016｜Oxidative mitigation of aquatic methane emissions in large Amazonian rivers｜Global Change Biology 22: 1075–1085｜10.1111/gcb.13169
+- Basso, 2021｜Amazon methane budget derived from multi-year airborne observations highlights regional variations in emissions｜Communications Earth & Environment 2: 246｜10.1038/s43247-021-00314-4
+- Smith, 2000｜Methane emissions from the Orinoco River floodplain, Venezuela｜Biogeochemistry 51: 113–140｜10.1023/A:1006443429909
+- Bastviken, 2010｜Methane Emissions from Pantanal, South America, during the Low Water Season: Toward More Comprehensive Sampling｜Environmental Science & Technology 44: 5450–5455｜10.1021/es1005048
+- Hamilton, 1995｜Oxygen depletion and carbon dioxide and methane production in waters of the Pantanal wetland of Brazil｜Biogeochemistry 30（Crossref 无页码）｜10.1007/BF00002727
+- Li, 2024｜Underestimated Dry Season Methane Emissions from Wetlands in the Pantanal｜Environmental Science & Technology（Crossref 无卷，文章号 acs.est.3c09250）｜10.1021/acs.est.3c09250
+- Tathy, 1992｜Methane emission from flooded forest in central Africa｜J. Geophys. Res. Atmos. 97: 6159–6168｜10.1029/90JD02555
+- Borges, 2019｜Variations in dissolved greenhouse gases (CO2, CH4, N2O) in the Congo River network overwhelmingly driven by fluvial-wetland connectivity｜Biogeosciences 16: 3801–3834｜10.5194/bg-16-3801-2019
+- Lunt, 2019｜An increase in methane emissions from tropical Africa between 2010 and 2016 inferred from satellite data｜Atmospheric Chemistry and Physics 19: 14721–14740｜10.5194/acp-19-14721-2019
+- Pandey, 2021｜Using satellite data to identify the methane emission controls of South Sudan's wetlands｜Biogeosciences 18: 557–572｜10.5194/bg-18-557-2021
+- Shaw, 2022｜Large Methane Emission Fluxes Observed From Tropical Wetlands in Zambia｜Global Biogeochemical Cycles 36: e2021GB007261｜10.1029/2021GB007261
+- Gondwe, 2014｜Spatial and temporal dynamics of diffusive methane emissions in the Okavango Delta, northern Botswana, Africa｜Wetlands Ecology and Management 22: 63–78｜10.1007/s11273-013-9323-5
+- Murguia-Flores, 2023｜Assessing Methane Emissions From Tropical Wetlands: Uncertainties From Natural Variability and Drivers at the Global Scale｜Global Biogeochemical Cycles 37: e2022GB007601｜10.1029/2022GB007601
+- Bastviken, 2011｜Freshwater Methane Emissions Offset the Continental Carbon Sink｜Science 331: 50｜10.1126/science.1196808
+- Nahlik, 2011｜Methane emissions from tropical freshwater wetlands located in different climatic zones of Costa Rica｜Global Change Biology 17: 1321–1334｜10.1111/j.1365-2486.2010.02190.x
+- Piedade, 1991｜The Productivity of the C4 Grass Echinochloa Polystachya on the Amazon Floodplain｜Ecology 72: 1456–1463｜10.2307/1941118
+- Engle, 2008｜High rates of net primary production and turnover of floating grasses on the Amazon floodplain: implications for aquatic respiration and regional CO2 flux｜Global Change Biology 14: 369–381｜10.1111/j.1365-2486.2007.01481.x
+- Chanton, 1993｜Seasonal Variations in the Isotopic Composition of Methane Associated with Aquatic Macrophytes｜Biogeochemistry of Global Change: 619–632｜10.1007/978-1-4615-2812-8_34
+- Conrad, 2011｜Stable carbon isotope discrimination and microbiology of methane formation in tropical anoxic lake sediments｜Biogeosciences 8: 795–814｜10.5194/bg-8-795-2011
+- Hernández, 2019｜Structure, function and resilience to desiccation of methanogenic microbial communities in temporarily inundated soils of the Amazon rainforest (Cunia Reserve, Rondonia)｜Environmental Microbiology 21: 1702–1717｜10.1111/1462-2920.14535
+- Borges, 2026｜Methane oxidation in African and European rivers depends on stream size and wetland connectivity｜Science Advances 12: eaeb8250｜10.1126/sciadv.aeb8250
+- Miller, 2022｜Coupled CH4 production and oxidation support CO2 supersaturation in a tropical flood pulse lake (Tonle Sap Lake, Cambodia)｜PNAS 119: e2107667119｜10.1073/pnas.2107667119
+- McNicol, 2014｜Separate effects of flooding and anaerobiosis on soil greenhouse gas emissions and redox sensitive biogeochemistry｜J. Geophys. Res. Biogeosci. 119: 557–566｜10.1002/2013JG002433
+
+模式、集合与预算
+- Ringeval, 2014｜Methane emissions from floodplains in the Amazon Basin: challenges in developing a process-based model for global applications｜Biogeosciences 11: 1519–1558｜10.5194/bg-11-1519-2014
+- Spahni, 2011｜Constraining global methane emissions and uptake by ecosystems｜Biogeosciences 8: 1643–1665｜10.5194/bg-8-1643-2011
+- Zhang, 2016｜Modeling spatiotemporal dynamics of global wetlands: comprehensive evaluation of a new sub-grid TOPMODEL parameterization and uncertainties｜Biogeosciences 13: 1387–1408｜10.5194/bg-13-1387-2016
+- Hodson, 2011｜The El Niño-Southern Oscillation and wetland methane interannual variability｜Geophysical Research Letters 38（Crossref 页码 n/a）｜10.1029/2011GL046861
+- Wania, 2013｜Present state of global wetland extent and wetland methane modelling: methodology of a model inter-comparison project (WETCHIMP)｜Geoscientific Model Development 6: 617–641｜10.5194/gmd-6-617-2013
+- Wania, 2010｜Implementation and evaluation of a new methane model within a dynamic global vegetation model: LPJ-WHyMe v1.3.1｜Geoscientific Model Development 3: 565–584｜10.5194/gmd-3-565-2010
+- Kallingal, 2024｜Optimising CH4 simulations from the LPJ-GUESS model v4.1 using an adaptive Markov chain Monte Carlo algorithm｜Geoscientific Model Development 17: 2299–2324｜10.5194/gmd-17-2299-2024
+- Kallingal, 2025｜Assimilating multi-site eddy-covariance data to calibrate the wetland CH4 emission module in a terrestrial ecosystem model｜Biogeosciences 22: 4061–4086｜10.5194/bg-22-4061-2025
+- Ringeval, 2010｜An attempt to quantify the impact of changes in wetland extent on methane emissions on the seasonal and interannual time scales｜Global Biogeochemical Cycles 24: 2008GB003354｜10.1029/2008GB003354
+- Ringeval, 2011｜Climate-CH4 feedback from wetlands and its interaction with the climate-CO2 feedback｜Biogeosciences 8: 2137–2157｜10.5194/bg-8-2137-2011
+- Ringeval, 2012｜Modelling sub-grid wetland in the ORCHIDEE global land surface model: evaluation against river discharges and remotely sensed data｜Geoscientific Model Development 5: 941–962｜10.5194/gmd-5-941-2012
+- Zhang, 2022｜Estimating the lateral transfer of organic carbon through the European river network using a land surface model｜Earth System Dynamics 13: 1119–1144｜10.5194/esd-13-1119-2022
+- Petrescu, 2010｜Modeling regional to global CH4 emissions of boreal and arctic wetlands｜Global Biogeochemical Cycles 24: 2009GB003610｜10.1029/2009GB003610
+- Riley, 2011｜Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM｜Biogeosciences 8: 1925–1953｜10.5194/bg-8-1925-2011
+- Meng, 2012｜Sensitivity of wetland methane emissions to model assumptions: application and model testing against site observations｜Biogeosciences 9: 2793–2819｜10.5194/bg-9-2793-2012
+- Müller, 2015｜CH4 parameter estimation in CLM4.5bgc using surrogate global optimization｜Geoscientific Model Development 8: 3285–3310｜10.5194/gmd-8-3285-2015
+- Yazbeck, 2025｜ELM-Wet: Inclusion of a Wet-Landunit With Sub-Grid Representation of Eco-Hydrological Patches and Hydrological Forcing Improves Methane Emission Estimations in the E3SM Land Model (ELM)｜J. Adv. Model. Earth Syst. 17: e2024MS004396｜10.1029/2024MS004396
+- Gedney, 2003｜The Sensitivity of Global Climate Model Simulations to the Representation of Soil Moisture Heterogeneity｜Journal of Hydrometeorology 4: 1265–1275｜10.1175/1525-7541(2003)004<1265:TSOGCM>2.0.CO;2
+- Gedney, 2004｜Climate feedback from wetland methane emissions｜Geophysical Research Letters 31: 2004GL020919｜10.1029/2004GL020919
+- Gedney, 2019｜Significant feedbacks of wetland methane release on climate change and the causes of their uncertainty｜Environmental Research Letters 14: 084027｜10.1088/1748-9326/ab2726
+- Parker, 2022｜Evaluation of wetland CH4 in the Joint UK Land Environment Simulator (JULES) land surface model using satellite observations｜Biogeosciences 19: 5779–5805｜10.5194/bg-19-5779-2022
+- Marthews, 2022｜Inundation prediction in tropical wetlands from JULES-CaMa-Flood global land surface simulations｜Hydrology and Earth System Sciences 26: 3151–3175｜10.5194/hess-26-3151-2022
+- Folberth, 2022｜Description and Evaluation of an Emission-Driven and Fully Coupled Methane Cycle in UKESM1｜J. Adv. Model. Earth Syst. 14: e2021MS002982｜10.1029/2021MS002982
+- Zhuang, 2004｜Methane fluxes between terrestrial ecosystems and the atmosphere at northern high latitudes during the past century: A retrospective analysis with a process-based biogeochemistry model｜Global Biogeochemical Cycles 18: GB3010｜10.1029/2004GB002239
+- Bloom, 2017｜A global wetland methane emissions and uncertainty dataset for atmospheric chemical transport models (WetCHARTs version 1.0)｜Geoscientific Model Development 10: 2141–2156｜10.5194/gmd-10-2141-2017
+- Bloom, 2012｜Seasonal variability of tropical wetland CH4 emissions: the role of the methanogen-available carbon pool｜Biogeosciences 9: 2821–2830｜10.5194/bg-9-2821-2012
+- Kleinen, 2012｜A dynamic model of wetland extent and peat accumulation: results for the Holocene｜Biogeosciences 9: 235–248｜10.5194/bg-9-235-2012
+- Kleinen, 2020｜Terrestrial methane emissions from the Last Glacial Maximum to the preindustrial period｜Climate of the Past 16: 575–595｜10.5194/cp-16-575-2020
+- Castro-Morales, 2018｜Year-round simulated methane emissions from a permafrost ecosystem in Northeast Siberia｜Biogeosciences 15: 2691–2722｜10.5194/bg-15-2691-2018
+- Kaiser, 2017｜Process-based modelling of the methane balance in periglacial landscapes (JSBACH-methane)｜Geoscientific Model Development 10: 333–358｜10.5194/gmd-10-333-2017
+- Wilkenskjeld, 2025｜Natural wetland methane emissions simulated by ICON-XPP｜预印本（Crossref 无卷页）｜10.5194/egusphere-2025-3601
+- Ito, 2012｜Use of a process-based model for assessing the methane budgets of global terrestrial ecosystems and evaluation of uncertainty｜Biogeosciences 9: 759–773｜10.5194/bg-9-759-2012
+- Arora, 2018｜An assessment of natural methane fluxes simulated by the CLASS-CTEM model｜Biogeosciences 15: 4683–4709｜10.5194/bg-15-4683-2018
+- Tian, 2010｜Spatial and temporal patterns of CH4 and N2O fluxes in terrestrial ecosystems of North America during 1979–2008: application of a global biogeochemistry model｜Biogeosciences 7: 2673–2694｜10.5194/bg-7-2673-2010
+- Shu, 2020｜Investigating Wetland and Nonwetland Soil Methane Emissions and Sinks Across the Contiguous United States Using a Land Surface Model｜Global Biogeochemical Cycles 34: e2019GB006251｜10.1029/2019GB006251
+- Bernard, 2025｜Satellite-based modeling of wetland methane emissions on a global scale (SatWetCH4 1.0)｜Geoscientific Model Development 18: 863–883｜10.5194/gmd-18-863-2025
+- McNicol, 2023｜Upscaling Wetland Methane Emissions From the FLUXNET-CH4 Eddy Covariance Network (UpCH4 v1.0): Model Development, Network Assessment, and Budget Comparison｜AGU Advances 4: e2023AV000956｜10.1029/2023AV000956
+- Cao, 1996｜Global carbon exchange and methane emissions from natural wetlands: Application of a process-based model｜J. Geophys. Res. Atmos. 101: 14399–14414｜10.1029/96JD00219
+- Walter, 2001｜Modeling modern methane emissions from natural wetlands: 1. Model description and results｜J. Geophys. Res. Atmos. 106: 34189–34206｜10.1029/2001JD900165
+- Walter, 2000｜A process-based, climate-sensitive model to derive methane emissions from natural wetlands: Application to five wetland sites, sensitivity to model parameters, and climate｜Global Biogeochemical Cycles 14: 745–765｜10.1029/1999GB001204
+- Zhu, 2014｜Modelling methane emissions from natural wetlands by development and application of the TRIPLEX-GHG model｜Geoscientific Model Development 7: 981–999｜10.5194/gmd-7-981-2014
+- Melton, 2013｜Present state of global wetland extent and wetland methane modelling: conclusions from a model inter-comparison project (WETCHIMP)｜Biogeosciences 10: 753–788｜10.5194/bg-10-753-2013
+- Saunois, 2020｜The Global Methane Budget 2000–2017｜Earth System Science Data 12: 1561–1623｜10.5194/essd-12-1561-2020
+- Saunois, 2025｜Global Methane Budget 2000–2020｜Earth System Science Data 17: 1873–1958｜10.5194/essd-17-1873-2025
+- Zhang, 2025｜Ensemble estimates of global wetland methane emissions over 2000–2020｜Biogeosciences 22: 305–321｜10.5194/bg-22-305-2025
+- Guo, 2023｜Linking Biogeochemical and Hydrodynamic Processes to Model Methane Fluxes in Shallow, Tropical Floodplain Lakes｜J. Adv. Model. Earth Syst. 15: e2022MS003385｜10.1029/2022MS003385
+- Gerlein-Safdi, 2021｜Improving Representation of Tropical Wetland Methane Emissions With CYGNSS Inundation Maps｜Global Biogeochemical Cycles 35: e2020GB006890｜10.1029/2020GB006890
+- Wilson, 2021｜Large and increasing methane emissions from eastern Amazonia derived from satellite data, 2010–2018｜Atmospheric Chemistry and Physics 21: 10643–10669｜10.5194/acp-21-10643-2021
+
+通气组织与根际氧化
+- Laanbroek, 2010｜Methane emission from natural wetlands: interplay between emergent macrophytes and soil microbial processes. A mini-review｜Annals of Botany 105: 141–153｜10.1093/aob/mcp201
+- Ström, 2005｜Species-specific Effects of Vascular Plants on Carbon Turnover and Methane Emissions from Wetlands｜Biogeochemistry 75: 65–82｜10.1007/s10533-004-6124-1
+- Kankaala, 2004｜Emission and oxidation of methane in Equisetum fluviatile stands growing on organic sediment and sand bottoms｜Biogeochemistry 67: 21–37｜10.1023/B:BIOG.0000015277.17288.7a
+- Frenzel, 1998｜Methane emission from a wetland plant: the role of CH4 oxidation in Eriophorum｜Plant and Soil 202: 27–32｜10.1023/A:1004348929219
+- Colmer, 2003｜Long-distance transport of gases in plants: a perspective on internal aeration and radial oxygen loss from roots｜Plant, Cell & Environment 26: 17–36｜10.1046/j.1365-3040.2003.00846.x
+- Visser, 2000｜Changes in growth, porosity, and radial oxygen loss from adventitious roots of selected mono- and dicotyledonous wetland species with contrasting types of aerenchyma｜Plant, Cell & Environment 23: 1237–1245｜10.1046/j.1365-3040.2000.00628.x
+- Justin, 1987｜The anatomical characteristics of roots and plant response to soil flooding｜New Phytologist 106: 465–495｜10.1111/j.1469-8137.1987.tb00153.x
+- Ejiri, 2019｜Prevention of Radial Oxygen Loss Is Associated With Exodermal Suberin Along Adventitious Roots of Annual Wild Species of Echinochloa｜Frontiers in Plant Science 10: 254｜10.3389/fpls.2019.00254
+- Bhullar, 2013｜Methane transport and emissions from soil as affected by water table and vascular plants｜BMC Ecology 13: 32｜10.1186/1472-6785-13-32
+- van Bodegom, 2001｜A mechanistic model on methane oxidation in a rice rhizosphere｜Biogeochemistry 55: 145–177｜10.1023/A:1010640515283
+- Segers, 2001｜Modeling methane fluxes in wetlands with gas-transporting plants: 1. Single-root scale｜J. Geophys. Res. Atmos. 106: 3511–3528｜10.1029/2000JD900484
+- Kettunen, 2003｜Connecting methane fluxes to vegetation cover and water table fluctuations at microsite level: A modeling study｜Global Biogeochemical Cycles 17: 2002GB001958｜10.1029/2002GB001958
+- Raivonen, 2017｜HIMMELI v1.0: HelsinkI Model of MEthane buiLd-up and emIssion for peatlands｜Geoscientific Model Development 10: 4665–4691｜10.5194/gmd-10-4665-2017
+- Salmon, 2022｜Assessing methane emissions for northern peatlands in ORCHIDEE-PEAT revision 7020｜Geoscientific Model Development 15: 2813–2838｜10.5194/gmd-15-2813-2022
+- Morel, 2019｜A New Process-Based Soil Methane Scheme: Evaluation Over Arctic Field Sites With the ISBA Land Surface Model｜J. Adv. Model. Earth Syst. 11: 293–326｜10.1029/2018MS001329

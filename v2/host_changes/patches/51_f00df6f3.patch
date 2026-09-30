@@ -1,0 +1,78 @@
+From f00df6f3586e0ba6d2f47bbd6bd86cf4f7b7c104 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 19:48:48 +0800
+Subject: [PATCH] feat(thermal): litter resistance to evaporation of ponded
+ wetland water
+
+DEF_WETLAND_POND_LITTER_RSS (s/m, default 0 = off): while a wetland tile (patchtype 2) holds more than 1 mm of ponded water, the key is the floor of its soil surface resistance, so evaporation from the pond under an emergent canopy passes the litter and standing dead lying on the water (Goulden et al. 2007, Aquatic Botany: about 100 s/m from the water to the air under the litter, 8-21 s/m over open water). With a saturated top layer the rss scheme otherwise gives zero and the pond evaporates as open water. The moss floor of C-26 now combines with it by max; key off leaves rss_min unchanged.
+
+---
+ main/MOD_Thermal.F90   | 7 +++++--
+ share/MOD_Namelist.F90 | 9 +++++++++
+ 2 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/main/MOD_Thermal.F90 b/main/MOD_Thermal.F90
+index c5ef4010..0e463adb 100644
+--- a/main/MOD_Thermal.F90
++++ b/main/MOD_Thermal.F90
+@@ -138,7 +138,7 @@ CONTAINS
+    USE MOD_Vars_1DFluxes, only: raw_grnd
+    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_RSS_SCHEME, DEF_SPLIT_SOILSNOW, &
+                            DEF_USE_LCT,DEF_USE_PFT,DEF_USE_PC,DEF_PC_CROP_SPLIT, &
+-                           DEF_PONDING_HEAT
++                           DEF_PONDING_HEAT, DEF_WETLAND_POND_LITTER_RSS
+    USE MOD_Vars_TimeVariables, only: wdsrf
+ #ifdef TRACER
+    USE MOD_Vars_TimeVariables, only: zwt
+@@ -644,10 +644,13 @@ ENDIF
+          !NOTE: If the beta scheme is used, the rss is not soil resistance,
+          !but soil beta factor (soil wetness relative to field capacity [0-1]).
+          rss_min = 0.
++         ! litter over the ponded water of a wetland tile
++         IF ((patchtype==2) .and. (wdsrf(ipatch) > 1.)) &
++            rss_min = max(DEF_WETLAND_POND_LITTER_RSS, 0.)
+ #ifdef TRACER
+          ! moss and peat surface of a dynamic wetland tile (C-26)
+          IF (DEF_USE_Dynamic_Wetland .and. (patchtype==2)) &
+-            rss_min = wetland_moss_rss(ipatch, zwt(ipatch), wdsrf(ipatch))
++            rss_min = max(rss_min, wetland_moss_rss(ipatch, zwt(ipatch), wdsrf(ipatch)))
+ #endif
+          CALL SoilSurfaceResistance (nl_soil,forc_rhoair,hksati,porsl,psi0, &
+ #ifdef Campbell_SOIL_MODEL
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index fbffdf98..26636c5c 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -305,6 +305,13 @@ MODULE MOD_Namelist
+    ! takes its temperature (no phase change of its own). .false. (default)
+    ! leaves the ground heat solver unchanged.
+    logical  :: DEF_PONDING_HEAT = .false.
++   ! Litter resistance [s/m] to evaporation of ponded water on a wetland tile:
++   ! under an emergent marsh canopy the litter and standing dead lying on the
++   ! water keep it from the air (Goulden et al. 2007: about 100 s/m from the
++   ! water to the air under the litter, 8-21 s/m over open water). While the
++   ! ponding exceeds 1 mm it is the floor of the soil surface resistance.
++   ! <= 0 off (default).
++   real(r8) :: DEF_WETLAND_POND_LITTER_RSS = 0._r8
+ 
+    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
+    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
+@@ -1441,6 +1448,7 @@ CONTAINS
+       DEF_WETLAND_POND_TARGET_SITE,           &
+       DEF_WETLAND_POND_MAX_SITE,              &
+       DEF_PONDING_HEAT,                       &
++      DEF_WETLAND_POND_LITTER_RSS,            &
+       DEF_BGC_DEBUG_SCALARS,                  &
+ 
+       DEF_USE_WaterTableInit,                 &
+@@ -2081,6 +2089,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_WETLAND_POND_TARGET_SITE           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_POND_MAX_SITE              ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_PONDING_HEAT                       ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_POND_LITTER_RSS            ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

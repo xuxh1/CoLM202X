@@ -1,0 +1,50 @@
+# paper_v2/v260930/sp_v2_c96 v2_p9ex25: all 77 towers; KGE_ln / beta / alpha / r; means mg CH4 m-2 d-1
+site     class         n  KGEln   beta  alpha     r     obs   model
+CA-SCB   bog          21   0.70   0.88   1.14  0.76   67.49   59.48
+DE-SfN   bog          28  -1.09   5.33   3.22  0.55   12.68   67.53
+FI-Si2   bog          28   0.63   0.82   0.75  0.88   68.45   55.79
+JP-BBY   bog          39   0.75   1.04   1.04  0.76   66.92   69.37
+NZ-Kop   bog          48   0.37   1.67   1.17  0.66   61.37  102.43
+US-BZB   bog          20   0.57   0.96   1.46  0.80   59.79   57.16
+DE-Zrk   fen          63   0.09   0.88   0.41  0.89  114.56  100.70
+FI-Lom   fen          60   0.23   0.54   0.63  0.92   56.57   30.78
+FI-Sii   fen          61   0.85   1.00   0.91  0.88   49.76   49.63
+FR-LGt   fen          20  -2.25  13.20   6.90  0.60    5.10   67.25
+SE-Deg   fen          50   0.77   0.92   1.19  0.87   39.24   36.26
+US-BZF   fen          19   0.58   1.23   1.31  0.75   66.72   81.73
+US-Los   fen          59  -0.16   2.58   1.93  0.87   23.87   61.69
+US-DPW   marsh        40   0.47   1.39   0.68  0.83  205.28  285.45
+US-LA2   marsh        12   0.56   1.51   1.01  0.85  171.87  259.83
+US-Myb   marsh        99   0.46   1.02   0.61  0.77  174.65  178.35
+US-ORv   marsh        50   0.78   0.98   1.02  0.79   29.95   29.34
+US-Sne   marsh        24   0.27   0.95   0.49  0.88  157.11  148.90
+US-Tw1   marsh        91   0.57   1.40   1.01  0.73  171.52  240.26
+US-Tw4   marsh        61   0.43   1.60   1.29  0.79  118.09  188.63
+US-Tw5   marsh         9   0.57   0.87   0.67  0.94  316.46  274.22
+US-WPT   marsh        34   0.33   0.72   0.56  0.96  194.97  140.01
+BR-Npw   swamp        29  -0.14   0.46   0.45  0.74   90.58   41.73
+BW-Gum   swamp        10   0.71   1.27   0.99  0.84  355.56  451.69
+BW-Nxr   swamp        12  -1.89   0.10   0.20  0.47  178.11   17.27
+MY-MLM   swamp        19  -1.69   8.96   3.54  0.08   40.17  359.79
+US-NC4   swamp        60   0.20   1.82   0.71  0.60  110.75  201.70
+RU-Ch2   wet tundra   26   0.53   1.13   1.56  0.89   34.24   38.77
+US-A03   wet tundra   25   0.65   0.76   1.06  0.79   37.65   28.65
+US-A10   wet tundra   17  -0.57   2.84   3.18  0.78   11.36   32.22
+US-Atq   wet tundra   26  -0.31   1.91   3.06  0.81    9.21   17.62
+US-Beo   wet tundra   16   0.58   0.83   1.41  0.86   11.20    9.32
+US-Bes   wet tundra   27   0.84   0.86   1.00  0.94   15.32   13.16
+US-ICs   wet tundra   16  -0.72   2.65   4.06  0.81   13.76   36.53
+US-Ivo   wet tundra   41   0.29   1.02   1.93  0.73   20.79   21.14
+US-NGB   wet tundra   33   0.83   1.02   1.01  0.83   18.70   19.04
+US-Uaf   permafrost   46  -0.10   0.78   2.39  0.38    4.01    3.12
+# unscored: AT-Neu (0 common months), CA-SCC (0 common months), CH-Cha (0 common months), CH-Dav (0 common months), CH-Oe2 (<8 obs months), CN-Hgu (0 common months), DE-Dgw (0 common months), DE-Hte (0 common months), FI-Hyy (<8 obs months), ID-Pag (0 common months), IT-BCi (<8 obs months), IT-Cas (0 common months), JP-Mse (0 common months), JP-SwL (<8 obs months), KR-CRK (0 common months), NL-Hor (<8 obs months), PH-RiF (0 common months), RU-Che (0 common months), RU-Cok (<8 obs months), RU-Fy2 (0 common months), US-BZS (0 common months), US-Bi1 (0 common months), US-Bi2 (0 common months), US-CRT (0 common months), US-EDN (<8 obs months), US-EML (0 common months), US-HRA (<8 obs months), US-HRC (<8 obs months), US-Ho1 (0 common months), US-LA1 (0 common months), US-MAC (0 common months), US-MRM (0 common months), US-NGC (<8 obs months), US-OWC (<8 obs months), US-Pfa (0 common months), US-Snd (0 common months), US-Srr (0 common months), US-StJ (0 common months), US-Tw3 (<8 obs months), US-Twt (0 common months)
+
+group          n  KGEln   beta  alpha     r
+all           37   0.46   1.02   1.04   0.80
+wetland       37   0.46   1.02   1.04   0.80
+bog            6   0.60   1.00   1.15   0.76
+fen            7   0.23   1.00   1.19   0.87
+marsh          9   0.47   1.02   0.68   0.83
+swamp          5  -0.14   1.27   0.71   0.60
+wet tundra     9   0.53   1.02   1.56   0.81
+permafrost     1  -0.10   0.78   2.39   0.38

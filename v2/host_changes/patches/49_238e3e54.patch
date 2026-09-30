@@ -1,0 +1,126 @@
+From 238e3e54a724fbf4188f0236f4a4a468e6cd93cc Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 18:02:53 +0800
+Subject: [PATCH] feat(thermal): ponded water heat capacity in the first soil
+ layer
+
+DEF_PONDING_HEAT (default .false.): on soil, urban and wetland ground (patchtype <= 2) the ponded water wdsrf of the previous step joins the heat capacity of the first soil layer, cv(1) + cpliq*wdsrf, so standing water shares the top soil temperature and damps it. The energy check of THERMAL stays closed because fact(1) carries the same cv. The pond has no phase change of its own. With the key off wpond is zero and cv(1) is unchanged.
+
+---
+ main/MOD_GroundTemperature.F90 |  5 ++++-
+ main/MOD_Thermal.F90           | 14 +++++++++++---
+ share/MOD_Namelist.F90         |  7 +++++++
+ 3 files changed, 22 insertions(+), 4 deletions(-)
+
+diff --git a/main/MOD_GroundTemperature.F90 b/main/MOD_GroundTemperature.F90
+index f16af737..a3841e02 100644
+--- a/main/MOD_GroundTemperature.F90
++++ b/main/MOD_GroundTemperature.F90
+@@ -34,7 +34,7 @@ CONTAINS
+                          t_soisno,t_grnd,t_soil,t_snow,wice_soisno,wliq_soisno,scv,snowdp,fsno,&
+                          frl,dlrad,sabg,sabg_soil,sabg_snow,sabg_snow_lyr,&
+                          fseng,fseng_soil,fseng_snow,fevpg,fevpg_soil,fevpg_snow,cgrnd,htvp,emg,&
+-                         imelt,snofrz,sm,xmf,fact,pg_rain,pg_snow,t_precip &
++                         imelt,snofrz,sm,xmf,fact,pg_rain,pg_snow,t_precip,wpond &
+ #ifdef TRACER
+                         ,qphs_thaw_lay,qphs_frzc_lay &
+ #endif
+@@ -148,6 +148,7 @@ CONTAINS
+    real(r8), intent(in) :: pg_rain      !rainfall onto ground including canopy runoff [kg/(m2 s)]
+    real(r8), intent(in) :: pg_snow      !snowfall onto ground including canopy runoff [kg/(m2 s)]
+    real(r8), intent(in) :: t_precip     !snowfall/rainfall temperature [kelvin]
++   real(r8), intent(in) :: wpond        !ponded water sharing the first soil layer temperature [kg/m2]
+ 
+    real(r8), intent(inout) :: t_soisno   (lb:nl_soil) !soil temperature [K]
+    real(r8), intent(inout) :: wice_soisno(lb:nl_soil) !ice lens [kg/m2]
+@@ -212,6 +213,8 @@ CONTAINS
+          cv(i) = hcap(i)*dz_soisno(i)
+       ENDDO
+       IF(lb==1 .and. scv>0.) cv(1) = cv(1) + cpice*scv
++      ! ponded water stores heat with the first soil layer (DEF_PONDING_HEAT)
++      IF(wpond>0.) cv(1) = cv(1) + cpliq*wpond
+ 
+ ! Snow heat capacity
+       IF(lb <= 0)THEN
+diff --git a/main/MOD_Thermal.F90 b/main/MOD_Thermal.F90
+index 13d41e0a..c5ef4010 100644
+--- a/main/MOD_Thermal.F90
++++ b/main/MOD_Thermal.F90
+@@ -137,9 +137,11 @@ CONTAINS
+    USE MOD_SPMD_Task
+    USE MOD_Vars_1DFluxes, only: raw_grnd
+    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_RSS_SCHEME, DEF_SPLIT_SOILSNOW, &
+-                           DEF_USE_LCT,DEF_USE_PFT,DEF_USE_PC,DEF_PC_CROP_SPLIT
++                           DEF_USE_LCT,DEF_USE_PFT,DEF_USE_PC,DEF_PC_CROP_SPLIT, &
++                           DEF_PONDING_HEAT
++   USE MOD_Vars_TimeVariables, only: wdsrf
+ #ifdef TRACER
+-   USE MOD_Vars_TimeVariables, only: zwt, wdsrf
++   USE MOD_Vars_TimeVariables, only: zwt
+    USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_moss_rss
+ #endif
+ 
+@@ -440,6 +442,7 @@ CONTAINS
+        t_soil,                   &! ground soil temperature
+        t_snow,                   &! ground snow temperature
+        t_soisno_bef(lb:nl_soil), &! soil/snow temperature before update
++       wpond,                    &! ponded water in the first soil layer heat capacity [kg/m2]
+        tinc,                     &! temperature difference of two time step
+        ur,                       &! wind speed at reference height [m/s]
+        ulrad,                    &! upward longwave radiation above the canopy [W/m2]
+@@ -1263,6 +1266,11 @@ ENDIF
+ ! [5] Ground temperature
+ !=======================================================================
+ 
++      ! Ponded water of soil, urban and wetland ground joins the heat
++      ! capacity of the first soil layer (DEF_PONDING_HEAT); zero otherwise
++      wpond = 0.
++      IF (DEF_PONDING_HEAT .and. patchtype <= 2) wpond = max(wdsrf(ipatch), 0.)
++
+       CALL GroundTemperature (patchtype,is_dry_lake,lb,nl_soil,deltim,&
+                       capr,cnfac,vf_quartz,vf_gravels,vf_om,vf_sand,wf_gravels,wf_sand,&
+                       porsl,psi0,&
+@@ -1279,7 +1287,7 @@ ENDIF
+                       t_soisno,t_grnd,t_soil,t_snow,wice_soisno,wliq_soisno,scv,snowdp,fsno,&
+                       frl,dlrad,sabg,sabg_soil,sabg_snow,sabg_snow_lyr,&
+                       fseng,fseng_soil,fseng_snow,fevpg,fevpg_soil,fevpg_snow,cgrnd,htvp,emg,&
+-                      imelt,snofrz,sm,xmf,fact,pg_rain,pg_snow,t_precip &
++                      imelt,snofrz,sm,xmf,fact,pg_rain,pg_snow,t_precip,wpond &
+ #ifdef TRACER
+                      ,qphs_thaw_lay=qphs_thaw_lay_th, &
+                       qphs_frzc_lay=qphs_frzc_lay_th &
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index fbdbf492..fbffdf98 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -300,6 +300,11 @@ MODULE MOD_Namelist
+    ! spills as surface runoff in the same step. < 0 off (default); ignored
+    ! outside single-point builds.
+    real(r8) :: DEF_WETLAND_POND_MAX_SITE = -1._r8
++   ! Heat capacity of ponded water: the standing water wdsrf on soil, urban
++   ! and wetland ground joins the heat capacity of the first soil layer and
++   ! takes its temperature (no phase change of its own). .false. (default)
++   ! leaves the ground heat solver unchanged.
++   logical  :: DEF_PONDING_HEAT = .false.
+ 
+    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
+    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
+@@ -1435,6 +1440,7 @@ CONTAINS
+       DEF_WETLAND_INFLOW_RATIO_SITE,          &
+       DEF_WETLAND_POND_TARGET_SITE,           &
+       DEF_WETLAND_POND_MAX_SITE,              &
++      DEF_PONDING_HEAT,                       &
+       DEF_BGC_DEBUG_SCALARS,                  &
+ 
+       DEF_USE_WaterTableInit,                 &
+@@ -2074,6 +2080,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_WETLAND_INFLOW_RATIO_SITE          ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_POND_TARGET_SITE           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_POND_MAX_SITE              ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_PONDING_HEAT                       ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

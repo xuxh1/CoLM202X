@@ -1,0 +1,122 @@
+Sender: LSF System <lsfadmin@node103>
+Subject: Job 215165: <glwd2deg> in cluster <myCluster> Done
+
+Job <glwd2deg> was submitted from host <mgt01> by user <dq076> in cluster <myCluster> at Fri Sep 25 06:09:56 2026
+Job was executed on host(s) <4*node103>, in queue <normal>, as user <dq076> in cluster <myCluster> at Fri Sep 25 06:09:57 2026
+</share/home/dq076> was used as the home directory.
+</share/home/dq076/mode/Methane/CoLM202X-paper-v2> was used as the working directory.
+Started at Fri Sep 25 06:09:57 2026
+Terminated at Fri Sep 25 06:14:05 2026
+Results reported at Fri Sep 25 06:14:05 2026
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#BSUB -J glwd2deg
+#BSUB -q normal
+#BSUB -n 4
+#BSUB -R rusage[mem=16G]
+#BSUB -R span[ptile=48]
+#BSUB -W 2:00
+#BSUB -o /share/home/dq076/mode/Methane/CoLM202X-paper-v2/v2/results/logs/glwd_class_2deg_%J.out
+#BSUB -e /share/home/dq076/mode/Methane/CoLM202X-paper-v2/v2/results/logs/glwd_class_2deg_%J.err
+/share/home/dq076/software/miniconda3/envs/py311/bin/python /share/home/dq076/mode/Methane/CoLM202X-paper-v2/v2/scripts/glwd_class_2deg.py
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   237.72 sec.
+    Max Memory :                                 10698 MB
+    Average Memory :                             8466.89 MB
+    Total Requested Memory :                     16384.00 MB
+    Delta Memory :                               5686.00 MB
+    Max Swap :                                   2 MB
+    Max Processes :                              4
+    Max Threads :                                52
+    Run time :                                   247 sec.
+    Turnaround time :                            249 sec.
+
+The output (if any) follows:
+
+row 0
+row 1
+row 2
+row 3
+row 4
+row 5
+row 6
+row 7
+row 8
+row 9
+row 10
+row 11
+row 12
+row 13
+row 14
+row 15
+row 16
+row 17
+row 18
+row 19
+row 20
+row 21
+row 22
+row 23
+row 24
+row 25
+row 26
+row 27
+row 28
+row 29
+row 30
+row 31
+row 32
+row 33
+row 34
+row 35
+row 36
+row 37
+row 38
+row 39
+row 40
+row 41
+row 42
+row 43
+row 44
+row 45
+row 46
+row 47
+row 48
+row 49
+row 50
+row 51
+row 52
+row 53
+row 54
+row 55
+row 56
+row 57
+row 58
+row 59
+row 60
+row 61
+row 62
+row 63
+row 64
+row 65
+row 66
+row 67
+row 68
+row 69
+total tile-class area 4.882 Mkm2, forested 2.850
+
+
+PS:
+
+Read file </share/home/dq076/mode/Methane/CoLM202X-paper-v2/v2/results/logs/glwd_class_2deg_215165.err> for stderr output of this job.
+

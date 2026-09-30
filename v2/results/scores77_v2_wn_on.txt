@@ -1,0 +1,19 @@
+# paper_v2/v260930/sp_v2_dev_walter v2_wn_on: all 77 towers; KGE_ln / beta / alpha / r; means mg CH4 m-2 d-1
+site     class         n  KGEln   beta  alpha     r     obs   model
+FI-Si2   bog          28   0.39   0.74   0.60  0.86   68.45   50.42
+US-Myb   marsh        99   0.24   0.93   0.49  0.78  174.65  162.75
+BR-Npw   swamp        29  -0.20   0.43   0.45  0.73   90.58   38.72
+US-Atq   wet tundra   26  -0.29   1.92   2.98  0.80    9.21   17.64
+RU-Fy2   upland       44    nan  -0.02   0.01  0.60   10.03   -0.20
+US-CRT   upland       13    nan  -0.01   0.01 -0.09    9.41   -0.13
+US-Pfa   upland       92    nan  -0.03   0.02  0.06    4.06   -0.11
+# unscored: AT-Neu (0 common months), BW-Gum (0 common months), BW-Nxr (0 common months), CA-SCB (0 common months), CA-SCC (0 common months), CH-Cha (0 common months), CH-Dav (0 common months), CH-Oe2 (<8 obs months), CN-Hgu (0 common months), DE-Dgw (0 common months), DE-Hte (0 common months), DE-SfN (0 common months), DE-Zrk (0 common months), FI-Hyy (<8 obs months), FI-Lom (0 common months), FI-Sii (0 common months), FR-LGt (0 common months), ID-Pag (0 common months), IT-BCi (<8 obs months), IT-Cas (0 common months), JP-BBY (0 common months), JP-Mse (0 common months), JP-SwL (<8 obs months), KR-CRK (0 common months), MY-MLM (0 common months), NL-Hor (<8 obs months), NZ-Kop (0 common months), PH-RiF (0 common months), RU-Ch2 (0 common months), RU-Che (0 common months), RU-Cok (<8 obs months), SE-Deg (0 common months), US-A03 (0 common months), US-A10 (0 common months), US-BZB (0 common months), US-BZF (0 common months), US-BZS (0 common months), US-Beo (0 common months), US-Bes (0 common months), US-Bi1 (0 common months), US-Bi2 (0 common months), US-DPW (0 common months), US-EDN (<8 obs months), US-EML (0 common months), US-HRA (<8 obs months), US-HRC (<8 obs months), US-Ho1 (0 common months), US-ICs (0 common months), US-Ivo (0 common months), US-LA1 (0 common months), US-LA2 (0 common months), US-Los (0 common months), US-MAC (0 common months), US-MRM (0 common months), US-NC4 (0 common months), US-NGB (0 common months), US-NGC (<8 obs months), US-ORv (0 common months), US-OWC (<8 obs months), US-Snd (0 common months), US-Sne (0 common months), US-Srr (0 common months), US-StJ (0 common months), US-Tw1 (0 common months), US-Tw3 (<8 obs months), US-Tw4 (0 common months), US-Tw5 (0 common months), US-Twt (0 common months), US-Uaf (0 common months), US-WPT (0 common months)
+
+group          n  KGEln   beta  alpha     r
+all            4   0.02   0.83   0.54   0.79
+wetland        4   0.02   0.83   0.54   0.79
+bog            1   0.39   0.74   0.60   0.86
+marsh          1   0.24   0.93   0.49   0.78
+swamp          1  -0.20   0.43   0.45   0.73
+wet tundra     1  -0.29   1.92   2.98   0.80
+upland         3 median(model-obs)  -9.54 mg m-2 d-1; right sign 0.00; median r  0.06

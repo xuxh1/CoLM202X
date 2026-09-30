@@ -1,0 +1,156 @@
+&nl_colm
+
+   DEF_CASE_NAME = '__CASE__'
+
+   USE_SITE_landtype        = .true.
+   USE_SITE_pctpfts         = .false.
+   USE_SITE_pctcrop         = .false.
+   USE_SITE_htop            = .false.
+   USE_SITE_LAI             = .false.
+   USE_SITE_lakedepth       = .false.
+   USE_SITE_soilreflectance = .false.
+   USE_SITE_soilparameters  = .false.
+   USE_SITE_topography      = .false.
+   USE_SITE_WTD             = .false.
+
+   ! C-31: Sturm et al. (1997) snow thermal conductivity instead of Jordan (1991)
+   DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME = 2
+
+   ! Start/end are filled per site by gen_site_nmls.py from the actual Met.nc
+   ! time coverage (not assumed full calendar years), trimmed 1 day inward at
+   ! each end to absorb the greenwich=.false. timezone shift. spinup_repeat
+   ! stays 0 for now; a spinup stage is added once the batch runs clean.
+   DEF_simulation_time%greenwich    = .False.
+   DEF_simulation_time%start_year   = __SYEAR__
+   DEF_simulation_time%start_month  = __SMON__
+   DEF_simulation_time%start_day    = __SDAY__
+   DEF_simulation_time%start_sec    = 0
+   DEF_simulation_time%end_year     = __EYEAR__
+   DEF_simulation_time%end_month    = __EMON__
+   DEF_simulation_time%end_day      = __EDAY__
+   DEF_simulation_time%end_sec      = 86400
+   ! spinup period = [start, spinup_date]; it loops spinup_repeat times before
+   ! the real run. spinup_date is set to start + 1 year so each cycle replays the
+   ! first year of forcing (is_spinup needs spinup_date > start, else it no-ops).
+   DEF_simulation_time%spinup_year  = __SPYEAR__
+   DEF_simulation_time%spinup_month = __SPMON__
+   DEF_simulation_time%spinup_day   = __SPDAY__
+   DEF_simulation_time%spinup_sec   = 0
+   DEF_simulation_time%spinup_repeat = __SPINUP__
+
+   DEF_simulation_time%timestep     = 1800.
+
+   SITE_fsitedata = '__SITEDATA__'
+   DEF_dir_rawdata = '/share/home/dq013/zhwei/colm/data/CoLMrawdata/'
+   DEF_dir_runtime = '/share/home/dq013/zhwei/colm/data/CoLMruntime/'
+   DEF_dir_output  = '__OUTDIR__'
+
+   ! ----- land units and land sets -----
+   ! LAI setting
+   DEF_LAI_MONTHLY = .true.
+   DEF_LC_YEAR = 2005
+   DEF_LAI_CHANGE_YEARLY = .true.
+
+   ! ----------------
+
+   !for soil init
+   DEF_USE_SoilInit = .true.
+   DEF_file_SoilInit = '/share/home/dq013/zhwei/colm/data/CoLMruntime/soilstate.nc'
+   DEF_USE_SnowInit = .true.
+   DEF_file_SnowInit = '/share/home/dq013/zhwei/colm/data/CoLMruntime/soilstate.nc'
+
+   !for BGC
+   DEF_USE_CN_INIT  = .true.
+   DEF_file_cn_init = '/share/home/dq013/zhwei/colm/data/CoLMruntime/cnsteadystate.nc'
+   ! Seed the wetland tile from OM_density * 580 gC/kg instead of the CN
+   ! steady-state dataset, which is spun up for vegetated land.  Pairs with
+   ! DEF_METHANE%wetland_fixed_substrate in the CH4 parameter file.
+   DEF_USE_WETLAND_PEAT_C = .true.
+   DEF_WETLAND_PEAT_C_PROFILE = .true.
+   ! C-17 (paper V2): the seeded old peat goes to the passive pool (soil3).
+   DEF_WETLAND_PEAT_C_PASSIVE = .true.
+   ! C-17b: the acrotelm above 0.3 m keeps the dataset split (Clymo 1984: 10-50 cm).
+   DEF_WETLAND_PEAT_C_PASSIVE_ZTOP = 0.3
+   ! C-17c (paper V2): per-site DEF_WETLAND_PEAT_SHARE_SITE comes from SITE_MAIN.csv (1 peat, 0 mineral).
+   DEF_USE_PN       =   .true.
+   ! SASU jumps the CN pools to the analytic steady state -(A*K)^-1 * I at each
+   ! annual boundary. For a pool with no flux at all -- a grass PFT has no dead
+   ! stem and no dead coarse root -- that matrix is singular, and CNSASU patches
+   ! the zero diagonal with -1e36 to make it invertible. The inverse then mixes
+   ! 1e36 with the ordinary 1e-2 entries and the eight pools CNSASU writes back
+   ! (deadstem/deadcroot C and N, and their storage) come out NaN. Measured
+   ! 2026-08-05: those eight are exactly the eight RangeCheck reports, and the
+   ! NaN reaches decomp_cpools_vr through litterfall within one year, leaving
+   ! CH-Dav, US-Ho1 and AT-Neu with all 70 soil layers NaN in v260803/sp_inund.
+   !
+   ! Off until that is fixed upstream. The cost is small here because the pools
+   ! are initialized from cnsteadystate.nc, so SASU was refining an equilibrium
+   ! rather than finding one; the wetland substrate is seeded from peat carbon
+   ! and held fixed, so it never depended on SASU at all.
+   DEF_USE_SASU     = .false.
+
+   ! Register CH4 reactive tracer.
+   DEF_TRACER_NUM                 = 1
+   DEF_TRACER_NAMES               = "CH4"
+   DEF_TRACER_TYPES               = "gas"
+   DEF_TRACER_REF_RATIO            = "1.0"
+   DEF_TRACER_INIT_DELTA           = "0.0"
+   DEF_TRACER_REACTIVE_DECAY_RATE  = "0.0"
+   DEF_TRACER_MRAT                = "16.04"
+   DEF_TRACER_PARAM_FILES           = '__CH4PARAM__'
+
+   DEF_USE_VariablySaturatedFlow = .true.
+   DEF_USE_Dynamic_Wetland = .true.
+   DEF_UnitCatchment_file = '/share/home/dq013/zhwei/colm/data/CoLMruntime/unitcatchment/grid_routing_data_15min.nc'
+   DEF_Runoff_SCHEME = 0
+   DEF_USE_BIFURCATION = .false.
+   DEF_USE_LEVEE       = .false.
+
+   ! ----- forcing -----
+   ! POINT forcing: DEF_forcing_namelist points to the per-site forcing namelist
+   ! (&nl_colm_forcing), NOT the Met .nc data file.
+   DEF_forcing_namelist = '__FORCINGNML__'
+
+   ! ----- history -----
+   ! Direct-to-disk history writes; the in-memory write-back buffer has a latent
+   ! heap-corruption bug on this single-point path.
+   USE_SITE_HistWriteBack = .false.
+
+   DEF_WRST_FREQ = 'YEARLY'
+   ! Monthly while the structural problems are being diagnosed. Daily is the
+   ! better comparison against a tower -- it shows the day-to-day variation
+   ! inside a month instead of a twelve-point climatology -- but it is not free:
+   ! measured 2026-08-06, 77 sites x 5 years runs ~9.5 h under DAILY with
+   ! ch4_history_vars='all' against ~20 min under MONTHLY, because the methane
+   ! set carries many 10-layer fields. That cost buys nothing while the question
+   ! is still "does this configuration emit at all", and it dominates the time
+   ! saved by --no-spinup.
+   !
+   ! Switch back to DAILY once the diagnosis needs seasonal phase -- channel
+   ! timing, event-scale ebullition -- and prefer narrowing the years over
+   ! narrowing the variables. The towers record half-hourly, which TIMESTEP
+   ! would match, but that is ~730x monthly volume: a separate short run over
+   ! a few sites, never the 77.
+   DEF_HIST_FREQ = 'MONTHLY'
+   DEF_HIST_groupby = 'YEAR'
+
+   DEF_hist_vars_out_default = .true.
+   DEF_hist_vars_namelist = 'null'
+
+   ! C-21 (paper V2): C3 co-limitation and sink limit under the WUE stomata model.
+   DEF_WUE_COLIMIT = .true.
+   ! C-21 (paper V2): only the leaf share of absorbed PAR drives photosynthesis.
+   DEF_PAR_LEAF_ONLY = .true.
+   ! C-32: host irrigation (demand-driven, DEF_IRRIGATION_ALLOCATION 1) for irrigated crops
+   DEF_USE_IRRIGATION = .true.
+   ! C-32: rainfed rice bunded too; bunds hold water from planting to harvest
+   DEF_PADDY_RICE_BUND = .true.
+   DEF_RICE_DOUBLE_SEASON_FILE = '/share/home/dq076/mode/Methane/CoLM202X-paper-v2/v2/data/rice_double_2deg.nc'
+   DEF_CROP_FALLOW_NO_LAI = .true.
+   DEF_RICE_ROOT_EXUDATE = 0.15
+   DEF_RICE_GRNFILL = 0.40
+   DEF_PADDY_DRAIN_DAYS = 21.
+   DEF_FLOODPLAIN_INFILTRATION = .true.
+   ! Q-45: peat soil profile, acrotelm above 0.3 m over catotelm
+   DEF_WETLAND_PEAT_SOIL = 2
+/

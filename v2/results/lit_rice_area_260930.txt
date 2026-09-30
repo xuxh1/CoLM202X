@@ -1,0 +1,210 @@
+# lit_rice_area_260930：全球稻田面积、灌溉份额与双季份额的数据方案
+
+- **日期**：2026.09.30-06:06
+- **读者**：下一会话
+- **来源**：methane-lit-ricearea 只读调研（文献 L-8），承接 `v2/results/diag_rice_global_260930.txt`（Q-60）与账本 C-37、C-39、C-39b、C-45、C-46、C-47、C-95、V-71、V-163、V-171；脚本与输出在 `v2/_scratch/rice_area/`，node114 运行（`prep_inputs.py` 在 mgt01 秒级运行）
+- **状态**：五问已答；未动代码、配置、case 与数据正本；SPAM 2020 物理面积、MIRCA-OS、RiceAtlas 分季面积未下载（需用户在门户登记或决定正本位置）
+- **失效于**：SPAM 2020 物理面积下载后按第 6 节重做稻田地表数据；或 V-171（`g2_r2`）结果改变 C-95 的实现率
+
+单位：面积 Mha（省表 kha）；排放 Tg CH₄ yr⁻¹，单位面积 g CH₄ m⁻² yr⁻¹。"物理面积"一块田只算一次，"收获面积"按季累加，d = 灌溉稻物理面积中一年种两季的份额。wc5 = `g2_wc5`（2018，地表 `CoLMrawdata_glwd` 原拆分，无双季文件，即 `region_eval_g2_wc5_2018-2018.log` 的那一版）；mp = mircaphys 地表（`g2_o4` 的 landdata，`g2_o6`、`g2_ri`、`g2_r2` 共用，C-39b）。FAO = FAOSTAT 收获面积（元素 5312，来源 FAO TIER 1），中国取 "China, mainland"。
+
+## 0. 覆盖面
+
+1. 读码（本树 `CoLM202X-paper-v2`）：
+   - `rice_double|RICE_DOUBLE`：`main/MOD_CropReadin.F90:179–196`（按格读入、截到 0–1、只给 PFT 62），`main/BGC/MOD_BGC_Veg_CNPhenology.F90:1100、1195`（`rice_double_p >= 0.5` 才种第二季）。
+   - `gddmaturity`：`CNPhenology.F90:1144–1146`（稻 0.35 × gdd020 + 587）；`gdd0/gdd10/gddplant` 累加 `CNPhenology.F90:300–320`；C-95 `RiceSecondSow` `CNPhenology.F90:1315–1371`。
+2. 脚本文件头：`v2/scripts/mk_cft_mirca_rice.py`（C-39、C-39b）、`mk_rice_double.py`（C-45）、`rice_cft_share.py`（Q-15）；`mk_rainfed_share.py` 是湿地 C-38 的雨养份额，与稻田无关，不入项。
+3. 配置：`g2_wc5`、`g2_ri`、`g2_r2` 的 `input_*.nml`（`DEF_dir_rawdata`、`DEF_RICE_DOUBLE_SEASON_FILE`、`DEF_RICE_SECOND_SOW_DAYS`）；landdata 链接 `g2_wc5 → v260924c/g2_v2/landdata`，`g2_o6、g2_ri → v260928j/g2_o4/landdata`。
+4. 数据：wc5 2018 与 o6 2011–2012 主、tracer history；o6 `2012-001` pft 重启（`plantdate_p、gdd020_p、annavg_tref_p`）；两套 landdata `diag/cropfrac_elm_2005.nc、patchfrac_elm_2005.nc`；`v2/data/rice_double_2deg.nc`、`country_mask_0p1.npz`；MIRCA2000（`~/data/methane/MIRCA2000/`）；Cao et al. 2026 数据包 `Input_data_Rice`（SPAM 2020 按七种水分类型拆分的收获面积、RiceAtlas 季数与季长）与国别排放汇总表；FAOSTAT 作物排放域批量表（2025-11 版，含稻谷收获面积）；国家统计局 2023 年早稻公告分省表与 2023 年粮食公告；`~/data/boundaries/CN/chinawithisland`（省界，ADCODE99）。
+5. 门户与注册库（WebFetch；请求头、URL 均无个人信息，无 `mailto`）：Harvard Dataverse 的 SPAM 2020、RiceAtlas、GAEZ+_2015 文件清单与条款；HydroShare 的 MIRCA-OS 文件清单与 README；Europe PMC 全文（Grogan et al. 2022、Kebede et al. 2025）；Crossref 与 DataCite 著录（第 7 节）。
+6. 脚本与输出（同名 `.out`）：`prep_inputs.py`（FAOSTAT 过滤、复制 Cao 栅格）、`area_country.py`（国别与分区面积、wc5 分区单位面积排放拆分）、`double_schemes.py`（双季方案、中国分省、C-95 积温仿算、面积外推）、`china_heat.py`（中国早稻省积温）、`spam_interim.py`（用现有数据拼的过渡地表与作物用地容量）。
+7. 不入项与理由：GAEZ v4 门户页由脚本渲染，WebFetch 取不到正文，只核了模型说明书的 Crossref 著录；国家统计局公告无分省稻谷播种面积行，分省总面积改用 SPAM 2020 收获面积；FAOSTAT 的 UNFCCC 来源行（日本、美国与 FAO 行不同，美国 UNFCCC 1.62 Mha 含再生稻）不用。
+8. 未看：无。
+9. 存疑（要跑或要下数据才能定）：
+   - 印度灌溉稻复种份额：MIRCA2000 印度灌溉稻收获 ÷ 物理恰为 2.00（按国别作物历设两季同面积），据此 C-45 把印度 85 % 灌溉稻标双季。实验：下载 SPAM 2020 物理面积后算印度 A_I 与 H_I/A_I，与 MIRCA 物理 12.2 Mha 比。
+   - 第 5 节各情景的排放是按面积外推，未跑模式。实验：按第 6 节做新地表后冷启动一次，与 `g2_r2`（V-171）同配置比分区稻田。
+   - C-95 实现率是按其正弦年循环离线仿算的，东南亚 0.81 与账本 C-95 行的离线仿算 0.95 不同。实验：看 V-171 `g2_r2` 2012 的逐格收获次数。
+
+## 1. 结论
+
+1. 全球：模式稻田物理面积 131.5（甲烷稻田 126.0），wc5 收获折算 127.9，是 FAO 2018 年 164.2 的 0.78；灌溉份额按物理面积 33 %（wc5）与 47 %（mp），对 SPAM 2020 收获面积 62 %、MIRCA2000 物理面积 51 %——已验证（`area_country.out` GLOBAL 行）。
+2. 分国偏差大于全球偏差：wc5 收获折算 ÷ FAO 2018 为中国 0.69、印度 1.18、孟加拉 0.40、印尼 0.34、越南 0.42、泰国 0.92、缅甸 0.95、菲律宾 0.26、日本 0.94、韩国 1.63、美国 1.53、巴西 0.99——已验证（`area_country.out`）。灌溉份额（mp）对 SPAM：中国 80 对 99 %、越南 33 对 89 %、泰国 23 对 67 %、菲律宾 34 对 60 %、印度 44 对 55 %——已验证（同上）。
+3. 现用双季文件（MIRCA2000 灌溉稻收获 ÷ 物理 ≥ 1.5）标双季的份额：中国 67 %、印度 85 %、孟加拉、越南、泰国、缅甸、菲律宾 100 %、印尼 80 %、日本 41 %；若全部种上，mp 收获面积 174.8，高出 FAO 6 %，其中印度 72.3 对 44.2——已验证（`area_country.out` dbl%、mpH* 列）。
+4. 中国：统计局 2023 年早稻 4733.1 kha、稻谷 28949.1 kha，全国双季份额 0.195；分省江西 0.55、湖南 0.43、广东 1.00、广西 0.87、海南 0.94、浙江 0.26、福建 0.18、安徽 0.07、湖北 0.06、云南 0.02（分母为 SPAM 2020 收获面积减早稻）；MIRCA2000 中国灌溉稻隐含双季面积 13.6 Mha，是早稻面积的 2.9 倍，安徽、湖北、云南三省 MIRCA 4.0 Mha 对统计 0.32 Mha——已验证（`double_schemes.out` 省表；国家统计局两份公告）。
+5. C-95 积温门槛在中国基本放不下第二季：灌溉稻头季后剩余积温 ÷ 成熟积温中位 0.23，只有海南过；要种两季，每季成熟积温须降到现值的 0.51–0.64（长江中下游、福建与云南）或 0.80–0.86（广东、广西）——已验证（`double_schemes.out` heat/gddm 段；`china_heat.out` f2 列，按 C-95 自身的正弦年循环仿算）。所以把中国双季份额从 66 % 改到统计口径，在 C-95 开时对排放几乎无影响（第二季实种 0.1 Mha 不变），只在 C-95 关时去掉 C-45 的伪第二季——推测。依据：`double_schemes.out` China 行 S0 与 S2 的 Mha 列同为 0.1。
+6. C-95 开时南亚、东南亚的双季文件 89 %、81 % 能种上，全球约 27.4 Mha 灌溉稻种两季；印度因此收获面积到 70.3 Mha，是 FAO 的 1.59 倍；南亚第二季增量 3.1 Tg，印度灌溉稻占南亚的 83 %，而印度模式物理面积比 MIRCA 物理多 63 %（52.4 对 32.1）——已验证（`double_schemes.out` 分国表与分区表；`area_country.out`）。所以南亚这部分增量有相当一部分建立在印度面积偏多上——推测。依据：上述面积比。
+7. 替代数据里最合适的是 SPAM 2020 V2r2（2020 年、5′、灌溉与雨养分开的物理面积 A 与收获面积 H，H/A 即复种指数，CC BY 4.0，下载需在 Harvard Dataverse 填访客登记，物理面积 geotiff 包 66.4 MB）；MIRCA-OS（2015、5′、稻按 RiceAtlas 设三季、有逐月生长面积，数据 CC BY 4.0，rar 包 172 MB）作逐月季节与第二季播种月的来源——已验证（Dataverse 与 HydroShare 文件清单、条款；Kebede et al. 2025 全文 Methods）。Cao 2026 数据包只有 SPAM 收获面积的水分类型拆分，没有物理面积；GAEZ+_2015 的逐月物理面积用 MIRCA2000 作物历拆季——已验证（`in/` 文件清单；Grogan et al. 2022 全文 Methods）。
+8. 预期（按 wc5 分区单位面积排放外推，未跑模式）：只把灌溉份额改成 SPAM（物理面积不变）全球 ×1.39；用 SPAM 收获面积推物理面积加 NBS 分省中国双季与 C-95（过渡方案 VII）全球 10.2 → 16.4 Tg（×1.61）；与现行 mp 地表加 C-95（V，16.2）比，总量相当，但南亚 −2.4、中国 +1.0、东南亚 +1.1，三区对清单中位的差距从 3.1、0.9、2.5 倍变为 2.3、1.3、1.9 倍，更均匀——推测。依据：`double_schemes.out`、`spam_interim.out` 情景表与 `region_eval_g2_wc5_2018-2018.log` 清单中位。
+9. 建议：先做不需要 mksrf 的双季文件（中国用统计局分省早稻，其余暂用 MIRCA），再由用户下载 SPAM 2020 物理与收获面积，按 SPAM 重建稻田 CFT 份额（总量与灌溉拆分都改）并由 SPAM 的 H/A 生成双季文件；地表改动须重跑一次 mksrf（约 9.5 h，同一时刻只跑一个）并冷启动。按 2° 格核，SPAM 口径的稻田物理面积有 15.1 Mha 超过所在格的作物用地，只改 `PCT_CFT` 会丢掉这部分，要同时抬作物份额或接受损失——已验证（`spam_interim.out` 容量行）；方案本身——推测。
+
+## 2. 问一：模式稻田面积与统计的差
+
+### 2.1 模式面积从哪来
+
+1. 稻田物理面积 = 作物用地（`plant_15s` 的 `PCT_CROP`）× `global_CFT_surface_data.nc` 的 `PCT_CFT` 第 47（雨养稻，PFT 61）与 48（灌溉稻，PFT 62）两类；每个作物功能型是一个斑块、一年按作物历播一次——已验证（`diag_rice_global_260930.txt` 第 2.1 节第 1、2 条读码 `MOD_LandCrop.F90:66–108`、`MOD_LandPFT.F90:213–226`）。
+2. wc5 用原始拆分（`g2_wc5/input_g2_wc5.nml:45` `DEF_dir_rawdata = .../CoLMrawdata_glwd/`，无 `DEF_RICE_DOUBLE_SEASON_FILE`）；`g2_ri`、`g2_r2` 用 C-39b 的 mircaphys（CFT 47 + 48 总量不变，灌溉部分按 MIRCA2000 物理面积份额）与 `rice_double_2deg.nc`，`g2_r2` 另开 C-95（`DEF_RICE_SECOND_SOW_DAYS = 15`）——已验证（两 case 的 `input_*.nml`；`mk_cft_mirca_rice.py` 文件头）。
+3. 双季文件 `rice_double_2deg.nc`：2° 格内 MIRCA2000 灌溉稻收获面积 ÷ 逐月生长面积最大值 ≥ 1.5 记 1；代码按格读入，PFT 62 取值 ≥ 0.5 才在头季收获后再播——已验证（`mk_rice_double.py` 文件头；读码 `MOD_CropReadin.F90:179–196`、`CNPhenology.F90:1100、1195`）。所以文件里若写连续份额，模式仍按 0.5 的阈值逐格二值化——已验证（同上读码）。
+
+### 2.2 分国对照（Mha）
+
+| 国 | FAO 2018 / 2020 | SPAM 2020 收获（灌溉 %） | MIRCA2000 收获 / 物理（灌溉稻 H/P） | 模式物理（wc5 灌溉 %）/ 甲烷稻田 / wc5 收获折算（÷ FAO） | mp 灌溉 % / o6 收获折算 | 双季标记 %（全种上时收获） |
+|---|---|---|---|---|---|---|
+| 中国 | 30.2 / 30.1 | 30.2（99） | 43.3 / 29.2（1.55） | 21.9（47）/ 21.8 / 20.7（0.69） | 80 / 21.9 | 67（33.6） |
+| 印度 | 44.2 / 45.8 | 44.8（55） | 44.2 / 32.1（2.00） | 52.4（35）/ 52.4 / 52.0（1.18） | 44 / 61.1 | 85（72.3） |
+| 孟加拉 | 11.5 / 11.4 | 11.1（50） | 10.5 / 7.9（1.97） | 4.7（45）/ 4.7 / 4.7（0.40） | 35 / 5.8 | 100（6.3） |
+| 印尼 | 11.4 / 10.7 | 10.2（51） | 11.8 / 9.7（1.54） | 3.8（39）/ 3.8 / 3.8（0.34） | 51 / 5.4 | 80（5.4） |
+| 越南 | 7.6 / 7.2 | 7.1（89） | 6.9 / 4.8（1.98） | 3.2（38）/ 3.2 / 3.2（0.42） | 33 / 3.5 | 100（4.3） |
+| 泰国 | 10.6 / 10.9 | 10.5（67） | 9.8 / 7.6（2.00） | 9.8（20）/ 9.8 / 9.8（0.92） | 23 / 11.5 | 100（12.1） |
+| 缅甸 | 7.1 / 6.8 | 6.6（26） | 6.3 / 5.3（2.00） | 6.8（11）/ 6.8 / 6.8（0.95） | 22 / 7.4 | 100（8.3） |
+| 菲律宾 | 4.8 / 4.7 | 4.4（60） | 4.0 / 2.9（2.00） | 1.3（17）/ 1.3 / 1.3（0.26） | 34 / 1.3 | 100（1.7） |
+| 日本 | 1.6 / 1.5 | 1.4（88） | 1.8 / 1.2（1.50） | 1.8（47）/ 1.8 / 1.5（0.94） | 84 / 1.8 | 41（2.4） |
+| 韩国 | 0.7 / 0.7 | 0.6（98） | 1.1 / 1.1（1.00） | 1.2（42）/ 1.2 / 1.2（1.63） | 60 / 1.2 | 0（1.2） |
+| 美国 | 1.2 / 1.2 | 1.1（100） | 1.3 / 1.3（1.00） | 1.8（46）/ 1.8 / 1.8（1.53） | 91 / 1.8 | 0（1.8） |
+| 巴西 | 1.9 / 1.7 | 1.7（50） | 3.0 / 3.0（1.00） | 1.9（15）/ 0.7 / 1.8（0.99） | 28 / 1.9 | 0（1.9） |
+| 全球 | 164.2 / 165.1 | 162.1（62） | 165.7 / 125.2（1.62） | 131.5（33）/ 126.0 / 127.9（0.78） | 47 / 146.0 | 70（174.8） |
+
+表内数值——已验证（`area_country.out`）。模式 2° 格按 0.1° 国界的陆地像元份额分给各国，小国与海岸国家有跨境误差；国界图把台湾计入 CHN，FAO "China" 比 "China, mainland" 多 0.27 Mha——已验证（`area_country.out` 首行；`in/fao_rice.csv`）。wc5 与 mp 的物理总面积逐格相同，只差灌溉拆分——已验证（`mk_cft_mirca_rice.py` 只改拆分；`diag_rice_global_260930.txt` 第 2.2 表 o6 雨养 70.1 + 灌溉 61.4 = 131.5）。
+
+### 2.3 判读
+
+1. 缺口的主体是物理面积的地理分布，不是复种：用模式自己的物理面积去凑 FAO 收获面积，孟加拉、印尼、越南、菲律宾的灌溉稻即使全部两季也补不上（所需 d 截在 1），印度所需 d 为 0（物理面积已超过收获面积），中国需 d = 0.48（物理面积 21.9 对统计折算约 24.2）——已验证（`double_schemes.out` 分国表 FAOc 列；24.2 = 28.95 − 4.73）。
+2. 灌溉份额 mp 已比 wc5 高，但对 SPAM 仍偏低，东南亚最甚（越南、泰国、菲律宾差 26–56 个百分点）——已验证（第 2.2 表）。
+3. MIRCA2000 的灌溉稻 H/P 在印度、泰国、缅甸、菲律宾恰为 2.00、孟加拉与越南 1.97–1.98，是按国别作物历给两个亚作物同面积的结果；中国 1.55 来自冬季亚作物（1–3 月与 10–12 月的灌溉稻生长面积，`diag_rice_global_260930.txt` 第 2.4 节第 4 条）——已验证（`area_country.out` HPir 列）；"国别作物历同面积"是对恰为 2.00 的解释——推测。
+4. 美国、韩国模式物理面积高于统计（1.53、1.63），巴西甲烷稻田只有物理面积的 37 %（雨养旱稻没有稻田灌溉方式）——已验证（第 2.2 表；SPAM 巴西旱稻 49 %，`diag_rice_global_260930.txt` 引 `spam_regime.out`）。
+
+## 3. 问二：可替代的数据
+
+| 数据 | 年份 | 分辨率 | 稻的内容 | 许可 | 取得方式与大小 | 能否给"物理面积 + 灌溉份额 + 复种指数" |
+|---|---|---|---|---|---|---|
+| SPAM 2020 V2r2（IFPRI） | 2020 | 5′ | 物理面积 A、收获面积 H、产量、单产，按全部 / 灌溉 / 雨养三种技术 | CC BY 4.0（IFPRI 条款：署名 IFPRI） | Harvard Dataverse，doi:10.7910/DVN/SWPENT，版本 6（2026-05-05 发布）；`spam2020V2r2_global_physical_area.geotiff.zip` 66.4 MB、`..._harvested_area.geotiff.zip` 68.0 MB；需填访客登记（姓名、邮箱）并接受条款 | 能：A_I、A_R 直接给物理面积与灌溉份额，H_I/A_I 即灌溉稻复种指数 |
+| MIRCA-OS（Kebede et al.） | 2000、2005、2010、2015 | 5′（另有 30′） | 23 类作物灌溉 / 雨养的逐月生长面积、逐月最大值、年收获面积；稻按 RiceAtlas 设三季；作物历 CSV（单元、亚作物、年收获面积、播种与成熟月） | 数据 CC BY 4.0（HydroShare）；论文 CC BY-NC-ND 4.0 | HydroShare，doi:10.4211/hs.60a890eb841c460192c03bb590687145；逐月最大值与年收获面积各约 172 MB（rar），作物历 CSV 每份约 8.6 MB，逐月全量 1.1 GB | 能：最大逐月生长面积为物理面积，年收获 ÷ 物理为复种指数，另有第二、三季的播种月 |
+| MIRCA2000（现用） | 约 2000 | 5′ / 30′ | 灌溉 / 雨养逐月生长面积与年收获面积 | CC BY 4.0（Zenodo 7422506） | 本地已有 | 能，但中国冬季亚作物使复种指数虚高，南亚、东南亚为国别作物历的 2.00 |
+| GAEZ v4（FAO、IIASA） | 2000、2010 | 5′ | 实际收获面积、产量（灌溉 / 雨养） | 门户未取到正文 | gaez.fao.org | 只有收获面积，无物理面积与季数 |
+| GAEZ+_2015（Grogan et al.） | 2015 | 5′ | 26 类作物收获面积、产量、单产（灌溉 / 雨养，Harvard Dataverse，doi:10.7910/DVN/KAGRFI，CC0，稻每层 37 MB）；逐月物理面积另存 GeoHub | CC0 | Dataverse 直下 | 收获面积可；逐月物理面积由 MIRCA2000 作物历拆季，承袭其季节结构 |
+| Cao et al. 2026 数据包 | 约 2020 | 5′ | SPAM 2020 收获面积按 IPCC 七种水分类型拆分、RiceAtlas 季数与季长、国别水分类型表 | CC BY 4.0 | figshare，doi:10.6084/m9.figshare.29089973.v3；已在本地 | 只有收获面积与灌溉份额，无物理面积 |
+| RiceAtlas（Laborte et al.） | 约 2010 | 行政区矢量 | 各季播种、收获日期与各季产量 / 面积 | CC0 | Harvard Dataverse，doi:10.7910/DVN/JE6R2R，`RiceCalendar_v1.zip` 107 MB，需访客登记 | 分季面积可推复种，行政区粒度 |
+
+表内年份、分辨率、内容、许可、大小——已验证（Dataverse 与 HydroShare 文件清单 API；MIRCA-OS README 与 Kebede et al. 2025 Methods "rice ... three growing seasons ... based on ... RiceAtlas calendars"、"annual harvested area ... sum of each sub-crop's maximum monthly harvested area"；Grogan et al. 2022 Methods "MIRCA2000 crop calendars"、Data Records；Cao et al. 2026 Methods "SPAM 2020 v.2.0 ... harvest area, physical area and production"）。GAEZ v4 行的内容取自 MIRCA-OS 与 Grogan 两文对它的描述，许可未核——存疑。MIRCA-OS 的 rar 本机有 `bsdtar` 可读，能否解 rar5 未试——存疑。
+
+选择：SPAM 2020 最合适——2020 年与现评 2018 年、Cao 2026 水分类型同口径，A 与 H 分灌溉 / 雨养，复种指数不依赖作物历假设；SPAM 2020 收获面积全球 162.1 对 FAO 2020 165.1——已验证（`area_country.out`）。MIRCA-OS 作第二选择与季节来源：它给逐季播种月，可替 C-45 的 `pdrice2`；年份 2015、稻季结构依赖 RiceAtlas——推测。依据：上表。
+
+## 4. 问三：双季份额修正
+
+### 4.1 方案
+
+- S0 现用：MIRCA2000 灌溉稻 H/P ≥ 1.5 记 1。
+- S1 MIRCA 连续：d = (H_ir − P_ir) / P_ir，截到 0–1；代码按 0.5 二值化后与 S0 完全相同。
+- S2 分省：中国各省早稻面积（统计局 2023）按 SPAM 2020 收获面积在省内按比例铺开，d = 早稻 ÷（SPAM 收获 − 早稻）逐 2° 格；中国以外用 S1。
+- S2n 全国一值：中国 d = 4733.1 ÷（28949.1 − 4733.1）= 0.195，中国以外用 S1。
+- 按"收获 ÷ 物理 ≥ 阈值"与"直接用连续份额"两种做法：现有代码只认 ≥ 0.5 的二值，连续份额要改宿主代码（把 PFT 62 按 d 拆成两类斑块，或让第二季按 d 计），第 5 节情景 VIII 与 VII 只差 0.1 Tg，连续做法不值得改码——推测。依据：`spam_interim.out`。
+
+### 4.2 中国分省（kha）
+
+| 省 | 早稻 2023 | SPAM 2020 收获 | d（统计） | MIRCA 隐含双季 | 模式 mp 灌溉稻 | S0 标记 | C-95 可种 | 头季后积温 ÷ 成熟积温 | 两季每季上限（× 成熟积温） |
+|---|---|---|---|---|---|---|---|---|---|
+| 浙江 | 122.1 | 593 | 0.26 | 883 | 400 | 400 | 0.00 | 0.29 | 0.56 |
+| 安徽 | 171.2 | 2516 | 0.07 | 1904 | 2316 | 2159 | 0.00 | 0.23 | 0.54 |
+| 福建 | 94.3 | 608 | 0.18 | 585 | 188 | 188 | 0.00 | 0.37 | 0.64 |
+| 江西 | 1202.2 | 3400 | 0.55 | 1217 | 612 | 612 | 0.00 | 0.25 | 0.60 |
+| 湖北 | 128.6 | 2326 | 0.06 | 1245 | 1805 | 1748 | 0.00 | 0.24 | 0.55 |
+| 湖南 | 1204.8 | 4012 | 0.43 | 1675 | 1045 | 1045 | 0.00 | 0.23 | 0.58 |
+| 广东 | 866.0 | 1729 | 1.00 | 937 | 508 | 508 | 0.00 | 0.72 | 0.86 |
+| 广西 | 812.7 | 1750 | 0.87 | 942 | 1327 | 1327 | 0.00 | 0.60 | 0.80 |
+| 海南 | 112.2 | 232 | 0.94 | 112 | 92 | 92 | 0.98 | 1.05 | 0.98 |
+| 云南 | 19.1 | 848 | 0.02 | 844 | 767 | 710 | 0.00 | 0.24 | 0.51 |
+| 十省合计 | 4733.2 | 18013 | 0.36 | 10345 | 9059 | 8788 | | | |
+
+表内数值——已验证（`double_schemes.out` 省表；`china_heat.out`；统计局 2023 年早稻公告附表）。全中国：mp 灌溉稻 17.4 Mha、S0 标记 11.7、MIRCA 隐含双季 13.6、C-95 可种 0.01——已验证（`double_schemes.out`）。两季每季上限：在日均温 ≥ 12 °C 的窗口里、两季间隔 15 d，两季各能分到的积温占现成熟积温之比——已验证（`china_heat.py` 算法与输出）；12 °C 窗口与 15 d 间隔是本调研取的假定——推测。模式在江西、湖南头季播种日 82–88、仿算收获日 226–229，即一季占满 3 月下旬到 8 月中——已验证（`china_heat.out`）。
+
+判读：MIRCA 把双季放在安徽、湖北、云南等单季稻省，而统计上的双季集中在江西、湖南、两广；模式的稻田在江西、湖南、广东本身就少（mp 灌溉稻 0.6、1.0、0.5 Mha，对 SPAM 收获 3.4、4.0、1.7）——已验证（上表）。
+
+### 4.3 各方案的双季份额与 C-95 下实际种上的面积（mp 灌溉稻）
+
+| 区 | 灌溉稻 Mha | S0 连续 / 二值 / C-95 通过 / 种两季 Mha | S1 | S2 | S2n |
+|---|---|---|---|---|---|
+| 全球 | 61.4 | 0.70 / 0.70 / 0.63 / 27.4 | 0.68 / 0.70 / 0.63 / 27.4 | 0.55 / 0.55 / 0.81 / 27.4 | 0.56 / 0.51 / 0.87 / 27.3 |
+| 中国 | 16.7 | 0.66 / 0.66 / 0.01 / 0.1 | 0.63 / 0.66 / 0.01 / 0.1 | 0.15 / 0.11 / 0.05 / 0.1 | 0.19 / 0.00 / — / 0.0 |
+| 南亚 | 28.1 | 0.81 / 0.81 / 0.89 / 20.1 | 0.78 / 0.81 / 0.89 / 20.1 | 0.78 / 0.80 / 0.89 / 20.1 | 同 S2 |
+| 东南亚 | 8.9 | 0.96 / 0.96 / 0.81 / 6.9 | 0.92 / 0.96 / 0.81 / 6.9 | 0.89 / 0.93 / 0.83 / 6.9 | 0.87 / 0.89 / 0.87 / 6.9 |
+| 日韩 | 2.9 | 0.21 / 0.21 / 0.00 / 0.0 | 0.27 / 0.21 / 0.00 / 0.0 | 同 S1 | 同 S1 |
+
+表内数值——已验证（`double_schemes.out`）。C-95 仿算：按 `RiceSecondSow` 的正弦年循环（年均 `annavg_tref`、半年均 gdd020 ÷ 182.5、基温 10 °C），头季自 `plantdate_p` 起积温达 0.35 × gdd020 + 587 或满 150 d 收获，15 d 后播第二季，到下一次头季日前积温够成熟积温即通过——已验证（`double_schemes.py` 与读码 `CNPhenology.F90:1315–1371、1144–1146`）。本仿算中国 0.01、南亚 0.89 与账本 C-95 行的离线仿算（中国 0、南亚 0.88）一致，东南亚 0.81 对 0.95 不一致——已验证（账本 C-95 行）；差异来源未查——存疑（第 0 节第 9 条）。
+
+头季后剩余积温 ÷ 成熟积温（灌溉稻面积加权）：中国 P10–P50–P90 0.00–0.23–0.44，≥ 1 的 1 %；南亚 0.96–1.27–1.40，≥ 1 的 86 %；东南亚 0.84–1.38–1.54，82 %；日韩 0.02–0.12–0.25——已验证（`double_schemes.out`）。
+
+修正后的模式行为：
+1. 中国：S2 标记从 66 % 降到 11 %，C-95 开时只有海南能种第二季，中国双季实种不因修正而变（0.1 Mha）；C-95 关时，C-45 在中国的伪第二季（2–4 月冬春播、头季日被强制收，账本 C-95 行）的标记面积从约 11.1 Mha 降到约 1.8 Mha（0.11 × 16.7）——已验证（第 4.3 表）。S2 的 d 在一省内近乎常数，过 0.5 的是江西、广东、广西、海南四省的格；伪第二季排放随之减少的量未算——推测。依据：分省 d（第 4.2 表）与 `double_schemes.py` 的铺开算法。
+2. 要中国真种上早晚两季，须给早稻与晚稻各自的短成熟积温（长江中下游、福建与云南约现值 0.51–0.64，即约 900–1350 GDD₁₀；两广 0.80–0.86，约 1800–1950 GDD₁₀），并让头季在 3–4 月播——推测。依据：第 4.2 表末列乘 `china_heat.out` 各省成熟积温 1814–2272。这是 C-95 明言不做的宿主改动（账本 C-95 行）。
+3. 南亚、东南亚：S1、S2 与 S0 在二值化后几乎相同，修正不改变这两区的第二季；它们的问题在灌溉面积与物理面积本身（第 2.3 节）——已验证（第 4.3 表）。
+
+### 4.4 分国：C-95 开时的收获面积（mp 地表，Mha）
+
+| 国 | FAO 2018 | 模式物理 | 灌溉 | 收获（S0 / S2，C-95 后） | 凑 FAO 所需 d | S0 / S2 二值份额 | C-95 通过 |
+|---|---|---|---|---|---|---|---|
+| 中国 | 30.2 | 21.9 | 17.4 | 22.0 / 22.0 | 0.48 | 0.67 / 0.14 | 0.01 |
+| 印度 | 44.2 | 52.4 | 23.3 | 70.3 / 70.3 | 0.00 | 0.85 / 0.85 | 0.91 |
+| 孟加拉 | 11.5 | 4.7 | 1.6 | 6.3 / 6.3 | 1.00 | 1.00 / 1.00 | 0.99 |
+| 印尼 | 11.4 | 3.8 | 2.0 | 5.4 / 5.4 | 1.00 | 0.80 / 0.80 | 1.00 |
+| 越南 | 7.6 | 3.2 | 1.1 | 3.9 / 3.9 | 1.00 | 1.00 / 0.98 | 0.66 |
+| 泰国 | 10.6 | 9.8 | 2.3 | 12.0 / 12.0 | 0.36 | 1.00 / 1.00 | 0.94 |
+| 缅甸 | 7.1 | 6.8 | 1.5 | 8.0 / 8.0 | 0.23 | 1.00 / 0.99 | 0.80 |
+| 菲律宾 | 4.8 | 1.3 | 0.4 | 1.7 / 1.7 | 1.00 | 1.00 / 1.00 | 1.00 |
+| 日本 | 1.6 | 1.8 | 1.5 | 1.8 / 1.8 | 0.00 | 0.41 / 0.41 | 0.00 |
+| 韩国 | 0.7 | 1.2 | 0.7 | 1.2 / 1.2 | 0.00 | 0 / 0 | 0.00 |
+| 美国 | 1.2 | 1.8 | 1.7 | 1.8 / 1.8 | 0.00 | 0 / 0 | 0.00 |
+| 巴西 | 1.9 | 1.9 | 0.5 | 1.9 / 1.9 | 0.04 | 0 / 0 | 0.11 |
+
+表内数值——已验证（`double_schemes.out` 分国表）。
+
+## 5. 问四：对全球稻田甲烷的方向与量级（推测）
+
+方法：wc5 2018 年逐格稻田排放对格内灌溉稻、雨养稻面积做最小二乘，得单位面积排放（每季）灌溉 / 雨养：全球 14.8 / 4.1，中国 15.3 / 3.9，南亚 15.3 / 2.8，东南亚 13.2 / 6.6 g m⁻² yr⁻¹；拟合全球 10.0 对实算 9.51——已验证（`area_country.out` 首段）。各情景把这些速率乘以新面积，第二季按灌溉速率再加一季；未跑模式，不含面积改变后的水文、底物与 pH 反馈——推测。
+
+| 情景 | 全球 | 中国 | 南亚 | 东南亚 | 日韩 |
+|---|---|---|---|---|---|
+| base：wc5 面积（拟合值） | 10.20 | 1.93 | 4.60 | 2.50 | 0.35 |
+| I：各格灌溉份额改为 SPAM 2020，物理面积不变 | 14.21 | 3.12 | 6.24 | 3.16 | 0.54 |
+| II：面积与拆分改为 MIRCA2000 物理面积 | 12.22 | 3.83 | 3.58 | 3.10 | 0.37 |
+| III：SPAM 2020 收获面积逐季全算（上限） | 17.53 | 4.43 | 6.09 | 4.78 | 0.36 |
+| IV：mp 地表（`g2_ri` 那版），无第二季 | 12.15 | 2.70 | 5.26 | 2.65 | 0.48 |
+| V：IV 加 S0 双季，C-95 后（`g2_r2` 那版） | 16.21 | 2.72 | 8.34 | 3.56 | 0.48 |
+| VI：IV 加 S2 双季，C-95 后 | 16.21 | 2.72 | 8.34 | 3.56 | 0.48 |
+| VII：物理面积 = SPAM 收获 ÷（1 + d），d 取 S2，C-95 后（过渡方案） | 16.38 | 3.76 | 5.91 | 4.62 | 0.30 |
+| VIII：同 VII，d 按连续份额（需改码） | 16.28 | 3.76 | 5.86 | 4.57 | 0.30 |
+| 清单中位（7 份，2018） | 31.6 | 8.5 | 7.7 | 8.8 | 0.9 |
+
+表内模式列——已验证（`double_schemes.out`、`spam_interim.out` 的计算结果）；作为排放预期——推测。清单中位——已验证（`region_eval_g2_wc5_2018-2018.log` rice 列）。
+
+1. 方向：所有面积类修正都使全球升（×1.2–1.7）；最大的单项是灌溉份额（I，×1.39），其次是地理分布（孟加拉、印尼、越南、菲律宾补面积，印度减面积）——推测。依据：上表 I、II、VII。
+2. 双季份额修正本身（V → VI）在 C-95 开时对总量为 0：中国被积温门槛挡住，南亚、东南亚二值化后不变——推测。依据：第 4.3 表。
+3. 过渡方案 VII 与现行 V 总量相当（16.4 对 16.2），但把南亚 2.4 Tg 移到中国与东南亚；VII 下三区距清单中位 2.3、1.3、1.9 倍，V 下 3.1、0.9、2.5 倍——推测。依据：上表与清单中位相除。之后剩下的约 ×1.9 全球缺口是单位面积强度（配置对齐、pH、D-59 等，`diag_rice_global_260930.txt` 第 5 节第 1、2 条），不是面积——推测。
+4. VII 下全球收获面积 154.4 对 SPAM 162.1、FAO 164.2，缺的约 8 Mha 主要是中国放不下的早晚稻（中国 26.1 对 30.2）与孟加拉、越南的雨养季与三季稻（模式只给灌溉稻第二季）——已验证（`spam_interim.out` 分国表）；归因为推测。
+
+## 6. 问五：建议的数据方案与落地步骤
+
+1. 第一步（不需要 mksrf、不改代码）：`v2/scripts/mk_rice_double.py` 加 S2 口径（中国按统计局 2023 年分省早稻、SPAM 2020 收获面积铺开，其余 MIRCA），产物 `v2/data/rice_double_2deg_nbs.nc`，文件头写明来源；改 `DEF_RICE_DOUBLE_SEASON_FILE` 即可用。C-95 开时对排放几乎不变，作用是去掉中国 66 % 的虚标，保证 C-95 关或日后加早晚稻短积温时不出错——推测。依据：第 4.3 节。
+2. 第二步（需用户操作）：在 Harvard Dataverse 填访客登记，下 SPAM 2020 V2r2 的 `spam2020V2r2_global_physical_area.geotiff.zip`（66.4 MB）与 `..._harvested_area.geotiff.zip`（68.0 MB），在 mgt01 下载；正本位置由用户定（建议 `~/data/SPAM2020/`，与 MIRCA2000 同级）。下完先核：中国各省 H/A 与第 4.2 表的统计 d 比，印度 A_I 与 MIRCA 物理 12.2 Mha 比——推测。依据：第 0 节第 9 条。
+3. 第三步：新脚本 `v2/scripts/mk_cft_spam_rice.py`（仿 `mk_cft_mirca_rice.py` 的目录做法：新 rawdata 目录只替换 `global_CFT_surface_data.nc`，其余软链）：0.25° 格内 CFT 47 = A_R ÷ 作物用地面积，CFT 48 = A_I ÷ 作物用地面积，其余 CFT 按比例缩放使和不变；超过作物用地的部分截断并打印截断量。2° 格上已有 15.1 Mha（中国 2.2、南亚 2.3、东南亚 4.6）超过作物用地，稻田占作物用地的面积加权 P90 为 1.77——已验证（`spam_interim.out` 容量行）。若截断太多，要同时抬 `plant_15s` 的 `PCT_CROP`（动 15″ 原始数据，更重）；这是要用户定的口径——推测。
+4. 第四步：`mk_rice_double.py` 再加 SPAM 口径：d = (H_I − A_I) ÷ A_I 逐 2° 格，中国若与统计分省 d 差得多则用 S2 覆盖，产物 `v2/data/rice_double_2deg_spam.nc`（运行时文件，不进 mksrf）。
+5. 第五步：用第三步的 rawdata 目录重做 mksrf 一次（全球 2° ifx 约 9.5 h、672 核；铁律 8 同一时刻只跑一个 mksrf），斑块结构变了不能从 o6 重启续跑，要 mkini 加冷启动 spin-up（先例 V-71 `g2_mr`：C-39 重做 mksrf 后 2008 窗口 spin-up）——已验证（账本 V-71 行"全球 mksrf 约 9.5 h"与其 spin-up 做法；铁律 8 见项目规则）。配置取 `g2_r2`（V-171）以便同口径比。
+6. 评估：`area_country.py` 换新 landdata 重算分国面积对 FAO，`rice_regions.py`、`region_eval.py`、`country_eval.py` 比分区稻田；看印度收获面积是否回到约 44 Mha、孟加拉与东南亚是否升。
+7. 等不及下载时的过渡：用本地已有的 Cao 包 SPAM 收获面积按 VII 推物理面积（灌溉 = H_I ÷（1 + d），雨养 = H_R），同样要走第三、五步的 mksrf；印度那部分依赖 MIRCA 的 d，存疑——推测。依据：第 5 节 VII。
+8. 不做：连续双季份额（需改码，VIII 与 VII 只差 0.1 Tg）；雨养稻第二季与越南三季稻（需新宿主代码）；中国早晚稻短积温（C-95 明言不做，要另立改法）。
+
+## 7. 著录与链接
+
+DOI 条目由 Crossref（论文）或 DataCite（数据集）逐条取回，题名、作者、刊名或发布者、卷、文章号或页、年取注册库返回值；无 DOI 的给落地链接。
+
+- Cao, Peiyu; Bilotto, Franco; Gonzalez Fischer, Carlos; Mueller, Nathaniel D.; Carlson, Kimberly M.; Driscoll, Avery W.; Gerber, James S.; Smith, Pete; Tubiello, Francesco N.; West, Paul C.; You, Liangzhi; Herrero, Mario (2026) Spatially explicit global assessment of cropland greenhouse gas emissions circa 2020. Nature Climate Change, 16(3), 354–363. https://doi.org/10.1038/s41558-026-02558-4
+- Cao, Peiyu; Bilotto, Franco; Gonzalez Fischer, Carlos; Mueller, Nathaniel D.; Driscoll, Avery W.; Carlson, Kimberly M.; Gerber, James S.; Smith, Pete; Tubiello, Francesco N.; West, Paul C.; You, Liangzhi; Herrero, Mario (2025) Data and code for Spatially explicit global assessment of cropland greenhouse gas emissions circa 2020. figshare, CC BY 4.0. https://doi.org/10.6084/m9.figshare.29089973.v3
+- FAO (2021) Global agro-ecological zone V4 – Model documentation. FAO. https://doi.org/10.4060/cb4744en ；数据门户 https://gaez.fao.org/（无 DOI）
+- FAOSTAT, Emissions from crops (GCE) 批量表 `Emissions_crops_E_All_Data_(Normalized).csv`（2025-11 版；稻谷收获面积元素 5312）。无 DOI。https://www.fao.org/faostat/en/#data/GCE
+- Frolking, Steve; Wisser, Dominik; Grogan, Danielle; Proussevitch, Alexander; Glidden, Stanley (2020) GAEZ+_2015 Crop Harvest Area. Harvard Dataverse, V4, CC0. https://doi.org/10.7910/DVN/KAGRFI
+- Grogan, Danielle; Frolking, Steve; Wisser, Dominik; Prusevich, Alex; Glidden, Stanley (2022) Global gridded crop harvested area, production, yield, and monthly physical area data circa 2015. Scientific Data, 9, 15. https://doi.org/10.1038/s41597-021-01115-2
+- International Food Policy Research Institute (IFPRI) (2024) Global Spatially-Disaggregated Crop Production Statistics Data for 2020 Version 2.0 Release 2. Harvard Dataverse, V6. https://doi.org/10.7910/DVN/SWPENT
+- Kebede, Endalkachew Abebe; Oluoch, Kevin Ong'are; Siebert, Stefan; Mehta, Piyush; Hartman, Sarah; Jägermeyr, Jonas; Ray, Deepak; Ali, Tariq; Brauman, Kate A.; Deng, Qinyu; Xie, Wei; Davis, Kyle Frankel (2025) A global open-source dataset of monthly irrigated and rainfed cropped areas (MIRCA-OS) for the 21st century. Scientific Data, 12(1), 208. https://doi.org/10.1038/s41597-024-04313-w
+- Kebede, Endalkachew; Oluoch, Kevin; Siebert, Stefan; Mehta, Piyush; Hartman, Sarah; Jägermeyr, Jonas; Ray, Deepak; Ali, Tariq; Brauman, Kate A.; Deng, Qinyu; Xie, Wei; Davis, Kyle Frankel (2024) A global open-source dataset of monthly irrigated and rainfed cropped areas (MIRCA-OS) for the 21st century. HydroShare (CUAHSI), CC BY 4.0. https://doi.org/10.4211/hs.60a890eb841c460192c03bb590687145
+- Laborte, Alice G.; Gutierrez, Mary Anne; Balanza, Jane Girly; Saito, Kazuki; Zwart, Sander J.; Boschetti, Mirco; Murty, M.V.R.; Villano, Lorena; Aunario, Jorrel Khalil; Reinke, Russell; Koo, Jawoo; Hijmans, Robert J.; Nelson, Andrew (2017) RiceAtlas, a spatial database of global rice calendars and production. Scientific Data, 4(1), 170074. https://doi.org/10.1038/sdata.2017.74 ；数据 Harvard Dataverse V4.1，CC0，https://doi.org/10.7910/DVN/JE6R2R
+- Portmann, Felix T.; Siebert, Stefan; Döll, Petra (2010) MIRCA2000—Global monthly irrigated and rainfed crop areas around the year 2000: A new high-resolution data set for agricultural and hydrological modeling. Global Biogeochemical Cycles, 24(1), 2008GB003435. https://doi.org/10.1029/2008GB003435 ；数据 Zenodo v1.1，CC BY 4.0，https://doi.org/10.5281/zenodo.7422506
+- 国家统计局 (2023) 国家统计局关于2023年早稻产量数据的公告（含分省早稻播种面积附表）。无 DOI。https://www.stats.gov.cn/sj/zxfb/202308/t20230823_1942209.html
+- 国家统计局 (2023) 国家统计局关于2023年粮食产量数据的公告。无 DOI。https://www.stats.gov.cn/sj/zxfb/202312/t20231211_1945417.html

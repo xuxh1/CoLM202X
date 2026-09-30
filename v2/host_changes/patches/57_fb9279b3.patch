@@ -1,0 +1,196 @@
+From fb9279b3debc323901d72d2fbe7e8b15fa343f87 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Wed, 30 Sep 2026 03:38:15 +0800
+Subject: [PATCH] fix(soil): van Genuchten alpha in 1/mm behind DEF_VG_ALPHA_MM
+ (C-94)
+
+The soil data fit the van Genuchten alpha in 1/cm: mksrfdata fits the
+curve on suction points in cm, the same points that give psi_s in cm.
+The read-in converts psi_s (cm -> mm) and k_s (cm/day -> mm/s) but
+copies alpha as is, while the soil water functions of the VSF solver
+take suction in mm, so alpha acts ten times too large in every soil.
+The field capacity wfc was still taken at alpha*339.9 (cm) and the peat
+end member alpha as 10/suction[mm], both on the 1/cm basis.
+
+DEF_VG_ALPHA_MM (default .false.): with it on,
+- MOD_SoilParametersReadin: alpha = soil alpha / 10 (1/cm -> 1/mm),
+  wfc at alpha*3399 (mm);
+- MOD_Initialize (wetland peat soil): peat end member alpha = 1/psuc
+  with psuc in mm, wfc at alpha*3399;
+- MOD_SoilSurfaceResistance: LP92 wfc at alpha*3399; the TR13 S and dw,
+  where smp_node is in m, take alpha*1000 (1/m).
+
+With the key off every expression is the unchanged original (alpha,
+wfc and the TR13 terms are computed from the same operands in the same
+order), so results are bitwise identical. With the key on alpha,
+sc_vgm, fc_vgm and the cold-start soil water state change; they are
+set in CoLMINI and kept in the const restart, so the key needs a cold
+start (rerun CoLMINI and spin up again) and must be the same in the
+initialisation and the run namelists. Landdata stays in 1/cm; no mksrf
+rerun is needed.
+
+---
+ main/MOD_SoilSurfaceResistance.F90     | 17 +++++++++++++----
+ mkinidata/MOD_Initialize.F90           | 16 ++++++++++++----
+ mkinidata/MOD_SoilParametersReadin.F90 | 16 ++++++++++++----
+ share/MOD_Namelist.F90                 |  9 +++++++++
+ 4 files changed, 46 insertions(+), 12 deletions(-)
+
+diff --git a/main/MOD_SoilSurfaceResistance.F90 b/main/MOD_SoilSurfaceResistance.F90
+index 012ebf05..7e6cd13a 100644
+--- a/main/MOD_SoilSurfaceResistance.F90
++++ b/main/MOD_SoilSurfaceResistance.F90
+@@ -61,7 +61,7 @@ CONTAINS
+ 
+    USE MOD_Precision
+    USE MOD_Const_Physical, only: denice, denh2o
+-   USE MOD_Namelist, only: DEF_RSS_SCHEME
++   USE MOD_Namelist, only: DEF_RSS_SCHEME, DEF_VG_ALPHA_MM
+    USE MOD_Hydro_SoilFunction
+    IMPLICIT NONE
+ 
+@@ -117,6 +117,7 @@ CONTAINS
+         dw,               &! aqueous diffusivity [m2/s]
+         hk,               &! hydraulic conductivity [m h2o/s]
+         m_vgm,            &! pore-connectivity related parameter [dimensionless]
++        k_vgm,            &! alpha_vgm of the first layer in the unit of 1/smp_node
+         S,                &! Van Genuchten relative saturation [-]
+         wfc,              &! field capacity of the first layer soil
+         rg_1,             &! inverse of vapor diffusion resistance [m/s]
+@@ -222,8 +223,11 @@ CONTAINS
+       ! dw = -hk*(m-1)/(k*m*(theta_s-theta_r))*S**(-1/m)*(1-S**(1/m))**(-m)
+       ! where k=alpha_vgm, S=(1+(-k*smp_node)**(n))**(-m), m=m_vgm=1-1/n_vgm
+       m_vgm = 1. - 1./n_vgm(1)
+-      S     = (1. + (- alpha_vgm(1)*smp_node)**(n_vgm(1)))**(-m_vgm)
+-      dw    = -hk*(m_vgm-1.)/(alpha_vgm(1)*m_vgm*(porsl(1)-theta_r(1))) &
++      k_vgm = alpha_vgm(1)
++      ! C-94 (paper V2): smp_node is in m here, alpha_vgm in 1/mm
++      IF (DEF_VG_ALPHA_MM) k_vgm = alpha_vgm(1)*1000.
++      S     = (1. + (- k_vgm*smp_node)**(n_vgm(1)))**(-m_vgm)
++      dw    = -hk*(m_vgm-1.)/(k_vgm*m_vgm*(porsl(1)-theta_r(1))) &
+             * S**(-1./m_vgm)*(1.-S**(1./m_vgm))**(-m_vgm)
+ #endif
+ 
+@@ -273,7 +277,12 @@ CONTAINS
+          !wfc = porsl(1)*(-3399._r8/psi0(1))**(-1./bsw(1))
+ #endif
+ #ifdef vanGenuchten_Mualem_SOIL_MODEL
+-         wfc = theta_r(1)+(porsl(1)-theta_r(1))*(1+(alpha_vgm(1)*339.9)**n_vgm(1))**(1.0/n_vgm(1)-1)
++         IF (DEF_VG_ALPHA_MM) THEN
++            ! C-94 (paper V2): alpha_vgm in 1/mm, field capacity at -3399 mm
++            wfc = theta_r(1)+(porsl(1)-theta_r(1))*(1+(alpha_vgm(1)*3399.)**n_vgm(1))**(1.0/n_vgm(1)-1)
++         ELSE
++            wfc = theta_r(1)+(porsl(1)-theta_r(1))*(1+(alpha_vgm(1)*339.9)**n_vgm(1))**(1.0/n_vgm(1)-1)
++         ENDIF
+ #endif
+ 
+          ! Lee and Pielke 1992 beta
+diff --git a/mkinidata/MOD_Initialize.F90 b/mkinidata/MOD_Initialize.F90
+index 173513c1..819c6e87 100644
+--- a/mkinidata/MOD_Initialize.F90
++++ b/mkinidata/MOD_Initialize.F90
+@@ -1864,7 +1864,8 @@ ENDIF
+       USE MOD_Precision
+       USE MOD_SPMD_Task
+       USE MOD_Namelist, only: DEF_WETLAND_PEAT_SOIL, DEF_WETLAND_PEAT_C_PASSIVE_ZTOP, &
+-         DEF_WETLAND_PEAT_TROP_LAT, DEF_WETLAND_PEAT_TROP_ACRO, DEF_WETLAND_PEAT_TROP_CATO
++         DEF_WETLAND_PEAT_TROP_LAT, DEF_WETLAND_PEAT_TROP_ACRO, DEF_WETLAND_PEAT_TROP_CATO, &
++         DEF_VG_ALPHA_MM
+       USE MOD_LandPatch, only: numpatch
+       USE MOD_Vars_Global, only: nl_soil, z_soi, PI
+       USE MOD_Vars_TimeInvariants
+@@ -1909,11 +1910,18 @@ ENDIF
+                bsw  (j,ip) = (1._r8 - w) * bsw(j,ip)   + w * pb
+ #ifdef vanGenuchten_Mualem_SOIL_MODEL
+                theta_r  (j,ip) = (1._r8 - w) * theta_r(j,ip)
+-               alpha_vgm(j,ip) = (1._r8 - w) * alpha_vgm(j,ip) + w * 10._r8 / psuc   ! [1/cm]
+                n_vgm    (j,ip) = (1._r8 - w) * n_vgm(j,ip)     + w * (1._r8 + 1._r8 / pb)
+                L_vgm    (j,ip) = (1._r8 - w) * L_vgm(j,ip)     + w * 0.5_r8
+-               wfc      (j,ip) = theta_r(j,ip) + (porsl(j,ip) - theta_r(j,ip)) &
+-                  * (1._r8 + (alpha_vgm(j,ip) * 339.9_r8) ** n_vgm(j,ip)) ** (1._r8 / n_vgm(j,ip) - 1._r8)
++               IF (DEF_VG_ALPHA_MM) THEN
++                  ! C-94: alpha already converted to 1/mm on read-in
++                  alpha_vgm(j,ip) = (1._r8 - w) * alpha_vgm(j,ip) + w * 1._r8 / psuc    ! [1/mm]
++                  wfc      (j,ip) = theta_r(j,ip) + (porsl(j,ip) - theta_r(j,ip)) &
++                     * (1._r8 + (alpha_vgm(j,ip) * 3399._r8) ** n_vgm(j,ip)) ** (1._r8 / n_vgm(j,ip) - 1._r8)
++               ELSE
++                  alpha_vgm(j,ip) = (1._r8 - w) * alpha_vgm(j,ip) + w * 10._r8 / psuc   ! [1/cm]
++                  wfc      (j,ip) = theta_r(j,ip) + (porsl(j,ip) - theta_r(j,ip)) &
++                     * (1._r8 + (alpha_vgm(j,ip) * 339.9_r8) ** n_vgm(j,ip)) ** (1._r8 / n_vgm(j,ip) - 1._r8)
++               ENDIF
+ #else
+                psi0     (j,ip) = (1._r8 - w) * psi0(j,ip) - w * psuc
+                wfc      (j,ip) = (-3399._r8 / psi0(j,ip)) ** (-1._r8 / bsw(j,ip)) * porsl(j,ip)
+diff --git a/mkinidata/MOD_SoilParametersReadin.F90 b/mkinidata/MOD_SoilParametersReadin.F90
+index 6e76162c..46045e97 100644
+--- a/mkinidata/MOD_SoilParametersReadin.F90
++++ b/mkinidata/MOD_SoilParametersReadin.F90
+@@ -27,7 +27,7 @@ CONTAINS
+ 
+    USE MOD_Precision
+    USE MOD_Vars_Global, only: nl_soil
+-   USE MOD_Namelist, only: DEF_SOIL_REFL_SCHEME
++   USE MOD_Namelist, only: DEF_SOIL_REFL_SCHEME, DEF_VG_ALPHA_MM
+    USE MOD_SPMD_Task
+    USE MOD_NetCDFVector
+    USE MOD_LandPatch
+@@ -355,11 +355,19 @@ CONTAINS
+ #ifdef vanGenuchten_Mualem_SOIL_MODEL
+                   psi0       (nsl,ipatch) = -10.      ! mm
+                   theta_r    (nsl,ipatch) = soil_theta_r_l  (ipatch)
+-                  alpha_vgm  (nsl,ipatch) = soil_alpha_vgm_l(ipatch)
+                   L_vgm      (nsl,ipatch) = soil_L_vgm_l    (ipatch)
+                   n_vgm      (nsl,ipatch) = soil_n_vgm_l    (ipatch)
+-                  wfc        (nsl,ipatch) = soil_theta_r_l  (ipatch)+(soil_theta_s_l(ipatch)-soil_theta_r_l(ipatch))*&
+-                             (1+(soil_alpha_vgm_l(ipatch)*339.9)**soil_n_vgm_l(ipatch))**(1.0/soil_n_vgm_l(ipatch)-1)
++                  IF (DEF_VG_ALPHA_MM) THEN
++                     ! C-94 (paper V2): alpha of the soil data is in 1/cm,
++                     ! the soil water functions take suction in mm
++                     alpha_vgm  (nsl,ipatch) = soil_alpha_vgm_l(ipatch) / 10.  ! 1/cm -> 1/mm
++                     wfc        (nsl,ipatch) = soil_theta_r_l  (ipatch)+(soil_theta_s_l(ipatch)-soil_theta_r_l(ipatch))*&
++                                (1+(alpha_vgm(nsl,ipatch)*3399.)**soil_n_vgm_l(ipatch))**(1.0/soil_n_vgm_l(ipatch)-1)
++                  ELSE
++                     alpha_vgm  (nsl,ipatch) = soil_alpha_vgm_l(ipatch)
++                     wfc        (nsl,ipatch) = soil_theta_r_l  (ipatch)+(soil_theta_s_l(ipatch)-soil_theta_r_l(ipatch))*&
++                                (1+(soil_alpha_vgm_l(ipatch)*339.9)**soil_n_vgm_l(ipatch))**(1.0/soil_n_vgm_l(ipatch)-1)
++                  ENDIF
+ #else
+                   theta_r    (nsl,ipatch) = 0.
+ #endif
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index cf413d3d..155419fb 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -162,6 +162,13 @@ MODULE MOD_Namelist
+    ! to model patches through FIT algorithm (Montzka et al., 2017).
+    logical :: DEF_USE_SOILPAR_UPS_FIT = .true.
+ 
++   ! C-94 (paper V2): the van Genuchten alpha of the soil data is fitted in
++   ! 1/cm (suction points in cm, as psi_s), but the soil water functions take
++   ! suction in mm. Convert alpha to 1/mm on read-in and take the field
++   ! capacity at -3399 mm (and the peat end member alpha as 1/suction[mm])
++   ! with it. Needs a cold start (new CoLMINI). Default off.
++   logical :: DEF_VG_ALPHA_MM = .false.
++
+    ! Options for soil reflectance setting schemes
+    ! 1: Guessed soil color type according to land cover classes
+    ! 2: Read a global soil color map from CLM
+@@ -1350,6 +1357,7 @@ CONTAINS
+       DEF_USE_CANYON_HWR,                     &
+ 
+       DEF_USE_SOILPAR_UPS_FIT,                &
++      DEF_VG_ALPHA_MM,                        & !C-94 (paper V2)
+       DEF_THERMAL_CONDUCTIVITY_SCHEME,        &
+       DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME,   &
+       DEF_USE_SUPERCOOL_WATER,                &
+@@ -2029,6 +2037,7 @@ CONTAINS
+ 
+       ! 06/2023, added by weinan
+       CALL mpi_bcast (DEF_USE_SOILPAR_UPS_FIT                ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_VG_ALPHA_MM                        ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_THERMAL_CONDUCTIVITY_SCHEME        ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME   ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_SUPERCOOL_WATER                ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

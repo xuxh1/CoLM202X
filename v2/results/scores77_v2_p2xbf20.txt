@@ -1,0 +1,24 @@
+# paper_v2/v260929/sp_v2_c72 v2_p2xbf20: all 77 towers; KGE_ln / beta / alpha / r; means mg CH4 m-2 d-1
+site     class         n  KGEln   beta  alpha     r     obs   model
+CA-SCB   bog          21   0.12   0.58   0.61  0.51   67.49   39.27
+DE-SfN   bog          28  -0.89   5.29   2.17  0.54   12.68   67.12
+FI-Si2   bog          28   0.16   0.72   0.54  0.52   68.45   49.08
+JP-BBY   bog          39   0.51   0.92   0.64  0.82   66.92   61.64
+NZ-Kop   bog          48   0.35   1.38   0.71  0.56   61.37   84.92
+US-BZB   bog          20   0.50   0.82   1.44  0.72   59.79   48.95
+DE-Zrk   fen          63  -0.77   0.67   0.18  0.77  114.56   76.35
+FI-Lom   fen          60   0.04   0.53   0.50  0.87   56.57   29.70
+FI-Sii   fen          61   0.59   0.92   0.69  0.83   49.76   46.01
+FR-LGt   fen          20  -1.64  10.86   2.68  0.43    5.10   55.35
+SE-Deg   fen          50   0.75   0.85   0.87  0.87   39.24   33.29
+US-BZF   fen          19   0.56   1.17   1.25  0.66   66.72   78.26
+US-Los   fen          59   0.20   2.10   1.22  0.78   23.87   50.13
+US-Uaf   permafrost   46  -0.24   0.61   1.71 -0.00    4.01    2.45
+# unscored: AT-Neu (0 common months), BR-Npw (0 common months), BW-Gum (0 common months), BW-Nxr (0 common months), CA-SCC (0 common months), CH-Cha (0 common months), CH-Dav (0 common months), CH-Oe2 (<8 obs months), CN-Hgu (0 common months), DE-Dgw (0 common months), DE-Hte (0 common months), FI-Hyy (<8 obs months), ID-Pag (0 common months), IT-BCi (<8 obs months), IT-Cas (0 common months), JP-Mse (0 common months), JP-SwL (<8 obs months), KR-CRK (0 common months), MY-MLM (0 common months), NL-Hor (<8 obs months), PH-RiF (0 common months), RU-Ch2 (0 common months), RU-Che (0 common months), RU-Cok (<8 obs months), RU-Fy2 (0 common months), US-A03 (0 common months), US-A10 (0 common months), US-Atq (0 common months), US-BZS (0 common months), US-Beo (0 common months), US-Bes (0 common months), US-Bi1 (0 common months), US-Bi2 (0 common months), US-CRT (0 common months), US-DPW (0 common months), US-EDN (<8 obs months), US-EML (0 common months), US-HRA (<8 obs months), US-HRC (<8 obs months), US-Ho1 (0 common months), US-ICs (0 common months), US-Ivo (0 common months), US-LA1 (0 common months), US-LA2 (0 common months), US-MAC (0 common months), US-MRM (0 common months), US-Myb (0 common months), US-NC4 (0 common months), US-NGB (0 common months), US-NGC (<8 obs months), US-ORv (0 common months), US-OWC (<8 obs months), US-Pfa (0 common months), US-Snd (0 common months), US-Sne (0 common months), US-Srr (0 common months), US-StJ (0 common months), US-Tw1 (0 common months), US-Tw3 (<8 obs months), US-Tw4 (0 common months), US-Tw5 (0 common months), US-Twt (0 common months), US-WPT (0 common months)
+
+group          n  KGEln   beta  alpha     r
+all           14   0.18   0.88   0.79   0.69
+wetland       14   0.18   0.88   0.79   0.69
+bog            6   0.26   0.87   0.67   0.55
+fen            7   0.20   0.92   0.87   0.78
+permafrost     1  -0.24   0.61   1.71  -0.00

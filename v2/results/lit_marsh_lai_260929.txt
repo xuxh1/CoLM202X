@@ -1,0 +1,234 @@
+# lit_marsh_lai_260929：七座沼泽塔足迹 LAI、MODIS 像元差别、按 GPP 反推 LAI 与埋藏份额
+
+- **日期**：2026.09.30-00:52
+- **读者**：下一会话
+- **来源**：文献与数据调研子任务（只读，未改码、未跑模式）；承接 `v2/results/lit_marsh_restoration_260929.txt`（Arias-Ortiz 积碳、复湿年份、盖度已核，本文不重复）、`v2/results/diag_marsh_260929.txt`（塔上与模式 GPP、Reco）、`v2/results/marsh_sites_260929.tsv`（足迹盖度）；srfdata 与 15″ 原始 LAI 用 py311 秒级读取；著录逐条打 Crossref，数据集打 DataCite
+- **状态**：四问已答；实测 LAI 找到四塔（US-Tw1、US-Tw4、US-Myb 为 2016 年 8 月绿叶 LAI，US-WPT、US-OWC 为分区 LAI），US-Tw5、US-Sne 无实测改用反推；反推 LAI 与埋藏份额都是算术推算，未实跑
+
+口径：LAI 指单面绿叶面积指数；PAI（植物面积指数）含立枯。"像元值"指模式 srfdata 的 `LAI_monthly`，即足迹平均；"冠层内"指植被斑块内部，按调研任务书所述模式口径 = 像元值 ÷ 足迹盖度（第 3.3 节另有代码核对）。GPP 比 r = 塔上 / 模式，取任务书给的多年平均（g C m-2 d-1）：US-Tw1 4.88/4.95、US-Tw4 4.14/4.50、US-Tw5 5.30/5.10、US-Myb 3.56/5.91、US-Sne 2.38/4.37、US-WPT 2.02/3.98、US-OWC 5.48/3.24。年通量（g C m-2 yr-1）取诊断件第 4.3 节表。埋藏份额 b = 碳积累速率 ÷ 净初级生产力，净初级生产力 = CUE × 塔上 GPP，CUE 取 0.50（模式 `wetland_npp_frac`）至 0.61（Rocha & Goulden 2009 香蒲沼泽）。
+
+## 0. 覆盖面
+
+1. 网络检索词（WebSearch，每次 9–10 条，逐条看标题与摘要）：
+   - Dronova restored wetlands Delta leaf area index plant area index LAI-2200 Mayberry West Pond
+   - Taddeo Dronova spectral vegetation indices wetland greenness
+   - Eichelmann 2018 evapotranspiration land cover type structure LAI；Eichelmann 2022 partitioning evapotranspiration flooded ecosystems
+   - "Canopy Leaf Area Index in Non-Forested Marshes of the California Delta"（两轮）
+   - PEPRMT github Oikawa input data LAI
+   - Hemes 2018 aerodynamic surface properties surface cooling LAI
+   - Delta restored wetland plant area index dataset Dryad
+   - Winous Point marsh leaf area index（两轮）
+   - Rocha Goulden 2009 marsh productivity Typha LAI
+   - Schile Byrd 2013 non-photosynthetic vegetation Twitchell
+   - Chamberlain drought-induced salinization gross ecosystem productivity
+   - "Remotely sensed phenological heterogeneity of restored wetlands"
+2. 读了全文或全表：
+   - Dronova 等 2021（eScholarship 接受稿 PDF，89 页，逐页抽文本；表 1 与脚注在第 63–64 页，读图核对）
+   - Eichelmann 等 2022（OSTI 接受稿第 1–15 页，第 1–480 行）
+   - Anderson 等 2016（USGS PDF，19 页全文抽句）；Byrd 等 2014（15 页全文抽句）；Rocha & Goulden 2009（eScholarship PDF 全文抽句）
+   - 本地 `docs/refs/sites/`：Knox 2015 表 1；Hemes 2019 表 1；Valach 2021（本地文本第 486–630、715–745 行）；McNicol 2017 表（第 23、25 页）；Oikawa 2017（本地文本第 200–262 行）；Villa 2020（方法第 4 页，图 4 第 10 页读图）；Chu 2014、Chu 2015、Bernal & Mitsch 2012、Mitsch 2012、Miller 2008、Miller & Fujii 2010、Kasak 2020 全文抽句；Morin 2022（US-OWC 的 ecosys 模拟，LAI 只在图里）、Rey-Sanchez 2018、Hassett 2024、Borton 2024、Tang 2025、Angle 2017、Ju 2022 抽句，均无实测 LAI 数值
+   - Qiu 等 2018（ORCHIDEE-PEAT）表 2（本地 PDF 第 7 页，读图）
+   - ESS-DIVE 数据集 `docs/refs/sites/US-WPT/dataset_ESS-DIVE_OWC_cores.zip`：`C_N_P_Seq_ESS_DIVE_r2.csv` 全部 612 行与元数据
+3. 只读到摘要或页面：Dronova & Taddeo 2016（AGRIS 摘要页、Crossref）；Chamberlain 2020（AmeriFlux 出版物页摘要，站点链接 US-Myb、US-Tw1）。
+4. 本地数据与代码（逐处读过）：
+   - 七塔 srfdata `LAI_monthly`、`SAI_monthly`、`LAI_year`、经纬度（`cases/paper_v2/v260929/sp_v2_c74/sites_v2_p7/<塔>/landdata/srfdata.nc`）；US-WPT 的站点 LAI 来自 `data/FLUXNET-CH4/Sitedata/US-WPT_2011-2013_FLUXNET-CH4_site.nc`。
+   - 15″ 原始数据 `/share/home/dq013/zhwei/colm/data/CoLMrawdata/plant_15s/RG_40_-125_35_-120.MOD2010–2018.nc`、`RG_45_-85_40_-80.MOD2011–2016.nc`：塔像元与 5×5、7×7 窗口的 `LC`（MCD12Q1 LC_Type1）与 `MONTHLY_LC_LAI`；另读 US-Snd、US-Tw3 两座农地塔像元作对照。
+   - AmeriFlux BADM：本地 `data/_tmp/分析_260925_站点测量高度/badm/` 的 US-Myb、US-Tw1、US-Tw4、US-Tw5、US-Sne 五份 BIF 全部 grep LAI、PAI、BIOMASS、HEIGHTC。
+   - FLUXNET-CH4 元数据 `data/sites/FLUXNET-CH4/raw/FLX_AA-Flx_CH4-META_*.csv` 表头（无 LAI 列）。
+   - `scripts/sites/site_facts.csv` 七塔 LAI 行（第 2631、2890、2977、3020、3189、3294、3335、3525 行）。
+   - 代码：`CoLM202X-paper-v2/main/TRACER/MOD_Tracer_Reactive_Methane_WetlandVeg.F90:195–262`（`wetveg_cap_lai`）、`MOD_Tracer_Reactive_Methane_Const.F90:745–800`（盖度与埋藏份额声明）、`MOD_Tracer_Reactive_BgcShim.F90:279、296–312`；grep 工作树 `main/`、`share/`、`mkinidata/` 的 `cover_frac`；`sites_v2_p7/_conf/SITE_PARAMS.csv`、`ch4_parameter.nml` 第 259–372 行；`scripts/sites/add_site_lai.py` 第 1–112 行。
+5. 没找到或未取得：
+   - Dronova & Taddeo 2016 全文（Springer 付费墙，Semantic Scholar 标 CLOSED）：各站 PAI 数值本次未能复核。
+   - Oikawa 2017 支撑材料图 S1（2014 年 4–9 月 US-Myb、US-Tw1 足迹内逐月异速生长 LAI）：未取得，正文无数值。
+   - Eichelmann 2018（本地文本）：grep 无 LAI 数值。
+   - US-WPT、US-OWC 的 BADM：站点页不显示条目，下载需 AmeriFlux 账号，未取得。
+   - US-Sne、US-Tw5 足迹实测 LAI：检索与本地文献均未见。
+   - PEPRMT 仓库输入数据（GitHub API 403）。
+6. 存疑（取得原文或跑实验才能定）：
+   - US-Myb PAI 5.8、US-Tw1 PAI 6.1（Dronova & Taddeo 2016，2014 年 7–8 月）只见账本转引。取得原文核表即可。
+   - Dronova 2021 的样方是否含开阔水面：脚注说"死植被占样方比例"的对照面含开阔水与裸土，US-Myb 的 1.9 ± 2.3 标准差大，可能混有近空样方。取得该文补充材料的逐样方数据即可定。
+   - 模式冠层内 LAI 是否真按"像元 ÷ 盖度"：第 3.3 节 grep 未见这一处理。确认所用代码版本即可定。
+
+## 1. 结论
+
+1. 问一：足迹实测绿叶 LAI（2016 年 8 月，0.3 m 样方均值）US-Tw1 3.1、US-Tw4 3.8、US-Myb 1.9；含立枯的 PAI 约 6（US-Tw1、US-Myb，2014 年，存疑）；US-WPT 面积平均 2.3（挺水区 3.3、浮叶区 1.0）；US-OWC 香蒲 8 月约 4.4、浮叶种不超过 1（2018 年读图），折足迹平均约 1.9；US-Tw5、US-Sne 无实测——已验证（第 2 节逐条来源）。
+2. 问二：模式像元峰值 US-Tw1 1.7、US-Tw4 1.5，只有实测绿叶 LAI（3.1、3.8）的 0.4–0.55，US-Tw5 1.8 无实测对照；US-Myb 2.5、US-Sne 3.2、US-OWC 3.4 高于实测，US-WPT 3.1 是邻近湿地像元代值。偏低的原因是立枯遮挡、水面背景与小湿地混在农地像元里；偏高的原因是像元混入牧场或林地，US-Sne 的季节形状整个是牧场的（4 月峰）——已验证（第 3 节 srfdata 与原始像元读数）；原因归属——推测（第 3.2 节逐塔理由）。
+3. 问三：US-Myb、US-WPT 的 GPP 偏高能用实测 LAI 解释：按 GPP 反推的冠层内峰值 US-Myb 1.7–1.9，正好等于实测 1.9；US-WPT 反推 1.2–1.3，等于实测 2.27 乘上 US-Tw1 上模式有效 LAI 与实测之比 0.56。US-Sne 无实测，反推冠层内峰值 2017 年约 0.25、2018 年约 0.65（湿地季节形状）。US-OWC 偏低不能用 LAI 解释，实测 LAI 比模式还低——推测（第 4 节算术，光能吸收按比尔定律近似，未实跑）。
+4. 问四：埋藏份额（占净初级生产力）US-Tw1 0.38（0.19–0.59）、US-Myb 0.40（0.25–0.58）、US-Tw4 0.45（0.30–0.60）、US-Tw5 0.40（0.30–0.50）、US-Sne 0（塔上年份为净碳源）、US-WPT 0.18（0.13–0.24，塔上 2011–2013 年为净碳源）、US-ORv 0.27（0.20–0.33）、US-OWC 0.10（0.06–0.19）——推测（第 5 节逐塔算术；Tw1、Myb 之外的积碳或净碳汇数据来源见同节）。
+5. US-Tw1 上模式用实测一半的 LAI 就对上了 GPP，说明模式单位叶面积的光合偏高，或者实测绿叶有一半被立枯遮住；两者在冠层光吸收上可以互换：绿叶 LAI 3.1 加立枯面积 3.0 的绿叶吸收比，与现用 LAI 1.74 加 SAI 0.45 几乎相同（0.48 对 0.53）——推测（第 4.4 节算术）。
+
+## 2. 问一：七塔足迹内实测 LAI / PAI
+
+### 2.1 数值
+
+| 塔 | 实测季节最大值 | 时间与方法 | 出处 |
+| --- | --- | --- | --- |
+| US-Tw1（West Pond） | 绿叶 LAI 3.1 ± 1.7（样方均值）；PAI 6.1 | 2016-08-02 至 08-08，24 个 0.3 m × 0.3 m 样方；PAI 为 2014 年 7–8 月 LAI-2200 | Dronova 2021 表 1；PAI 转引账本 |
+| US-Tw4（East End） | 绿叶 LAI 3.8 ± 2.2 | 同上，20 个样方 | Dronova 2021 表 1 |
+| US-Myb（Mayberry） | 绿叶 LAI 1.9 ± 2.3；PAI 5.8 | 同上，36 个样方；PAI 同 Tw1 | Dronova 2021 表 1；PAI 转引账本 |
+| US-Tw5（East Pond） | 无 LAI；可收割地上生物量约 22 t ha-1 干重 | 2019 年 6 月收割试验 | Kasak 2020 第 6 页 |
+| US-Sne（Sherman Wetland） | 无 | — | — |
+| US-WPT（Winous Point） | 面积平均 2.3；挺水区 3.3；浮叶（开阔水）区 1.0 | 2011–2013 | Qiu 2018 表 2（引 Chu 2014、2015 的数据） |
+| US-OWC（Old Woman Creek） | 香蒲 8 月约 4.4（误差棒约 3.7–5.0）；莲、睡莲 0.6–1.0（浮叶种上限按定义为 1） | 2018 年 6–8 月，0.25 m2 样框，香蒲用干重回归 LAI = 51 W/Af + 12.1 | Villa 2020 图 4B 读图、第 4 页方法 |
+
+- US-Tw1、US-Tw4、US-Myb 三塔的绿叶 LAI、冠层高 335.5 / 282.4 / 223.7 cm、立枯高 211.4 / 161.8 / 211.6 cm、死植被占样方比 58.9 / 54.2 / 51.7 %、样方水深 19.6 / 66.3 / 37.9 cm——已验证（10.1016/j.agrformet.2020.108215 接受稿第 63 页表 1、第 64 页脚注，读图）。
+- 该文正文：最年轻的 East End 绿叶面积最高、立枯层最矮；Mayberry 立枯层与 West Pond 同高，但活植株更矮、绿叶面积更低——已验证（同上接受稿第 13 页）。
+- US-Myb、US-Tw1 的 PAI 5.8、6.1——存疑。本次未取得 Dronova & Taddeo 2016 原文，数值转引自 `v2/迭代账本.md` 第 527 行（前一文献子任务读原文所得）。该文摘要说立枯使直接测得的绿叶 LAI 小于 3 的样点 PAI 偏高，卫星 NDVI 与 PAI 的 R2 = 0.63——已验证（AGRIS 摘要页）。
+- Valach 2021 说 West Pond 与 Mayberry 的 PAI 从地面到立枯层顶一直很高，立枯层以上迅速下降——已验证（本地文本 `sites_US-Myb_2021_Valach.pdf.txt` 第 728–732 行）。Eichelmann 2022 说由于高度异质与立枯累积，该区湿地实测 LAI 的不确定性很大——已验证（10.1111/gcb.15974 接受稿第 465–469 行）。
+- US-WPT 的面积平均 2.3 对应挺水 0.527、浮叶 0.429 的足迹组成——已验证（10.5194/gmd-11-497-2018 表 2，读图；组成见 `marsh_sites_260929.tsv` 第 7 行）。按两区加权：0.527 × 3.3 + 0.429 × 1.0 = 2.17，与表中 2.3 接近——已验证（手算）。同表地上生物量面积平均 1.94、挺水区 3.04、浮叶区 0.44 kg m-2，即 Chu 2014 的 1.52、0.22 kg C m-2 按含碳 50 % 换算——已验证（同表；10.1002/2013JG002520 第 3 页）。
+- US-OWC 的读图值：香蒲 6 月约 1.8、7 月约 2.0、8 月约 4.4；莲约 0.6、1.0、0.9；睡莲约 0.9、1.0、0.95——已验证（10.1002/lno.11467 第 10 页图 4B 右轴，读图，误差约 ± 0.2）。按 2015 年足迹组成（香蒲 0.418、浮叶 0.097）折足迹平均峰值 0.418 × 4.4 + 0.097 × 1.0 = 1.94，冠层内 1.94 ÷ 0.515 = 3.76——推测。理由：LAI 为 2018 年，组成为 2015 年，Tang 2025 记 2020–2022 年植被已有变化。
+- 其他生物量佐证：2012 年晚夏 Mayberry 挺水植被地上生物量均值 2303 g m-2，Twitchell 1357 g m-2；Twitchell 有 1–2 m 高的密集死藨草茎层，Mayberry 当时基本无立枯——已验证（10.1016/j.rse.2014.04.003 表 8 与第 3 页；Knox 2015 表 1 转引同值）。Twitchell 两塘 1998–2006 年生长季中期活地上生物量 924–2353 g m-2——已验证（10.1007/s11273-009-9143-9 第 8 页）。
+- 对照：Sherman 牧场（US-Snd，US-Sne 的前身）2012 年峰值 PAI 2.2——已验证（10.1111/gcb.12745 表 1）。
+- AmeriFlux BADM：五份三角洲 BIF 只有冠层高（HEIGHTC，US-Tw1 3.06–3.43 m、US-Myb 2.24–2.66 m、US-Tw4 2.82–3.24 m，2015–2017 年 8 月前后），没有 LAI 条目——已验证（grep 本地五份 BIF）。
+
+### 2.2 季节曲线
+
+- 三角洲三塔：冠层在生长季内长高约 1 m，8 月到顶，9–10 月枯倒；生长季初的最低冠层高就是常年立枯层，约需 2 年积起——已验证（Valach 2021 本地文本第 718–727 行）。
+- 物候相机绿度起涨日：West Pond 约第 98 天、Mayberry 约第 69 天、East End 约第 51 天；NEE 起涨：Mayberry 第 68 天、East End 第 85 天、West Pond 第 99 天；NEE 达到饱和：Mayberry 约第 125 天，West Pond 推迟到第 192 天；衰老在第 318 天前后结束——已验证（Dronova 2021 接受稿第 27–28 页）。即 Mayberry 峰早（5 月），West Pond 峰晚（7 月），与立枯多少一致——推测。理由：同文第 32–33 页把推迟归于大斑块内立枯遮光与水温偏低。
+- Oikawa 2017 在 US-Myb、US-Tw1 足迹内 2014 年 4–9 月每月测一次异速生长 LAI，与物候相机 Gcc 拟合出逐日 LAI，驱动 PEPRMT 的 FPAR = 0.95(1 − exp(−k·LAI))——已验证（本地文本第 207–246、334–338 行）；逐月数值在未取得的图 S1 里。
+- US-OWC：香蒲 LAI 6–7 月约 2，8 月翻倍；浮叶种 6 月起就接近 1——已验证（Villa 2020 图 4B 读图）。
+- US-WPT：MODIS NDVI 5 月后快速上升，7 月中至 8 月中到顶，9 月后快速下降；地面光谱仪升尺度的 NDVI 与 MODIS 一致——已验证（10.1002/2013JG002520 第 5、7 页）。
+
+## 3. 问二：MODIS 像元现值与足迹实测的差别
+
+### 3.1 模式现用像元 LAI（srfdata `LAI_monthly`）
+
+| 塔 | 年份 | 年峰值均值（最小–最大） | 多年气候态峰月 | 塔像元 MCD12Q1 类（逐年） | 5×5 窗口组成（逐年范围） | 冠层内峰值（像元 ÷ 盖度） |
+| --- | --- | --- | --- | --- | --- | --- |
+| US-Tw1 | 2011–2018 | 1.70（1.23–2.22） | 8 月 | 12、10、10、11、11、11、11、10 | 湿地 11 类 0–9 个，农地 12/14 类 8–20 个 | 1.74 |
+| US-Tw4 | 2013–2018 | 1.50（1.09–1.79） | 8 月 | 12、11、11、11、10、10 | 11 类 1–15 个，水体 2 个 | 1.70 |
+| US-Tw5 | 2018 | 1.78 | 8 月 | 10 | 11 类 0 个，12/14 类 11 个 | 1.95 |
+| US-Myb | 2010–2018 | 2.46（2.06–3.12） | 6 月（2010、2012 年 5 月） | 全部 10（草地） | 10 类 14–19 个，11 类 0–8 个 | 4.14 |
+| US-Sne | 2016–2018 | 3.24（2.61–4.04） | 4 月（三年都是） | 12、10、10 | 10 类 13–14 个，11 类 1–5 个，水体 5 个 | 7.13 |
+| US-WPT | 2011–2013 | 3.12（2.75–3.71），站点文件代值 | 7 月 | 11（像元 LAI 全年 0） | 11 类 13 个，水体 7 个 | 3.26 |
+| US-OWC | 2015–2016 | 3.39（3.32–3.45） | 8 月 | 9（稀树草原） | 11 类 4–6 个，水体 7 个 | 6.57 |
+
+- 各数——已验证（py311 读 srfdata 与 15″ 原始瓦片；冠层内 = 气候态峰值 ÷ `marsh_sites_260929.tsv` 盖度）。模式对这七塔设了 LAI 上限 3.0 并按"上限 ÷ 年峰值"整年缩放，只作用于年峰值超过 3 的年份——已验证（`sites_v2_p7/_conf/SITE_PARAMS.csv` 七塔行；`ch4_parameter.nml` 第 355 行 `wetland_lai_shape = .true.`；`WetlandVeg.F90:200–229` 的 `wetveg_cap_lai`）。
+- US-Tw5 与 US-Tw1 的 2018 年 12 个月 LAI 逐值相同，两塔落在同一个 MODIS 500 m 原始像元里——已验证（srfdata 读数）；原因归属——推测。理由：两塔的 15″ 像元编号相邻（第 454 行第 804、805 列），15″ 数据由 500 m 产品重采样。
+- US-WPT 塔像元是 MODIS 永久湿地像元，LAI 为填充值 0；站点文件改用离塔 0.5–1.0 km 内 4 个湿地像元（年峰值大于 0.5）的逐月均值——已验证（`scripts/sites/add_site_lai.py` 第 6–14 行文档串；原始瓦片 2011–2013 年塔像元峰值 0.00）。
+- 对照：US-Snd 牧场像元 2018 年峰值 3.75（LC 12，农地 81 %），而同塔 2012 年地面峰值 PAI 只有 2.2——已验证（原始瓦片读数；10.1111/gcb.12745 表 1）。
+
+### 3.2 逐塔差别与原因
+
+- US-Tw1：2016 年 8 月像元值 1.59，实测绿叶 LAI 3.1，足迹平均（乘 0.74–0.97 植被比例）2.3–3.0，像元只有实测的 0.53–0.69——已验证（srfdata 2016 年 8 月读数；Dronova 2021 表 1 足迹 90 % 植被比例 74.0 %；Valach 2021 表 1 的 0.970）。原因：一是 West Pond 整片只有 0.032 km2，约占一个 15″ 像元（约 0.46 km × 0.36 km = 0.17 km2）的 19 %，像元多是东塘、堤与农地；二是 59 % 的样方面积是立枯，反射近红外弱，MODIS 反演的绿叶 LAI 偏低；三是积水背景压低 NDVI——推测。理由：面积比由 Dronova 2021 表 1 与像元大小手算；立枯压低植被指数与 fAPAR 见 Schile 2013 摘要与 Anderson 2016 第 14 页（2006–2010 年足迹内 8 月 NDVI 下降，归因于立枯增多）；Dronova 2021 第 36 页说粗分辨率像元更易混入非植被成分。
+- US-Tw4：2016 年 8 月像元值 1.60，实测 3.8，足迹平均约 3.2，像元约为实测的一半——已验证（同上读数；足迹植被比例 83.2 %）。East End 面积 2.995 km2，塔像元 2014–2016 年归湿地类，混像元不是主因，主因是积水（样方水深 66 cm，三塔最深）与立枯背景——推测。理由：同上；该塔立枯体积最小（0.022 m3 每样方），但死植被仍占 54 % 样方面积。
+- US-Myb：2016 年 8 月像元值 2.12，实测绿叶 1.9，足迹平均（乘 0.557）约 1.06，像元是足迹实测的 2 倍——已验证（同上读数）。原因：塔像元九年都归草地类，窗口内以草地、农地为主；2010 年（复湿前牧场）与 2012 年像元峰值落在 5 月，是一年生牧草的物候；像元 LAI 更多反映堤岸与周边牧场，而不是开阔水占四成的湿地——推测。理由：原始瓦片 LC 与峰月读数；McNicol 2017 足迹开阔水 0.40 ± 0.12。另外 2016 年正值盐化（2015–2016），实测的 1.9 可能低于常年——推测。理由：Chamberlain 2020 摘要说盐化高峰年年 GEP 降 64 %，AmeriFlux 页把该文链到 US-Myb 与 US-Tw1；Dronova 2021 第 28 页把 Mayberry 最大绿度偏低归于 2015–2016 年水体盐度上升。
+- US-Sne：像元三年都在 4 月到顶（3.07、4.04、2.61），6–8 月只有 1.06–1.65；2016 年还是牧场时形状相同——已验证（srfdata 读数）。这是加州一年生牧草冬春返青、初夏枯黄的形状，不是湿地；Sherman 湿地 2016 年 11 月才淹水，2017–2018 年植被稀疏（足迹盖度 0.454，其中浮水植物与藻类占 24 %，冠层高中位数 0.18 m）——已验证（Valach 2021 本地文本第 692 行与第 3.3 节；`marsh_sites_260929.tsv` 第 6 行）。故 US-Sne 的像元 LAI 在量级与季节形状上都代表周边牧场——推测。理由：窗口内 11 类像元同样 4 月到顶（峰值 1.35–1.68），说明 MCD12Q1 类别与 LAI 都没有跟上复湿。
+- US-WPT：模式用的 4 个邻近湿地像元峰值 2.75–3.71，实测面积平均 2.3，高约 35 %——已验证（srfdata 读数；Qiu 2018 表 2）。原因：邻近像元多为挺水植被密的地段，而塔足迹有 43 % 是 LAI 上限为 1 的浮叶区——推测。理由：Chu 2014 第 2.1 节足迹组成（经 `marsh_sites_260929.tsv` 第 7 行）；Villa 2020 浮叶种 LAI 按定义不超过 1。
+- US-OWC：塔像元归稀树草原类（9），峰值 3.3–3.45；窗口内湿地类像元峰值 0.70（2015）、1.97（2016）；实测足迹平均约 1.94——已验证（原始瓦片读数；第 2.1 节）。像元混入了河口两岸的林地——推测。理由：MCD12Q1 第 9 类是树冠盖度 10–30 % 的木本类，湿地内部没有乔木。
+
+### 3.3 模式里 LAI 与盖度的实际关系（代码核对）
+
+- 当前工作树里盖度 `wetland_cover_frac_site` 只在一处使用：乘在植物碳输入上（`BgcShim.F90:279` `cin = cin * DEF_METHANE%wetland_cover_frac_site`），没有见到"LAI ÷ 盖度"或"GPP × 盖度"——已验证（grep `main/`、`share/`、`mkinidata/` 的 `cover_frac`，命中只有该行与 `Const.F90` 的声明和检查）。`sp_v2_c74` 的 case 源码里这个键还不存在——已验证（grep case 目录 `main/` 零命中）。
+- 因此第 4 节同时给三种口径：A 冠层内 = 像元 ÷ 盖度且 GPP 乘盖度（任务书口径）；B 在 A 上再加上限 3 的整年缩放；C 像元值直接进冠层并加上限 3（当前代码口径）——推测。理由：三者只差在光吸收的非线性上，给出区间比押一种口径稳妥。
+
+## 4. 问三：塔上与模式 GPP 的差能否用足迹 LAI 解释
+
+### 4.1 做法
+
+1. 光能吸收用比尔定律：月吸收比 = 盖度 × (1 − exp(−k × 冠层内 LAI))；k 取 0.5 与 0.35（挺水禾草叶片近直立，k 偏小）。
+2. 月权重取该纬度月中日的大气顶日均辐射，近似光合有效辐射的季节分布。
+3. 设模式 GPP 正比于加权年吸收比（光能利用率不变），求乘子 s，使 s × 现用 LAI 给出的吸收比 = r × 现用吸收比。反推的冠层内峰值 = s × 现用冠层内峰值，像元等效峰值 = 冠层内 × 盖度。
+4. 这是一阶近似：忽略了温度、水汽、氮与叶片光饱和对光能利用率的影响，也没有扣立枯遮光——推测。理由：CoLM 实际用双大叶光合与两流辐射，只能靠实跑核对。
+
+### 4.2 反推结果（冠层内峰值，m2 m-2）
+
+| 塔 | r | 现用冠层内峰值 A / B / C | 实测冠层内 | 反推冠层内峰值 A（k 0.5–0.35） | B | C | 像元等效（A） |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| US-Tw1 | 0.99 | 1.74 / 1.74 / 1.69 | 3.1 | 1.71 | 1.71 | 1.66 | 1.66 |
+| US-Tw4 | 0.92 | 1.70 / 1.70 / 1.43 | 3.8 | 1.51–1.53 | 1.51–1.53 | 1.28–1.29 | 1.27–1.29 |
+| US-Tw5 | 1.04 | 1.95 / 1.95 / 1.78 | 无 | 2.05–2.07 | 同 A | 1.87 | 1.87–1.89 |
+| US-Myb | 0.60 | 4.14 / 2.87 / 2.35 | 1.9 | 1.70–1.90（像元形状）；1.93–2.18（湿地形状） | 1.32–1.44；1.53–1.66 | 1.14–1.22 | 0.97–1.24 |
+| US-Sne 全部年 | 0.55 | 7.13 / 3.00 / 2.87 | 无 | 1.77–2.05（湿地形状） | 1.02–1.09 | 1.27–1.36（牧场形状） | 0.80–0.93 |
+| US-Sne 2017 | 0.10 | 年峰值 8.90 | 无 | 0.24–0.29（湿地形状） | 0.13–0.14 | — | 0.11–0.13 |
+| US-Sne 2018 | 0.23 | 年峰值 5.75 | 无 | 0.61–0.73（湿地形状） | 0.43–0.47 | — | 0.28–0.33 |
+| US-WPT | 0.51 | 3.26 / 2.96 / 2.88 | 2.27 | 1.21–1.34 | 1.12–1.24 | 1.10–1.20 | 1.16–1.28 |
+| US-OWC | 1.69 | 6.57 / 3.00 / 3.00 | 3.76 | 无解（吸收比已饱和） | 7.9–11.9 | 7.9–12.2 | — |
+
+- 各数——已验证（py311 按第 4.1 节手算；"湿地形状"= US-Tw4 2015–2018 年气候态归一化，8 月为 1；US-Sne 分年的 r 取诊断件第 5.1 节 2017 年 175/1741 与第 4.3 节两年均值反推的 2018 年 523/2259）。
+- 读法：US-Tw1、US-Tw4、US-Tw5 的 r 接近 1，反推值就是现用值，不需要改；US-OWC 要把 LAI 提到 8 以上才够，实测却只有 3.8，LAI 不是原因——推测。理由：上表。
+
+### 4.3 跨塔一致性检验（以 US-Tw1 标定）
+
+- US-Tw1 上模式用冠层内峰值 1.74 就对上了 GPP，而实测绿叶 LAI 3.1，模式有效 LAI 与实测之比 f = 0.56。设这个比值对各塔相同，用实测 LAI × 0.56 代入第 4.1 节，预报的 r：US-Myb 0.38–0.51（实测 r 0.60），US-WPT 0.49–0.56（0.51），US-Tw4 1.17–1.19（0.92），US-OWC 0.50–0.80（1.69）——已验证（py311 手算，A、B 两种口径，k 0.5 与 0.35）。
+- 读法：US-Myb 与 US-WPT 两塔的偏高可以由实测 LAI 解释；US-Tw4 预报偏高 25 %，落在实测标准差（3.8 ± 2.2）之内；US-OWC 方向相反——推测。理由：上条；三塔 LAI 同为 2016 年 8 月、同一方法，可比性好，US-WPT 与 US-OWC 的 LAI 方法不同。
+- 若不做 US-Tw1 标定、直接把实测 LAI 当冠层内 LAI：US-Myb 反推值 1.7–1.9 与实测 1.9 一致；US-WPT 只能解释约三分之一（r 预报约 0.85）——推测。理由：第 4.2 节表与同法手算。
+
+### 4.4 机理上的替代：把立枯写成 SAI
+
+- 同一比尔定律下，绿叶与立枯均匀混合时绿叶吸收比 = L ÷ (L + D) × (1 − exp(−k(L + D)))，D 为立枯面积指数。US-Tw1 取 L = 3.1、D = PAI − L = 3.0，峰值吸收比 0.48；现用 L = 1.74、SAI 约 0.45，为 0.53——推测。理由：手算（k = 0.5）；D 用的 PAI 为 2014 年（存疑），L 为 2016 年。
+- US-Myb 取 L = 1.9、D = 3.9：0.31；现用 A 口径 L = 4.14、SAI 约 1.05（像元 SAI 0.6 ÷ 0.57）：0.74，比值 0.42；B 口径 0.49；实测 r 0.60——推测。理由：同上手算。
+- 即"LAI 取实测绿叶、SAI 取 PAI 减绿叶"能同时保住 US-Tw1 并压低 US-Myb，是比"整体乘 0.56"更有物理依据的做法；CoLM 的两流辐射本来就让 SAI 吸收光——推测。理由：以上两条；缺各塔 PAI 的可靠值。
+
+### 4.5 逐塔判断
+
+- US-Tw1、US-Tw4、US-Tw5：GPP 已对上（r 0.92–1.04），现用像元 LAI 只有实测绿叶 LAI 的一半，是被模式单位叶面积光合偏高或未计立枯遮光抵消的；不建议单独把 LAI 换成实测值——推测。理由：第 4.3、4.4 节。
+- US-Myb：能用足迹 LAI 解释。建议冠层内峰值取实测 1.9（像元等效约 1.1），与反推值 1.7–1.9 吻合；盐化年（2015–2016）与虫害年（2013、2014、2017）GPP 另有下降，是模式没有的过程——推测。理由：第 4.2 节表；Chamberlain 2020 摘要；Valach 2021 第 718–724 行。
+- US-Sne：无实测，只能反推，而且必须换季节形状：像元是牧场的 4 月峰。按湿地形状，冠层内峰值 2017 年约 0.25、2018 年约 0.65（A 口径），全部年份平均约 1.8（含 2016 年牧场年的 GPP，不宜直接用）——推测。理由：第 4.2 节表；2017 年塔上 GPP 仅 175 g C m-2 yr-1（诊断件第 5.1 节），与第一年近乎开阔水一致（Hemes 2019 表 1 该年净放 CO2 324 ± 34）。
+- US-WPT：部分由 LAI 解释（邻近像元代值比实测面积平均高 35 %，且 43 % 足迹是浮叶区）。反推冠层内峰值 1.2–1.3；另两个原因：2012–2013 年夏季冷害压低最大光合速率，2013 年 GEP 比前两年低 20–24 %；浮叶种的净初级生产力远低于香蒲（睡莲 54–279、香蒲 507–1565 g C m-2 yr-1）——推测。理由：10.1111/gcb.12760 第 11、15 页与表 1（GEP 910.8、952.4、727.4）。
+- US-OWC：不能用 LAI 解释。实测足迹平均 1.94 低于像元 3.39，按实测改 LAI 会让模式 GPP 更低。塔上 Reco/GPP 只有 0.38、NEP 932（诊断件第 4.3 节），远高于该地积碳速率（第 5 节 56–140），塔上 GPP 可能含开阔水中藻类与沉水植物的初级生产，或受水平碳输出影响——推测。理由：以上数值对比；Rey-Sanchez 2018 与 Tang 2025 未给出可核的解释。
+
+## 5. 问四：复湿与管理沼泽的埋藏份额
+
+### 5.1 做法
+
+- b = 碳积累速率（沉积芯）÷ 净初级生产力；没有沉积芯的塔用"大气净碳汇（NEE + CH4）× 积碳与净碳汇之比"代替。积碳与净碳汇之比在 US-Tw1 为 350 ÷ 409 = 0.86（Hemes 2019 净碳平衡），US-Myb 为 280 ÷ 290 = 0.97（Arias-Ortiz 2021 的大气净吸收）——已验证（手算；来源见 `lit_marsh_restoration_260929.txt` 第 3.1 节与 Hemes 2019 表 1）。
+- 净初级生产力 = CUE × 塔上 GPP；CUE 0.61 ± 0.05 为香蒲沼泽 8 年实测（范围 0.53–0.69），另两处香蒲群落 0.60、0.65——已验证（10.1016/j.agrformet.2008.07.010 全文抽句）。中值取 0.55，区间取 0.50–0.61。
+
+### 5.2 逐塔结果
+
+| 塔 | 积碳或净碳汇（g C m-2 yr-1） | 塔上 GPP | 净初级生产力（0.50–0.61） | b 中值 | b 区间 |
+| --- | --- | --- | --- | --- | --- |
+| US-Tw1 | 积碳 350 ± 150（22 年） | 1692 | 846–1032 | 0.38 | 0.19–0.59 |
+| US-Myb | 积碳 280 ± 90（9 年） | 1266 | 633–772 | 0.40 | 0.25–0.58 |
+| US-Tw4 | 净碳汇：NEE −536 ± 56（第 2–5 年），CH4 约 30–50；全部年净碳平衡 −290 ± 202 | 1282 | 641–782 | 0.45 | 0.30–0.60 |
+| US-Tw5 | 2018 年 NEP/GEP 0.31，CH4/GEP 0.05；植被清除前 1997–2006 年积碳约 376（104–731） | 1823 | 912–1112 | 0.40 | 0.30–0.50 |
+| US-Sne | 净碳源：2017 年 +370 ± 34；2017–2018 年 NEE +235 ± 137 | 676（2017–18 为 349） | — | 0 | 0–0.1 |
+| US-WPT | 有机碳沉积 96.9 ± 10.3（1966–2013）、94.8（1998–2013）；其中外源输入约 23 ± 13；2011–2013 年净碳源 42.7 ± 23.4 | 864（Chu 2015 三年均值） | 411–559（Chu 2015 估算） | 0.18 | 0.13–0.24 |
+| US-ORv | 积碳 219（种植塘）、266（自然定殖塘），15 年，约一成为无机碳 | 1471 | 736–897 | 0.27 | 0.20–0.33 |
+| US-OWC | 积碳 56 ± 13（近 50 年）、65 ± 11（近 20 年，2019 年芯）；另一研究 140 ± 16（河道型群落，1964 年以来） | 1509 | 755–920 | 0.10 | 0.06–0.19 |
+
+- US-Tw1、US-Myb：b = 350 ÷ 931 = 0.38、280 ÷ 696 = 0.40；区间由 CUE 与积碳误差合成，如 US-Tw1 200 ÷ 1032 = 0.19、500 ÷ 846 = 0.59——已验证（手算；积碳 10.1029/2021JG006573 表 2，GPP 诊断件第 4.3 节）。
+- US-Tw4：East End 除去复湿当年，四年平均 NEE −536.4 ± 55.6，NEP/GEP 0.33 ± 0.03；Hemes 2019 含第一年的净碳平衡 −290 ± 202——已验证（Valach 2021 本地文本第 598–621 行；10.1016/j.agrformet.2019.01.017 表 1）。b = (0.33 − 0.02 至 0.03) ÷ (0.50–0.61) × (0.86–0.97) = 0.42–0.60；用 Hemes 全部年份 290 ÷ 705 = 0.41；中值取 0.45——推测。理由：手算；复湿头几年的净碳汇有一部分进了新长成的根与根状茎，而不是新泥炭，模式里植物输入直接进凋落物，所以这部分也算"不进入分解"。
+- US-Tw5：2018 年 NEP/GEP 31 %（n = 1）；CH4 取诊断件 E/Reco 8.84 % × Reco 985 = 87，占 GPP 0.048；b = (0.31 − 0.048) ÷ (0.50–0.61) × (0.86–0.97) = 0.37–0.50——推测。理由：手算，单一年份。另用 Miller 2008 东塘（55 cm 深塘）冷冻芯积累 1.8 cm yr-1（0.5–3.5）× 0–15 cm 容重 0.048 g cm-3 × 含碳 43.5 % = 376 g C m-2 yr-1（104–731），÷ 1003 = 0.37——推测。理由：手算（10.15447/sfews.2008v6iss3art1 第 13–14 页表 1、表 2）；深层容重更高，3.5 cm yr-1 一端被低估；1997–2006 与 2018 年的 GPP 未必相同。
+- US-Sne：塔上年份是净碳源，老泥炭仍在失碳，b 取 0；新积累层在植被斑块里已开始形成（最年轻三塔新层含碳 9.1 %，前一报告已核），所以上限给 0.1——推测。理由：Hemes 2019 表 1；Valach 2021 NEP/GEP −38 ± 29 %（去掉第一年 −17 %）；模式里的净碳源应由老泥炭初值给出，不是负的埋藏。
+- US-WPT：b = 96.9 ÷ (411–559) = 0.17–0.24；扣外源 23 后 74 ÷ (411–559) = 0.13–0.18；中值取 0.18——推测。理由：手算（10.1111/gcb.12760 第 1、9–11 页）；原文自己指出沉积速率含外源碳会高估埋藏。塔上三年与长期沉积不一致，拿塔上年份标定时 b 应接近 0——推测。理由：同文第 10 页，三年碳平衡为源 42.7 ± 23.4。
+- US-ORv：有机碳 ≈ 0.9 × (219–266) = 197–239，÷ (736–897) = 0.22–0.32，中值 218 ÷ 809 = 0.27——推测。理由：手算（10.1525/bio.2012.62.3.5 第 8、11 页；10.2134/jeq2012.0229 摘要，前一报告已核）；塔足迹只有 19.5 % 是湿地（诊断件第 6.1 节），塔上 GPP 混有非湿地，净初级生产力未必是塘的。
+- US-OWC：56 ± 13 与 65 ± 11 由 ESS-DIVE 数据集 9 个取芯点各 4 根芯算得：用每点定年芯（210Pb 恒定补给模型）给出 1969.5 年与 1999.5 年对应深度，把 4 根芯在该深度以上的容重 × 含碳量 × 层厚积分后取平均，再除以年数——已验证（py311 读 `C_N_P_Seq_ESS_DIVE_r2.csv`；9 点近 50 年 34–78，近 20 年 48–78）。另一研究的河道型群落 140 ± 16（莲 160、芦苇藨草 105、泥滩 112），其中含上游来沙带入的外源碳（该湿地年沉积约 28 t ha-1）——已验证（10.1111/j.1365-2486.2011.02619.x 摘要、第 6、10 页表 5）。b = 56 ÷ 920 = 0.06 至 140 ÷ 755 = 0.19，中值取 0.10——推测。理由：手算；两套芯的年代方法与取芯位置不同，把定年芯的深度与年代关系套到同点另 3 根芯是本文的假设。
+- 对照：三角洲历史泥炭至少保存了净初级生产力的 20 %；潮汐沼泽不到 1 %（矿质沉积为主）到不到 10 %（有机质为主）——已验证（10.15447/sfews.2008v6iss3art1 第 16 页，转述 Atwater & Belknap 1980 与 Callaway 1996）。永久淹水的管理塘 0.38–0.45 高于这两者，符合"淹水抑制分解"——推测。理由：以上数值对比。
+
+### 5.3 换算到模式参数
+
+- 模式的 `wetland_burial_frac_site` 乘在扣除根分泌物之后的凋落物输入上，而本文 b 以净初级生产力为分母；若分泌物份额为 0.15（`root_exudate_frac`），参数值 = b ÷ 0.85，如 US-Tw1 0.45、US-Myb 0.47——推测。理由：`Const.F90` 该参数注释说份额针对 "what is left after the root exudates"；`ch4_parameter.nml` 第 359、372 行 `wetland_exudate_frac = 0.`、`root_exudate_frac = 0.15`；C-69 分泌物的记账顺序本次未读全，是否先扣未核。
+- 模式植物输入 = 模式光合 × 0.5 × 盖度（`BgcShim.F90:279`）；若模式 GPP 仍比塔上高（US-Myb、US-Sne、US-WPT），同一个 b 埋掉的绝对量也会按比例偏高，应先修 GPP 再定 b——推测。理由：b 是比例，绝对埋藏量随输入走。
+
+## 6. 著录（Crossref 逐条核对，数据集核 DataCite；请求不带任何个人信息）
+
+1. Dronova, I., Taddeo, S. (2016) Canopy leaf area index in non-forested marshes of the California Delta. Wetlands 36(4), 705–716. doi:10.1007/s13157-016-0780-5。Crossref 已核（全文未取得）
+2. Dronova, I., Taddeo, S., Hemes, K. S., Knox, S. H., Valach, A., Oikawa, P. Y., Kasak, K., Baldocchi, D. D. (2021) Remotely sensed phenological heterogeneity of restored wetlands: linking vegetation structure and function. Agricultural and Forest Meteorology 296, 108215. doi:10.1016/j.agrformet.2020.108215。Crossref 已核
+3. Eichelmann, E., Mantoani, M. C., Chamberlain, S. D., Hemes, K. S., Oikawa, P. Y., Szutu, D., Valach, A., Verfaillie, J., Baldocchi, D. D. (2022) A novel approach to partitioning evapotranspiration into evaporation and transpiration in flooded ecosystems. Global Change Biology 28(3), 990–1007. doi:10.1111/gcb.15974。Crossref 已核
+4. Eichelmann, E., Hemes, K. S., Knox, S. H., Oikawa, P. Y., Chamberlain, S. D., Sturtevant, C., Verfaillie, J., Baldocchi, D. D. (2018) The effect of land cover type and structure on evapotranspiration from agricultural and wetland sites in the Sacramento–San Joaquin River Delta, California. Agricultural and Forest Meteorology 256–257, 179–195. doi:10.1016/j.agrformet.2018.03.007。Crossref 已核（只用于覆盖面：无 LAI 数值）
+5. Oikawa, P. Y., Jenerette, G. D., Knox, S. H., Sturtevant, C., Verfaillie, J., Dronova, I., Poindexter, C. M., Eichelmann, E., Baldocchi, D. D. (2017) Evaluation of a hierarchy of models reveals importance of substrate limitation for predicting carbon dioxide and methane exchange in restored wetlands. JGR Biogeosciences 122(1), 145–167. doi:10.1002/2016JG003438。Crossref 已核
+6. Knox, S. H., Sturtevant, C., Matthes, J. H., Koteen, L., Verfaillie, J., Baldocchi, D. (2015) Agricultural peatland restoration: effects of land-use change on greenhouse gas (CO2 and CH4) fluxes in the Sacramento–San Joaquin Delta. Global Change Biology 21(2), 750–765. doi:10.1111/gcb.12745。Crossref 已核
+7. Byrd, K. B., O'Connell, J. L., Di Tommaso, S., Kelly, M. (2014) Evaluation of sensor types and environmental controls on mapping biomass of coastal marsh emergent vegetation. Remote Sensing of Environment 149, 166–180. doi:10.1016/j.rse.2014.04.003。Crossref 已核
+8. Valach, A. C., Kasak, K., Hemes, K. S., Anthony, T. L., Dronova, I., Taddeo, S., Silver, W. L., Szutu, D., Verfaillie, J., Baldocchi, D. D. (2021) Productive wetlands restored for carbon sequestration quickly become net CO2 sinks with site-level factors driving uptake variability. PLOS ONE 16(3), e0248398. doi:10.1371/journal.pone.0248398。Crossref 已核
+9. Hemes, K. S., Chamberlain, S. D., Eichelmann, E., Anthony, T., Valach, A., Kasak, K., Szutu, D., Verfaillie, J., Silver, W. L., Baldocchi, D. D. (2019) Assessing the carbon and climate benefit of restoring degraded agricultural peat soils to managed wetlands. Agricultural and Forest Meteorology 268, 202–214. doi:10.1016/j.agrformet.2019.01.017。Crossref 已核
+10. McNicol, G., Sturtevant, C. S., Knox, S. H., Dronova, I., Baldocchi, D. D., Silver, W. L. (2017) Effects of seasonality, transport pathway, and spatial structure on greenhouse gas fluxes in a restored wetland. Global Change Biology 23(7), 2768–2782. doi:10.1111/gcb.13580。Crossref 已核
+11. Chamberlain, S. D., Hemes, K. S., Eichelmann, E., Szutu, D. J., Verfaillie, J. G., Baldocchi, D. D. (2020) Effect of drought-induced salinization on wetland methane emissions, gross ecosystem productivity, and their interactions. Ecosystems 23(3), 675–688. doi:10.1007/s10021-019-00430-5。Crossref 已核（只读摘要）
+12. Anderson, F. E., Bergamaschi, B., Sturtevant, C., Knox, S., Hastings, L., Windham-Myers, L., Detto, M., Hestir, E. L., Drexler, J., Miller, R. L., Matthes, J. H., Verfaillie, J., Baldocchi, D., Snyder, R. L., Fujii, R. (2016) Variation of energy and carbon fluxes from a restored temperate freshwater wetland and implications for carbon market verification protocols. JGR Biogeosciences 121(3), 777–795. doi:10.1002/2015JG003083。Crossref 已核
+13. Schile, L. M., Byrd, K. B., Windham-Myers, L., Kelly, M. (2013) Accounting for non-photosynthetic vegetation in remote-sensing-based estimates of carbon flux in wetlands. Remote Sensing Letters 4(6), 542–551. doi:10.1080/2150704X.2013.766372。Crossref 已核（只读摘要）
+14. Arias-Ortiz, A., Oikawa, P. Y., Carlin, J., Masqué, P., Shahan, J., Kanneg, S., Paytan, A., Baldocchi, D. D. (2021) Tidal and nontidal marsh restoration: a trade-off between carbon sequestration, methane emissions, and soil accretion. JGR Biogeosciences 126(12), e2021JG006573. doi:10.1029/2021JG006573。Crossref 已核
+15. Miller, R. L., Fram, M. S., Fujii, R., Wheeler, G. (2008) Subsidence reversal in a re-established wetland in the Sacramento-San Joaquin Delta, California, USA. San Francisco Estuary and Watershed Science 6(3). doi:10.15447/sfews.2008v6iss3art1。Crossref 已核
+16. Miller, R. L., Fujii, R. (2010) Plant community, primary productivity, and environmental conditions following wetland re-establishment in the Sacramento-San Joaquin Delta, California. Wetlands Ecology and Management 18(1), 1–16. doi:10.1007/s11273-009-9143-9。Crossref 已核（Crossref issued 为 2009 年在线，卷期为 2010 年）
+17. Kasak, K., Valach, A. C., Rey-Sanchez, C., Kill, K., Shortt, R., Liu, J., Dronova, I., Mander, Ü., Szutu, D., Verfaillie, J., Baldocchi, D. D. (2020) Experimental harvesting of wetland plants to evaluate trade-offs between reducing methane emissions and removing nutrients accumulated to the biomass in constructed wetlands. Science of the Total Environment 715, 136960. doi:10.1016/j.scitotenv.2020.136960。Crossref 已核
+18. Chu, H., Chen, J., Gottgens, J. F., Ouyang, Z., John, R., Czajkowski, K., Becker, R. (2014) Net ecosystem methane and carbon dioxide exchanges in a Lake Erie coastal marsh and a nearby cropland. JGR Biogeosciences 119(5), 722–740. doi:10.1002/2013JG002520。Crossref 已核
+19. Chu, H., Gottgens, J. F., Chen, J., Sun, G., Desai, A. R., Ouyang, Z., Shao, C., Czajkowski, K. (2015) Climatic variability, hydrologic anomaly, and methane emission can turn productive freshwater marshes into net carbon sources. Global Change Biology 21(3), 1165–1181. doi:10.1111/gcb.12760。Crossref 已核（Crossref issued 为 2014 年在线，卷期为 2015 年）
+20. Qiu, C., Zhu, D., Ciais, P., Guenet, B., 等 48 人 (2018) ORCHIDEE-PEAT (revision 4596), a model for northern peatland CO2, water, and energy fluxes on daily to annual scales. Geoscientific Model Development 11(2), 497–519. doi:10.5194/gmd-11-497-2018。Crossref 已核
+21. Villa, J. A., Ju, Y., Stephen, T., Rey-Sanchez, C., Wrighton, K. C., Bohrer, G. (2020) Plant-mediated methane transport in emergent and floating-leaved species of a temperate freshwater mineral-soil wetland. Limnology and Oceanography 65(7), 1635–1650. doi:10.1002/lno.11467。Crossref 已核
+22. Tang, A. C. E., Bohrer, G., Malhotra, A., Missik, J., Machado-Silva, F., Forbrich, I. (2025) Rising water levels and vegetation shifts drive substantial reductions in methane emissions and carbon dioxide uptake in a Great Lakes coastal freshwater wetland. Global Change Biology 31(2), e70053. doi:10.1111/gcb.70053。Crossref 已核
+23. Bernal, B., Mitsch, W. J. (2012) Comparing carbon sequestration in temperate freshwater wetland communities. Global Change Biology 18(5), 1636–1647. doi:10.1111/j.1365-2486.2011.02619.x。Crossref 已核
+24. Mitsch, W. J., Zhang, L., Stefanik, K. C., Nahlik, A. M., Anderson, C. J., Bernal, B., Hernandez, M., Song, K. (2012) Creating wetlands: primary succession, water quality changes, and self-design over 15 years. BioScience 62(3), 237–250. doi:10.1525/bio.2012.62.3.5。Crossref 已核
+25. Bernal, B., Mitsch, W. J. (2013) Carbon sequestration in two created riverine wetlands in the Midwestern United States. Journal of Environmental Quality 42(4), 1236–1244. doi:10.2134/jeq2012.0229。Crossref 已核
+26. Rocha, A. V., Goulden, M. L. (2009) Why is marsh productivity so high? New insights from eddy covariance and biomass measurements in a Typha marsh. Agricultural and Forest Meteorology 149(1), 159–168. doi:10.1016/j.agrformet.2008.07.010。Crossref 已核
+27. Kasak, K., Ahmadi, A., Dronova, I., Arias-Ortiz, A., Wang, T., Valach, A. C., Szutu, D., Verfaillie, J., Baldocchi, D. D. (2026) Interannual variability in greenhouse gas emissions challenges post-restoration net sink predictions in California Delta wetlands. Global Change Biology 32(1), e70700. doi:10.1111/gcb.70700。Crossref 已核（本文只转引前一报告已核的数）
+28. Villa, J., Bohrer, G., Kinsman-Costello, L., Ju, Y. (2022) Nutrient and carbon concentrations in dated soil cores at US-OWC Ameriflux wetland site (OWC NERR). ESS-DIVE 数据集. doi:10.15485/1839288。DataCite 已核

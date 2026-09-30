@@ -1,0 +1,82 @@
+# paper_v2/v260929/sp_v2_c70 v2_p2xap: all 77 towers; KGE_ln / beta / alpha / r; means mg CH4 m-2 d-1
+site     class         n  KGEln   beta  alpha     r     obs   model
+CA-SCB   bog          21   0.70   0.91   0.96  0.72   67.49   61.16
+DE-SfN   bog          28  -0.96   5.34   2.42  0.49   12.68   67.70
+FI-Si2   bog          28   0.17   0.71   0.48  0.79   68.45   48.33
+JP-BBY   bog          39   0.48   0.87   0.62  0.84   66.92   58.51
+NZ-Kop   bog          48   0.20   1.47   0.82  0.33   61.37   90.28
+US-BZB   bog          20   0.19   1.27   2.09  0.77   59.79   76.17
+DE-Zrk   fen          63  -0.84   0.65   0.17  0.73  114.56   74.13
+FI-Lom   fen          60  -0.03   0.49   0.48  0.87   56.57   27.95
+FI-Sii   fen          61   0.55   0.88   0.68  0.80   49.76   44.01
+FR-LGt   fen          20  -1.60  10.39   2.54  0.37    5.10   52.93
+SE-Deg   fen          50   0.69   0.80   0.86  0.85   39.24   31.51
+US-BZF   fen          19   0.41   1.21   1.44  0.58   66.72   80.86
+US-Los   fen          59   0.27   1.96   1.16  0.78   23.87   46.88
+US-DPW   marsh        40   0.58   1.24   0.98  0.64  205.28  255.36
+US-LA2   marsh        12   0.39   1.41   1.62  0.84  171.87  242.96
+US-Myb   marsh        99   0.35   1.79   1.22  0.79  174.65  313.18
+US-ORv   marsh        50  -1.30   4.37   5.74  0.74   29.95  130.95
+US-Sne   marsh        24   0.63   1.36   0.84  0.87  157.11  212.89
+US-Tw1   marsh        91   0.58   1.23   0.96  0.63  171.52  210.16
+US-Tw4   marsh        61   0.44   1.50   1.38  0.80  118.09  177.53
+US-Tw5   marsh         9   0.57   0.83   0.71  0.82  316.46  261.99
+US-WPT   marsh        34   0.24   0.74   0.50  0.94  194.97  143.39
+BR-Npw   swamp        29  -1.19   0.22   0.20  0.81   90.58   20.37
+BW-Gum   swamp        10  -3.38   0.03   0.10 -0.33  355.56   11.12
+BW-Nxr   swamp        12  -2.59   0.06   0.12  0.66  178.11    9.82
+MY-MLM   swamp        19  -3.22  19.45  18.80  0.37   40.17  781.15
+US-NC4   swamp        60   0.39   1.55   0.91  0.59  110.75  171.74
+RU-Ch2   wet tundra   26   0.48   1.17   1.59  0.81   34.24   39.92
+US-A03   wet tundra   25   0.54   0.75   1.01  0.63   37.65   28.36
+US-A10   wet tundra   17  -0.53   2.83   2.85  0.59   11.36   32.10
+US-Atq   wet tundra   26  -0.54   2.21   3.66  0.73    9.21   20.35
+US-Beo   wet tundra   16   0.33   0.89   1.90  0.85   11.20    9.96
+US-Bes   wet tundra   27   0.80   1.03   1.20  0.91   15.32   15.83
+US-ICs   wet tundra   16  -0.71   2.48   4.15  0.71   13.76   34.08
+US-Ivo   wet tundra   41   0.25   1.06   2.03  0.76   20.79   21.96
+US-NGB   wet tundra   33   0.63   1.17   1.17  0.71   18.70   21.85
+RU-Che   drained      33   0.04   1.50   2.35  0.82   15.38   23.07
+US-Bi1   drained      26  -0.93   0.98   0.23 -0.26    0.66    0.65
+US-Bi2   drained      20  -0.41   0.77   1.79 -0.26    5.34    4.14
+US-MAC   drained      12  -1.73   0.12   0.27 -0.13   92.00   11.34
+US-Snd   drained      41    nan  -0.00   0.00  0.44   27.57   -0.08
+US-Uaf   permafrost   46  -0.27   0.41   1.53  0.22    4.01    1.63
+IT-Cas   rice         21   0.02   0.49   0.67  0.46   90.65   44.09
+JP-Mse   rice         10  -0.08   0.76   1.11 -0.04   45.01   34.18
+KR-CRK   rice         43   0.46   1.15   1.57  0.74  108.77  124.59
+PH-RiF   rice         23   0.12   1.64   1.49  0.40   55.32   90.74
+US-Twt   rice         91   0.11   1.00   1.20  0.13   46.42   46.19
+DE-Dgw   lake         33  -3.48   0.03   0.06  0.24   31.72    1.01
+DE-Hte   salt marsh   84  -2.22   0.12   0.09  0.86  203.20   24.80
+US-LA1   salt marsh   14   0.60   0.91   0.71  0.81   42.62   38.73
+US-MRM   salt marsh   20  -4.24  56.06  24.30 -0.02    1.14   64.15
+US-Srr   salt marsh   34  -3.04  15.82  18.37  0.53    3.93   62.14
+US-StJ   salt marsh    9  -0.00   0.43   0.60  0.92   46.91   19.95
+AT-Neu   upland       23  -3.68   0.06   0.02  0.72    1.19    0.07
+CA-SCC   upland       18    nan  -0.00   0.00 -0.61   40.58   -0.07
+CH-Cha   upland       48  -3.55   0.04   0.05  0.06   11.32    0.43
+CH-Dav   upland       19  -4.78   0.01   0.03  0.18    4.26    0.05
+CN-Hgu   upland       23  -3.70   0.03   0.05  0.24    4.27    0.11
+RU-Fy2   upland       44  -9.47   0.00   0.00 -0.24   10.03    0.01
+US-BZS   upland       13    nan  -0.01   0.01  0.41    7.29   -0.05
+US-CRT   upland       13  -8.37   0.00   0.00 -0.14    9.41    0.01
+US-EML   upland       24  -9.48   0.00   0.00  0.15    3.18    0.00
+US-Ho1   upland       67    nan  -0.07   0.05  0.01   -0.48    0.04
+US-Pfa   upland       92  -4.04   0.02   0.04  0.06    4.06    0.10
+# unscored: CH-Oe2 (<8 obs months), FI-Hyy (<8 obs months), ID-Pag (0 common months), IT-BCi (<8 obs months), JP-SwL (<8 obs months), NL-Hor (<8 obs months), RU-Cok (<8 obs months), US-EDN (<8 obs months), US-HRA (<8 obs months), US-HRC (<8 obs months), US-NGC (<8 obs months), US-OWC (<8 obs months), US-Tw3 (<8 obs months)
+
+group          n  KGEln   beta  alpha     r
+all           48   0.19   1.04   1.13   0.71
+wetland       42   0.24   1.11   1.08   0.73
+bog            6   0.19   1.09   0.89   0.74
+fen            7   0.27   0.88   0.86   0.78
+marsh          9   0.44   1.36   0.98   0.80
+swamp          5  -2.59   0.22   0.20   0.59
+wet tundra     9   0.33   1.17   1.90   0.73
+drained        5  -0.67   0.77   0.27  -0.13
+permafrost     1  -0.27   0.41   1.53   0.22
+rice           5   0.11   1.00   1.20   0.40
+lake           1  -3.48   0.03   0.06   0.24
+salt marsh     5  -2.22   0.91   0.71   0.81
+upland        11 median(model-obs)  -4.21 mg m-2 d-1; right sign 0.73; median r  0.06

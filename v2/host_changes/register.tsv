@@ -1,0 +1,62 @@
+n	commit	改动号	宿主部分做什么	性质	开关（默认）	全球基线 O-3	站点基线 O-2	与甲烷文件同提交
+01	6e07a0b0	C-11	湿地斑块泥炭出水（SoilSnowHydrology）	宿主物理	DEF_METHANE%wetland_peat_drainage（关）	开	开	是
+02	fa4c8b3d	C-12	湿地泥炭碳按地表数据剖面初始化（MOD_Initialize）与主 namelist 键	宿主物理（初值）	DEF_USE_WETLAND_PEAT_C、DEF_WETLAND_PEAT_C_PROFILE（关）	开	开	是
+03	98891b86	C-13	CoLM.F90 调用湿地植被读入、Makefile 加文件	挂接	—	—	—	是
+04	a3ec57a0	C-13	主 namelist 加站点覆盖键（后被 05 撤回）	挂接	—	—	—	是
+05	3fe00e82	C-13	撤回 04 的主 namelist 键	挂接	—	—	—	是
+06	61c79cdf	C-17	泥炭碳初值放进慢库（MOD_Initialize）	宿主物理（初值）	DEF_WETLAND_PEAT_C_PASSIVE（关）	开	开	否
+07	6e50b232	C-18	Makefile 依赖	挂接	—	—	—	是
+08	8ee7f400	C-17b	慢库播种的顶层深度	宿主物理（初值）	DEF_WETLAND_PEAT_C_PASSIVE_ZTOP	开（0.3 m）	开	是
+09	b6626424	C-19	CoLM.F90 调用湿地 LAI 缩放	挂接	—	—	—	是
+10	1db4aad3	C-20	湿地斑块氮闭合与埋藏（BGC 竞争、垂直输送）	宿主物理	DEF_METHANE%wetland_n_unlimited、wetland_n_uptake 等（关）	开	开	是
+11	d9553115	C-21	光合：WUE 下共同限制、只让叶片 PAR 进光合	宿主物理	DEF_WUE_COLIMIT、DEF_PAR_LEAF_ONLY（关）	开	开	否
+12	68025cc8	C-22	CoLM.F90 调用湿地碳库解析稳态	挂接	—	—	—	是
+13	9615dcc5	C-17c	慢库只播在泥炭份额上（MOD_Initialize 读 GLWD 份额）	宿主物理（初值）	DEF_WETLAND_PEAT_SHARE_FILE（null）	开	开（站点份额）	否
+14	967e6cb2	C-17c	13 的 MPI 名称修正	修正	—	—	—	否
+15	7d1b1a3e	C-26	湿地地面蒸发加藓与泥炭表面阻抗（SoilSurfaceResistance、Thermal）	宿主物理	DEF_METHANE%wetland_moss_rss（关）	关（D-25 不采用）	关	是
+16	fb6de1d6	C-29	CoLM.F90 读泥炭份额	挂接	—	—	—	是
+17	069b97ba	C-30	Makefile 依赖	挂接	—	—	—	是
+18	813679ef	C-31	雪导热可选 Sturm et al. (1997)	宿主物理	DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME（1）	开（2）	开（2）	否
+19	e36c86ca	C-32	宿主灌溉的稻田方式、雨养稻田埂（Irrigation、SoilSnowHydrology）	宿主物理	DEF_USE_IRRIGATION、DEF_PADDY_RICE_BUND（关）	开	开	是（rice_host_water 在甲烷模块）
+20	70db0d46	C-32	无灌溉状态的重启文件从零起	宿主修正	—	生效	生效	否
+21	574ae546	C-32b	稻田补水到饱和加 50 mm 水层	宿主物理	随 DEF_PADDY_RICE_BUND	开	开	否
+22	4ca7987d	C-32c	稻田犁底层导水率上限 3 mm/d	宿主物理	随 DEF_PADDY_RICE_BUND	开	开	否
+23	222fe8f7	C-32d	稻田饱和缺口只算犁底层以上	宿主物理	随 DEF_PADDY_RICE_BUND	开	开	否
+24	b1db69fb	C-32e	稻田灌浆起停灌放水	宿主物理	随 DEF_PADDY_RICE_BUND	开	开	否
+25	5a0caa1f	C-37	活稻根系分泌物进凋落物（BGC）	宿主物理	DEF_RICE_ROOT_EXUDATE（0）	关（挂起）	关	否
+26	f6f9f757	C-38	湿地雨养份额不接侧向补水（SoilSnowHydrology）	宿主物理	雨养份额（0）	开（PEB 份额）	开（US-Uaf）	是
+27	1eb3704a	C-44	汇流洪泛区水面蒸发（GridRiverLakeFlow）	宿主物理	DEF_FLOODPLAIN_EVAP（关）	试跑中（V-79）	—	否
+28	86d02661	Q-39	湖深按有湖深的像元取中位，缺失取 10 m（Aggregation_LakeDepth、LakeDepthReadin）	宿主修正（地表数据）	DEF_LAKEDEPTH_VALID_PIXELS（关）	关（待下次 mksrf）	—	否
+29	2314e693	C-45	双季灌溉稻：复种份额≥0.5 的灌溉稻在收获后于 pdrice2 再播（CNPhenology、CropReadin、PFTimeVariables）	宿主物理（作物）	DEF_RICE_DOUBLE_SEASON_FILE（null）	关（待 O-4）	关（待站点检验）	否
+30	3470e55c	C-45	第二季水稻到第一季播种日未收则当天收获，保第一季（CNPhenology）	宿主物理（作物）	随 DEF_RICE_DOUBLE_SEASON_FILE	关（待 O-4）	关	否
+31	488cf043	Q-33	作物 pft 不在生长期时 LAI 记 0（CoLMMAIN）	宿主物理（作物）	DEF_CROP_FALLOW_NO_LAI（关）	关（待验）	关（待验）	否
+32	2c5ced82	Q-33	水稻灌浆起点可取 namelist 值（CNPhenology、NutrientCompetition）	宿主物理（作物）	DEF_RICE_GRNFILL（−1 即 0.68）	关（待验）	关（待验）	否
+33	d01a7ad8	C-47	稻田按预计收获前 N 天放水（CNPhenology、Irrigation、SoilSnowHydrology、PFTimeVariables）	宿主物理（稻田水管理）	DEF_PADDY_DRAIN_DAYS（−1 即 C-32e）	关（待验）	关（待验）	否
+34	869657cc	Q-43	洪水回渗进被淹土壤斑块（MOD_FloodInfiltration 新模块、WATER_VSF、CoLMMAIN 水量平衡、GridRiverLakeFlow 发布淹水与扣水、Makefile）	宿主物理（水文）	DEF_FLOODPLAIN_INFILTRATION（关）	关（待验）	关（待验）	否
+35	017b6479	C-45	播种若紧接收割（第二季未出苗就在第一季播种日收割），先把残留种子碳氮退回种子池再放新种子（CNPhenology）；原码直接覆盖 leaf*_xfer 丢碳 3 gC m-2，O-4 全球在 27N 105E 报碳平衡错	宿主修错（作物）	无开关；残留为零时与原码逐位相同	—（O-4 起用）	—（逐位不变）	否
+36	2ea1a167	C-52	湿地斑块泥炭土壤剖面：mkini 读入土壤参数后按泥炭份额逐层混向 CLM4.5 有机土端元（MOD_Initialize、MOD_Namelist）	宿主物理（土壤水力与热力）	DEF_WETLAND_PEAT_SOIL（0 关）	关（待验）	关（待验）	否
+37	f6733a3f	候选 13	湿地斑块积水的地表外排：未冻时积水按水位齐地表时的泥炭出水率外排（MOD_SoilSnowHydrology、MOD_Namelist）	宿主物理（水文）	DEF_WETLAND_POND_OUTFLOW（关）	关（待验）	关（待验）	否
+38	44f90c76	候选 25	稻田种前淹水：灌溉稻离下一播种日不超过 N 天且不在生长期时田埂蓄水、按 C-32b 补水（MOD_Irrigation、MOD_SoilSnowHydrology、CoLMMAIN、PFTimeVariables、MOD_Namelist）	宿主物理（稻田水管理）	DEF_PADDY_FALLOW_FLOOD（0 关）	关（待验）	关（待验）	否
+39	42703922	候选 9	地面到参考高度的水汽阻抗按斑块留存（raw_grnd，运行期量，不进重启；MOD_Vars_1DFluxes、MOD_LeafTemperature、MOD_LeafTemperaturePC、MOD_Thermal），供甲烷键 grnd_methane_cond_host 取作有植被斑块的地面导度	宿主诊断量（只新增存值，不改宿主物理）	无开关（只存值）	不影响宿主结果	不影响宿主结果	否
+40	b3e66306	C-65	湿地下限补水按面积劈分：动态湿地斑块看作接来水份额（补到下限）与不接来水份额（雨养永冻高原，亏缺跨步保留）的面积平均，新重启字段 wetdef_noinfl（只在开时读写）（MOD_SoilSnowHydrology、MOD_Vars_TimeVariables、MOD_Namelist）	宿主物理（水文）	DEF_WETLAND_INFLOW_AREA_SPLIT（关）	关（待验）	关（待验）	否
+41	5ce6e755	C-67	湿地有限侧向来水取代下限补水（候选 17、D-20）：全球取同 element 土壤斑块上一步径流 × min(A_up/A_wet, 上限)，站点取逐月高地径流 × 站点比值；来水只进接来水份额，任何水位都进，积水满 200 mm 后当步变地表径流；新重启字段 wetlatin、history 变量 f_wetinflow（CoLMDRIVER、MOD_SoilSnowHydrology、MOD_Vars_TimeVariables、MOD_Vars_1DFluxes、MOD_Vars_1DAccFluxes、MOD_Hist、MOD_Namelist）	宿主物理（水文）	DEF_WETLAND_LATERAL_INFLOW（关）	关（待验）	关（待验）	否
+42	ccc8c37c	C-71	C-67 分支里开阔 bog 份额不接侧向来水，并在该份额深于 z_bog 时按份额补到 z_bog（MOD_SoilSnowHydrology）；须与甲烷提交 a15b12e7 同用	宿主物理（水文）	随 DEF_METHANE%wetland_max_wtd_bog_share（−1 关）	关（待验）	关（待验）	否
+43	373faf8a	C-73	洪泛回渗守恒（Q-47 改法 ①）：回渗按斑块所见漫滩水分到输入格、再按单元流域漫滩水分到单元流域，扣不足结转不丢，年日志加"carried over"（MOD_Grid_RiverLakeFlow、MOD_Grid_RiverLakeTimeVars、MOD_Namelist）	宿主物理（水文，修错）	DEF_FLOODPLAIN_INFILT_FIX（关；只在 DEF_FLOODPLAIN_INFILTRATION 开时起作用）	关（待验）	关（待验）	否
+44	efe04028	C-73	洪泛回渗停泵（Q-47 改法 ⑥）：一次洪水的累计回渗不超过新增淹没比例 × 当时水位以上的孔隙亏缺，退水清零；重启字段 fld_inf_left、fld_frc_evt（MOD_SoilSnowHydrology、MOD_Vars_TimeVariables）	宿主物理（水文，修错）	同上	关（待验）	关（待验）	否
+45	069a2729	C-73	发给土壤斑块的淹没比例扣掉格内湖泊与湿地面积及常年淹水单元流域，回渗只从非常年淹水单元扣（Q-47 改法 ④）；汇流重启字段 acc_inf_uc、fld_perm_year、fld_fmin_uc、fld_fmax_uc、fld_perm_uc（MOD_Grid_RiverLakeFlow、MOD_Grid_RiverLakeTimeVars）	宿主物理（水文，修错）	同上	关（待验）	关（待验）	否
+46	aa396365	C-74	spin 回绕时若本轮没经过 1 月 1 日首步，照 1 月 1 日写法结一次积温年（gdd020/gdd820/gdd1020 更新、nyrs 加一、gdd0/8/10 清零）；只作用于强迫不足一年、spin 窗口不含 1 月 1 日的塔（MOD_BGC_Veg_CNPhenology、CoLM）	宿主物理（作物物候，修错）	无开关（修错；窗口含 1 月 1 日的塔与全球逐位不变）	不影响（每轮都过 1 月 1 日）	JP-Mse、US-HRA、US-HRC、CH-Oe2 的作物成熟积温由常数项 587 等改为按气候	否
+47	06c6a351	C-77	单点湿地积水目标（D-62 ⑤）：`DEF_WETLAND_POND_TARGET_SITE` 开时湿地斑块补水到目标积水深度（不超过 wetwatmax），取代类下限与侧向来水分支，补水记外来水（MOD_SoilSnowHydrology、MOD_Namelist）	宿主物理（水文，站点表示）	DEF_WETLAND_POND_TARGET_SITE（−1 关，只在单点）	不影响（全球不取）	管理沼泽塔（`v2/results/marsh_sites_260929.tsv`）	否
+48	7034143c	C-80	单点湿地积水上限（D-62 ⑤ 续）：`DEF_WETLAND_POND_MAX_SITE` 开时动态湿地斑块的积水上限由 wetwatmax（200 mm）换成该值，作用于当步超上限外排与 C-77 积水目标的截断；非动态湿地桶、流域侧向流与甲烷 wetwat 覆盖仍用 wetwatmax（MOD_SoilSnowHydrology、MOD_Namelist）	宿主物理（水文，站点表示）	DEF_WETLAND_POND_MAX_SITE（−1 关，只在单点）	不影响（全球不取）	管理沼泽塔实测积水深于 0.2 m 者（`v2/results/marsh_sites_260929.tsv`）	否
+49	238e3e54	C-81	积水热容（用户 2026-09-29 选甲-0）：`DEF_PONDING_HEAT` 开时土壤、城市、湿地斑块（patchtype ≤ 2）上一步的积水 wdsrf 并进第 1 层土热容 cv(1) + cpliq·wdsrf，积水与第 1 层土同温；积水自身不冻融；能量检查用同一 fact(1) 仍闭合（MOD_GroundTemperature、MOD_Thermal、MOD_Namelist）	宿主物理（土壤热量）	DEF_PONDING_HEAT（.false. 关）	关（待验）	有积水的塔：管理沼泽、稻田	否
+50	da264464	C-81	C-81 修错：无雪时求解器把第 1 层热容按 0.5(z1 + capr·z2)/dz1（缺省节点 0.47）缩小以贴近地表，原写法在缩放前加积水只算进 47 %；改为在缩放后的有效热容 deltim/fact(1) 上加整份 c_liq·wdsrf，有雪时仍并进 cv(1)（该层不缩放）（MOD_GroundTemperature）	宿主物理（土壤热量，修错）	同第 49 行	关（待验）	同第 49 行；V-139 用的是修错前的 47 % 版本	否
+51	f00df6f3	C-82	积水湿地地面的枯落物阻抗（用户 2026-09-29 选"1"）：`DEF_WETLAND_POND_LITTER_RSS` 开时湿地斑块（patchtype 2）积水超过 1 mm，以该值为土壤表面阻抗下限，积水在挺水冠层下的蒸发经枯落物与立枯（Goulden et al. 2007）；C-26 苔藓下限与之取大（MOD_Thermal、MOD_Namelist）	宿主物理（地表能量）	DEF_WETLAND_POND_LITTER_RSS（0 关）	关（待验）	有积水的湿地塔，主要是管理沼泽	否
+52	4355c071	C-83	塔上湿地植被覆盖度（D-63 ①）：单点键 `DEF_WETLAND_FVEG_SITE` 开时湿地斑块 fveg 取实测盖度；现码 fveg 对湿地斑块无物理去向（sigf 由积雪比例重算、冠层铺满斑块），故在 albland 以 lai/fveg、sai/fveg 解两流并与开阔地面按面积合成，在 THERMAL 按单位冠层面积解叶温后冠层通量、同化、呼吸、叶面水乘 fveg，地面与湍流量与 [3] 的裸地值加权，raw_grnd 两导度并联；tlai、tsai 仍存斑块平均（MOD_LAIReadin、MOD_Albedo、MOD_Thermal、MOD_Namelist）	宿主物理（冠层辐射与通量，站点表示）	DEF_WETLAND_FVEG_SITE（−1 关，只在单点）	不影响（全球不取）	管理沼泽塔（盖度 0.454–0.970）	否
+53	c1da236a	C-83	C-83 与 C-82 的衔接：开阔水部分（[3] 的裸地通量）用只含苔藓下限的 rss_open，枯落物阻抗只作用于冠层部分（Goulden et al. 2007 开阔水 8–21 s m−1）；条件不满足时 rss_open 即 rss（MOD_Thermal）	宿主物理（地表能量）	随第 51、52 行两键	不影响	同第 52 行	否
+54	7dd1924d	C-86	枯落物阻抗只作用于温带沼泽类：有甲烷模块时，湿地斑块不属温带沼泽类（`wetland_is_temperate_marsh`，甲烷 6fef5f58）则枯落物下限置 0，苔原与北方泥炭夏季积水照旧（MOD_Thermal）	宿主物理（地表能量）	随第 51 行键	不影响（全球该键关）	温带沼泽类湿地塔	否
+55	8452054b	C-88	积水枯落物阻抗乘湿地斑块的挺水沼泽份额（`wetland_emergent_share`，甲烷 ae6c3f60）：维度键开时为 GLWD 17 类份额或站点值，关时为温带沼泽类的 1 或 0，与 C-86 逐位相同（MOD_Thermal）	宿主物理（地表能量）	随第 51 行键与甲烷 `wetland_dim_class`	不影响（全球该键关）	挺水沼泽塔	否
+56	95e4985b	C-91	热带泥炭土壤端元：`DEF_WETLAND_PEAT_TROP_LAT` 开时，纬度在其内的湿地斑块泥炭土按热带上层与下层端元（`DEF_WETLAND_PEAT_TROP_ACRO`、`_CATO`：孔隙度、b、饱和吸力 mm、饱和导水 mm/s）混合，替代 CLM4.5 北方纤维质与腐殖质端元；上层给水度由 0.50–0.68 回到热带实测 0.14–0.29（Cobb & Harvey 2019、Apers et al. 2022）；缺省为原 CLM4.5 值、键关逐位不变（MOD_Initialize、MOD_Namelist）	宿主物理（土壤水力，初始化）	DEF_WETLAND_PEAT_TROP_LAT（−1 关）	需冷启动（改初始化土壤参数）	热带泥炭塔 ID-Pag、MY-MLM	否
+57	fb9279b3	C-94	van Genuchten α 单位修正（Q-58，上游 CoLM202X 自 2022 起的错）：`DEF_VG_ALPHA_MM` 开时读入 α 除以 10（1/cm → 1/mm，与 ψ 的 mm 口径一致），田间持水三处 339.9 cm 改 3399 mm，泥炭混合 `10/psuc` 改 `1/psuc`，TR13 土壤蒸发阻抗改用 1/m 口径；关时原式逐字保留（MOD_SoilParametersReadin、MOD_Initialize、MOD_SoilSurfaceResistance、MOD_Namelist）	宿主物理（土壤水力，修错，全模型）	DEF_VG_ALPHA_MM（.false. 关）	需冷启动（初始化参数与 wfc 改）	全部站点与全球	否（上游共有的错，可反馈上游）
+58	cb9f94d8	C-95	双季灌溉稻第二季改在头季收获后播：`DEF_RICE_SECOND_SOW_DAYS` ≥ 0 时头季收获后 N 天（整地期）播第二季，条件是到下次头季日前按正弦年循环（annavg_tref 与 gdd020）估的积温不低于刚收那季的成熟积温；不在头季日播的即第二季，到头季日还在长的照 C-45 当日收；键开时候选 25 休耕淹水只看头季日。原 C-45 只在日历日 pdrice2 播，pdrice2 为 0.5° 年内日的面积平均，39 % 标记面积落在头季内、29 % 跨年被平均到年中、中国 55 % 在 2–4 月，全球标双季面积只有 33–35 % 真种上（MOD_BGC_Veg_CNPhenology、MOD_Irrigation、MOD_Namelist）	宿主物理（作物物候）	`DEF_RICE_SECOND_SOW_DAYS`（−1 关）	续跑可用（无新状态量与重启字段）	稻田塔 PH-RiF	否
+59	6cf2b143	C-98	湖面净蒸发进汇流收支（I-29，修水量不闭合）：原写法湖泊斑块径流取 max(0, P − E − Δ)，负的部分记 lake_deficit 当补回的水、xerr 置 0（CoLMMAIN.F90:1971–1982、2004–2008、2022–2026），汇流里湖全当河道；`DEF_LAKE_EVAP_ROUTING` 开时 lake_deficit 走与径流相同的映射，在汇流步先于 C-44、Q-43 从同一单元储量扣（最多扣到 0），扣不足记账结转（重启字段 acc_ldef_uc），每年日志报亏缺、入网、已扣、年末仍欠；C-44 的淹水面积先减去映射到该单元的湖泊斑块面积，免同一湖面蒸发两次；开动态湖泊时强制关（MOD_Namelist、MOD_Grid_RiverLakeTimeVars、MOD_Grid_RiverLakeFlow）	宿主水文（汇流水量守恒，修错）	`DEF_LAKE_EVAP_ROUTING`（.false. 关）	续跑可用（新重启字段只在开时读写）	无（单点无汇流）	否（上游共有，可反馈）
+60	09e80350	C-99	动态湿地斑块冻土上方的栖留水位（I-25）：原 WATER_VSF 开头的水位一致性检查把水位推到每个未被液态水饱和的层之下，冰层恒算未饱和，冻土上水位每步被推到柱底 3.433 m，湿地分支因此永远走下限回灌、C-11 出流在冻土上从未执行（MOD_SoilSnowHydrology.F90:1199–1205、1362）；`DEF_WETLAND_PERCHED_DRAINAGE` 开时一致性检查跳过不透水层，水位留在栖留饱和带顶，C-11 透水率只积分到水位以下第一个冻结或不透水层顶面，下限回灌、C-11、C-67 作用于此水位（MOD_SoilSnowHydrology、MOD_Namelist）	宿主物理（土壤水文，修错）	`DEF_WETLAND_PERCHED_DRAINAGE`（.false. 关）	续跑可用（无新重启字段）	苔原与永冻塔	否（上游共有，可反馈）
+61	2f4ed528	C-100	洪泛回渗取淹水比例上限（I-28 的宿主半）：`DEF_METHANE%floodplain_glwd_cap_file` 开时，C-50 回渗所用的格点淹水比例与甲烷模块同样截到 GLWD 8–15、30 类面积份额上限（宿主数组 fld_cap_p），汇流蓄水、水位、流量与 C-44 蒸发不动，汇流按实际回渗量扣水（MOD_Grid_RiverLakeFlow、MOD_FloodInfiltration）	宿主水文（洪泛回渗）	`DEF_METHANE%floodplain_glwd_cap_file`（'null' 关）	续跑可用	无（单点用站点洪泛序列）	否

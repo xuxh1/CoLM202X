@@ -1,0 +1,392 @@
+# 湿地来水文献调研：汇水面积比、HAND 与河网交换
+
+## 0. 覆盖面
+
+- **本地全文**：Fan 2011、Yazbeck 2025、Stocker 2014、Zhang 2016。先读本地 txt，再用 PyMuPDF 逐页抽 PDF 核对页码。
+- **联网取到全文**：匿名 curl，无邮箱、无个人信息。共九篇：
+  - Hayashi 2016
+  - Lambert 2022
+  - Ketcheson 2015 博士论文
+  - Brinson 1993
+  - Winter 1999
+  - Nobre 2011
+  - Tootchi 2019
+  - Liao 2025
+  - Decharme 2012
+- **只读到摘要**：
+  - Winter 2001、Winter 2000
+  - Swenson 2019（Wiley 返回 403）
+  - Dadson 2010（NORA 无全文）
+  - Yamazaki 2011（闭源）
+  - Xu 2022（OSTI 超时）
+- **正文和摘要都没读到**：
+  - Rennó 2008：出版方闭源，Crossref 和 OpenAlex 都没有摘要。只能经 Nobre 2011 转述。
+  - Price et al. 2010：比值是经 Ketcheson 2015 转引的。
+- **代码**（读码）：
+  - CTSM：`~/mode/Wetland/CTSM` @7409d321
+  - CoLM202X-lean：分支 methane-lean @1829600a
+- **页码与著录**：页码一律是期刊印刷页码，按 PDF 页定位。著录字段取自 Crossref 或 OpenAlex；Brinson 1993 与 Ketcheson 2015 无 DOI，已注明落地链接。
+- **临时文件**：只写在 scratchpad/，内容是下载的 PDF 和 txt。
+
+## 1. 汇水面积与湿地面积之比
+
+### 1.1 Hayashi, van der Kamp & Rosenberry 2016, Wetlands 36(Suppl 2):S237–S254
+
+- **DOI**：10.1007/s13157-016-0797-9
+- **全文/摘要**：全文
+- **水量平衡式**（Eq. 1，p.S239）：
+  - ΔS/Δt = Aw(P−E) + (Ac−Aw)R + G + O
+  - Aw 是湿地面积；Ac 是按地表分水岭划的汇水面积，包含湿地。
+  - R 是高地单位面积产流。
+- **稳态简化**（Eq. 8，p.S246）：适用于闭流域的长期稳态，此时 G 远小于其他项（冰碛渗透性低），O = 0。得到 (Ac−Aw)R ≅ Aw(E−P)。
+- **面积比**（Eq. 9，p.S246）：Aw/Ac ≅ R/(E−P)。
+- **原文数字**（p.S247）：
+  - 耕地高地的年产流：实例为 24、17、70、6–20 mm/yr，概括为"20 to 70 mm"。
+  - E−P：从干区 400 到湿区 200 mm/yr；北达科他为 270 mm/yr。
+  - 由 Eq. 9 得 Aw/Ac 为 5–35 %。
+  - 实测值：
+    - 12 块湿地平均 11 %
+    - Iowa 9 %
+    - 加拿大 PPR 平均 8 %（5–10 %）
+    - Cottonwood Lake 18 %
+    - Smith Creek 1958 年 24 %
+  - 综合结论为 5–25 %。
+- **结论句**（p.S251）："prairie wetlands require catchments that are roughly 3 to 20 times larger than the areas of those wetlands"。
+
+### 1.2 Lambert, Larocque, Gagné & Garneau 2022, Front. Earth Sci. 10:835817
+
+- **DOI**：10.3389/feart.2022.835817
+- **全文/摘要**：全文
+- **研究对象**（表1，p.3）：魁北克中北部两块北方泥炭地。
+
+  | 泥炭地 | 泥炭地面积 | 汇水面积 | 汇水/泥炭地（我算的） |
+  |---|---|---|---|
+  | Misask | 0.102 km² | 0.226 km² | 约 2.2 |
+  | Cheinu | 0.147 km² | 0.487 km² | 约 3.3 |
+
+- **稳态 MODFLOW 水量平衡**（p.9–10）：
+  - Misask：入流以就地补给为主，占 78 %；地下水入流 129 mm/yr，占 22 %。
+  - Cheinu：地下水入流 544 mm/yr，占 56 %。
+- **原因与敏感性**（p.12）：
+  - 作者把两地差异归于三点：汇水面积、坡度对比（6.7 % 对 0.5 %）、在区域流中的位置。
+  - 补给减少 50 % 时，泥炭地水头变化小于 10 cm。
+
+### 1.3 Ketcheson 2015，Univ. Waterloo 博士论文
+
+- **DOI**：无，落地链接为 uwaterloo.ca/wetlands-hydrology/sites/default/files/uploads/files/ketcheson_scott.pdf
+- **全文/摘要**：全文；它转引的 Price 2010 原文未读。
+- **页码**：印刷 p.20，§2.6。
+- **设计比值**：转引 Price et al. 2010 与 Rooney et al. 2012，Nikanotee 人工 fen 的数值模拟给出"minimum ~2:1 (3:1 is optimal) upslope to fen peatland ratio"。
+- **同段的限定与反例**：
+  - 该比值还受衬底和高地含水层渗透系数的控制。
+  - Western Boreal Plain 的健康 fen "often in the absence of water contributions from groundwater and adjacent hillslopes"（引 Riddell 2008；Smerdon 2008）。
+  - 储水能力强、实际蒸散受限，同样能维持 fen。
+
+### 1.4 Brinson 1993, Technical Report WRP-DE-4, US Army Corps WES
+
+- **DOI**：无，govinfo 编号 GOVPUB-D103-PURL-LPS75620
+- **全文/摘要**：全文（扫描件 OCR）
+- **三种水源**（p.32）：
+  - (a) 降水
+  - (b) 地下水排泄
+  - (c) 地表或近地表来水，包括潮汐、河道漫滩、坡面流或壤中流
+- **水量平衡脚注**（p.32）：dS = PR + Si + GWi + NCi − ET − So − GWo − NCo。
+- **三角图**（Fig. 12，p.37）：表示三种水源的相对贡献；雨养 bog 没有地下水和上游来水。
+
+### 1.5 Winter 的景观位置概念
+
+**Winter 1999, Hydrogeol. J. 7:28–45**
+
+- **DOI**：10.1007/s100400050178
+- **全文/摘要**：全文
+- **坡折处湿地**（p.31）：地下水位向上坡折处有上涌，导致"presence of wetlands at the edges of river valleys and other flat landscapes adjacent to uplands"。
+- **局地流系统**（p.34）："Groundwater from local flow systems discharges into nearly all the lakes and wetlands, whether topographically high or low"。
+- **Cottonwood Lake**（p.38）：当地 E 比 P 大约 300 mm。季节性坑塘多数向地下水补给，补给主要流向附近更永久的湿地。
+- **坑塘的地下水交换**（p.43）：受冰碛低渗透限制。
+
+**Winter 2001, JAWRA 37:335–349**
+
+- **DOI**：10.1111/j.1752-1688.2001.tb00973.x
+- **全文/摘要**：只读摘要
+- **要点**：基本水文景观单元 = 高地 + 中间陡坡 + 低地。用地面坡度、土壤与地质水力性质、P−ET 来刻画。
+
+**Winter 2000, JAWRA 36:305–311**
+
+- **DOI**：10.1111/j.1752-1688.2000.tb04269.x
+- **全文/摘要**：只读摘要
+- **要点**：分六类水文景观。主要靠降水的湿地对气候最脆弱，靠区域地下水排泄的最不脆弱。
+
+### 1.6 未找到的
+
+没有找到给出芬兰 aapa mire 汇水/沼泽面积比数值的开放全文。Sallinen et al. 2023, J. Hydrol. 617:129022 是 CC BY，但 ScienceDirect 返回 403。
+
+## 2. 用 HAND 或地形指数识别地下水湿地
+
+### 2.1 Fan & Miguez-Macho 2011, Clim. Dyn. 37:253–278（2010 年在线）
+
+- **DOI**：10.1007/s00382-010-0829-8
+- **全文/摘要**：全文（本地）
+
+**来水机制分类**
+
+原文是四个端元，不是三个："Type-A: mostly precipitation and local surface/subsurface runoff-fed, Type-D: mostly surface water-fed but groundwater-supported, Type-E: mostly groundwater-fed, and Type-F: mostly frozen ground-supported"（定义见 p.256，总结见 p.274）。
+
+- **A 类**：坑塘和雨养 bog。汇水小，悬于区域水位之上。见 p.254–255 与 §2.1（p.257–258）。
+- **D 类**：沿干流分布，河水供水、地下水托底。见 p.254–255 与 §2.2（p.258）。
+- **E 类**：离大河远，只靠地下水。见 §2.3（p.258–259）。
+- **F 类**：靠冻土阻排维持，是一种阻排机制，不是水源。见 §2.4（p.259）。
+
+按"来水"算，就是 A、D、E 三类。另外，原文引 Walter 2001 说，干旱区要生成湿地，必须经河道和地下水获得侧向来水（p.254）。
+
+**地下水侧流式**
+
+- Eq. 1，坡地格：R Δx Δy = Σ Q
+- Eq. 2，谷地和海岸格：Σ Q = Qr（Qr 是上涌进河道和湿地的量）
+- Eq. 3，格间 Darcy + Dupuit–Forchheimer：Q = w T (h − hn)/l
+- Eq. 4a–c，导水系数：T = T1 + T2，T1 = K0(d0 − d1)，T2 = K0 f
+- Eq. 5：K = K0 exp(−z′/f)
+- Eq. 6，水位在已知 K 的层以下时：T = K0 f exp(−(z − h − d0)/f)
+- Eq. 7：f = 100/(1 + 150 s)，f ≥ 2.5 m
+- Eq. 8a–b，冻土修正，T 为 1 月气温：
+  - −14 < T < −5 °C 时，fT = 1.5 + 0.1T
+  - T < −14 °C 时，fT = 0.17 + 0.005T，且 fT ≥ 0.05
+- 页码：Eq. 1–3 在 p.261，Eq. 4–6 在 p.262，Eq. 7–8 在 p.263。
+
+**在 GCM 格点尺度怎样参数化**
+
+原文没有给 GCM 格点参数化。实际做法是离线、30″（约 1 km）、平衡态：
+
+- 补给取 R = P − ET − Qs，数据来自 GLDAS 的三个陆面模式；最小补给设为 10 mm/yr（p.265）。
+- 海岸设零水头边界，迭代到 Δh < 1 mm；河道和湿地格的水位钉在地表（p.267）。
+- 湿地判据是水位埋深 < 0.25 m（p.270）。
+- 分辨率影响：30″ 网格的湿地面积是 9″ 的 2.8 倍，而且漏掉 30–200 m 大小的坑塘（p.273）。
+- 对 TOPMODEL 的批评："without model cell to cell flow, the local water table has no communication to remote recharge or discharge zones and to the sea level"（p.260）。
+- 结论（p.274）：小湿地靠"Sub-grid characterization, as commonly applied in global models"；长远应在模式里显式做地下水质量平衡。
+
+### 2.2 Nobre et al. 2011, J. Hydrol. 404:13–29
+
+- **DOI**：10.1016/j.jhydrol.2011.03.051
+- **全文/摘要**：全文
+- **定义**：HAND 是每个 DEM 格相对其沿流向最近排水格的高差（算法出自 Rennó 2008，见 p.15 Fig. 2）。
+- **阈值标定**（中亚马孙 Asu 流域，90 m SRTM，p.18–19）：
+  - waterlogged、ecotone、upland 三类的分界为 5.3 m 与 15.0 m（初猜 5 m 和 15 m，再用 simplex 优化）。
+  - upland 再按坡度 7.6 % 分成 slope 和 plateau。
+- **与水位的关系**（p.20）：
+  - 27 个测压管的长期水位埋深对 HAND：y = 0.658x − 2.89，R² = 0.806。
+  - 对 SRTM 海拔：R² = 0.674。
+- **验证与对比**：
+  - 在下 Rio Negro 约 18,000 km² 范围验证（摘要，p.13）。
+  - HAND 与 TWI 没有显著相关（p.25）。
+- **关键自由参数**（p.26）：唯一的确定性阈值是河道起始的汇水面积阈值。
+- **应用前景**（p.27）：可用于为 ESM 从细尺度向上推参数。
+
+### 2.3 Rennó et al. 2008, Remote Sens. Environ. 112(9):3469–3481
+
+- **DOI**：10.1016/j.rse.2008.03.018
+- **全文/摘要**：未读到（闭源，也无摘要）
+- **要点**：HAND 算法的原始出处。Nobre 2011 的 Fig. 8 引用了它的四类环境 HAND 箱线图（p.18）。
+
+### 2.4 Tootchi, Jost & Ducharne 2019, ESSD 11:189–220
+
+- **DOI**：10.5194/essd-11-189-2019
+- **全文/摘要**：全文
+- **没有用 HAND**。地下水型湿地（GDW）走两条路：
+  1. **水位法**（p.198）：用 Fan et al. 2013 的全球水位埋深，取 ≤ 20 cm，占陆地 15 %。阈值在 0–40 cm 之间变动时，占比只在 13.7–16.7 % 之间变。
+  2. **地形指数法**：
+     - TI = ln(a/tanβ)（Eq. 1，p.190）
+     - TCI = ln(a·Pe/tanβ) = TI + ln Pe，其中 Pe = Σ max(0, P − PET)（Eq. 2–3，p.195）
+     - TCTrI = TI + ln Pe − ln Tr（Eq. 4，p.195）
+     - 阈值取成让湿地占陆地的给定比例。
+- **合成结果**（摘要，p.189）：
+  - 组合湿地图 27.5 和 29 Mkm²，分别占陆地 21.1 % 和 21.6 %。
+  - GDW 占 15 %，定期淹水湿地（RFW）占 9.7 %，两者重叠约 3.4 %。
+- **与你的设计相关**：TCI 里的 a·Pe 就是"上游汇水面积 × 有效降水"。
+
+### 2.5 Swenson, Clark, Fan, Lawrence & Perket 2019, JAMES 11(12):4044–4065
+
+- **DOI**：10.1029/2019MS001833
+- **全文/摘要**：只读摘要
+- **要点**：
+  - CLM5 把每格分解为一条或多条多柱坡面，柱间饱和侧流传给下坡相邻柱。
+  - 高地与低地的 ET 差在干旱半干旱区最大；湿热带和高纬低地的 ET 增加有限。
+- **读码补充**（CTSM `src/biogeophys/SoilHydrologyMod.F90`，SubsurfaceLateralFlow，2203–2232 行）——已验证（读码）：
+  - 柱间水头梯度 = [(hill_elev − zwt) − (下坡柱 hill_elev − zwt)] / 距离。
+  - 最低柱与河道之间：梯度 = [(hill_elev − zwt) − min(河水深 − 满槽深, 0)] / hill_distance。
+  - 河道有水时梯度可以为负，即失水河；此时加一项 −1/k_anisotropic（2227 行）。
+  - 注释写明"ignore overbankfull storage"（2219 行），即漫滩水不回灌到土柱。
+  - 2239 行注释把 hill_elev 叫作"hand"，说明它就是 HAND。
+- **技术手册**（`doc/source/tech_note/Hillslope_Hydrology/*.rst`）：
+  - Eq. hh.eqn.1 是 Darcy 式。
+  - Eq. hh.eqn.2 是河道几何：W = cw A^0.6，D = cd A^0.4。
+  - 手册里 "Swensonetal2019b" 的引文链接指错了，指向一篇生物量热储存论文。
+
+### 2.6 Liao, Leung, Fang, Tesfa & Negron-Juarez 2025, GMD 18:4601–4624
+
+- **DOI**：10.5194/gmd-18-4601-2025
+- **全文/摘要**：全文
+- **ELM 默认排水的局限**（p.4603–4604）：默认式为 Qdrai = Θice Qdrai,max exp(−fdrai z∇)（Eq. 1–4，p.4603）。原文列出四点：
+  - 不处理水位高于地表的情况
+  - 忽略含水层性质
+  - 洪水期不能出现"losing-stream"
+  - 没有空间连通
+- **新坡面侧流（HLGF）的限制**（p.4605–4606）：
+  - 用河道水位作坡脚边界。
+  - 但"only sends one-way lateral flow from ELM to MOSART"。
+  - 单坡面配置下"the river is always a 'gaining' stream"。
+- **讨论中的改进方向**（p.4615）：按每一对坡面与河段分别算水头差，得水河和失水河才能同时存在；也提到 HAND 可作为更细的连接方式。
+
+## 3. 河网洪水或回水进入湿地
+
+### 3.1 Decharme et al. 2012, Clim. Dyn. 38:1389–1412
+
+- **DOI**：10.1007/s00382-011-1054-9
+- **全文/摘要**：全文
+- **ISBA-TRIP 双向洪泛方案**（p.1392）：
+  - TRIP 增加一个漫滩库 F：∂F/∂t = QF_in − QF_out + Pf − If − Ef（Eq. 4）。
+  - 漫入和漫出：Q = v/(W+Wf)·Mf，其中 Mf = ρw Lf W (hs − hc − hf)（Eq. 5–6）。
+  - 流速 v 用 Manning 公式算（Eq. 7）。
+- **回渗条件**（p.1392）：
+  - 回渗 If 只在淹水分数 fflood 大于土壤饱和分数 fsat 时发生，还受最大入渗能力限制。
+  - 原文："the floodplains cannot infiltrate the fraction of the grid-cell for which the soil is saturated"。
+- **效果**（摘要 p.1389，结论 p.1408）：
+  - 122 个站里，一半以上的流量效率提高，只有 4 % 变差。
+  - 机制是蒸散增加，以及洪峰被削平。
+
+### 3.2 Dadson et al. 2010, JGR-Atmos 115(D23)
+
+- **DOI**：10.1029/2010JD014474
+- **全文/摘要**：只读摘要
+- **要点**：
+  - JULES（PDM + G2G）加了漫滩参数化，用亚格网地形的两参数分布给出淹没面积。
+  - 尼日尔内陆三角洲在最大淹水期，陆气水通量翻倍。
+
+### 3.3 Yamazaki, Kanae, Kim & Oki 2011, WRR 47(4)
+
+- **DOI**：10.1029/2010WR009726
+- **全文/摘要**：只读摘要
+- **要点**：
+  - CaMa-Flood 用 1 km DEM 的亚格网地形，确定储量、水位、淹没面积三者关系。
+  - 用扩散波方程实现回水效应。
+  - 亚马孙淹没面积与卫星的相关好，且依赖回水效应。
+
+### 3.4 Xu, Bisht, Zhou, Leung & Pan 2022, JAMES 14(8):e2021MS002772
+
+- **DOI**：10.1029/2021MS002772
+- **全文/摘要**：只读摘要
+- **要点**：
+  - E3SM 做了陆地与河流的双向耦合。
+  - 新淹没方案能解释 96 % 的卫星淹没变化，默认方案只有 7 %。
+  - 约五分之一的陆地格，水循环和能量循环被改变。
+
+### 3.5 Yazbeck et al. 2025, JAMES 17:e2024MS004396
+
+- **DOI**：10.1029/2024MS004396
+- **全文/摘要**：全文（本地）
+- **结构**：
+  - 在格内另立一个 wet-landunit。
+  - 每种湿地斑块类型（WPT）各有一个土柱。
+  - 底部两层设为近不透水层。
+- **水文强迫只有文字描述，没有式号**（p.5–6）。两种选项：
+  - **① 预报**：关掉径流，直到水面达到该斑块的最大淹水深。最大淹水深是不随时间变的参数，取 CRMS 十年月均水深的 98.5 百分位（p.8）。
+  - **② 给定**：读入场站水面高程时间序列，按各斑块最大淹水深的差做高程偏移；亚淹没斑块强制水位，淹没斑块强制水面。
+  - 潮汐原则上可用高频强迫实现，但没测试；没有做盐度强迫（p.6）。
+- **侧流怎么处理**（p.14）：US-LA2 站的水主要来自密西西比河的 Davis Pond 分洪。模式本身不解侧流，只靠强迫水位间接计入。
+- **原文数字**（p.10）：
+  - ELM-Wet-NoWF 与 ELM-Wet 参数相同、只是不强迫水位，其 FCH4 RMSE = 126.7，比 ELM-Wet 高 150 %。
+  - ELM-Wet 的回归斜率 0.72，最接近 1。
+- **注意**：文中 Eq. (1)(2) 是通气组织传输，不是水文式。
+- **综述段**（p.3）：各陆面模式的淹水深都是柱内降水、入渗、蒸发、径流的局地平衡，"riverine transport of water ... are not directly represented"。
+
+### 3.6 CoLM202X-lean 代码现状
+
+- **位置**：`main/MOD_SoilSnowHydrology.F90`
+  - WATER_2014：382–425 行
+  - WATER_VSF：1043–1087 行
+- **回渗条件**：在 CaMa_Flood 编译宏和 LWINFILT 开关下，要同时满足三个条件才算回渗：
+  - flddepth > 1e-6
+  - fldfrc > 0.05
+  - patchtype == 0
+- **算法**：qinfl_fld = (gfld − rsur_fld)·fldfrc。
+- **结论**：湿地斑块（patchtype 2）拿不到 CaMa 回渗——已验证（读码 387 行与 1048 行）。
+
+## 4. 格内 TOPMODEL 湿地份额是否等价于侧向来水
+
+### 4.1 Stocker, Spahni & Joos 2014, GMD 7:3089–3110
+
+- **DOI**：10.5194/gmd-7-3089-2014
+- **全文/摘要**：全文（本地）
+- **淹水份额的式子**：
+  - Eq. 1：CTIi = ln(ai/tanβi)
+  - Eq. 2：CTI*x = CTIb − M·Γx。CTIb 是整个一级流域的平均值，"the catchment area may extend beyond the model grid cell"。
+  - Eq. 3：f̂x = (1/Ax) Σ A*i，条件为 CTIi ≥ max(CTI*x, CTImin)。
+  - Eq. 4：fxmax，只用 CTImin 作条件。
+  - Eq. 5：Ψx(Γ) = [1 + vx e^{−kx(Γ−qx)}]^{−1/vx}
+  - Eq. 6：fx,m = min(Ψx(Γx,m), fxmax)
+- **参数**（表1）：M = 8，CTImin = 12，λ = 2，N = 18。
+- **湿地水位怎样得到**：
+  - Eq. 8：Γ = fpeat Γpeat + fmineral Γmineral + foldpeat Γoldpeat。
+  - Γpeat 按 Wania 2009b 的 Eq. 22 算。
+  - Eq. 10，矿质土：Γmineral,m = −zl0 + (1/Nm) Σ Σ Wl,d Δzl/φ + runoff_m/φ。
+  - Eq. 11，有效土深：z* = zl0 − (zl0 − zmax) e^{−λθ}。
+- **有没有显式来水项**：没有。
+  - 进入指数的只有本格的月径流。
+  - TOPMODEL 只"implicitly"在流域内按地形再分配，而且"Neglecting ... river routing"（p.3090）。
+- **原文承认的局限**：
+  - 沿 Amazon、Mississippi、Euphrates、Ganges、Brahmaputra，以及 Paraná、Pantanal、Lake Chad 的高淹没值，模式模拟不出来（p.3103）。
+  - 大流域退水过快，因为不含下游再分配的时间动态（p.3104）。
+- **页码**：Eq. 1–2 在 p.3092，Eq. 3–4 在 p.3093，Eq. 5–9 在 p.3094，Eq. 10–11 在 p.3095。
+
+### 4.2 Zhang, Zimmermann, Kaplan & Poulter 2016, Biogeosciences 13:1387–1408
+
+- **DOI**：10.5194/bg-13-1387-2016
+- **全文/摘要**：全文（本地）
+- **湿地份额的式子**：
+  - Eq. 2：λl = ln(αl/tanβl)
+  - Eq. 3：λl − λm = f(zl − zm)
+  - Eq. 4：Fwet = ∫ pdf(λ) dλ
+  - Eq. 5：Fwet = Fmax e^{−Cs f (λl − λm)}
+  - Eq. 6：Fmax = max(A_GLWD, max A_SWAMPS-GLWD)
+  - Eq. 7：冻土时 f 乘以修正系数 k。
+  - Eq. 8：有效湿地 Fwet_eff = ωliq/(ωliq+ωfroz)·Fwet
+- **湿地水位 zm 怎样得到**：
+  - 取自 LPJ 两层桶模型，原文没给式子。
+  - 明确假设"water is stagnant within each grid"；平均 CTI 可以按格算，也可以按流域算（p.1393）。
+  - Fmax 的校准同样基于"水在格内静止"的假设（p.1391）。
+- **有没有显式来水项**：没有。
+- **其他数字**：
+  - Fmax 全球约 10.3 Mkm²（p.1398）。
+  - 导言说 TOPMODEL 类方案一致高估湿地范围和淹水历时（p.1388）。
+- **页码**：Eq. 1 在 p.1389，Eq. 2–5 在 p.1390，Eq. 6–8 在 p.1391。
+
+## 5. 对两种设计的含义
+
+**方案一："周边高地产流 × 汇水面积 ÷ 湿地面积"作为湿地来水**
+
+- **支撑**：这个式子与 Hayashi Eq. 1 里的 (Ac−Aw)R/Aw 同构。Ac/Aw 的量级有三组原文数据——已验证（上引页码）：
+  - 草原坑塘：约 3–20
+  - 北方泥炭地两个实例：约 2.2 与 3.3
+  - 人工 fen 设计：2:1 至 3:1
+- **反例和前提**：
+  - Hayashi 的比值是闭流域、地下水交换很小时的稳态推导。
+  - 北方泥炭地的汇水来水有很大比例经地下水到达，Cheinu 占 56 %。
+  - Western Boreal Plain 不少 fen 没有这种来水也存在。
+
+**方案二：用 HAND 决定湿地与河网、地下水的交换**
+
+- **现成的阈值不能直接搬**：5.3 m 和 15 m 是在 90 m SRTM、中亚马孙局地标定的。
+- **2° 格点上的一个现成做法是 CLM hillslope**：
+  - 按 HAND 分柱。
+  - 最低柱的水位与河道水位比较，允许失水河。
+  - 但漫滩水不回灌，这一点已验证（读码）。
+- **E3SM 的 HLGF**：目前只做单向，河道总是得水河。
+
+**TOPMODEL 类方案**
+
+- DYPTOP 和 LPJ-wsl 都没有显式来水项，河流供水型湿地模拟不出来——已验证（Stocker p.3103；Zhang p.1391、p.1393）。
+- Fan 2011 也说明，没有格间流时，局地水位无法和远处的补给区、排泄区相通。
+
+**现有回渗机制对湿地斑块的适用性**
+
+- CoLM 的 CaMa 回渗只给 patchtype 0，湿地斑块现在拿不到——已验证（读码）。
+- Decharme 的回渗要求 fflood > fsat；湿地斑块若已饱和，同样不会回渗。
+- 所以两者都不能直接当"洪水进湿地"来用——推测（依据是上面两处条件）。

@@ -1,0 +1,99 @@
+From 86d02661ec3e3ebaf8b2ab010689759aa85c4fa4 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Mon, 28 Sep 2026 10:23:24 +0800
+Subject: [PATCH] fix(lake): lake depth from the water pixels that have one;
+ missing depth takes 10 m (Q-39)
+
+DEF_LAKEDEPTH_VALID_PIXELS (default off): the surface-data aggregation takes
+the median over water pixels with a depth only (rivers and other water
+bodies outside the lake data are 0 and used to pull half the lake patches
+to 0 and then 0.1 m); a patch without any keeps 0, which the model now
+reads as missing and gives the 10 m default of the lake-depth data.
+
+---
+ mkinidata/MOD_LakeDepthReadin.F90   |  5 +++++
+ mksrfdata/Aggregation_LakeDepth.F90 | 14 +++++++++++++-
+ share/MOD_Namelist.F90              |  5 +++++
+ 3 files changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/mkinidata/MOD_LakeDepthReadin.F90 b/mkinidata/MOD_LakeDepthReadin.F90
+index 087c941d..91fbe0cd 100644
+--- a/mkinidata/MOD_LakeDepthReadin.F90
++++ b/mkinidata/MOD_LakeDepthReadin.F90
+@@ -28,6 +28,7 @@ CONTAINS
+    USE MOD_LandPatch
+    USE MOD_NetCDFVector
+    USE MOD_Vars_TimeInvariants, only: lakedepth, dz_lake
++   USE MOD_Namelist, only: DEF_LAKEDEPTH_VALID_PIXELS
+ #ifdef SinglePoint
+    USE MOD_SingleSrfdata
+ #endif
+@@ -85,6 +86,10 @@ CONTAINS
+ 
+          DO ipatch = 1, numpatch
+ 
++            ! Q-39: a missing depth takes the default of the lake-depth data
++            ! (Kourzeneva et al. 2012), 10 m, instead of the 0.1 m floor below
++            IF (DEF_LAKEDEPTH_VALID_PIXELS .and. lakedepth(ipatch) <= 0.) lakedepth(ipatch) = 10.
++
+             ! testing 14/05/2021, Zhang
+             IF(lakedepth(ipatch) < 0.1) lakedepth(ipatch) = 0.1
+ 
+diff --git a/mksrfdata/Aggregation_LakeDepth.F90 b/mksrfdata/Aggregation_LakeDepth.F90
+index 7f2b9916..38cc3f17 100644
+--- a/mksrfdata/Aggregation_LakeDepth.F90
++++ b/mksrfdata/Aggregation_LakeDepth.F90
+@@ -107,7 +107,19 @@ SUBROUTINE Aggregation_LakeDepth ( &
+                CALL aggregation_request_data (landpatch, ipatch, gland, &
+                   zip = USE_zip_for_aggregation, &
+                   data_r8_2d_in1 = lakedepth, data_r8_2d_out1 = lakedepth_one)
+-               lakedepth_patches (ipatch) = median (lakedepth_one, size(lakedepth_one))
++               IF (DEF_LAKEDEPTH_VALID_PIXELS) THEN
++                  ! Q-39: water pixels without a depth (rivers and other water
++                  ! bodies outside the lake data) are 0 and are left out; a
++                  ! patch with none keeps 0, which the model reads as missing
++                  IF (count(lakedepth_one > 0._r8) > 0) THEN
++                     lakedepth_patches (ipatch) = median (pack(lakedepth_one, lakedepth_one > 0._r8), &
++                        count(lakedepth_one > 0._r8))
++                  ELSE
++                     lakedepth_patches (ipatch) = 0._r8
++                  ENDIF
++               ELSE
++                  lakedepth_patches (ipatch) = median (lakedepth_one, size(lakedepth_one))
++               ENDIF
+             ELSE
+                lakedepth_patches (ipatch) = -1.0e36_r8
+             ENDIF
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 362d109a..07ecde0e 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -378,6 +378,9 @@ MODULE MOD_Namelist
+    ! C-44 (paper V2): open-water evaporation from the flooded area of the
+    ! grid-based routing floodplain (beyond the channel), Penman open water
+    logical  :: DEF_FLOODPLAIN_EVAP = .false.
++   ! Q-39 (paper V2): lake depth of a lake patch from its water pixels that
++   ! have a depth only; a patch without any takes the dataset default 10 m
++   logical  :: DEF_LAKEDEPTH_VALID_PIXELS = .false.
+ 
+    ! ----- levee module -----
+    logical  :: DEF_USE_LEVEE           = .false.
+@@ -1263,6 +1266,7 @@ CONTAINS
+       DEF_Reservoir_Method,                   &
+       DEF_GRIDBASED_ROUTING_MAX_DT,           &
+       DEF_FLOODPLAIN_EVAP,                    & !C-44 (paper V2)
++      DEF_LAKEDEPTH_VALID_PIXELS,             & !Q-39 (paper V2)
+ 
+       DEF_USE_LEVEE,                          &
+       DEF_USE_BIFURCATION,                    &
+@@ -1974,6 +1978,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_Reservoir_Method                   ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_GRIDBASED_ROUTING_MAX_DT           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_FLOODPLAIN_EVAP                    ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_LAKEDEPTH_VALID_PIXELS             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_LEVEE                          ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_BIFURCATION                    ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

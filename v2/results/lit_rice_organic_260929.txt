@@ -1,0 +1,288 @@
+# lit_rice_organic_260929：稻田秸秆还田与外加有机物——空间数据、定量效应与模式做法（候选 24）
+
+- **日期**：2026.09.29-12:40
+- **读者**：下一会话
+- **来源**：文献线只读调研，承接 `v2/results/lit_models_rice_260929.txt` 第 5.2 节与候选池第 24 条（状态"待数据"）；全文与数据说明由 mgt01 匿名下载到 scratchpad `lit_riceorg/` 读取，区域与国家汇总由其中 `cao/agg.py`、`cao/isimip_manure.py`、`fao/` 与 `scen.py` 秒级运行得到；读码树 `CoLM202X-paper-v2` HEAD 67186201；第 6 节全部 DOI 重查 Crossref 或 DataCite
+- **状态**：第 0 至 6 节成文；第 5 节只到依据、改法、参数与预期，未动代码与配置；量级预期是按 CoLM 现参数的离线推算，未跑模式
+
+单位约定：秸秆一律干重（t DM ha⁻¹）；折碳按 0.42 g C g⁻¹ DM（Lutz et al. 2019 p.2423 取 42% 有机质为碳）；1 t DM ha⁻¹ ≈ 42 g C m⁻²；厩肥按氮给出时以 C:N 14.5 折碳（GGCMI 第 3 期协议值，见第 2.6 节）。排放一律 CH₄ 质量。出处简写"作者 年 位置"，完整著录见第 6 节。"读全文"指读了原文并给页码、式号或表号；"只读摘要"指只读到注册库或数据库给出的摘要；"转引"指数值取自另一篇的转述；"经子任务读全文"指 `lit_models_rice_260929.txt` 中子任务所读、本文未逐字复读的条目。
+
+## 0. 覆盖面
+
+1. 检索词：IPCC 2019 Refinement Vol 4 Ch 5 "SFo" "CFOA" "Table 5.14" "Annex 5A.2"；"crop residue" "left on field" "straw return rate" "residue removal" global dataset；"manure nitrogen application cropland gridded"；"GGCMI phase 3 protocol residue"；"Greenhouse gas emissions intensity of global croplands" 及其数据；"cropland greenhouse gas emissions circa 2020"；"straw incorporation methane meta-analysis" "timing" "off-season" "conversion factor"；"LPJ-wsl rice"；"DLEM-Ag residue"；"ORCHIDEE-CROP residue"；"LPJmL residue tillage"；"Zhang Chen 2014 straw"；"China straw return province"；FAOSTAT 数据目录中 Residue、Burning、Manure、Rice 各域。
+2. 渠道：OpenAlex 检索接口、Crossref 与 DataCite 接口（均匿名，请求头只写 `curl` 或 `python-urllib`，URL 无邮箱）；WebSearch；出版社与仓储直链（nature.com、copernicus.org、springeropen、link.springer.com、pmc.ncbi.nlm.nih.gov、dndc.sr.unh.edu、bulks-faostat.fao.org、ndownloader.figshare.com）；figshare 文件清单用 WebFetch 取 `api.figshare.com`（mgt01 直连 403）；figshare 大压缩包只按 HTTP Range 取中央目录与单个成员文件（每个 1–2 MB）。
+3. 读到全文的篇目：IPCC 2019 第 4 卷第 5 章第 5.5 节与附录 5A.2；IPCC 2006 第 4 卷第 5 章第 5.5 节；Smerald et al. 2023；Cao et al. 2026 正文、在线 Methods 与 Extended Data Table 1；Carlson et al. 2017 正文与 Methods；Zhang B. et al. 2017 ESSD；Tian et al. 2022 ESSD（第 2 节与数据可得性）；Jägermeyr et al. 2021 Methods；Yan et al. 2009；Wang et al. 2018；Jiang et al. 2019 Sci Adv（PMC 全文 XML）；Linquist et al. 2012；Qian et al. 2023；Hu et al. 2024 正文与方法；Huang et al. 1998；Song et al. 2019；Ren J. et al. 2019；Zhao Y. et al. 2018（PMC 网页全文）；Lutz et al. 2019；Wu et al. 2016；Van Hung et al. 2020 与 Allen et al. 2020 两章；DNDC 9.5 科学手册与用户指南（UNH，无 DOI）；Schaphoff et al. 2026 预印本（本地抽取文本）。
+4. 只读摘要：Liu C. et al. 2014；Yan X. et al. 2005；Wang J. et al. 2023；Zhang X. et al. 2019（ACP 讨论稿摘要）；Zhang J. et al. 2026（只有 EurekAlert 新闻稿，注册库无摘要）。
+5. 读不到的与已试路径：Huang et al. 2004（Wiley pdfdirect 403，OpenAlex 标 closed），其式子用 Huang 1998 与 Hu 2024 方法段代替；Zhang J. et al. 2026（nature.com 付费、HAL 副本被 Anubis 拦截），只用新闻稿；Zhao X. et al. 2019（closed，注册库无摘要），数值转引 Qian 2023 p.717；Wang J. et al. 2023（closed，HAL 页被拦截），只用 Crossref 摘要；Carlson 2017 数据页（figshare 24662457 与 USDA Ag Data Commons 24852810 均 403），许可证未核；Smerald 数据全集 1.1 GB 未下载，变量名取自论文 Data Records 节；Bondeau et al. 2007（HAL 被拦截），LPJmL 残体做法改用 Lutz 2019。
+6. 检索有结果但为零的："LPJ-wsl" 稻田甲烷论文未检出（OpenAlex 两组检索词与 WebSearch 均无），唯一的 "Zhang et al. 2016" 稻田全球模式是 DLEM 的 Zhang B. 2016 GBC，按 DLEM 处理；"Zhang & Chen 2014" 未检出确切对应（Crossref 三组检索），按"Zhang et al."可能所指列入 Zhang B. 2017、Tian 2022 与 Zhang J. 2026；全球绿肥与堆肥施用量数据未检出，Carlson 2017 与 Cao 2026 都写明缺（第 2.2、2.3 节）；全球"翻入时机"（栽前 < 30 d 还是 > 30 d）空间数据未检出；ORCHIDEE-CROP v0 全文 "residue""straw""stubble" 0 命中。
+7. 本地读码：`main/BGC/MOD_BGC_Veg_CNPhenology.F90`（收获残体去向、施肥）、`MOD_BGC_Soil_BiogeochemVerticalProfile.F90`（凋落物剖面）、`MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90`、`mkinidata/MOD_Initialize.F90`（凋落物周转）、`main/MOD_Const_PFT.F90`（凋落物三分）、`MOD_BGC_CNBalanceCheck.F90`、`main/MOD_CropReadin.F90`、`main/MOD_SoilSnowHydrology.F90`（`paddy_bunded`）、`main/MOD_Irrigation.F90`（候选 25 休耕淹水）、`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90`（产甲烷底物）；CTSM ctsm5.4.047（7409d3218）`CNPhenologyMod.F90` 与 namelist 定义；运行时文件 `/share/home/dq013/zhwei/colm/data/CoLMruntime/crop/fertilizer_2015soc.nc` 头部。
+8. 未看：无。
+9. 存疑（需实验）：CoLM 稻田斑块收获时叶加活茎碳量与到下季泡田时的凋落物残留量（决定第 5.6 节的正负号）；稻田斑块泡田期"排放 CH₄ 碳 ÷ 分解碳"的边际比；Cao 2026 稻草"留田"量偏低是否来自其 10% 最低留田约束；以上实验写在第 5.7 节。
+
+## 1. IPCC 2019 的有机物缩放因子（问题 1）
+
+1. 式 5.2（Tier 1 日排放因子）EFi = EFc · SFw · SFp · SFo，其中 EFc 为"持续淹水、种前落干 < 180 d、无有机改良"的基准——已验证（读全文 IPCC 2019 式 5.2 p.5.51）。
+2. 式 5.3：SFo = (1 + Σᵢ ROAᵢ · CFOAᵢ)^0.59；ROAᵢ 为第 i 种有机物施用量（t ha⁻¹），秸秆按干重、其他按鲜重；CFOAᵢ 为相对"栽前不久翻入的秸秆"的换算系数；指数 0.59 的不确定度取 0.54–0.64——已验证（读全文 IPCC 2019 式 5.3 p.5.55）。
+3. 表 5.14（2019 更新）CFOA 与误差范围：秸秆栽前 < 30 d 翻入 1.00（0.85–1.17）；秸秆栽前 > 30 d 翻入 0.19（0.11–0.28）；堆肥 0.17（0.09–0.29）；厩肥 0.21（0.15–0.28）；绿肥 0.45（0.36–0.57）；表注：秸秆施用指翻入土中，不含只铺在地表与田间焚烧的秸秆——已验证（读全文 IPCC 2019 表 5.14 p.5.56）。
+4. 2006 版表 5.14 对应值：1（0.97–1.04）、0.29（0.20–0.40）、0.05（0.01–0.08）、0.14（0.07–0.20）、0.50（0.30–0.60），来源 Yan et al. 2005；式 5.3 与指数 0.59 两版相同——已验证（读全文 IPCC 2006 式 5.3 p.5.50、表 5.14 p.5.51）。
+5. 时机的归类口径：休耕季留在地表、下季栽前翻入的秸秆算"< 30 d"；上一季（旱作或休耕期）翻入的算"> 30 d"；堆肥、厩肥、绿肥按鲜重——已验证（读全文 IPCC 2019 表 5A.2.1 p.5.66）。
+6. 系数来历：附录式 5A.2.1 ln(flux) = 常数 + a·ln(SOC) + pH_h + PWᵢ + WRⱼ + CLₖ + OMₗ·ln(1 + AOMₗ)，各有机物的相对系数以"栽前翻入 6 t ha⁻¹ 秸秆"为 1 折算——已验证（读全文 IPCC 2019 式 5A.2.1 p.5.64、p.5.65）。拟合出的 OMₗ 即 (1 + A) 的幂指数：栽前秸秆 0.591、季外秸秆 0.228、堆肥 0.218、厩肥 0.247、绿肥 0.400——已验证（读全文 Wang et al. 2018 表 2 p.10424）。
+7. 数据来源建议：活动数据以收获面积为主，有机物类型与数量"may not be available in current databases/statistics"，需按专家判断给施用农户比例，默认不确定度 ±0.2（例如 0.4 取 0.2–0.6）——已验证（读全文 IPCC 2019 第 5.5.3 节 p.5.57、第 5.5.4 节不确定度段 p.5.60）。
+8. 代数值（2019 版）：ROA 0.42、0.70、1.11、2、4、6 t ha⁻¹ 时，栽前翻入 SFo 为 1.23、1.37、1.55、1.91、2.58、3.15，栽前 > 30 d 翻入为 1.05、1.08、1.12、1.21、1.40、1.57——推测。依据：按式 5.3 与表 5.14 计算（`scen.py`）。IPCC 算例正是 2 t ha⁻¹ 栽前翻入得 1.91——已验证（读全文 IPCC 2019 第 5.5.4 节 p.5.57–5.58）。
+
+## 2. 可用于模式的数据（问题 2）
+
+### 2.1 总表
+
+| 数据 | 覆盖与内容 | 分辨率与年份 | 许可 | 下载与变量 | 能否直接用于稻田斑块 | 证据 |
+|---|---|---|---|---|---|---|
+| Cao et al. 2026 管理数据集 | 46 类作物，含稻（灌溉 I、雨养 R 分开）的地上残体留田量、焚烧量、地下残体、厩肥氮；稻作水分类型与季数 | 5′，约 2020 年，静态 | CC BY 4.0 | figshare 10.6084/m9.figshare.29089973.v3（2.98 GB）；`Input_data_Crop_residues.zip` 中 `spam2020_V2r0_global_Y_RICE_{I,R}_total_residue_Mg_fraction_left.tif`（单位 Mg DM 每格，虽名含 fraction）、`..._Mg_N_left_on_field.tif`、`..._Mg_fraction_burned.tif`、`Total_belowground_residues_rice_{I,R}.tif`；`Input_data_Manure.zip` 中 `Global_manure_N_rice_application_{amount_2020_kg,rate_2020_kg_ha}.tif`；`Input_data_Rice.zip`（CF/SD/MD、RR/DP/DW/UP 面积，RiceAtlas 季数与天数）；`Summary_tables.zip` 国家×作物表 | 能，唯一的稻作专属留田与厩肥图；不分翻入时机 | 已验证（DataCite 记录；figshare 文件清单；Range 取出 5 个稻田栅格读 `rasterio`） |
+| Smerald et al. 2023 谷物残体去向 | 全部谷物合计的残体产量与四种去向：饲用垫圈、田间焚烧、其他离田、留田 | 0.5°，1997–2021 逐年 | CC BY 4.0 | RADAR4KIT 10.35097/989（1.1 GB tar），主文件 `crop_residue_usage_mean.nc`，另 18 个方法组合文件；变量 `residue_production`、`burnt_residues`、`animal_usage`、`other_usage`、`left_on_field`，单位 Mg yr⁻¹；代码 Zenodo 10.5281/zenodo.7843730 | 只能给谷物合计的留田比例，套到稻田要假设稻与其他谷物同比例 | 已验证（读全文 Smerald 2023 Data Records p.6；DataCite 记录） |
+| Carlson et al. 2017 | 172 种作物温室气体，稻田甲烷按 IPCC Tier 1 加秸秆与厩肥 | 5′，约 2000 年 | 未核（数据页 403） | EarthStat 与 USDA Ag Data Commons（figshare 24852810）；只有排放结果，留田比例是国别规则不是图 | 规则可借用，数据本身不含留田图 | 已验证（读全文 Carlson 2017 Methods）；许可——存疑 |
+| Yan et al. 2009 | 国别稻草量与施用量规则、国别水分与种前水分比例 | 国家，2000 年 | 期刊论文 | 稻草量 = 3.43 ln(产量) + 1.36，未烧稻草的 70% 还田；烧掉比例中国取 Yan 2006，其他发展中国家取 Yevich and Logan 2003，缺的按亚洲平均 45% 未烧；厩肥按 Mosier 1998 法由动物氮折算 | 规则可借用 | 已验证（读全文 Yan 2009 p.4） |
+| Zhang B. et al. 2017（厩肥氮） | 厩肥氮产量与施到耕地的量 | 5′，1860–2014 逐年 | CC BY 3.0 | PANGAEA 10.1594/PANGAEA.871980（TSV 索引加格点文件）；全球施到耕地 3.6（1860）→ 24.5 Tg N（2014），只占产量 16.9–19.1% | 是耕地平均，不分作物 | 已验证（读全文 Zhang B. 2017 第 2.2 节 p.669–670、第 3.4 节 p.672；DataCite 记录） |
+| Tian et al. 2022 HaNi | 化肥（NH₄⁺、NO₃⁻）、厩肥施用与沉积、大气沉降，共 10 类 | 5′，1860–2019 逐年 | CC BY 4.0 | PANGAEA 10.1594/PANGAEA.942069；其中第 5 类为"manure N application on cropland"，按作物面积加权的格点平均率 | 是耕地平均 | 已验证（读全文 Tian 2022 摘要、第 2 节 p.4553–4554、第 5 节数据可得性 p.4564；DataCite 记录） |
+| ISIMIP 3a/3b 施肥（CoLM 运行时已有） | 64 个作物功能型的化肥率与一张厩肥率 | 0.5°（360×720），2015soc 静态 | 随 ISIMIP 输入 | `CoLMruntime/crop/fertilizer_2015soc.nc`，变量 `fertilizer(cft,lat,lon)`、`manure(lat,lon)`，单位 gN m⁻² yr⁻¹，全局属性 source = "ISIMIP 3a/3b" | 能，已被 `DEF_FERT_SOURCE = 2` 读成 `manunitro_p`（第 5.1 节） | 已验证（ncdump 头部；读码 `main/MOD_CropReadin.F90:228–266`） |
+| GGCMI 第 3 期协议（Jägermeyr 2021） | 协调管理：厩肥按格点给、各作物相同，C:N 14.5；建议 70% 地上残体移出；两次翻耕（播种日、收获日）200 mm 全翻 | 0.5° | 输入经 www.isimip.org 公开；作物历 Zenodo 10.5281/zenodo.5062513，CC BY 4.0 | 协议值，不是还田实测 | 可作默认参数与深度依据 | 已验证（读全文 Jägermeyr 2021 Methods，PDF 第 10 页；DataCite 记录） |
+| FAOSTAT"Emissions from Crops"（GCE） | 国家×作物×年：面积、Crop residues (N content)、Burning crop residues (Biomass burned, dry matter)、Rice cultivation (Emissions CH4) | 国家，1961–2023 并含 2030、2050 投影 | FAO 使用条款（未核） | bulks-faostat.fao.org `Emissions_crops_E_All_Data_(Normalized).zip`（6.9 MB） | 不能：Tier 1 缺省值，稻田焚烧量各国都是 0.550 t DM ha⁻¹，残体氮随单产变而不含移出 | 已验证（下载并逐国计算 2020 年，第 2.4 节） |
+| FAOSTAT"Livestock Manure"（EMN） | 国家尺度厩肥氮：排泄量、留牧场、施到土壤、损失 | 国家，逐年 | FAO 使用条款（未核） | `Environment_LivestockManure_E_All_Data_(Normalized).zip`（24 MB） | 不分作物 | 已验证（FAOSTAT 数据目录描述） |
+| 中国：Zhao Y. et al. 2018 | 58 县 4060 个样点的秸秆还田率与 2011 年分区还田碳量 | 县与六大区，1980–2011 | 期刊论文 | 表 1：全国 0.89 Mg C ha⁻¹（2011），华北 1.38、中南 1.16、西北 0.84、华东 0.82、西南 0.72、东北 0.39；SI 表 S3、S4 有作物草谷比与根系参数 | 耕地平均，不分稻田 | 已验证（读全文 Zhao Y. 2018 表 1 与 Fig. 2 说明，PMC 网页） |
+| 中国：Ren J. et al. 2019 | 全国秸秆综合利用率与还田比例 | 国家 | CC BY（MDPI） | 2015 年综合利用率 80%；2009 年约 29% 还田 | 耕地平均 | 已验证（读全文 Ren 2019 p.4） |
+| 中国：Zhang X. et al. 2019 | 296 个地级市的秸秆焚烧活动数据，1 km 再分配 | 地级市，2014 年 | 期刊论文 | 只给焚烧，不给还田 | 可作焚烧比例的约束 | 已验证（只读摘要，ACP 讨论稿） |
+| Zhang J. et al. 2026（DLEM-Ag） | 1961–2020 全球稻田温室气体，秸秆还田加强被列为 2000 年后增量的 18% | 未知 | 未知 | 付费；数据可得性未读到 | 存疑 | 已验证（只读 EurekAlert 新闻稿与 Crossref 题录） |
+
+判读：能直接落到稻田斑块、且灌溉与雨养分开的留田与厩肥图，现有只有 Cao et al. 2026 一套（约 2020 年，静态）——已验证（第 0 节第 1–6 条检索结果与上表）。任何数据都不区分"栽前 < 30 d 翻入"与"> 30 d 翻入"，时机只能用规则给——已验证（上表各数据的变量清单；Carlson 2017 Methods；Cao 2026 Methods"Organic amendments"段）。
+
+### 2.2 Cao et al. 2026 的稻田秸秆与厩肥：分区汇总
+
+对 5′ 栅格按稻田收获面积（`Input_data_Rice` 中七类水分面积之和）汇总到 GCP 区与国家（`cao/agg.py`，国家归属取 `v2/data/country_mask_0p1.npz` 最近格点）：
+
+| 区或国 | 稻田收获面积 Mha | 留田 t DM ha⁻¹ | 焚烧 t DM ha⁻¹ | 厩肥 kg N ha⁻¹（Cao） | 厩肥 kg N ha⁻¹（ISIMIP 2015soc，按稻田面积加权） |
+|---|---|---|---|---|---|
+| 全球 | 162.1（灌溉 101.0、雨养 61.1） | 0.70 | 0.18 | 23.3 | 17.4 |
+| 中国 | 29.3 | 1.12 | 0.14 | 31.3 | 34.1 |
+| 南亚 | 60.7 | 0.42 | 0.07 | 19.3 | 11.5 |
+| 东南亚 | 46.6 | 0.75 | 0.23 | 26.5 | 13.9 |
+| 日韩 | 2.6 | 1.04 | 0.26 | 50.0 | 19.8 |
+| 美国 | 1.1 | 1.31 | 0.62 | 9.5 | 3.4 |
+| 印度 / 孟加拉 / 印尼 / 泰国 / 越南 / 菲律宾 | 44.8 / 11.1 / 10.2 / 10.5 / 7.1 / 4.4 | 0.43 / 0.41 / 0.76 / 0.75 / 0.76 / 0.73 | 0.08 / 0.00 / 0.12 / 0.33 / 0.42 / 0.14 | 15.8 / 28.5 / 43.0 / 13.6 / 25.5 / 31.7 | — |
+
+——已验证（运行 `cao/agg.py` 与 `cao/isimip_manure.py` 的输出）。
+
+1. Cao 数据里稻草留田量全球平均只有 0.70 t DM ha⁻¹，按 Yan 2009 的稻草式在全球平均单产 4.7 t ha⁻¹ 下稻草约 6.7 t ha⁻¹，留田约一成——推测。依据：稻草量按 Yan 2009 p.4 式 3 计算，单产取 Cao 国家×作物表稻田合计 766 Mt ÷ 162 Mha。Cao 的留田由"焚烧、饲用、其他离田用途扣完后剩下"给出，且强制至少留 10%——已验证（读全文 Cao 2026 Methods"Crop residues"段"Left on field"与"Other off-field uses"两段）。所以南亚、东南亚的低值可能是 10% 下限在起作用——存疑。实验：用 Cao 的草谷比表重算稻草产量，看留田比例是否集中在 0.10。
+2. 同一套数据里厩肥碳与留田秸秆碳同量级：中国 31 kg N ha⁻¹ × 14.5 ≈ 45 g C m⁻²，留田秸秆 1.12 t × 0.42 ≈ 47 g C m⁻²；南亚 28 对 18，东南亚 38 对 32 g C m⁻²——推测。依据：按上表与单位约定换算。
+3. Cao 的厩肥"在格点内各作物均匀分配"——已验证（读全文 Cao 2026 Methods"Manure application to croplands"段）。ISIMIP 2015soc 与 Cao 在中国接近（34 对 31），在南亚、东南亚差 1.7–1.9 倍——已验证（上表）。
+4. Cao 2026 全球稻田甲烷 867（785–1052）Mt CO₂e，占农田 2.5 Gt CO₂e 的 35%；只计秸秆翻入与厩肥两类有机物，堆肥与绿肥因"limited global data and the negligible quantities"不计——已验证（读全文 Cao 2026 摘要、Extended Data Table 1、Methods"Organic amendments"段）。按 AR6 非化石甲烷 GWP₁₀₀ = 27 折约 32 Tg CH₄——推测。依据：Cao 2026 写明用 AR6 GWP₁₀₀（Methods 首段），27 为按 AR6 取的值。
+
+### 2.3 Carlson et al. 2017 与 Yan et al. 2009 的国别规则
+
+1. Carlson 2017：稻草量用 Yan 的对数式；焚烧与作燃料比例亚洲国家取 Yevich and Logan 2003，中国取 Yan 等（56% 留田），其他国家取亚洲（除中印）加权平均 45% 留田；单季、双季稻"未烧秸秆的 70% 翻入"，三季稻只取 10%；双、三季稻用"< 30 d"系数，单季稻用"> 30 d"系数；厩肥按 5′ 牲畜粪便图与管理数据在格点内均匀施于各作物（豆类除外），封顶在全球第 99 百分位；绿肥与堆肥"Global data ... are not available"不计——已验证（读全文 Carlson 2017 Methods"Rice organic amendment"与"Manure application to croplands"段）。
+2. Carlson 2017 稻田甲烷 962 ± 2170 Tg CO₂e，为清单比较的 84–131%；灌溉田占面积 60%、排放 78%——已验证（读全文 Carlson 2017 p.64–65）。按 AR5 GWP₁₀₀ 28 折约 34 Tg CH₄——推测。依据：原文写 AR5 GWP₁₀₀（Methods 首段），28 为不含气候碳反馈的值。
+3. Yan 2009：有机改良在印度贡献 1.7 Tg；除基准排放因子外，稻草施用是最敏感的输入；单季稻与双季早稻全改为季外翻入，全球减 4.1 Tg（16.1%）——已验证（读全文 Yan 2009 p.9、p.11、表 6 p.14）。
+4. 焚烧与离田的国别旁证：水稻为主的菲律宾、印度、埃及、泰国田间焚烧稻草约 95%、62%、53%、48%，中国 1995–2005 全部秸秆约 62% 在田间烧掉——已验证（转引 Ren 2019 p.2，其文献 7 为 Gadde 等 2009 Environ. Pollut.，未单独核著录）。卫星口径的焚烧比例普遍低于文献口径：全球 5–8% 对 FAO 的 10–11%，中国 2–5% 对 9–27%，印度 5–7% 对 9–20%——已验证（读全文 Smerald 2023 p.6）。
+5. 中国全部谷物残体还田比例：文献 46%（2009）与 52%（2019），Smerald 数据集在中国设 60% 上限后给 47% 与 51%——已验证（读全文 Smerald 2023 p.5）。Smerald 全球 1997–2021 平均：留田 44%（42–49%）、饲用 33%、其他离田 16%、焚烧 6%——已验证（读全文 Smerald 2023 图 1f p.2）。
+
+### 2.4 FAOSTAT 为何不能用
+
+2020 年各国稻田"Burning crop residues (Biomass burned, dry matter)"除以收获面积，中国、印度、越南、印尼、泰国、孟加拉、日本、美国、意大利、巴西、尼日利亚与世界全都是 0.550 t DM ha⁻¹；"Crop residues (N content)"为 34–85 kg N ha⁻¹，随单产变化——已验证（下载 GCE 并按国计算，`fao/` 目录）。即焚烧是统一缺省比例，残体氮不含移出，不带国别还田信息——推测。依据：数值逐国相同且残体氮与单产同向。FAOSTAT 2020 年世界稻田甲烷 24.7 Tg——已验证（同一文件"Rice cultivation (Emissions CH4)"世界行 24683.6 kt）。
+
+### 2.5 中国省级统计
+
+《中国统计年鉴》类统计不含秸秆还田率——推测。依据：本次检索的中国秸秆还田数据全部来自县级抽样（Zhao Y. 2018）、国家汇总（Ren 2019 转引）或文献汇编（Smerald 2023 引文 62、63），未检出省级官方还田率序列。Zhao Y. 2018 的 58 县抽样给出六大区 2011 年还田碳（第 2.1 节表），但不分稻田与旱地——已验证（读全文 Zhao Y. 2018 表 1）。可作中国稻区（华东、中南、西南）量级约束：0.72–1.16 Mg C ha⁻¹，折 1.7–2.8 t DM ha⁻¹——推测。依据：按单位约定换算；这比 Cao 2026 中国稻田 1.12 t DM ha⁻¹ 高 1.5–2.5 倍。
+
+### 2.6 GGCMI 第 3 期（Jägermeyr 2021）的管理输入
+
+1. 强制协调：作物历、化肥、土壤；化肥由 LUH2 按作物给；厩肥"grid cell specific, but constant across crops"，C:N 14.5，出处为 Zhang B. et al. 2017——已验证（读全文 Jägermeyr 2021 Methods，PDF 第 10 页，文献 62）。
+2. 鼓励但不强制：翻耕两次（播种日与收获日）、深 200 mm、全翻；残体"70% of above-ground residues removed"；稻与小麦按两季分开模拟——已验证（同上）。
+3. 作物历数据：GGCMI Phase 3 crop calendar，Zenodo，CC BY 4.0——已验证（DataCite 记录 10.5281/zenodo.5062513）。
+
+## 3. 秸秆与有机物对稻田 CH₄ 的定量效应（问题 3）
+
+### 3.1 量的函数
+
+| 来源 | 形式与数 | 证据 |
+|---|---|---|
+| IPCC 2019 式 5.3 | 排放 ∝ (1 + ROA·CFOA)^0.59，指数不确定度 0.54–0.64 | 已验证（读全文 p.5.55） |
+| Wang 2018（IPCC 2019 系数来源，1089 次测量、122 块田） | ln 通量 ∝ b·ln(1 + A)：栽前秸秆 b = 0.591（0.549–0.633），季外秸秆 0.228，堆肥 0.218，厩肥 0.247，绿肥 0.400；有机物是方差贡献最大的变量（F(5,3391) = 181.5）；栽前 6 t ha⁻¹ 为无改良的 3.2 倍，同量季外翻入 1.6 倍 | 已验证（读全文表 2 p.10424、p.10425） |
+| Yan 2005（IPCC 2006 系数来源） | 栽前 6 t ha⁻¹ 使排放增 2.1 倍，上一季施入只增 0.8 倍；有机物与季内水分是前两位变量 | 已验证（只读摘要） |
+| Hu 2024 CH4MOD 全球敏感性 | 有机物 +50、+100、+200 g m⁻² 使全球排放 +16%、+29%、+55%；+50 g m⁻² 相当于全球平均单产 460 g m⁻² 下秸秆还田率 +9% | 已验证（读全文 p.5） |
+| Hu 2024 情景 | 还田率 30% → 0%：持续淹水 −57%、单次排水 −74%、国别水分比例 −56%、多次排水 −40%；50% → 30% 只降 12–18%；12 情景 8–78 Tg，无还田时 22、21、8 Tg；RF0、RF30、RF50 取值"approximately corresponding to the current global range of major straw return rates" | 已验证（读全文 p.6、p.7、p.17） |
+
+两类函数都是凹的：前几吨秸秆的边际效应最大——已验证（IPCC 指数 0.59 < 1；Hu 2024 p.7 的 RF30 → RF0 大于 RF50 → RF30）。
+
+### 3.2 时机与放置
+
+1. 季外翻入的相对系数：IPCC 2019 为 0.19，2006 为 0.29——已验证（第 1 节第 3、4 条）。Wang 2018 的 6 t ha⁻¹ 比较给出季外约为栽前的一半（1.6 对 3.2）——已验证（读全文 p.10425）。
+2. 韩国 6 块不同质地田两年（秸秆 6–9 Mg ha⁻¹）：以春季栽前翻入为 1.0，秋收后铺地表 0.8、秋收后混入土中 0.6；栽前鲜秸秆使季排放约 +120%——已验证（读全文 Song 2019 p.5 与摘要）。冬季冷的地区季外翻入的减排远小于 IPCC 的 0.19——推测。依据：Song 2019 的 0.6–0.8 对 IPCC 0.19，差别与越冬低温下分解慢一致。
+3. 日本 Kamikawa：秸秆 5 月（临泡田）翻入比 10 月翻入高（观测 128 对 90 kg C ha⁻¹）——已验证（转引 `lit_models_rice_260929.txt` 第 3.1 节第 8 条，Fumoto 2008 表 6 p.392 经主会话抽核）。
+4. 在淹水前至少 30 d 切碎翻入，稻田 CH₄ 可降到 80%——已验证（转引 Allen 2020 p.149 所引 Launio 等，未单独核著录）。
+5. 双季稻与稻麦轮作中两次淹水之间留给秸秆好氧分解的时间很少；非稻季还田全球可减 5.4 Tg yr⁻¹——已验证（读全文 Qian 2023 p.725，5.4 Tg 引自 Wang J. 2023）。
+
+### 3.3 长期还田的"驯化"
+
+1. 双季稻长期试验中秸秆的增排由第 2 年的 +266% 降到第 13 年的 +87%；中稻由第 8 年的 +186% 降到第 13 年的 +50%——已验证（读全文 Jiang 2019 Sci Adv 结果段、图 1）。
+2. Meta 分析：还田 > 5 年的试验平均 +101%，同批试验按 IPCC Tier 1 算为 +193%，即实际约为 IPCC 的一半；作者归因于秸秆长期促进稻株生长与根系供氧、甲烷氧化菌增多——已验证（读全文 Jiang 2019 讨论段、图 2A、图 5）。
+3. 176 篇田间研究：秸秆还田使稻田 CH₄ +110.7 ± 1.2%——已验证（只读摘要，Liu C. 2014）。全球稻作管理 meta 分析：秸秆 +92%、厩肥 +60%——已验证（转引 Qian 2023 p.717，其文献 30 为 Zhao X. 2019）。
+
+### 3.4 厩肥、绿肥、堆肥
+
+1. 等氮量下厩肥替尿素 +26%（95% CI 12–47%），且效应与厩肥氮量无关；厩肥堆制后排放降 75%；绿肥田菁 +192%（95% CI 71–396%），与绿肥氮量无显著关系——已验证（读全文 Linquist 2012 p.17–18）。
+2. 堆肥、厩肥的 IPCC 系数（0.17、0.21，鲜重）与季外秸秆（0.19）相当——已验证（第 1 节第 3 条；Wang 2018 p.10425"comparable to that of rice straw applied off-season"）。
+3. 按碳计，厩肥与栽前秸秆的产甲烷能力接近：厩肥鲜重约 0.09 t C t⁻¹ 时 0.21 ÷ 0.09 ≈ 2.3，秸秆 1.00 ÷ 0.42 ≈ 2.4（每 t C 的 CFOA）；绿肥鲜重约 0.08 t C t⁻¹ 时约 5.6——推测。依据：厩肥与绿肥的干物质率与含碳率取常见值（厩肥 25% DM、36% C；绿肥 20% DM、40% C），原文未给。
+
+### 3.5 全球清单里秸秆占多少
+
+Wang J. 2023（IPCC 2019 Tier 1）全球稻田 27 ± 6 Tg（2008–2017），改为以生物炭形式还田可减 12 Tg——已验证（只读摘要）。即在 IPCC 口径里秸秆相关排放约占全球四成以上——推测。依据：12 ÷ 27，生物炭情景并不等于完全不还田，下限性质。Yan 2009 在 2006 口径下的季外化只减 16%——已验证（读全文表 6 p.14）。清单中位与本模式的比较里，秸秆一项是按清单自身的还田假设计入的，不是实测——推测。依据：IPCC 2019 p.5.60 写明有机物施用数据多靠专家判断。
+
+## 4. 模式里秸秆与有机肥怎么进底物（问题 4）
+
+| 模式 | 进哪个库 | 何时 | 多深 | 证据 |
+|---|---|---|---|---|
+| CH4MOD（Huang 1998；全球版 Hu 2024） | 外加有机物单独两库：非结构 OMN（k1 = 0.027 d⁻¹）与结构 OMS（k2 = 0.002 d⁻¹），稻草 OMN:OMS = 0.25:0.75；分解量 COM = SI·TI·(k1·OMN + k2·OMS) 直接作产甲烷底物，不经土壤有机质库 | 季初一次性作初值（泡田起算）；全球版把上季根茬（地上生物量约 10%）也作有机物，秸秆量 = 还田率 × 产量折算 | 不分层 | 已验证（读全文 Huang 1998 式 4 p.250、p.253；Hu 2024 p.14、p.17） |
+| CH4MOD 全球版参数 | 稻草非结构份额改 0.59、k2 改 0.003 d⁻¹；淹水下分解乘 0.65 | 同上 | 同上 | 已验证（转引 `lit_models_rice_260929.txt` 第 2.1 节，Hu 2024 附录表 S1、S4，经子任务读全文） |
+| DNDC | 收获后地下部全留，用户给"留田地上部份额"作为留茬；下次翻耕时按 C/N 比分进极易分解、易分解、难分解三个凋落物库（比分解速率 0.074、0.074、0.02 d⁻¹）；粪肥等外加有机物按日期、类型（10 类，含厩肥、绿肥、秸秆、堆肥）、量（kg C ha⁻¹）、C/N 与"地表撒施或翻入"输入 | 秸秆在"下次翻耕日"入土；外加有机物按用户给的日期 | 翻耕深度五档：免耕 0、浅耕 5、盘耙 10、铧式犁 20、深耕 30 cm | 已验证（读全文 DNDC 9.5 科学手册 p.8 式 3、p.18；用户指南 Crop、Tillage、Manure amendment 三页的输入说明） |
+| DNDC 国家尺度设定 | 地上残体 30–50% 还田、动物粪 20–50%、人粪 10% | — | — | 已验证（转引 `lit_models_rice_260929.txt` 第 2.1 节，Li 2002、2004、2005 经子任务读全文） |
+| DNDC-Rice | 秸秆进凋落物库，田间分解另乘折减 0.6；翻入日期决定季初底物 | 按实际翻入日 | 翻耕层 | 已验证（转引同上第 2.1、3.1 节，Fumoto 2008 p.389、表 6 p.392） |
+| MERES | 新鲜有机物三库初分 20/70/10%，最适速率 0.2、0.05、0.0095 d⁻¹，淹水约为排水良好土的一半 | 季初加入（国家情景 980 kg C ha⁻¹ 季⁻¹） | 不分层 | 已验证（转引同上第 2.1 节与第 3.1 节第 5 条，Matthews 2000a 式 3–5 p.144–147、2000d p.213） |
+| DLEM | 产甲烷只从 DOC 出，DOC 来自 GPP 分配与凋落物、土壤有机质分解；秸秆以时不变参数隐式处理，Ren 2011 中国设全量还田 | — | — | 已验证（转引同上第 2.1 节，经子任务读全文）。DLEM-Ag 新版把秸秆还田加强列为 2000 年后稻田增排的 18%——已验证（只读新闻稿，Zhang J. 2026） |
+| LPJmL5（5.0-tillage） | 未收走的作物残体进"地表凋落物"库，翻耕时按翻耕效率 0.95 转入"入土凋落物"库，混合效率 0.9；残体移出情景只留 10% | 翻耕两次：播种日与收获后 | 第一土层 0.2 m | 已验证（读全文 Lutz 2019 第 3.2 节 p.2422–2423、第 4.2 节与表 1 p.2426–2427） |
+| LPJmL6 甲烷 | 稻田甲烷来自厌氧分解；作者自认"may still under-represent management effects such as straw incorporation, organic amendments" | — | — | 已验证（读全文 Schaphoff 2026 行 747–748） |
+| ORCHIDEE-CROP v0 | 无秸秆去向与翻入的描述（全文 "residue""straw""stubble" 0 命中）；ORCHIDEE 甲烷分支把稻田掩掉 | — | — | 已验证（grep `wu2016.txt`；ORCHIDEE 甲烷见 `lit_models_rice_260929.txt` 第 1 节） |
+| LPJ-wsl（"Zhang et al. 2016"） | 未检出稻田甲烷论文；同年的全球稻田模式是 DLEM（Zhang B. 2016 GBC） | — | — | 已验证（第 0 节第 6 条检索结果） |
+| VISIT | 稻田用 Cao 方案或 WH 方案，原文"could not simulate the impact of manure input" | — | — | 已验证（转引 `lit_models_rice_260929.txt` 第 2.1 节，Ito 2022 p.63） |
+| CTSM 5.4 | `crop_residue_removal_frac`：收获时叶与活茎按此份额移入一年期产品库，其余落为凋落物；缺省 0，clm6_0 物理 0.5；无外加有机碳 | 收获步 | 同凋落物剖面 | 已验证（读码 `CNPhenologyMod.F90:3815–3826`；`namelist_definition_ctsm.xml:1441–1446`；`namelist_defaults_ctsm.xml:666–667`） |
+
+判读：专门模式（CH4MOD、MERES）把外加有机物作季初单独库、分解直接给产甲烷；过程模式（DNDC 系、LPJmL5）把秸秆放进凋落物库，靠"留田份额 + 翻耕日 + 翻耕深度"三个输入决定入土时机与深度；全球陆面模式里只有 CTSM 有移出份额，没有一个有外加有机碳——已验证（上表各行出处）。
+
+## 5. 对本模式的含义（问题 5）
+
+### 5.1 现状（读码）
+
+1. 收获步叶与活茎碳全部落为凋落物，籽粒进食物产品池；无移出、焚烧与外加有机碳——已验证（读码 `main/BGC/MOD_BGC_Veg_CNPhenology.F90:1370–1390`）。
+2. 叶与茎凋落物按 `lf_flab/lf_fcel/lf_flig` = 0.25/0.5/0.25 分进代谢、纤维素、木质素三库，垂直分布用 `leaf_prof_p`——已验证（读码 `MOD_BGC_Veg_CNPhenology.F90:1561–1604`；`main/MOD_Const_PFT.F90:703–709`）。`leaf_prof_p` 是 exp(−10 z)，e 折深度 0.1 m——已验证（读码 `MOD_BGC_Soil_BiogeochemVerticalProfile.F90:31、66、114`）。本模式的三分与 CH4MOD 的稻草 0.25/0.75 一致——已验证（对照 Huang 1998 p.253）。
+3. 凋落物周转：代谢库 18.5 yr⁻¹（0.051 d⁻¹）、纤维素与木质素库 4.9 yr⁻¹（0.0134 d⁻¹），再乘温度、水分、深度与氧因子——已验证（读码 `mkinidata/MOD_Initialize.F90:697–698`；`MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90:58–59、122–124`）。纤维素与木质素库比 CH4MOD 的结构库（0.002 d⁻¹）快约 7 倍——推测。依据：两式基准速率相除，两者参考温度不同，只看量级。非湿地斑块氧因子恒为 1，稻田淹水不减分解——已验证（转引 `lit_models_rice_260929.txt` 第 4.1 节第 3 条读码）。
+4. 产甲烷底物是稻田斑块的 somhr + lithr——已验证（读码 `main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90:2318`）。秸秆碳一旦进凋落物库，就按现有 f × 异养呼吸产甲烷，甲烷模块不需改——推测。依据：同一行把全部凋落物异养呼吸计入底物。
+5. 厩肥：只有 `DEF_FERT_SOURCE = 2` 时从 `fertilizer_2015soc.nc` 读 `manure` 进 `manunitro_p`，并与化肥一起在施肥期作矿质氮施入；碳不入账；缺省 `DEF_FERT_SOURCE = 1`，不读厩肥——已验证（读码 `main/MOD_CropReadin.F90:201–266`；`MOD_BGC_Veg_CNPhenology.F90:1181`；`share/MOD_Namelist.F90:538`）。全球 case `v260929/g2_o6` 的 `input_g2_o6.nml` 不设该键，即取缺省 1——已验证（grep 该文件无 FERT 键）。
+6. 碳平衡检查的输入只有 GPP，输出含 ER、火、收获木材、籽粒进产品池与淋失——已验证（读码 `main/BGC/MOD_BGC_CNBalanceCheck.F90:118–128`）。外加有机碳与秸秆移出若不在这里记账，会报 cbalance 错——推测。依据：同上式 `col_errcb`。
+7. 泡田时点：`paddy_bunded` 在 C-32/C-47 下从播种到收获前若干天为真，候选 25 的休耕淹水窗 `paddy_fallow_flood_p` 另可在播种前提前为真——已验证（读码 `main/MOD_SoilSnowHydrology.F90:2888–2914`；`main/MOD_Irrigation.F90:385–409`）。双季灌溉稻由 C-45 在第二季播种日再播——已验证（转引 `lit_models_rice_260929.txt` 第 4.1 节第 15 条读码）。
+
+### 5.2 与文献做法的对应
+
+1. 本模式现在等于"秸秆 100% 留田、收获即入土、在排干的休耕期按土壤速率好氧分解"——推测。依据：第 5.1 节第 1–3 条。按 Carlson 2017 的规则，单季稻本就取"> 30 d"系数、双三季稻取"< 30 d"，即本模式单季稻与 C-45 双季稻的时机已大致落在 IPCC 两档上——推测。依据：Carlson 2017 Methods"Rice organic amendment"段与第 5.1 节第 7 条对照。
+2. 所以候选 24 在本模式里真正改变的是三件事：留田多少（多数地区远少于 100%）、留田秸秆在休耕期是地表慢分解还是入土快分解、有无外加厩肥碳——推测。依据：同上。前一件是减项，后两件是增项，净效应的正负取决于留田比例——推测。依据：第 5.6 节推算。
+
+### 5.3 输入数据选哪个
+
+1. 留田比例：缺省用 Cao 2026 的稻田专属图（灌溉、雨养分开，5′，约 2020 年，CC BY 4.0）；把"留田量 ÷ 本斑块自身秸秆量"换成比例时需要 Cao 的稻草产量，建议直接用 Cao 的绝对量折成比例的上限约束，或改用 Smerald 2023 的谷物留田比例作对照——推测。依据：第 2.1–2.3 节；Cao 的稻草留田可能被 10% 下限主导（第 2.2 节第 1 条），与中国县级抽样差 1.5–2.5 倍（第 2.5 节）。高值情景用 Yan 2009 与 Carlson 2017 的规则（未烧秸秆的 70%，焚烧比例按国别）——推测。依据：这是清单口径，与 GCP 清单中位同口径。
+2. 厩肥：优先用运行时已有的 ISIMIP 2015soc `manure`（0.5°，gN m⁻² yr⁻¹）乘 C:N 14.5 折碳；对照用 Cao 2026 稻田专属厩肥率（5′）；需要年际变化时用 HaNi（1860–2019）——推测。依据：第 2.1 节表；C:N 14.5 为 GGCMI 协议值（第 2.6 节第 1 条）。两套在南亚、东南亚差近 2 倍（第 2.2 节表），是量级的主要不确定度之一——推测。
+3. 绿肥、堆肥：无全球数据，不做——已验证（Carlson 2017 与 Cao 2026 Methods 均写明）。
+4. 时机：无全球数据，只能按规则——已验证（第 2.1 节判读）。规则取 IPCC 2019 表 5A.2.1 的口径：留在地表越冬、下季栽前翻入的算"< 30 d"——已验证（读全文 p.5.66）。
+
+### 5.4 映射到稻田斑块
+
+1. Cao 的 RICE_I 层对 PFT 62（灌溉稻），RICE_R 层对 PFT 61（雨养稻），按收获面积加权聚到模式格点，存成类似 `fertilizer_2015soc.nc` 的运行时文件（按 CFT 分层或只给两层稻）——推测。依据：本模式稻田判据是 PFT 61/62 且灌溉方式为漫灌或稻田（`lit_models_rice_260929.txt` 第 4.1 节第 1 条读码），Cao 的 I/R 与 SPAM 灌溉、雨养一致。
+2. 单位统一成"每收获季 t DM ha⁻¹"；双季稻（C-45）两季各用一次——推测。依据：Cao 栅格是全年各季合计量，除以收获面积即每季量。
+3. 站点按塔实况覆盖：KR-CRK 地上部移出，US-HRA、US-HRC 焚烧，JP-Mse 焚烧后翻入并施鸡粪 69.5 kg C ha⁻¹，IT-Cas 越冬留田，PH-RiF、US-Twt 留田——已验证（转引 `lit_models_rice_260929.txt` 第 5.2 节第 5 条，出处为各塔论文）。
+
+### 5.5 实现方案（新开关，缺省全关，只作用于稻田斑块）
+
+1. 收获步分流（宿主 `MOD_BGC_Veg_CNPhenology.F90:1370–1390` 之后）：叶加活茎碳按图拆成三份——移出份额进产品池（仿 CTSM 进一年期产品库，并在 `CBalanceCheck` 的输出里加一项）；焚烧份额作碳输出（记为火损失一类）；留田份额进一个新的"稻草暂存库"（斑块级 C 与 N 各一，写重启）——推测。依据：CTSM `CNPhenologyMod.F90:3815–3826` 的写法；LPJmL5 的地表凋落物库（Lutz 2019 p.2422）。
+2. 暂存库在休耕期按凋落物三库速率乘一个"地表慢化系数"分解，分解产物照常进土壤碳链与异养呼吸——推测。依据：LPJmL5 地表凋落物有单独的温度与水分函数（Lutz 2019 第 3.2–3.3 节 p.2422–2423）；地表秸秆比入土慢是 IPCC 把"越冬地表、栽前翻入"归为 < 30 d 的物理原因（IPCC 2019 表 5A.2.1 p.5.66）。系数取值无直接文献，建议 0.3–0.5 作为可调参数——存疑。实验：对一个单季稻站点比较 0.3、0.5、1.0 三值下泡田时残留量与季排放。
+3. 泡田即翻入：`paddy_bunded` 由假变真的那一步（播种，或候选 25 的休耕淹水开始），把暂存库剩余量按 0–0.2 m 均匀剖面、以 0.25/0.5/0.25 分进三个凋落物库；同一步把外加厩肥碳按同一剖面加入——推测。依据：0.2 m 取 GGCMI 协议翻耕深度 200 mm（Jägermeyr 2021 Methods）、LPJmL5 第一土层 0.2 m（Lutz 2019 p.2422）、DNDC 铧式犁 20 cm（用户指南 Tillage 页）。
+4. 厩肥碳记账：作为新的外部碳输入加进 `CBalanceCheck` 的 `col_cinputs`；氮按 C:N 14.5 以有机氮随碳入凋落物，同时把 `fert_p` 里的厩肥部分扣掉，避免同一份氮既作矿质氮又作有机氮——推测。依据：`MOD_BGC_Veg_CNPhenology.F90:1181` 现把 `manunitro_p` 并入矿质施肥；C:N 取 GGCMI 协议值。
+5. 甲烷模块不改：新增碳进凋落物后经 lithr 进底物——推测。依据：第 5.1 节第 4 条。
+6. 开关与参数（名称为建议）：`DEF_RICE_RESIDUE_FATE`（0 = 现状；1 = 读图拆分）、`DEF_RICE_RESIDUE_FILE`（留田、移出、焚烧比例或量）、`DEF_RICE_STRAW_HOLD`（0/1，暂存库）、`rice_straw_surface_kfac`（地表慢化系数）、`DEF_PADDY_MANURE_C`（0/1）、`paddy_manure_cn`（14.5）、`paddy_incorp_depth`（0.2 m）；全部缺省为现状行为——推测。依据：按全局规则"新开关缺省关"。
+7. 守恒自检：开关打开后 `col_errcb` 应仍低于 `cerror`；暂存库须计入 `totcolc` 与 `totlitc`——推测。依据：`MOD_BGC_CNBalanceCheck.F90:118–128、153`。
+
+### 5.6 预期方向与大小（离线推算，未跑模式）
+
+推算口径：单季稻田、秸秆碳 S = 200 g C m⁻²（约 4.8 t DM ha⁻¹），休耕有效分解日（日数 × 温度水分因子）40 或 80 d，泡田季有效分解日 80 d，暂存库慢化系数 0.3，边际"排放 CH₄ 碳 ÷ 泡田期分解碳" ε = 0.05–0.10；凋落物速率与三分取第 5.1 节第 2、3 条；对照本模式 g2_mr 全球单季均值 10.6 g CH₄ m⁻²（`lit_models_rice_260929.txt` 第 4.3 节）。现状下到泡田时秸秆碳残留 52–94 g C m⁻²——推测。依据：`scen.py` 输出，下同。
+
+| 情景 | 泡田期分解碳变化 g C m⁻² | CH₄ 变化 g m⁻² 季⁻¹ | 相对 10.6 |
+|---|---|---|---|
+| 全留田 + 暂存 | +47 至 +52 | +3.1 至 +6.9 | +30% 至 +65% |
+| 全留田 + 暂存 + 厩肥碳 45 g C m⁻² | +80 至 +85 | +5.3 至 +11.3 | +50% 至 +105% |
+| 留田 50% + 暂存 | −9 至 +9 | −1.2 至 +1.1 | −10% 至 +10% |
+| 留田 50% + 暂存 + 厩肥碳 45 | +25 至 +42 | +1.6 至 +5.6 | +15% 至 +55% |
+| 留田 15% + 暂存 | −48 至 −22 | −6.3 至 −1.4 | −60% 至 −15% |
+| 留田 15% + 暂存 + 厩肥碳 45 | −14 至 +12 | −1.9 至 +1.5 | −20% 至 +15% |
+
+表内全部——推测。依据：`scen.py` 的一阶衰减推算；S、ε、休耕有效日、慢化系数都是假设值，ε 的量级参照站点"排放占异养呼吸" 2.1–5.2%（全年口径，账本 V-84）并按泡田期集中上调。
+
+1. 净效应的正负由留田比例决定：约 50% 留田时秸秆部分近于中性，低于此为减项，高于此为增项——推测。依据：上表。本模式现为 100% 留田，任何按实测数据加上"移出"的做法都先减排——推测。依据：第 5.2 节第 2 条。
+2. 用 Cao 2026 的留田量（全球 0.70 t DM ha⁻¹，约一成）会使南亚、东南亚单季稻减排，厩肥碳能抵回大部分；全球净效应约 −20% 至 +15%——推测。依据：上表"留田 15%"两行，Cao 厩肥碳南亚 28、东南亚 38、中国 45 g C m⁻²（第 2.2 节第 2 条）。
+3. 用中国县级抽样口径（中南、华东、西南 1.7–2.8 t DM ha⁻¹，约 30–50%）加厩肥，中国单季稻约 +15% 至 +55%——推测。依据：第 2.5 节与上表"留田 50%"两行。
+4. 用清单口径（未烧秸秆的 70%，未烧 45–100%，即留田 30–70%）加暂存与厩肥，单季稻区 +15% 至 +100%，与 Hu 2024 的 RF0 → RF30 升 40–74% 同量级——推测。依据：上表与 Hu 2024 p.7。
+5. 双季稻（C-45）第一季秸秆到第二季泡田只隔数天，现状已近"< 30 d"，暂存库几乎不起作用；变化只来自留田比例与厩肥——推测。依据：休耕有效日接近 0 时现状与暂存两种写法残留相同。
+6. 对"全球偏低 2–3 倍"的作用：`lit_models_rice_260929.txt` 第 4.3 节把季数与 pH 之外剩下的约 1.36 倍归到有机物一项；本候选要补满这一项，需要清单口径的高留田或较高的厩肥碳，按 Cao 口径只能补到 0.8–1.15 倍——推测。依据：上表各情景的相对值与该节的乘积分解。厩肥碳是比秸秆时机更稳的增项——推测。依据：厩肥碳在三种留田情景里都给正增量，且 ISIMIP 2015soc 已在运行时目录。
+7. 季节形态：外加碳在泡田时入土、代谢库约 20 d 内耗去大半，排放峰会前移——推测。依据：代谢库速率 0.051 d⁻¹ × 温水因子 0.8 的 e 折约 25 d；Hu 2024 p.3–4 亦写外加有机物使峰前移（经子任务读全文，转引 `lit_models_rice_260929.txt` 第 4.4 节第 3 条）。长期还田的驯化（Jiang 2019：长期效应只有 IPCC 的一半）本模式不表示，按 IPCC 或清单口径定参数会高估——推测。依据：第 3.3 节。
+
+### 5.7 动代码前的诊断（存疑项的实验）
+
+1. 在两座单季稻塔（IT-Cas、KR-CRK）与一个全球稻田格点输出：收获步叶加活茎碳、泡田首日三个凋落物库各层碳、泡田期 lithr 与甲烷产量——存疑。实验：只加诊断输出、不改物理，跑一年，定出 S、现状残留量与边际 ε，替换第 5.6 节的假设值。
+2. 用 Cao 的草谷比表重算稻草产量，得各格点留田比例的分布，检验是否集中在 0.10——存疑。实验：只读 Cao 数据的离线计算。
+3. 比较 ISIMIP 2015soc 与 Cao 厩肥在南亚、东南亚的差别对全球量的影响——存疑。实验：候选实现后两套各跑一次全球续跑一年。
+
+## 6. 著录
+
+有 DOI 的条目由 DOI 查 Crossref（`https://api.crossref.org/works/<doi>`）或 DataCite（`https://api.datacite.org/dois/<doi>`）逐条生成，2026-09-29 查，题名、作者、刊名、卷期、页或文章号、年全部取注册库返回值（作者多于三人写前三人加 et al.，大小写照注册库；Ren W. 2011 题名中注册库的 HTML 下标改写为 Unicode）。查询均匿名。`lit_models_rice_260929.txt` 已核过的条目本文沿用其第 6 节，不重列（Fumoto 2008 与 Matthews 2000a、2000d 除外，本文重查）。
+
+### 6.1 期刊与书章（Crossref，已核）
+
+- Allen, Justin; Pascual, Kristine S.; Romasanta, Ryan R. et al. (2020) Rice Straw Management Effects on Greenhouse Gas Emissions and Mitigation Options. Sustainable Rice Straw Management, 145-159. https://doi.org/10.1007/978-3-030-32373-8_9
+- Cao, Peiyu; Bilotto, Franco; Gonzalez Fischer, Carlos et al. (2026) Spatially explicit global assessment of cropland greenhouse gas emissions circa 2020. Nature Climate Change, 16(3), 354-363. https://doi.org/10.1038/s41558-026-02558-4
+- Carlson, Kimberly M.; Gerber, James S.; Mueller, Nathaniel D. et al. (2017) Greenhouse gas emissions intensity of global croplands. Nature Climate Change, 7(1), 63-68. https://doi.org/10.1038/nclimate3158
+- FUMOTO, TAMON; KOBAYASHI, KAZUHIKO; LI, CHANGSHENG et al. (2008) Revising a process‐based biogeochemistry model (DNDC) to simulate methane emission from rice paddy fields under various residue management and fertilizer regimes. Global Change Biology, 14(2), 382-402. https://doi.org/10.1111/j.1365-2486.2007.01475.x
+- Gadde, Butchaiah; Menke, Christoph; Wassmann, Reiner (2009) Rice straw as a renewable energy source in India, Thailand, and the Philippines: Overall potential and limitations for energy contribution and greenhouse gas mitigation. Biomass and Bioenergy, 33(11), 1532-1546. https://doi.org/10.1016/j.biombioe.2009.07.018
+- Hu, Qiwen; Li, Jingxian; Xie, Hanzhi et al. (2024) Global methane emissions from rice paddies: CH4MOD model development and application. iScience, 27(11), 111237. https://doi.org/10.1016/j.isci.2024.111237
+- Huang, YaO.; Sass, Ronald L.; Fisher, Jr, Frank M. (1998) A semi‐empirical model of methane emission from flooded rice paddy soils. Global Change Biology, 4(3), 247-268. https://doi.org/10.1046/j.1365-2486.1998.00129.x
+- Huang, Yao; Zhang, Wen; Zheng, Xunhua et al. (2004) Modeling methane emission from rice paddies with various agricultural practices. Journal of Geophysical Research: Atmospheres, 109(D8), 2003JD004401. https://doi.org/10.1029/2003jd004401
+- Jägermeyr, Jonas; Müller, Christoph; Ruane, Alex C. et al. (2021) Climate impacts on global agriculture emerge earlier in new generation of climate and crop models. Nature Food, 2(11), 873-885. https://doi.org/10.1038/s43016-021-00400-y
+- Jiang, Yu; Qian, Haoyu; Huang, Shan et al. (2019) Acclimation of methane emissions from rice paddy fields to straw addition. Science Advances, 5(1), eaau9038. https://doi.org/10.1126/sciadv.aau9038
+- Li, C.S. (2000) Modeling Trace Gas Emissions from Agricultural Ecosystems. Nutrient Cycling in Agroecosystems, 58(1-3), 259-276. https://doi.org/10.1023/A:1009859006242
+- Linquist, Bruce A.; Adviento-Borbe, Maria Arlene; Pittelkow, Cameron M. et al. (2012) Fertilizer management practices and greenhouse gas emissions from rice systems: A quantitative review and analysis. Field Crops Research, 135, 10-21. https://doi.org/10.1016/j.fcr.2012.06.007
+- Liu, Chang; Lu, Meng; Cui, Jun et al. (2014) Effects of straw carbon input on carbon dynamics in agricultural soils: a meta‐analysis. Global Change Biology, 20(5), 1366-1381. https://doi.org/10.1111/gcb.12517
+- Lutz, Femke; Herzfeld, Tobias; Heinke, Jens et al. (2019) Simulating the effect of tillage practices with the global ecosystem model LPJmL (version 5.0-tillage). Geoscientific Model Development, 12(6), 2419-2440. https://doi.org/10.5194/gmd-12-2419-2019
+- Matthews, R.B.; Wassmann, R.; Arah, J. (2000) Using a Crop/Soil Simulation Model and GIS Techniques to Assess Methane Emissions from Rice Fields in Asia. I. Model Development. Nutrient Cycling in Agroecosystems, 58(1-3), 141-159. https://doi.org/10.1023/a:1009894619446
+- Matthews, R.B.; Wassmann, R.; Knox, J.W. et al. (2000) Using a Crop/Soil Simulation Model and GIS Techniques to Assess Methane Emissions from Rice Fields in Asia. IV. Upscaling to National Levels. Nutrient Cycling in Agroecosystems, 58(1-3), 201-217. https://doi.org/10.1023/a:1009850804425
+- Qian, Haoyu; Zhu, Xiangchen; Huang, Shan et al. (2023) Greenhouse gas emissions and mitigation in rice agriculture. Nature Reviews Earth & Environment, 4(10), 716-732. https://doi.org/10.1038/s43017-023-00482-1
+- Ren, Jiqin; Yu, Peixian; Xu, Xiaohong (2019) Straw Utilization in China—Status and Recommendations. Sustainability, 11(6), 1762. https://doi.org/10.3390/su11061762
+- Ren, Wei; Tian, Hanqin; Xu, Xiaofeng et al. (2011) Spatial and temporal patterns of CO₂ and CH₄ fluxes in China’s croplands in response to multifactor environmental changes. Tellus B: Chemical and Physical Meteorology, 63(2), 222. https://doi.org/10.1111/j.1600-0889.2010.00522.x
+- Schaphoff, Sibyll; Hötten, David; Müller, Christoph et al. (2026) Implementing methane dynamics into the LPJmL6 model. EGUsphere preprint. https://doi.org/10.5194/egusphere-2025-6210
+- Smerald, Andrew; Rahimi, Jaber; Scheer, Clemens (2023) A global dataset for the production and usage of cereal residues in the period 1997–2021. Scientific Data, 10(1), 685. https://doi.org/10.1038/s41597-023-02587-0
+- Song, Hyeon Ji; Lee, Jin Ho; Jeong, Hyun-Cheol et al. (2019) Effect of straw incorporation on methane emission in rice paddy: conversion factor and smart straw management. Applied Biological Chemistry, 62(1), 70. https://doi.org/10.1186/s13765-019-0476-7
+- Tian, Hanqin; Bian, Zihao; Shi, Hao et al. (2022) History of anthropogenic Nitrogen inputs (HaNi) to the terrestrial biosphere: a 5 arcmin resolution annual dataset from 1860 to 2019. Earth System Science Data, 14(10), 4551-4568. https://doi.org/10.5194/essd-14-4551-2022
+- Van Hung, Nguyen; Maguyon-Detras, Monet Concepcion; Migo, Maria Victoria et al. (2020) Rice Straw Overview: Availability, Properties, and Management Practices. Sustainable Rice Straw Management, 1-13. https://doi.org/10.1007/978-3-030-32373-8_1
+- Wang, Jinyang; Akiyama, Hiroko; Yagi, Kazuyuki et al. (2018) Controlling variables and emission factors of methane from global rice fields. Atmospheric Chemistry and Physics, 18(14), 10419-10431. https://doi.org/10.5194/acp-18-10419-2018
+- Wang, Jinyang; Ciais, Philippe; Smith, Pete et al. (2023) The role of rice cultivation in changes in atmospheric methane concentration and the Global Methane Pledge. Global Change Biology, 29(10), 2776-2789. https://doi.org/10.1111/gcb.16631
+- Wu, X.; Vuichard, N.; Ciais, P. et al. (2016) ORCHIDEE-CROP (v0), a new process-based agro-land surface model: model description and evaluation over Europe. Geoscientific Model Development, 9(2), 857-873. https://doi.org/10.5194/gmd-9-857-2016
+- Yan, Xiaoyuan; Akiyama, Hiroko; Yagi, Kazuyuki et al. (2009) Global estimations of the inventory and mitigation potential of methane emissions from rice cultivation conducted using the 2006 Intergovernmental Panel on Climate Change Guidelines. Global Biogeochemical Cycles, 23(2), 2008GB003299. https://doi.org/10.1029/2008GB003299
+- Yan, Xiaoyuan; Yagi, Kazuyuki; Akiyama, Hiroko et al. (2005) Statistical analysis of the major variables controlling methane emission from rice fields. Global Change Biology, 11(7), 1131-1141. https://doi.org/10.1111/j.1365-2486.2005.00976.x
+- Yevich, Rosemarie; Logan, Jennifer A. (2003) An assessment of biofuel use and burning of agricultural waste in the developing world. Global Biogeochemical Cycles, 17(4), 2002GB001952. https://doi.org/10.1029/2002GB001952
+- Zhang, Bowen; Tian, Hanqin; Lu, Chaoqun et al. (2017) Global manure nitrogen production and application in cropland during 1860–2014: a 5 arcmin gridded global dataset for Earth system modeling. Earth System Science Data, 9(2), 667-678. https://doi.org/10.5194/essd-9-667-2017
+- Zhang, Bowen; Tian, Hanqin; Ren, Wei et al. (2016) Methane emissions from global rice fields: Magnitude, spatiotemporal patterns, and environmental controls. Global Biogeochemical Cycles, 30(9), 1246-1263. https://doi.org/10.1002/2016gb005381
+- Zhang, Jingting; Tian, Hanqin; Liang, Xin-Zhong et al. (2026) Global rice paddy greenhouse gas emissions have doubled over the past six decades driven by area expansion and intensified residue incorporation. Nature Food, 7(5), 474-487. https://doi.org/10.1038/s43016-026-01355-8
+- Zhang, Xiaohui; Lu, Yan; Wang, Qin'geng et al. (2019) A high-resolution inventory of air pollutant emissions from crop residue burning in China. Atmospheric Environment, 213, 207-214. https://doi.org/10.1016/j.atmosenv.2019.06.009
+- Zhao, Xin; Pu, Chao; Ma, Shou-Tian et al. (2019) Management-induced greenhouse gases emission mitigation in global rice production. Science of The Total Environment, 649, 1299-1306. https://doi.org/10.1016/j.scitotenv.2018.08.392
+- Zhao, Yongcun; Wang, Meiyan; Hu, Shuijin et al. (2018) Economics- and policy-driven organic carbon input enhancement dominates soil organic carbon accumulation in Chinese croplands. Proceedings of the National Academy of Sciences, 115(16), 4045-4050. https://doi.org/10.1073/pnas.1700292114
+
+### 6.2 数据集与代码（DataCite，已核）
+
+- Cao, Peiyu; Bilotto, Franco; Gonzalez Fischer, Carlos et al. (2025) Data and code for Spatially explicit global assessment of cropland greenhouse gas emissions circa 2020. figshare，CC BY 4.0，2981470651 字节. https://doi.org/10.6084/m9.figshare.29089973.v3
+- Jägermeyr, Jonas; Müller, Christoph; Minoli, Sara et al. (2021) GGCMI Phase 3 crop calendar. Zenodo，CC BY 4.0. https://doi.org/10.5281/zenodo.5062513
+- Smerald, Andrew (2023) Global crop residue management dataset (1997 - 2021). Karlsruhe Institute of Technology，CC BY 4.0，1.1 GB. https://doi.org/10.35097/989 （论文正文排版把引文号 66 接在 DOI 后，印成 10.35097/98966，该串在 doi.org 为 404）
+- Smerald, Andrew; Rahimi, Jaber; Scheer, Clemens (2023) Global crop residue management (1997-2021). Zenodo，CC BY 4.0（代码）. https://doi.org/10.5281/zenodo.7843730 （注册库 creators 的姓写在 affiliation 字段）
+- Tian, Hanqin; Bian, Zihao; Shi, Hao et al. (2022) HaNi: A Historical dataset of Anthropogenic Nitrogen Inputs to the terrestrial biosphere (1860-2019). PANGAEA，CC BY 4.0. https://doi.org/10.1594/PANGAEA.942069
+- Zhang, Bowen; Tian, Hanqin; Lu, Chaoqun et al. (2017) Manure nitrogen production and application in cropland and rangeland during 1860 - 2014: A 5-minute gridded global data set for Earth system modeling. PANGAEA，CC BY 3.0. https://doi.org/10.1594/PANGAEA.871980
+
+### 6.3 无 DOI 或只经转引
+
+- IPCC (2019) 2019 Refinement to the 2006 IPCC Guidelines for National Greenhouse Gas Inventories, Volume 4, Chapter 5 Cropland, Section 5.5 and Annex 5A.2. 无 DOI，https://www.ipcc-nggip.iges.or.jp/public/2019rf/pdf/4_Volume4/19R_V4_Ch05_Cropland.pdf
+- IPCC (2006) 2006 IPCC Guidelines for National Greenhouse Gas Inventories, Volume 4, Chapter 5 Cropland, Section 5.5. 无 DOI，https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/4_Volume4/V4_05_Ch5_Cropland.pdf
+- DNDC 9.5 Scientific Basis and Processes (2017)，University of New Hampshire. 无 DOI，https://www.dndc.sr.unh.edu/papers/DNDC_Scientific_Basis_and_Processes.pdf
+- User's Guide for the DNDC Model (Version 9.5)，University of New Hampshire. 无 DOI，https://www.dndc.sr.unh.edu/model/GuideDNDC95.pdf
+- FAOSTAT Emissions from Crops（GCE）与 Livestock Manure（EMN）批量文件，2025-10-28 更新. 无 DOI，https://bulks-faostat.fao.org/production/Emissions_crops_E_All_Data_(Normalized).zip 、https://bulks-faostat.fao.org/production/Environment_LivestockManure_E_All_Data_(Normalized).zip
+- ISIMIP 3a/3b 施肥输入的 CoLM 运行时副本 `fertilizer_2015soc.nc`. 无 DOI，本地 `/share/home/dq013/zhwei/colm/data/CoLMruntime/crop/fertilizer_2015soc.nc`
+- Carlson 2017 数据：EarthStat 与 USDA Ag Data Commons（figshare 24852810），页面 403，未核著录与许可.
+- CTSM ctsm5.4.047（commit 7409d3218），本地 `~/mode/Wetland/CTSM`. 无 DOI.
+- 只经转引、未单独核著录：Gadde, Bonnet, Menke and Garivait (2009, Environ. Pollut.)（经 Ren 2019 文献 7）；Launio 等（经 Allen 2020）；Mosier et al. (1998)（经 Yan 2009）；Kern et al. (1995)（经 Matthews 2000d）。

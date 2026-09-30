@@ -1,0 +1,190 @@
+From efe04028b5c9b4977deeef6c2419b43af97e343f Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 13:39:28 +0800
+Subject: [PATCH] feat(hydrology): a flood re-infiltrates at most the pore
+ deficit it found (Q-47)
+
+With DEF_FLOODPLAIN_INFILT_FIX, WATER_VSF tracks per soil patch the flood under way: it starts when the flooded fraction rises above the re-infiltration threshold (0.05) and ends when it falls back. The flood may give the soil at most its flooded fraction times the pore deficit above the water table (plus the aquifer deficit below the column, as the wetland floor refill counts it) found when it starts, plus the added fraction times the deficit then whenever it spreads beyond its largest extent. Each step's re-infiltration is capped by what is left and taken from it. Once the column is filled the flood stops re-infiltrating, so the baseflow no longer pumps the same flood back to the river. Two patch states, fld_inf_left [mm] and fld_frc_evt [-], go into the restart with the fix (old restarts read as zero: a flood under way at the first step starts anew).
+
+---
+ main/MOD_SoilSnowHydrology.F90  | 34 +++++++++++++++++++++++++++++++++
+ main/MOD_Vars_TimeVariables.F90 | 25 ++++++++++++++++++++++--
+ share/MOD_Namelist.F90          |  4 +++-
+ 3 files changed, 60 insertions(+), 3 deletions(-)
+
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index 6b0c0355..cf59060b 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -10,6 +10,7 @@ MODULE MOD_SoilSnowHydrology
+                            DEF_DA_TWS_GRACE,        DEF_Optimize_Baseflow, &
+                            DEF_USE_Dynamic_Wetland, USE_SITE_WTD,          &
+                            DEF_PADDY_RICE_BUND,     DEF_FLOODPLAIN_INFILTRATION, &
++                           DEF_FLOODPLAIN_INFILT_FIX, &
+                            DEF_WETLAND_POND_OUTFLOW, DEF_WETLAND_INFLOW_AREA_SPLIT, &
+                            DEF_WETLAND_LATERAL_INFLOW
+ #if (defined CaMa_Flood)
+@@ -607,6 +608,7 @@ ENDIF
+    USE MOD_SingleSrfdata,       only: SITE_WTD_now, SITE_WTD_valid
+ #endif
+    USE MOD_Opt_Baseflow,        only: scale_baseflow
++   USE MOD_Vars_TimeVariables,  only: fld_inf_left, fld_frc_evt
+ #ifdef TRACER
+    USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_max_wtd_of, wetland_peat_outflow, wetland_inflow_share, &
+       wetland_bog_share
+@@ -793,6 +795,7 @@ ENDIF
+    real(r8) :: gfld,qinfl_all,rsur_fld, qinfl_fld_subgrid! inundation water input from top (mm/s)
+ #endif
+    real(r8) :: gfld_q43, rsur_q43, qinfsub_q43, rsubst_q43  ! Q-43 flood re-infiltration [mm/s]
++   real(r8) :: fld_def                                      ! Q-47 pore deficit above the water table [mm]
+ 
+    type(soil_con_struct ) :: soil_con
+    type(cell_data_struct) :: cell
+@@ -1074,6 +1077,32 @@ IF((patchtype<=1) .or. is_dry_lake &
+       IF (DEF_FLOODPLAIN_INFILTRATION .and. allocated(fld_frc_p)) THEN
+          IF (ipatch >= 1 .and. ipatch <= size(fld_frc_p)) THEN
+             fld_qinfl_p(ipatch) = 0._r8
++            ! Q-47 (DEF_FLOODPLAIN_INFILT_FIX): a flood starts when the flooded
++            ! fraction rises above the re-infiltration threshold and ends when
++            ! it falls back to it. Each part of the patch the flood covers may
++            ! take at most the pore deficit above the water table the flood
++            ! found there (with the aquifer deficit below the column, as the
++            ! wetland floor refill counts it): the flooded fraction times the
++            ! deficit when the flood starts, and the added fraction times the
++            ! deficit then whenever the flood spreads beyond its largest extent.
++            ! A flood thus fills the column once; the baseflow then drains it
++            ! without the same flood refilling it.
++            IF (DEF_FLOODPLAIN_INFILT_FIX .and. patchtype == 0) THEN
++               IF (fld_frc_p(ipatch) <= 0.05_r8) THEN
++                  fld_inf_left(ipatch) = 0._r8
++                  fld_frc_evt (ipatch) = 0._r8
++               ELSEIF (fld_frc_p(ipatch) > fld_frc_evt(ipatch)) THEN
++                  fld_def = max(-wa, 0._r8)
++                  DO j = 1, nl_soil
++                     IF (is_permeable(j) .and. (zi_soisno(j-1) < zwt)) THEN
++                        fld_def = fld_def + max(eff_porosity(j) - vol_liq(j), 0._r8) * dz_soisno(j) * 1000._r8
++                     ENDIF
++                  ENDDO
++                  fld_inf_left(ipatch) = fld_inf_left(ipatch) &
++                     + (fld_frc_p(ipatch) - fld_frc_evt(ipatch)) * fld_def
++                  fld_frc_evt (ipatch) = fld_frc_p(ipatch)
++               ENDIF
++            ENDIF
+             IF (fld_dph_p(ipatch) > 1.e-6_r8 .and. fld_frc_p(ipatch) > 0.05_r8 .and. patchtype == 0) THEN
+                gfld_q43 = fld_dph_p(ipatch) / deltim
+                rsur_q43 = gfld_q43
+@@ -1091,6 +1120,11 @@ IF((patchtype<=1) .or. is_dry_lake &
+                      BVIC, gfld_q43, deltim, rsur_q43, rsubst_q43)
+                ENDIF
+                qinfsub_q43 = max(gfld_q43 - rsur_q43, 0._r8)
++               IF (DEF_FLOODPLAIN_INFILT_FIX) THEN
++                  ! Q-47: no more than the current flood may still give
++                  qinfsub_q43 = min(qinfsub_q43, fld_inf_left(ipatch) / (deltim * fld_frc_p(ipatch)))
++                  fld_inf_left(ipatch) = max(fld_inf_left(ipatch) - deltim * qinfsub_q43 * fld_frc_p(ipatch), 0._r8)
++               ENDIF
+                fld_qinfl_p(ipatch) = qinfsub_q43 * fld_frc_p(ipatch)
+                qgtop = qgtop + fld_qinfl_p(ipatch)
+                fld_dph_p(ipatch) = max(fld_dph_p(ipatch) - deltim * qinfsub_q43, 0._r8)
+diff --git a/main/MOD_Vars_TimeVariables.F90 b/main/MOD_Vars_TimeVariables.F90
+index 170b433d..cf13922e 100644
+--- a/main/MOD_Vars_TimeVariables.F90
++++ b/main/MOD_Vars_TimeVariables.F90
+@@ -537,6 +537,8 @@ MODULE MOD_Vars_TimeVariables
+    real(r8), allocatable :: wetwat        (:) ! water storage in wetland [mm]
+    real(r8), allocatable :: wetdef_noinfl (:) ! deficit below the floor of the wetland share without inflow [mm]
+    real(r8), allocatable :: wetlatin      (:) ! lateral inflow offered to a wetland per unit fed area, r R_up [mm/s]
++   real(r8), allocatable :: fld_inf_left  (:) ! Q-47: flood re-infiltration the current flood may still give, patch mean [mm]
++   real(r8), allocatable :: fld_frc_evt   (:) ! Q-47: largest flooded fraction of the current flood, 0 without one [-]
+    real(r8), allocatable :: wat           (:) ! total water storage [mm]
+    real(r8), allocatable :: wdsrf         (:) ! depth of surface water [mm]
+    real(r8), allocatable :: rss           (:) ! soil surface resistance [s/m]
+@@ -732,6 +734,8 @@ CONTAINS
+             allocate (wetwat                      (numpatch)); wetwat        (:) = spval
+             allocate (wetdef_noinfl               (numpatch)); wetdef_noinfl (:) = 0._r8
+             allocate (wetlatin                    (numpatch)); wetlatin      (:) = 0._r8
++            allocate (fld_inf_left                (numpatch)); fld_inf_left  (:) = 0._r8
++            allocate (fld_frc_evt                 (numpatch)); fld_frc_evt   (:) = 0._r8
+             allocate (wat                         (numpatch)); wat           (:) = spval
+             allocate (wdsrf                       (numpatch)); wdsrf         (:) = spval
+             allocate (rss                         (numpatch)); rss           (:) = spval
+@@ -934,6 +938,8 @@ CONTAINS
+             deallocate (wetwat                 )
+             deallocate (wetdef_noinfl          )
+             deallocate (wetlatin               )
++            deallocate (fld_inf_left           )
++            deallocate (fld_frc_evt            )
+             deallocate (wat                    )
+             deallocate (wdsrf                  )
+             deallocate (rss                    )
+@@ -1090,7 +1096,8 @@ CONTAINS
+    USE MOD_SPMD_Task
+    USE MOD_Namelist, only: DEF_REST_CompressLevel, DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, &
+                            DEF_USE_IRRIGATION, DEF_USE_Dynamic_Lake, SITE_landtype, &
+-                           DEF_WETLAND_INFLOW_AREA_SPLIT, DEF_WETLAND_LATERAL_INFLOW
++                           DEF_WETLAND_INFLOW_AREA_SPLIT, DEF_WETLAND_LATERAL_INFLOW, &
++                           DEF_FLOODPLAIN_INFILTRATION, DEF_FLOODPLAIN_INFILT_FIX
+    USE MOD_LandPatch
+    USE MOD_NetCDFVector
+    USE MOD_Vars_Global
+@@ -1219,6 +1226,10 @@ ENDIF
+       CALL ncio_write_vector (file_restart, 'wetdef_noinfl', 'patch', landpatch, wetdef_noinfl, compress)               ! deficit of the wetland share without inflow [mm]
+       IF (DEF_WETLAND_LATERAL_INFLOW) &
+       CALL ncio_write_vector (file_restart, 'wetlatin', 'patch', landpatch, wetlatin, compress)                         ! lateral inflow offered to a wetland [mm/s]
++      IF (DEF_FLOODPLAIN_INFILTRATION .and. DEF_FLOODPLAIN_INFILT_FIX) THEN
++      CALL ncio_write_vector (file_restart, 'fld_inf_left', 'patch', landpatch, fld_inf_left, compress)                 ! re-infiltration the current flood may still give [mm]
++      CALL ncio_write_vector (file_restart, 'fld_frc_evt', 'patch', landpatch, fld_frc_evt, compress)                   ! largest flooded fraction of the current flood [-]
++      ENDIF
+       CALL ncio_write_vector (file_restart, 'wdsrf   '   , 'patch', landpatch, wdsrf     , compress)                    ! depth of surface water [mm]
+       CALL ncio_write_vector (file_restart, 'rss     '   , 'patch', landpatch, rss       , compress)                    ! soil surface resistance [s/m]
+ 
+@@ -1440,6 +1451,12 @@ ENDIF
+       ! inflow in the first step.
+       IF (DEF_WETLAND_LATERAL_INFLOW) &
+       CALL ncio_read_vector (file_restart, 'wetlatin', landpatch, wetlatin, defval = 0._r8) ! [mm/s]
++      ! A restart written without DEF_FLOODPLAIN_INFILT_FIX has no flood
++      ! under way: a patch flooded at the first step starts a new one.
++      IF (DEF_FLOODPLAIN_INFILTRATION .and. DEF_FLOODPLAIN_INFILT_FIX) THEN
++      CALL ncio_read_vector (file_restart, 'fld_inf_left', landpatch, fld_inf_left, defval = 0._r8) ! [mm]
++      CALL ncio_read_vector (file_restart, 'fld_frc_evt', landpatch, fld_frc_evt, defval = 0._r8)   ! [-]
++      ENDIF
+       CALL ncio_read_vector (file_restart, 'wdsrf   '   , landpatch, wdsrf      ) ! depth of surface water [mm]
+       CALL ncio_read_vector (file_restart, 'rss     '   , landpatch, rss        ) ! soil surface resistance [s/m]
+ 
+@@ -1557,7 +1574,7 @@ ENDIF
+    USE MOD_RangeCheck
+    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, DEF_USE_IRRIGATION, &
+                            DEF_USE_SNICAR, DEF_USE_Dynamic_Lake, DEF_WETLAND_INFLOW_AREA_SPLIT, &
+-                           DEF_WETLAND_LATERAL_INFLOW
++                           DEF_WETLAND_LATERAL_INFLOW, DEF_FLOODPLAIN_INFILTRATION, DEF_FLOODPLAIN_INFILT_FIX
+    USE MOD_Vars_TimeInvariants, only: dz_lake
+ 
+    IMPLICIT NONE
+@@ -1602,6 +1619,10 @@ ENDIF
+       CALL check_vector_data ('wetdef_noinfl [mm] ', wetdef_noinfl) ! deficit of the wetland share without inflow [mm]
+       IF (DEF_WETLAND_LATERAL_INFLOW) &
+       CALL check_vector_data ('wetlatin    [mm/s] ', wetlatin     ) ! lateral inflow offered to a wetland [mm/s]
++      IF (DEF_FLOODPLAIN_INFILTRATION .and. DEF_FLOODPLAIN_INFILT_FIX) THEN
++      CALL check_vector_data ('fld_inf_left  [mm] ', fld_inf_left ) ! re-infiltration the current flood may still give [mm]
++      CALL check_vector_data ('fld_frc_evt   [-]  ', fld_frc_evt  ) ! largest flooded fraction of the current flood [-]
++      ENDIF
+       CALL check_vector_data ('wdsrf       [mm]   ', wdsrf      ) ! depth of surface water [mm]
+       CALL check_vector_data ('rss         [s/m]  ', rss        ) ! soil surface resistance [s/m]
+ IF (DEF_USE_Dynamic_Lake) THEN
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index c4296eb0..46685b32 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -433,7 +433,9 @@ MODULE MOD_Namelist
+    logical  :: DEF_FLOODPLAIN_INFILTRATION = .false.
+    ! Q-47 (paper V2), with DEF_FLOODPLAIN_INFILTRATION only: the routing takes
+    ! the re-infiltrated water from the unit catchments whose flood the soil
+-   ! patches saw and carries what it cannot take to the next routing step
++   ! patches saw and carries what it cannot take to the next routing step;
++   ! a flood re-infiltrates at most the pore deficit it found above the water
++   ! table of the part of the patch it covers
+    logical  :: DEF_FLOODPLAIN_INFILT_FIX = .false.
+    ! Q-39 (paper V2): lake depth of a lake patch from its water pixels that
+    ! have a depth only; a patch without any takes the dataset default 10 m
+-- 
+2.53.0
+

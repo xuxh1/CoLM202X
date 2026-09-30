@@ -1,0 +1,147 @@
+# diag_tropical_et_260930：热带泥炭湿地斑块蒸散偏低的拆分与改法（I-16）
+
+- **日期**：2026.09.30-09:07
+- **读者**：下一会话
+- **来源**：实现子任务 methane-trop-et（I-16），承接 `v2/results/diag_tropical_peat_wt_260930.txt` 第 1 节第 5、6 条与第 3.2 节；基线 `cases/paper_v2/v260930/sp_v2_c90/sites_v2_p9a`（V-155）；分支 `tropical-et`（改码 `7cf137a7`，起点 `cb9f94d8`）；单点树 `v260930/sp_v2_dev_tet`（@`7cf137a7`）与 `v260930/sp_v2_dev_tet0`（@`cb9f94d8`）；配置 `v2/config/v2_tet_*`；脚本 `v2/_scratch/trop_et/d1–d8`（node114 直跑，只打印，本文各数抄自输出）；塔址文献读本地 PDF（`docs/refs/sites/ID-Pag/`、`docs/refs/sites/MY-MLM/`），著录经 Crossref 核
+- **状态**：病因定为湿地斑块冠层高度取土地类 0.5 m；键已在分支 `tropical-et` 提交、两棵单点树编译 MAKE_EXIT=0；两塔键关逐位不变、键开跑完（spin-up 5）；全球未跑；未合回 `methane-paper-v2`
+- **失效于**：键 `DEF_METHANE%wetland_forest_htop_trop` 合回并登记之后，或湿地斑块的冠层改由 PFT 表示之后
+
+口径：蒸散 ET 为 mm d-1 或 mm yr-1；塔上 ET = Qle_f ÷ λ(T)，λ = 2.501e6 − 2370 (T − 273.15) J kg-1；模式 ET = f_fevpa，拆为冠层蒸腾 f_etr、冠层截留蒸发 f_fevpl − f_etr、地面蒸发 f_fevpg（积水面蒸发在地面蒸发里）；只比塔上有 Qle_f 的月份（MY-MLM 2014-01 至 2015-07 共 19 个月，ID-Pag 2016-06 至 2017-05 共 12 个月）。水位 m，地表以下为正。CH4 排放 g CH4 m-2 yr-1；KGE_ln 按 `score_series_v2.py` 的观测门槛与 `score_series.py` 的式子逐月算（`d6_kge.py`；标准计分器只读满 12 个月的示踪文件，ID-Pag 两段残年被判 UNSCORED，这里按时间轴取月）。
+
+## 0. 覆盖面
+
+1. 读码（分支 `tropical-et`）：
+   - 湿地斑块冠层高度：`mkinidata/MOD_HtopReadin.F90:100–148`（LULC_IGBP_PFT 分支，非土壤斑块取 `htop0(m)`，139–141）；`main/MOD_Const_LC.F90:406–412`（`htop0_igbp`，第 11 类 0.5 m）、416–422（`hbot0_igbp`）、436–439（z0mr、displar）、451–496（叶片光学）、788（`htop0 = htop0_igbp`）；`main/CoLMDRIVER.F90:144`（`htop(i)` 每步传入）；`main/MOD_Vars_TimeInvariants.F90:547、761`（const 重启读写，写只在 `mkinidata/MOD_Initialize.F90:753`）。
+   - 冠层与地面通量：`main/MOD_Thermal.F90:593–614`（动态湿地斑块按土壤地面算湿度）、652–682（rss 与 V2 下限）、735–849（patchtype > 0 的单层大叶冠层，调 `eroot` 与 `LeafTemperature`）；`main/MOD_LeafTemperature.F90:436–438`（zd、rb、rd 选项取 3）、518–544（z0m、d 由 htop 定，调 `cal_z0_displa`）、567–600（参考高度）、625–686（ra、rb、rd）、699–702（植物水力开时 rstfac 置 1）；`main/MOD_CanopyLayerProfile.F90:665–728`（Raupach 式 z0、d）；`main/MOD_Eroot.F90:93–152`（rstfac）；`main/MOD_PlantHydraulic.F90:447、470`（htop 进重力项与木质部导度）；`main/MOD_SoilSurfaceResistance.F90:234–245、310`（SL14 与下限）；`share/MOD_Namelist.F90:405、588、1667–1672`（RSS 方案 1、植物水力开、IGBP_PFT 设定）。
+   - V2 湿地改动：`main/TRACER/MOD_Tracer_Reactive_Methane_WetlandVeg.F90:264–291`（塔上份额覆盖）、301–330（`wetveg_cap_lai`）；`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90:4765–4782`（`wetland_emergent_share`）、4785–4827（`wetland_moss_rss`）；`main/TRACER/MOD_Tracer_Reactive_Methane.F90:189–199`（`read_methane_wetveg` 调用）；`v2/host_changes/register.tsv` 第 15、51–55 行（C-26、C-82、C-83、C-86、C-88）。
+   - 上游：CTSM `src/main/initGridCellsMod.F90:285–348`（湿地 landunit 只有一个 noveg 斑块，338）、`src/biogeochem/CNVegStructUpdateMod.F90:202–226`（乔木 htop 由茎碳算）；CLM5 参数 `~/mode/Wetland/v1/CLM_params/clm5_params.c171117.nc`（热带常绿阔叶 z0mr 0.075、displar 0.67）。
+2. 检索词：`htop`（main 中 LeafTemperature 以外只见于 CoLMDRIVER、CoLMMAIN、Thermal、FrictionVelocity、TurbulenceLEddy、PlantHydraulic、CanopyLayerProfile、TimeInvariants，都已读）、`\bhbot\b`（湿地路径上只作参数传入，LeafTemperature 不读）、`HTOP_readin`（1 处调用，mkini）、`WRITE_TimeInvariants`（1 处调用，mkini）、`read_methane_wetveg`（2 处调用）、`wetland_moss_rss`、`wetland_emergent_share`、`wetland_lai_cap_site`。
+3. 配置：`v2/config/v2_p8f`（两塔 forest 份额 1.0、LAI 上限 3.0、dome 份额 1.0、moss 份额 0、emergent 份额 0，`wetland_moss_rss` 未设即关）、`v2_p8tp`（p8f 加 C-91 建议值）；`sites_v2_p9a/_conf`（与 `v2_p8a` 同）；两塔强迫 namelist（观测高度 ID-Pag 36.5 m、MY-MLM 41 m）；ID-Pag const 重启 patchclass 11、patchtype 2、htop 0.5、hbot 0——已验证（ncdump `sites_v2_p9a_spin/ID-Pag/restart/const/ID-Pag_restart_const_lc2005_w180_s90.nc`）。
+4. 数据：两塔 FLUXNET-CH4 Flux 文件（Qle、Qle_f、Qh_f、Rnet_f、SWdown、SWup_f、LWup_f、VPD_f、GPP_DT、WTD、FCH4_f；MY-MLM 的 Rnet、SWup、LWup 全缺）与 Met 文件；各 tag 主历史、spin-up 历史与示踪历史；`v2/data/glwd_class_2deg.nc`。
+5. 文献：Sakabe et al. 2018 第 2.1、2.2 节，Wong et al. 2018 第 2.1、2.2 节，Tang et al. 2019 摘要（本地 PDF）；著录见第 6 节。
+6. 未看：无。存疑（要跑才能定）：全球效果——热带湿地斑块按森林份额加高冠层后东南亚、秘鲁、刚果 26 类的蒸散与水位（第 5.5 节）；MY-MLM 较干月份 Bowen 比偏高的原因（第 2.4 节）。
+
+## 1. 结论
+
+1. 偏低不在地面、积水或土壤水分约束上，在冠层：两塔 rstfac 逐月 1.000，地面蒸发已占模式 ET 的 18–21 %，V2 的枯落物、苔藓阻抗与 LAI 上限在两塔都不起作用（挺水与苔藓份额 0、`wetland_moss_rss` 关、森林份额 1 使 LAI 不截）——已验证（d1 输出；`WetlandVeg.F90:328`、`Physics.F90:4774–4781、4806–4810`、`Thermal.F90:656–667`）。模式 LAI 5.3–5.4、SAI 1.1，与塔上 PAI 5.0（ID-Pag）、6.4（MY-MLM）相当，冠层同化 10.5–11.0 µmol m-2 s-1 不低于塔上 GPP_DT（10.5、8.0）——已验证（d1、d2 输出；Sakabe et al. 2018 p. 5124；Wong et al. 2018 p. 355）。
+2. 病因：LULC_IGBP_PFT 下湿地斑块的冠层高度取土地类表的 0.5 m（`MOD_HtopReadin.F90:139–141`、`MOD_Const_LC.F90:410–412`），23–35 m 的泥炭沼泽林在模式里 z0m 0.08 m，冠层与 36–41 m 处的大气弱耦合：叶温月均高出气温 0.4–0.8 K，ID-Pag 长波上行 463.4 对塔 455.5 W m-2，净辐射少 14 W m-2（另 6.6 来自反照率 0.142 对 0.109），显热多 6 W m-2，合计潜热少 19 W m-2——已验证（d1、d7 输出；`LeafTemperature.F90:518–544`）。
+3. 改法：甲烷模块键 `DEF_METHANE%wetland_forest_htop_trop`（m，缺省 −1 关），热带（|纬度| ≤ 23.5°）湿地斑块冠层高度改为 f·H + (1 − f)·0.5 m，f 为 C-13 森林份额；提交 `7cf137a7`，只动 `main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90` 与 `MOD_Tracer_Reactive_Methane_WetlandVeg.F90`，无宿主文件改动，运行时初始化生效、不进重启——已验证（git show --stat；读码）。
+4. 键关逐位不变：`v2_tet_off`（@`7cf137a7`）与 `v2_tet_base`（@`cb9f94d8`，同配置）两塔主跑与 spin-up 共 12 个历史文件、3186 个变量 0 个不同——已验证（d4_bitwise.py）。
+5. 键开（塔上冠层高 ID-Pag 23 m、MY-MLM 32.5 m）：z0m 0.08 → 2.3、3.3 m，叶温降到比气温低 0.2、0.7 K，长波上行降 6–8 W m-2；ET ID-Pag 1202 → 1301 mm yr-1（塔的 0.81 → 0.87，月相关 0.12 → 0.52），MY-MLM 1075 → 1133（0.69 → 0.73）；水位 ID-Pag 0.075 → 0.086 m、MY-MLM 0.053 → 0.055 m；排放 ID-Pag 119 → 125、MY-MLM 131 → 138；KGE_ln ID-Pag −6.51 → −6.60、MY-MLM −1.70 → −1.66——已验证（d3、d6 输出）。统一取 25 m 与塔上高度差不到 0.01（ET 比 0.88、0.73）——已验证（d3 输出，`v2_tet_on25`）。
+6. 与 C-91 同开（`v2_p8tp` 加键）：ID-Pag ET 塔的 0.87 → 0.92，水位 0.173 → 0.192 m（塔 0.181），月最深 0.448 → 0.520（塔 0.444），标准差 0.129 → 0.153（0.125），r 0.93 → 0.94，排放 68.8 → 69.7；MY-MLM ET 0.74 → 0.77，水位 0.108 → 0.109，排放 97.9 → 100.3——已验证（d3、d8 输出）。即 ID-Pag 在 C-91 下水位已到塔上，再加蒸散旱季会偏深；承接件"差的 0.05–0.15 m 落在蒸散上"在 ID-Pag 不成立——已验证（上两项相比）。
+7. 余下的缺口：ID-Pag 潜热仍少 11 W m-2，其中反照率 6.6（模式 0.142、塔 0.109；湿地类叶片光学与热带常绿阔叶类只差可见光反射 0.105 对 0.100，属 CoLM 常绿阔叶冠层的通病）、显热多 4.6——已验证（d7 输出；`MOD_Const_LC.F90:451–496`）。MY-MLM 仍少 30 W m-2，显热 48 对塔 24；其中东北季风月（2014-12 至 2015-03）塔上 (H + LE) / 入射短波 0.87–0.97，高于 ID-Pag 塔上净辐射比 0.75，塔上潜热在这几个月很可能超过可用能量——推测。较干月份模式显热比塔高约 30 W m-2 的原因未定——存疑（第 2.4 节写了要做的实验）。
+8. 全球：热带湿地斑块森林份额（面积加权）东南亚 0.869、南美 0.881、非洲 0.814，热带外 0.518——已验证（d5 输出）；所以键只在热带开，热带外树木泥炭地（北方 5–15 m）不动。建议全球值 25 m——推测（两塔 23、30–35 m；25 m 与塔上高度结果几乎相同）。东南亚区域水位按两塔比例约加深 0.01–0.02 m、排放变化在 ±5 % 内——推测。
+
+## 2. 诊断：两塔模式蒸散逐月拆分（基线 `v2_tet_off` = V-155 的蒸散，配置 `v2_p8f`）
+
+### 2.1 年均对照
+
+| 量 | ID-Pag 模式 | ID-Pag 塔 | MY-MLM 模式 | MY-MLM 塔 |
+| --- | --- | --- | --- | --- |
+| ET（mm yr-1） | 1202 | 1488（能量闭合订正 1496） | 1075 | 1554 |
+| 蒸腾 / 截留蒸发 / 地面蒸发 | 840 / 115 / 247 | — | 639 / 245 / 191 | — |
+| 净辐射（W m-2） | 133.1 | 147.2 | 129.9 | 缺 |
+| 显热 / 潜热 | 37.0 / 95.7 | 31.2 / 114.7 | 44.5 / 85.6 | 23.7 / 119.9 |
+| 反照率、长波上行 | 0.142、463.4 | 0.109、455.5 | 0.140、464.0 | 缺 |
+| 叶温 − 气温（K）、z0m（m） | +0.80、0.08 | — | +0.41、0.08 | — |
+| LAI、SAI / 塔上 PAI | 5.38、1.11 / 5.0 | | 5.28、1.18 / 6.4 | |
+| rstfac | 1.000 | | 1.000 | |
+| 同化 / GPP_DT（µmol m-2 s-1） | 10.95 | 7.99 | 10.52 | 10.49 |
+| 截留蒸发 / 降水 | 0.041 | | 0.103 | |
+
+- 数——已验证（d1_et_monthly.py、d2_gpp_diurnal.py、d7_energy_month.py 输出；`v2_p9a` 与 `v2_tet_off` 的蒸散与能量逐位相同，两者排放不同是配置 p8a 与 p8f 之差）。塔上年 ET 与 Tang et al. 2019 的 4 年均值 1579 ± 47 mm yr-1 相符——已验证（Tang et al. 2019 摘要）。
+- ID-Pag 潜热少 19.0 W m-2：净辐射少 14.1（短波 6.6 = 吸收 168.6 对 175.2，长波 7.9 = 463.4 对 455.5），显热多 5.8——已验证（上表相减）。
+
+### 2.2 逐项排除
+
+- 土壤水分约束：`eroot` 在饱和或近饱和层 rresis = 1（`MOD_Eroot.F90:100–114`），CoLM 无缺氧或水饱和惩罚；两塔逐月 rstfac 1.000——已验证（读码；d1 输出）。植物水力开（`MOD_Namelist.F90:588`），htop 0.5 m 时木质部导度 sai·kmax/htop 反而大（`MOD_PlantHydraulic.F90:470`），不是限制——已验证（读码）。
+- LAI：森林份额 1 时 `wetveg_cap_lai` 保留遥感 LAI 不截（`WetlandVeg.F90:322–328`，f = 1）——已验证（读码；d1 LAI 5.3–5.4）。
+- 地面阻抗：枯落物下限乘挺水份额（两塔 0），苔藓下限要 `wetland_moss_rss` 开且乘苔藓份额（两塔 0），故 rss 只是宿主 SL14（ID-Pag 月均 170–441 s m-1），地面蒸发仍有 0.5–0.8 mm d-1——已验证（读码 `Thermal.F90:656–667`、`Physics.F90:4774–4781、4806–4826`；d1 输出）。
+- 光合：同化不低于塔上 GPP_DT（ID-Pag 反高 37 %），故 vmax25（湿地类 52 对常绿阔叶 72，`MOD_Const_LC.F90:500–503`）不是蒸腾偏低的原因——已验证（d2 输出）。
+
+### 2.3 冠层高度
+
+- 湿地斑块走单层大叶冠层（`Thermal.F90:735–849`），冠层参数取土地类 11 的常数：htop 0.5 m、hbot 0（`MOD_HtopReadin.F90:139–141`，土壤斑块的乔木 PFT 才读冠层高度数据，120–133）；z0m、d 由 htop 与 LAI + SAI 按 Raupach 式算（`LeafTemperature.F90:518–544`、`CanopyLayerProfile.F90:706–721`），模式输出 z0m 0.074–0.088 m——已验证（读码；d1 输出）。
+- 塔址实测冠层：ID-Pag 平均高约 23 m、PAI 5.0，塔高 36.5 m（Sakabe et al. 2018 p. 5124–5125）；MY-MLM 冠层参差、高 30–35 m，PAI 6.4，观测高 41 m（Wong et al. 2018 p. 354–355）——已验证（本地 PDF）。
+- 上游 CTSM 的湿地 landunit 只有一个无植被斑块（`initGridCellsMod.F90:338`），森林湿地的树落在植被 landunit 上按乔木 PFT 的高度（`CNVegStructUpdateMod.F90:202–226`；热带常绿阔叶 z0mr 0.075、displar 0.67）——已验证（读码与 ncdump）。CoLM 给湿地类一层 0.5 m 的草本冠层，对森林沼泽即把冠层当草甸——推测（由上两条推出）。
+- 后果：弱耦合使冠层白天积热，叶温比气温高、长波上行多、净辐射少，同时湿冠层与气孔的"水汽亏缺项"变小，潜热向平衡蒸散靠拢——推测（按 Penman–Monteith 的结构；第 5 节键开后长波上行与叶温同步回落为已验证的一半）。
+
+### 2.4 MY-MLM 的另一部分
+
+- 塔上 (H + LE) / 入射短波逐月：其余月份 0.58–0.79，东北季风月 2014-12、2015-01、02、03 为 0.87、0.97、0.92、0.88；这几个月实测（未插补）Qle 占 0.35–0.65。ID-Pag 塔上净辐射 / 入射短波 0.75、(H + LE) / 入射短波 0.71–0.80——已验证（d7 输出）。季风月塔上潜热高于可用能量的可能性大，MY-MLM 的"低 30 %"有一部分在观测侧——推测（MY-MLM 无净辐射，不能直接闭合）。
+- 较干月份（2014-09 至 11、2015-04 至 06）键开后模式显热 48–63 W m-2，塔上 22–30，潜热模式少 13–31 W m-2；键开前显热 44–57，键开后不降——已验证（d1、d7 输出）。原因存疑：候选是 WUE 气孔模型的 λ（全部类 1000，`MOD_Const_LC.F90:655–658`）与湿地类 vmax25，需在 MY-MLM 上各改一次跑单柱，看显热、蒸腾与同化是否同时对上塔。
+
+## 3. 代码路径：湿地斑块（patchtype 2）的地表能量与蒸发
+
+1. 冠层参数：mkini 时 `HTOP_readin` 给非土壤斑块 `htop0(patchclass)`（`MOD_HtopReadin.F90:139–141`），写进 const 重启（`MOD_Initialize.F90:753`），运行时读回（`MOD_Vars_TimeInvariants.F90:547`），每步 `CoLMDRIVER.F90:144` 传入——已验证（读码）。
+2. 地面湿度：动态湿地斑块按土壤地面，由第 1 层基质势算 hr（`Thermal.F90:593–614`）——已验证（读码）。
+3. 地面阻抗：`DEF_RSS_SCHEME = 1`（IGBP_PFT 不关，`MOD_Namelist.F90:405`），rss = SL14，下限取枯落物（C-82，乘 C-88 挺水份额）与苔藓（C-26，乘 C-89 苔藓份额）之大（`Thermal.F90:652–676`、`SoilSurfaceResistance.F90:310`）——已验证（读码）。
+4. 冠层：patchtype > 0 走单层大叶（`Thermal.F90:735`），`eroot` 给 rstfac（789–796），`LeafTemperature` 解叶温、ra、rb、rd、气孔与截留蒸发（808–849），湿地斑块的 C-83 盖度分拆只在单点键开时起作用（746）——已验证（读码）。
+5. 与土壤斑块不同之处：土壤斑块逐 PFT 解（`Thermal.F90:935` 起），乔木 PFT 用冠层高度数据（`MOD_HtopReadin.F90:129–133`）；湿地斑块只有土地类常数——已验证（读码）。
+
+## 4. 改法（I-16，提交 `7cf137a7`，分支 `tropical-et`）
+
+- 提交 `7cf137a7` feat(methane): canopy height of the forested share of tropical wetland tiles (I-16)，只改 `main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90`（键与说明 808–820，NaN 检查 1597，范围检查 1872–1878）与 `main/TRACER/MOD_Tracer_Reactive_Methane_WetlandVeg.F90`（调用 291–297，子程序 `wetveg_set_forest_htop` 308–333）——已验证（git show --stat；读码）。
+- 键 `DEF_METHANE%wetland_forest_htop_trop`（m，缺省 −1 关；取值须在 [1, 100] 且 `wetland_veg_glwd` 开）。消费点：`read_methane_wetveg` 在塔上份额覆盖之后调 `wetveg_set_forest_htop`，对 |纬度| ≤ 23.5° 的 patchtype 2 斑块置 htop = f·H + (1 − f)·htop0(patchclass)（`WetlandVeg.F90:331`），宿主 `LeafTemperature.F90:518–544` 由此算 z0m 与 d——已验证（读码；键开日志行 "I-16 forested share of tropical wetland tiles at canopy height [m]: 23.00"，z0m 输出 0.08 → 2.31）。
+- 设计取舍：
+  - 按份额线性平均，同土壤斑块对 PFT 高度的做法（`MOD_HtopReadin.F90:136`）——已验证（读码）。
+  - 由土地类表重算而不是在现值上改，`ch4_reactive_init` 重入时结果不变（`MOD_Tracer_Reactive_Methane.F90:132` 注明会重入）——已验证（读码）。
+  - hbot 不动：湿地路径上 `LeafTemperature` 不读 hbot——已验证（grep `\bhbot\b`）。
+  - 只在热带开：热带外湿地斑块森林份额 0.518（北方树木泥炭地），实测冠层远低于 25 m，没有塔上证据不动——已验证（d5 输出）；北方是否也该加高另议——推测。
+  - 放在甲烷模块而非宿主：森林份额来自 C-13（`wetland_veg_glwd`），宿主没有；与 C-13 改宿主 LAI（`wetveg_cap_lai`）同一做法。所以没有宿主提交，`v2/host_changes/register.tsv` 不加行——已验证（读码）。
+- 生效方式：运行时初始化改数组，不写重启，续跑可用、无需冷启动——已验证（`WRITE_TimeInvariants` 只在 mkini 调用）。
+- 建议取值：站点在 `SITE_PARAMS.csv` 加列 `DEF_METHANE%wetland_forest_htop_trop`（ID-Pag 23.0、MY-MLM 32.5，塔址文献值）；全球在 `ch4_parameter.nml` 设 25.0——推测（全球值见第 1 节第 8 条）。
+
+## 5. 验证
+
+### 5.1 建树与配置
+
+- 改码树：`build_site_tree.sh 7cf137a7 v260930/sp_v2_dev_tet "..."`，日志末行 `MAKE_EXIT=0`；起点树：`build_site_tree.sh cb9f94d8 v260930/sp_v2_dev_tet0 "..."`，`MAKE_EXIT=0`——已验证（tail 两棵树 `build_20260930_v2.log`）。两棵树的 `CODE_COMMIT.txt` 分支行由脚本写死为 methane-paper-v2，note 行写了分支 tropical-et——已验证（cat）。
+- 配置（本分支 `v2/config/`）：`v2_tet_off` = `v2_p8f` 原样；`v2_tet_on` = p8f 的 `SITE_PARAMS.csv` 加一列（ID-Pag 23.0、MY-MLM 32.5）；`v2_tet_on25` = p8f 的 `ch4_parameter.nml` 加 `wetland_forest_htop_trop = 25.0`；`v2_tet_off91`、`v2_tet_on91` = `v2_p8tp`（p8f 加 C-91）及其加列——已验证（diff）。
+- 跑法：`prep_tag.sh`（spin-up 5）加 `run_sites_direct.sh node114 ... --sites ID-Pag,MY-MLM`（WORKERS 2），六个 tag 均 `ok=2 fail=0`——已验证（各 tag `_conf/STATUS.txt`）。
+
+### 5.2 键关逐位不变
+
+- `v2_tet_off`（`sp_v2_dev_tet`）对 `v2_tet_base`（`sp_v2_dev_tet0`，同 `v2_tet_off` 配置）：两塔主跑与 spin-up 共 12 个历史文件、3186 个变量 0 个不同——已验证（d4_bitwise.py）。
+
+### 5.3 键开前后
+
+| tag | 塔 | ET mm yr-1（塔的比） | 蒸腾 / 截留 / 地面 | 净辐射、显热、潜热 W m-2 | 叶温 − 气温 K、z0m m | 水位 年均（最深月）m | 排放 | KGE_ln（β、α、r） |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| v2_tet_off | ID-Pag | 1202（0.81） | 840 / 115 / 247 | 133.1、37.0、95.7 | +0.80、0.08 | 0.075（0.179） | 119.3 | −6.51（978、19.8、0.72） |
+| v2_tet_on | ID-Pag | 1301（0.87） | 979 / 132 / 189 | 139.5、35.8、103.5 | −0.18、2.31 | 0.086（0.220） | 125.4 | −6.60（1028、22.0、0.72） |
+| v2_tet_on25 | ID-Pag | 1302（0.88） | 974 / 135 / 193 | 139.4、35.6、103.7 | −0.17、2.51 | 0.086（0.219） | 125.1 | −6.59（1026、21.9、0.72） |
+| v2_tet_off91 | ID-Pag | 1290（0.87） | 852 / 112 / 327 | 134.1、31.1、102.7 | +0.66、0.08 | 0.173（0.448） | 68.8 | −6.18（564、29.3、0.77） |
+| v2_tet_on91 | ID-Pag | 1370（0.92） | 970 / 130 / 270 | 139.9、30.8、109.0 | −0.25、2.31 | 0.192（0.520） | 69.7 | −6.22（571、31.3、0.79） |
+| 塔 | ID-Pag | 1488 | — | 147.2、31.2、114.7 | — | 0.181（0.44） | 0.1 | — |
+| v2_tet_off | MY-MLM | 1075（0.69） | 639 / 245 / 191 | 129.9、44.5、85.6 | +0.41、0.08 | 0.053（0.124） | 131.3 | −1.70（8.85、3.51、0.02） |
+| v2_tet_on | MY-MLM | 1133（0.73） | 733 / 264 / 136 | 137.4、47.8、90.2 | −0.74、3.28 | 0.055（0.128） | 137.6 | −1.66（9.29、3.27、0.17） |
+| v2_tet_on25 | MY-MLM | 1138（0.73） | 751 / 258 / 129 | 137.5、47.4、90.6 | −0.76、2.53 | 0.055（0.129） | 138.3 | −1.67（9.33、3.31、0.17） |
+| v2_tet_off91 | MY-MLM | 1146（0.74） | 651 / 243 / 252 | 130.5、39.7、91.2 | +0.31、0.08 | 0.108（0.314） | 97.9 | −1.87（6.36、7.23、0.06） |
+| v2_tet_on91 | MY-MLM | 1193（0.77） | 728 / 263 / 203 | 137.6、43.3、95.0 | −0.78、3.28 | 0.109（0.318） | 100.3 | −1.83（6.54、7.03、0.16） |
+| 塔 | MY-MLM | 1554 | — | 缺、23.7、119.9 | — | 0.060（0.30，零点洼地面） | 14.7 | — |
+
+- 数——已验证（d3_compare.py、d6_kge.py 输出；KGE_ln 以 mg CH4 m-2 d-1 月值算，`v2_tet_base` 的 MY-MLM 与 V-158 `scores77_v2_p9f.txt` 同为 −1.70、8.85、3.51、0.02）。
+- 读法：
+  - 能量：键开后长波上行 ID-Pag 463.4 → 457.0（塔 455.5）、MY-MLM 464.0 → 456.4，净辐射升 6.4、7.5 W m-2，ID-Pag 净辐射余差 7.7 W m-2 几乎全是反照率——已验证（d7 输出）。
+  - 蒸散的增加落在蒸腾（+94–139 mm yr-1）与截留蒸发（+17–19），地面蒸发降 55–58（冠层下 rd 变大）；ID-Pag 月 ET 相关 0.12 → 0.52——已验证（上表）。
+  - 同化升 8–10 %（ID-Pag 10.95 → 12.07，MY-MLM 10.52 → 11.43 µmol m-2 s-1），经湿地植物输入使产量升 2–4 %、排放升 3–5 %；C-91 同开时水位加深抵消，ID-Pag 排放 68.8 → 69.7——已验证（d8_ch4_drivers.py）。ID-Pag 同化已比塔上 GPP_DT 7.99 高 37–51 %，另立——推测（原因未查）。
+  - 水位：单开键 ID-Pag 加深 0.011 m、MY-MLM 0.002 m（出流 rsub 1820 → 1754 mm yr-1 吸收了多出的蒸散）；与 C-91 同开 ID-Pag 年均 0.192 对塔 0.181、旱季最深月 0.520 对 0.444——已验证（d3 输出）。
+  - 排放量级：两塔 β 分别约 1000 与 9，远超蒸散能动的范围；KGE_ln 变化 ≤ 0.09——已验证（上表）。
+
+### 5.4 结论对采用的含义
+
+- 物理上该开：它修的是结构错误（森林沼泽的冠层当 0.5 m 草甸），塔上长波与叶温回到实测附近，ET 升 5–8 %，C-91 同开时 ID-Pag 水位对上——已验证（第 5.3 节）。
+- 它补不齐"低 20–30 %"：ID-Pag 余下的潜热缺口 11.2 W m-2 中约六成（6.6）是反照率，MY-MLM 余 27 % 一部分可能在塔上——已验证（ID-Pag）；MY-MLM 部分为推测（第 2.4 节）。
+
+### 5.5 下一步
+
+- 全球：O-7 或下一基底配置加 `DEF_METHANE%wetland_forest_htop_trop = 25.0` 续跑一版（无需冷启动），分区看东南亚、秘鲁、刚果 26 类的蒸散与水位、单位面积排放；与 C-91 的全球 V-160 同比——推测（未跑）。
+- 站点：77 塔中键能作用到的只有 ID-Pag、MY-MLM——BR-Npw 以 `SITE_landtype = 2` 走土壤斑块，BW-Gum、BW-Nxr 森林份额 0，PH-RiF 为稻田土壤斑块，其余湿地塔都在热带外——已验证（读 `v2_p8f/SITE_MAIN.csv`、`SITE_PARAMS.csv` 与 LIST；PH-RiF 见承接件第 5.3 节）。
+- 另立：CoLM 常绿阔叶冠层反照率偏高（两塔 0.14 对 0.11）；MY-MLM 较干月份 Bowen 比偏高（第 2.4 节）；ID-Pag 同化偏高。
+
+## 6. 著录（Crossref 逐条查过，2026-09-30）
+
+- Sakabe, A., Itoh, M., Hirano, T., and Kusin, K. (2018) Ecosystem-scale methane flux in tropical peat swamp forest in Indonesia. Global Change Biology 24(11), 5123–5136. 10.1111/gcb.14410
+- Wong, G. X., Hirata, R., Hirano, T., Kiew, F., Aeries, E. B., Musin, K. K., Waili, J. W., Lo, K. S., and Melling, L. (2018) Micrometeorological measurement of methane flux above a tropical peat swamp forest. Agricultural and Forest Meteorology 256–257, 353–361. 10.1016/j.agrformet.2018.03.025
+- Tang, A. C. I., Stoy, P. C., Hirata, R., Musin, K. K., Aeries, E. B., Wenceslaus, J., Shimizu, M., and Melling, L. (2019) The exchange of water and energy between a tropical peat forest and the atmosphere: Seasonal trends and comparison against other tropical rainforests. Science of The Total Environment 683, 166–174. 10.1016/j.scitotenv.2019.05.217

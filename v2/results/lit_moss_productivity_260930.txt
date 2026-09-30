@@ -1,0 +1,293 @@
+# lit_moss_productivity_260930：泥炭地藓层生产力份额与藓碳去向（L-18）
+
+- **日期**：2026.09.30-09:33
+- **读者**：下一会话
+- **来源**：中控派活 methane-lit-moss（L-18，只读文献，未改码、未跑模式、未提交）；账本 `v2/迭代账本.md` 的 V-172、Q-75、C-89 行与备货 I-33；`v2/results/lai_from_gpp_260930.txt` 第 5 节；塔文献 `docs/refs/sites/<塔>/` 与 `scripts/sites/site_facts.csv`；三路只读子任务（塔级分区、藓碳去向、模型表示）的结论经本文件逐条收录，带页码者才收；文本缓存与脚本 `v2/_scratch/moss/lit/`（`share_convert.py` 输出 `share_convert.out`，`hanson2020_table1.py`）与 `v2/_scratch/moss/B/`（`grep2.py` 输出 `grep2.out`，`bnz_means.py`、`bnz471_bog_means.py`）；读码 `main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90:728-765、869-886`、`MOD_Tracer_Reactive_Methane_WetlandVeg.F90:365-384`、`MOD_Tracer_Reactive_BgcShim.F90:248-330`；计分 `v2/results/scores77_v2_p9k.csv`；CLM5 技术手册 `~/mode/Wetland/CTSM/doc/source/tech_note/Decomposition/CLM50_Tech_Note_Decomposition.rst` 第 122-138 行
+- **状态**：四问已答；最简表示只到机制、参数与方向，未改码、未实跑
+- **失效于**：I-33 藓层输入落地，或 `wetland_moss_input_frac`、`wetland_lai_open_peat`、`wetland_share_moss_site` 改动后
+
+口径：GPP、NPP 一律 g C m-2（生长季）或 g C m-2 yr-1（年），干物质另注"g dm"；"份额"均为藓占生态系统的比例。R = 维管地下 NPP / 维管地上 NPP；CUE = NPP / GPP。
+
+## 0. 覆盖面
+
+1. 塔（25 座）：bog 7（CA-SCB、DE-SfN、FI-Si2、JP-BBY、NZ-Kop、US-BZB、US-Uaf），fen 7（DE-Zrk、FI-Lom、FI-Sii、FR-LGt、SE-Deg、US-BZF、US-Los），湿苔原 11（US-A03、US-A10、US-Atq、US-Beo、US-Bes、US-ICs、US-Ivo、US-NGB、US-NGC、RU-Cok、RU-Ch2）。本地 173 份塔文献转文本逐句检索（藓类词 moss、Sphagnum、bryophyte、understor、ground layer、capitul 与生产、生物量、分区、去除、百分比词交叉；73 个文件命中 212 句，`v2/_scratch/moss/B/grep2.out`）；按塔名加 moss、Sphagnum、NPP、partition、removal 联网检索约 20 次；`site_facts.csv` 上述塔的"年净初级生产力""LAI""植物功能型""维管植物盖度"行全读。
+2. 份额综述与站点外文献：读全文 Turetsky et al. 2010（扫描版）、Walker et al. 2017、Hanson et al. 2020（表 1 文本层错乱，未取数）、Frolking et al. 2010、St-Hilaire et al. 2010、Peregon et al. 2024、Korrensalo et al. 2017、Leroy et al. 2019、Riutta et al. 2020、Hartmann et al. 2026（Europe PMC 全文 XML）；只读摘要 Goulden and Crill 1997、Douma et al. 2007、Street et al. 2013、Bisbee et al. 2001、Moore et al. 2002、Turetsky et al. 2012。付费且注册库无摘要、未用：Thormann and Bayley 1997（Écoscience 与 Plant Ecology 两篇）、Szumigalski and Bayley 1996、Kosykh et al. 2008、Riutta et al. 2007（Ecosystems）、Gunnarsson 2005、Shaver and Chapin 1991。
+3. 藓碳去向：分解 11 篇、DOC 与同位素标记 8 篇、藓层氧化 12 篇，读全文或只读摘要逐条标在第 3 节与第 6 节。
+4. 模型：16 个（第 4 节表），GMD、BG、ESD、CP、TC 全文；Wiley 与 Springer 付费文只读摘要（第 4 节注明）。
+5. 第 6 节全部 DOI 由 Crossref（数据集由 DataCite）重打，核对题名、刊、卷、页、年。
+6. 未看：无。
+7. 存疑（读码读文献定不了，要跑）：
+   - 藓凋落物在模式里单位碳的甲烷产率相对维管输入的倍数 e。文献只有 Leroy et al. 2019 中宇宙给出的上限 0.56（第 3.2 节第 4 条）。实验：按第 5.2 节加藓输入，peat 子集对 `v2_p9k`，看 SE-Deg、FI-Si2 两座有实测分区的塔。
+   - 藓凋落物走"专用慢库"与"借用现有库"两种做法的甲烷差（第 5.2 节第 2 条）。实验同上，两个配置各跑一次。
+
+## 1. 结论
+
+1. 现用 0.48 的口径是"藓 NPP 占全站地上 NPP"：分母为藓、林下维管地上与乔木地上三层 NPP 之和，不含任何维管地下 NPP，也不是 GPP 份额；数据来自北美 17 篇文献 70 处样地中的 22 处北方与苔原湿地，fen 0.53、bog 0.58，旱地 0.20（冻土旱地 0.25、非冻土旱地 0.14）；样地以黑云杉有林或结构复杂的湿地为主，作者明写不含开阔 fen 与挺水沼泽——已验证（Turetsky et al. 2010，Methods "Net primary productivity" 节、Results "Moss and vascular plant productivity" 节、Discussion 节）。
+2. 按地上份额折 GPP 份额要用 R 与两类 CUE：R 取 0.54–3、藓 CUE 0.52–0.70、维管 CUE 0.5 时，0.48 折成 GPP 份额 0.14–0.37，bog 的 0.58 折成 0.20–0.46——已验证（`v2/_scratch/moss/lit/share_convert.out`）。
+3. 但塔足迹内有实测分区的两座藓塔，GPP 份额与 0.48 相近或更高：SE-Deg 生长季藓占 GPP 0.54（2022）与 0.49（2023），占 NPP 0.69 与 0.60——已验证（Hartmann et al. 2026 第 3.3 节、表 2）；FI-Si2 2013 生长季藓占总光合 PG 0.60（藓 138、维管 92 g C m-2），占净光合 PN 0.26——已验证（Korrensalo et al. 2017 第 3.1、3.2 节）。所以 `lai_from_gpp_260930.txt` 第 5.2 节第 5 条"0.48 偏高、约 0.32"的推测，对以藓为主、维管 LAI 低的开阔泥炭塔不成立；0.48 数值上接近这两座塔的 GPP 份额是巧合，口径不同。
+4. 维管多的 bog 与 fen 份额低：Mer Bleue 灌木 bog 的模型拆分为藓占 GPP 0.36（0.33–0.39，MWM）与 0.26（PEATBOG）——已验证（St-Hilaire et al. 2010 第 3 节，读全文；Wu and Blodau 2013 第 1189 页，子任务读全文）；FR-LGt 泥炭芯中宇宙加入 Molinia 后藓至多占 GPP 0.33——推测。理由：414/1273 假定 Molinia 不改变藓的 GPP，原文未分测；两组 GPP 原值已验证（Leroy et al. 2019 表 3）。西西伯利亚松–矮灌–泥炭藓 bog 藓占总 NPP（含地下）0.29–0.37——已验证（Peregon et al. 2024 表 5、第 3.2 节）。
+5. 其他口径与地点：Mer Bleue 1999 年藓 NPP 85、灌木地上 NPP 80 g C m-2 yr-1（藓占地上 0.52），北方泥炭地藓 NPP 汇编 8–190 g C m-2 yr-1——已验证（St-Hilaire et al. 2010 第 3 节转引 Moore et al. 2002，读全文）；苔原藓为主植被藓占 GPP 0.14–0.96、平均约 0.6——已验证（Douma et al. 2007，只读摘要）；亚北极矮灌–藓植被藓新长生物量占生态系统 GPP 0.20 ± 0.09，Sphagnum CUE 0.68–0.71——已验证（Street et al. 2013，只读摘要）；黑云杉林藓光合占全林 GPP 0.10–0.50——已验证（Goulden and Crill 1997，只读摘要）。
+6. 季节：SE-Deg 藓与维管 GPP 之比返青期 1.18、盛期 0.88、衰老期 1.11——已验证（Hartmann et al. 2026 摘要与表 2）；FR-LGt 中宇宙纯藓 GPP 全季较平，维管衰老后两组 GPP 无差——已验证（Leroy et al. 2019 第 3.2 节）；SPRUCE 的 Sphagnum GPP 夏末才到峰，早夏受水位、夏末与秋季受温度控制——已验证（Walker et al. 2017 摘要）。塔上 GPP 里的藓份额春秋高于年值、盛期低于年值——推测。理由：上述三处方向一致。
+7. 塔级只有 SE-Deg、FI-Si2 两座有直接的藓与维管 GPP 分区；FR-LGt 只有室外中宇宙；FI-Sii 只有 PG 模型里的藓当量参数；US-BZB、US-BZF 有 Bonanza Creek LTER 的钢丝法藓 NPP 数据可拼算上界；US-Bes、US-Uaf、SE-Deg 另有生物量份额；其余 17 座未查到——已验证（第 2.2 节表内逐塔出处）。
+8. 藓凋落物慢：同地同法下藓的分解常数约为维管叶的 1/3–1/5（亚北极共同园 27 种藓 k 0.11、5 种维管 0.56；Alberta 凋落袋折算 S. fuscum 0.12、Carex 叶 0.39、根茎 0.69）；HPM 初始分解率 Sphagnum 0.06–0.13、褐藓与羽藓 0.13 yr-1，维管 0.32–0.88 yr-1——已验证（Lang et al. 2009 只读摘要；Thormann et al. 2001 只读摘要，失重按 k = −ln(1 − 失重)/t 折算；Frolking et al. 2010 表 1 读全文）。
+9. 藓光合碳进甲烷没有同位素直接测定；Sphagnum 13C 脉冲 23 d 后 64 % 仍在藓体，4 h 时泥炭渗出液 DOC 至多 4 % 来自标记——已验证（Fenner et al. 2004，只读摘要）；维管新近光合碳 18 d 内以 CH4 放出 0.03–0.13 %——已验证（Dorodnikov et al. 2011 表 1、图 3，子任务读全文）。FR-LGt 中宇宙纯藓组 CH4/GPP 1.7 %，加入 Molinia 部分的增量 3.0 %，即单位藓 GPP 的甲烷至多为维管的 0.56 倍——已验证（Leroy et al. 2019 摘要与表 3：7/414、(33 − 7)/(1273 − 414)；倍数为本文件算）。上限的理由：纯藓组的甲烷也含老泥炭来源。
+10. 藓层有自己的甲烷氧化：淹没或近水面的藓普遍带共生甲烷氧化菌，穿过湿藓层的扩散通量被削减 50–99 %（Siikaneva bog 洼地对裸泥炭减 83 ± 27 %，夏季约 76 %、晚秋 98 %；Kytalyk 淹没 Sphagnum 使排放约减半；西伯利亚池塘无维管处藓层耗掉底泥产量 61–99 %）；水位降到约 −12 cm 时藓内氧化失活；维管通气组织为主处藓层被绕过——已验证（Jentzsch et al. 2024 摘要，子任务读第 3.2、4.1.1 节；Parmentier et al. 2011 第 4–5 节，子任务读全文；Knoblauch et al. 2015 只读摘要；Putkinen et al. 2012 子任务读全文）。在莎草 fen（Lakkasuo）上，藓约占植物对甲烷增益的 1/4，方向为增，但不显著，作者判藓内氧化作用小——已验证（Riutta et al. 2020 第 3.2、4.1 节，读全文）。
+11. 16 个模型里只有 LPJ-WHyMe、LPJ-GUESS、PEATBOG、PVN 把藓碳经凋落物分解接进产甲烷底物；除 PVN 外都不给藓植物通道；只有 PVN 有挂在植物通道上的氧化比（Sphagnum 0.7、褐藓 0.8）；没有一家做过有藓与无藓的甲烷敏感性试验——已验证（第 4 节逐模型出处，子任务读全文为主）。藓凋落物初始分解率 MWM 0.05、LPJ-GUESS 0.055、HPM 0.06–0.13 yr-1，维管 0.1–0.3——已验证（St-Hilaire et al. 2010 表 1 读全文；Frolking et al. 2010 表 1 读全文；Chaudhary et al. 2017 表 1，子任务读全文）。
+12. 模式缺的是一条"慢、在表层、不走根剖面与通气组织"的藓碳输入，不必补藓光合——推测。理由：文献与模型里藓碳进甲烷只有凋落物分解一条路（结论 9、11），单位碳效率低于维管（结论 9）；V-172 与 Q-75 的两难来自把藓 GPP 当维管 GPP 用，补上这条输入后才能按维管 GPP 定上限。
+13. 最简表示（第 5.2 节）：藓 NPP 取 0.5 g C m-2 d-1 × 无雪且表土不冻的日子 × 水位因子 × s_moss，当年全部成凋落物、铺表层、不扣分泌物、不进根剖面、不开通道，分解率取维管凋落物的 0.3（0.2–0.4）；藓层氧化第一步不加。预期：上限不动只加藓输入，藓塔甲烷升 3–30 %、季节变平并后移；再按维管 GPP 压上限，被压的塔甲烷降 20–45 %，要重标单位维管碳的产率——推测。理由与算式见第 5.3 节。
+
+## 2. 藓占生产力的份额（问题 1）
+
+### 2.1 文献综合、样地实测与模型拆分
+
+| 类型与地点 | 口径 | 方法 | 时段 | 藓份额或数值 | 出处 | 证据 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 北方与苔原湿地 22 处（北美，多为黑云杉有林或结构复杂湿地，不含开阔 fen 与挺水沼泽） | 占全站地上 NPP | 文献综合：藓 cranked wire、荧光染色、标记枝或绿色生物量 × 生长比；维管收获；乔木清查与凋落物收集 | 年 | 湿地 0.48；fen 0.53；bog 0.58；旱地 0.20 | Turetsky et al. 2010 摘要、Results 与 Discussion | 已验证（读全文） |
+| 湿地 Sphagnum 群落（同上） | 藓 NPP 绝对值 | 同上 | 年 | 162.98 ± 27.07 g dm m-2 yr-1，约为林地的 3 倍 | 同上 Results | 已验证（读全文） |
+| 西西伯利亚松–矮灌–泥炭藓 bog 3 区 | 占总 NPP（含维管地下，干物质） | 收获 | 年 | 0.29–0.37；根占总 NPP 0.38–0.52 | Peregon et al. 2024 表 5、第 3.2 节 | 已验证（读全文） |
+| Mer Bleue 灌木 bog | 藓 NPP 对灌木地上 NPP | 收获（Moore et al. 2002） | 1999 | 85 对 80 g C m-2 yr-1，占地上 0.52 | St-Hilaire et al. 2010 第 3 节转引 | 已验证（读全文） |
+| 北方泥炭地汇编 | 藓 NPP 绝对值 | 汇编（Moore et al. 2002） | 年 | 8–190 g C m-2 yr-1；灌木地上 21–169；总 NPP 79–377 | 同上 | 已验证（读全文） |
+| Mer Bleue（MWM 模拟 8 年） | 占 GPP；占总 NPP | 模型拆分 | 年 | GPP 0.36（0.33–0.39）；NPP 0.62（0.49–0.89） | St-Hilaire et al. 2010 第 3 节、表 2 | 已验证（读全文） |
+| Mer Bleue（PEATBOG） | 占 GPP | 模型拆分 | 年 | 0.26（GPP 555 g C m-2 yr-1） | Wu and Blodau 2013 第 1189 页 | 已验证（子任务读全文） |
+| HPM 8500 年 | 占总 NPP；占泥炭 | 模型 | 全新世 | 0.35；0.65 | Frolking et al. 2010 摘要 | 已验证（读全文） |
+| LPJ-WHyMe 7 站 | 占总 NPP | 模型 | 年 | 0–0.35（藓 0–159 g C m-2 yr-1） | Wania et al. 2010 表 6 | 已验证（子任务读全文） |
+| 温带有林 bog（SPRUCE S1） | 藓 GPP 与 NPP 绝对值 | 自动箱通量分解；茎伸长 × 单位长度质量 × 密度 | 2014 生长季 | GPP 398 ± 55，NPP 205 g C m-2，CUE 约 0.52；文中无份额 | Walker et al. 2017 第 4 节 | 已验证（读全文） |
+| 黑云杉林（Saskatchewan） | 藓 NPP 绝对值 | 生长量 | 1998 | Sphagnum 77、羽藓 24、藓层平均 25 g C m-2 yr-1 | Bisbee et al. 2001 摘要 | 已验证（只读摘要） |
+| 黑云杉林（BOREAS NSA） | 占全林 GPP | 自动箱对涡度 | 1995 生长季末 35 d | 0.10–0.50；Sphagnum 光合 0 °C 时降约 70 %，8 °C 最大 | Goulden and Crill 1997 摘要 | 已验证（只读摘要） |
+| 苔原藓为主植被（Abisko 17 处、Svalbard 21 处） | 占 GPP | 小箱加光响应模型 | 生长季 | 0.14–0.96，平均约 0.6；与维管 LAI、NDVI 相关 | Douma et al. 2007 摘要 | 已验证（只读摘要） |
+| 亚北极矮灌–藓（芬兰） | 藓新长生物量占生态系统 GPP | 13C 脉冲标记 | 生长季 | 0.20 ± 0.09；Sphagnum CUE 0.68–0.71 | Street et al. 2013 摘要 | 已验证（只读摘要） |
+
+### 2.2 塔
+
+| 塔 | 类 | 有无 | 数值与口径 | 方法与时段 | 出处 | 证据 |
+| --- | --- | --- | --- | --- | --- | --- |
+| SE-Deg | fen | 有，GPP 与 NPP 都分 | 占生长季 GPP：2022 年 0.54（81.9/151.9），2023 年 0.49（72.0/145.9）；占生长季 NPP（NPP = NEE − RH，维管含地下）：0.69（79.4/114.6）、0.60（63.2/105.1）；藓与维管 GPP 比返青 1.18、盛期 0.88、衰老 1.11 | 自动箱：去维管的藓样方、全去除并挖沟的 RH 样方、自然样方，距 ICOS 塔 50 m 内；2022–2023 年 5 月中至 10 月 | Hartmann et al. 2026 第 3.3 节、表 2 | 已验证（Europe PMC 全文 XML） |
+| SE-Deg 旁证 | fen | 生物量 | 中宇宙活生物量中 Sphagnum 约 87 %；五个泥炭地 62–87 % | 收获 | Zając and Blodau 2016 第 3.1 节 | 已验证（子任务读全文） |
+| FI-Si2 | bog | 有，GPP（PG） | 藓 PG 138、维管 92 g C m-2，份额 0.60；PN 藓 20、维管 57，份额 0.26；放大后 PG 230 对涡度 GPP 243 | 物种、月份光响应曲线 × 盖度放大；2013 年 DOY 121–273 | Korrensalo et al. 2017 摘要、第 3.1、3.2 节 | 已验证（读全文） |
+| FI-Si2 旁证 | bog | 生产量 | 各群落生物量生产 162–216 g dm m-2 yr-1，裸泥炭面 38；摘要无藓份额 | 收获 | Korrensalo et al. 2018 | 已验证（子任务只读摘要） |
+| FI-Sii | fen | 只有模型参数 | PG ∝ (s + V)，V 为维管绿面积；s 取 E. vaginatum 草坪 0.33、C. rostrata 草坪 0.22、洼地 0.10；折成份额要 V 的季节曲线 | 箱式 PG 模型拟合，2004–2005 | Riutta et al. 2007 式 1、表 1 | 已验证（子任务读全文） |
+| FR-LGt | fen | 有，中宇宙 | 纯藓 GPP 414 ± 122、藓加 Molinia 1273 ± 482 g C m-2 yr-1；藓份额至多 0.33（推测，同结论 4） | 12 个 La Guette 泥炭柱埋于室外，箱式加模型；2015-05 至 2016-06 | Leroy et al. 2019 表 3、第 3.5 节 | 已验证（读全文） |
+| FR-LGt 旁证 | fen | 群落 GPP | 以藓为主样方组（藓盖度 91 %）GPP 886 ± 501 与 808 ± 387，全站 1290 ± 400 与 1070 ± 203 g C m-2 yr-1（两个模型）；不是分区 | 箱式 | D'Angelo 2015 博士论文第 3.3 节第 91 页（本地 `docs/refs/sites/FR-LGt/2015_DAngelo.pdf`，无 DOI） | 已验证（子任务读全文） |
+| US-BZB | bog | 原始数据 | Sphagnum 钢丝 NPP：老塌陷坑 200（2009）、183（2010），新塌陷坑 324、377 g dm m-2 yr-1（按 100 % 盖度）；维管地上 ANPP 老坑 116、新坑 96；拼算藓占地上 NPP 0.63–0.77，上界 | cranked wire 长度增量 × 表层容重；维管收获当年新生部分；2009–2010 | EDI BNZ 471、470 | 已验证（子任务读数据，`B/bnz471_bog_means.py`）；份额为推测 |
+| US-BZF | fen | 原始数据 | 对照区 Sphagnum 钢丝 NPP 141（2009）、104（2010）g dm m-2 yr-1；维管 ANPP 303 ± 56、BNPP 77.6 ± 23；拼算 0.27–0.32，上界；该 fen 地被以褐藓为主，钢丝只放在 Sphagnum 上，代表性存疑 | 同上 | Churchill and Turetsky 2015 第 187、190 页；EDI BNZ 471、470 | 已验证（子任务读全文与数据，`B/bnz_means.py`，维管 ANPP 302.9 与原文 303 一致）；份额为推测 |
+| US-Bes | 湿苔原 | 生物量 | 藓约占活生物量 80 %（2006 年 8 月） | 收获 | Zona et al. 2009 第 2 节 | 已验证（子任务读全文） |
+| US-Uaf | bog（有林） | 生物量 | 藓 0.47 kg m-2、黑云杉 0.10 kg m-2；站在 UAF 校园，不在 Poker Flat | 收获 | Kim et al. 2007 表 1 | 已验证（子任务读全文） |
+| US-Prr（Poker Flat，US-Uaf 旁证） | 有林泥炭 | 林下整体 | 林下（含灌木与禾草）占 GPP 0.61（0.45–0.77），不是藓份额 | 林下涡度，2011–2014 | Ikawa et al. 2015 | 已验证（子任务只读摘要） |
+| RU-Ch2 | 湿苔原 | 几乎无藓 | 藓盖度约 1.8 %，与配置 s_moss = 0 相符 | 样带 | Göckede et al. 2017 第 4 节 | 已验证（子任务读全文） |
+| US-Ivo 附近 | 湿苔原 | 生物量 | 湿润非酸性苔原藓生物量 465 g m-2 | 收获 | Riedel et al. 2005 | 存疑（子任务只见检索摘录，未用于结论） |
+| NZ-Kop、DE-Zrk、US-Los | bog、fen、fen | 无藓层 | 与配置 s_moss = 0 相符 | — | 本地 PDF | 已验证（子任务读全文） |
+| CA-SCB、DE-SfN、JP-BBY、FI-Lom、US-A03、US-A10、US-Atq、US-Beo、US-ICs、US-NGB、US-NGC、RU-Cok | 各类 | 未查到 | FI-Lom 只有藓盖度 57 %；CA-SCB 的藓 NPP 是 ecosys 模拟值；US-NGC 在 Council，不在 Barrow；US-NGB 有 NGEE 剪取数据集（10.5440/1375316）未取数 | — | `site_facts.csv`、本地 PDF | 已验证（子任务读全文） |
+
+### 2.3 0.48 的口径与换算
+
+1. 0.48 由 22 处湿地的藓 NPP 除以（藓 + 林下维管地上 + 乔木地上）NPP 得到；fen 0.53、bog 0.58 只在"湿地中藓多于黑云杉"的子集上算——已验证（Turetsky et al. 2010 Results "Moss and vascular plant productivity" 节）。模式注释（`MOD_Tracer_Reactive_Methane_Const.F90:869-886`）把它写成"moss over moss plus aboveground vascular NPP"，与原文相符——已验证（读码）。
+2. 折成总 NPP 与 GPP 份额（`share_convert.out`）：
+
+| 类 | 地上份额 a | R | 总 NPP 份额 | GPP 份额（藓 CUE 0.52） | GPP 份额（藓 CUE 0.70） |
+| --- | --- | --- | --- | --- | --- |
+| 湿地 | 0.48 | 0.54 / 1 / 2 / 3 | 0.37 / 0.32 / 0.24 / 0.19 | 0.37 / 0.31 / 0.23 / 0.18 | 0.30 / 0.25 / 0.18 / 0.14 |
+| fen | 0.53 | 同上 | 0.42 / 0.36 / 0.27 / 0.22 | 0.41 / 0.35 / 0.27 / 0.21 | 0.34 / 0.29 / 0.21 / 0.17 |
+| bog | 0.58 | 同上 | 0.47 / 0.41 / 0.32 / 0.26 | 0.46 / 0.40 / 0.31 / 0.25 | 0.39 / 0.33 / 0.25 / 0.20 |
+
+   R = 0.54 即模式的 `wetland_bg_frac` 0.35；R 的实测上限取自 Peregon et al. 2024（根占总 NPP 0.38–0.52，除去藓后 R 约 1.5–3）；维管 CUE 0.5 即 `wetland_npp_frac`。——已验证（`share_convert.out`；参数出处同本表说明）。
+3. 用法：
+   - C-89 给有林份额保底 0.48 × 林分输入：Turetsky 的样地正是有林或结构复杂的湿地，地上口径对得上；但 CoLM 的"林分输入"含地下份额，按 R 0.54–2 折总 NPP 份额为 0.24–0.37，现值偏高约三成——推测。理由：见上表湿地行。
+   - 开阔泥炭按维管 GPP 定上限时的扣除比 m：藓为主、维管 LAI 低的塔取实测 0.5–0.6（SE-Deg、FI-Si2），灌木多的 bog 与维管为主的 fen 取 0.25–0.35（Mer Bleue 两个模型、FR-LGt 上限），湿苔原无塔级实测，取 0.3（Street 0.20 ÷ CUE 0.68–0.71 ≈ 0.29；藓为主植被可到 0.6）——推测。理由：份额随维管 LAI 变（Douma et al. 2007 摘要），同一个 0.48 × s_moss 套在所有 s_moss = 1 的塔上，对 FI-Si2、SE-Deg 偏低，对其余多数偏高。
+
+### 2.4 季节
+
+1. 藓的 GPP 季节比维管平：SE-Deg 藓与维管 GPP 比 1.18、0.88、1.11（返青、盛期、衰老）——已验证（Hartmann et al. 2026 表 2 由各期 GPPM 与 GPPV 算得，如 2022 年返青 26.0/21.7）。
+2. 纯藓 GPP 全季较平，维管衰老后群落 GPP 与纯藓相同——已验证（Leroy et al. 2019 第 3.2 节）。
+3. Sphagnum 在低温下仍光合（0 °C 时约为最大值的 30 %，8 °C 最大），春季维管未展叶时贡献最大——已验证（Goulden and Crill 1997 摘要；Douma et al. 2007 摘要）。
+4. Sphagnum GPP 可在夏末才到峰，受水位与藓光合组织面积相互作用控制——已验证（Walker et al. 2017 摘要）。
+
+## 3. 藓碳去向（问题 2）
+
+### 3.1 凋落物分解
+
+| 类群与条件 | k（yr-1）或失重 | 出处 | 证据 |
+| --- | --- | --- | --- |
+| 亚北极共同园：27 种藓对 5 种维管（17 种地衣） | 2 年平均 k 0.11 ± 0.01 对 0.56 ± 0.03（0.44 ± 0.01）；Sphagnum 显著慢于其他藓 | Lang et al. 2009 | 已验证（只读摘要） |
+| Alberta 泥炭地凋落袋：S. fuscum；Carex aquatilis 叶、根茎；Salix planifolia 叶、根 | 2 年失重 21 %；54 %、75 %；48 %、29 %（折 k：0.12；0.39、0.69；0.33、0.17） | Thormann et al. 2001 | 已验证（子任务只读摘要，k 由失重折算） |
+| HPM 初始分解率 k0（双曲型 m = m0/(1 + k0 t)） | 褐藓 0.13、洼地 Sphagnum 0.13、草坪 0.08、丘 0.06、羽藓 0.13；维管 7 类 0.32–0.88 | Frolking et al. 2010 表 1 | 已验证（读全文） |
+| MWM k0 | 藓 0.05，维管叶与根 0.2 | St-Hilaire et al. 2010 表 1 | 已验证（读全文） |
+| 西西伯利亚 bog 埋袋 5–25 cm 一年 | S. fuscum 10–13 %；灌木茎 14–17 %；灌木叶 12–40 % | Peregon et al. 2024 表 6、第 3.3 节 | 已验证（读全文） |
+| 北方与苔原 29 篇文献综合 | 1 年失重：藓 12.1 ± 0.8 %，维管叶、根茎、细根 > 30 %，枝 10.0 ± 1.1 %；同一研究内藓全部慢于维管 | Turetsky et al. 2010 Results 与图 6、图 7 | 已验证（读全文） |
+| Sphagnum 凋落袋 15 项研究合成 | 平均 k0 0.01–1.16；S. fuscum 0.01–0.06；初始淋失 3–18 % | Teickner et al. 2025（BG） | 已验证（子任务读全文） |
+| 15 种 Sphagnum | 实验室 14 月失重：丘组 25.5 ± 1.9 %、洼地组 50.6 ± 1.8 %；野外埋 5 cm：15.2 ± 2.5 %、15.5 ± 1.6 % | Bengtsson et al. 2016 | 已验证（子任务读全文） |
+
+1. 藓凋落物分解常数约为同地维管叶的 1/3–1/5，量级 0.05–0.15 yr-1——已验证（上表前四行）。
+2. 丘种慢于洼地种（HPM 0.06 对 0.13），但野外种间差被环境抹平——已验证（Frolking et al. 2010 表 1；Bengtsson et al. 2016，子任务读全文）。
+3. 机制是化学的：细胞壁多糖 sphagnan 抗分解并抑制矿化——已验证（Hájek et al. 2010，子任务只读摘要，无数值）。
+4. 缺氧下单位质量藓与维管凋落物产 CH4 的直接对比未查到；泥炭层级上 Sphagnum 泥炭产 CH4 潜力最低，从 Sphagnum bog 到莎草 fen 缺氧培养的 CH4 潜力与 CH4/CO2 比上升——已验证（Hodgkins et al. 2014 图 1，子任务读全文）。
+
+### 3.2 DOC 与光合产物进甲烷
+
+1. Sphagnum 光合产物以 DOC 渗出，但以留体内为主：13C 脉冲 4 h 时泥炭渗出液 DOC 至多 4 % 来自标记，23 d 后 64 % 仍在藓体——已验证（Fenner et al. 2004，只读摘要）。
+2. 植物鲜体浸出 DOC 28 d 可降解 52–73 %（S. magellanicum 最高），凋落物 22–46 %，泥炭 24 %——已验证（Pinsonneault et al. 2016，子任务只读摘要）。
+3. 同位素直接测"藓光合碳进 CH4"的研究未查到。Dorodnikov et al. 2011 只标记了 E. vaginatum 与 Scheuchzeria，藓并入泥炭格；维管标记 18 d 内以 CH4 放出 0.03–0.13 %——已验证（Dorodnikov et al. 2011 第 2.1–2.2 节、表 1、图 3，子任务读全文）；阿拉斯加湿莎草苔原脉冲标记约 0.1 %，24 h 内出现——已验证（King and Reeburgh 2002，子任务读全文）。
+4. FR-LGt 中宇宙：纯藓 CH4 7 ± 4、GPP 414 ± 122；藓加 Molinia CH4 33 ± 8、GPP 1273 ± 482 g C m-2 yr-1；单位藓 GPP 甲烷至多为维管的 0.56 倍（1.7 % 对 3.0 %）——已验证（Leroy et al. 2019 摘要与表 3；倍数为本文件算）。
+5. 淹没 Sphagnum 加莎草与纯莎草样方排放 4.1 ± 3.1 对 8.0 ± 4.7 mg CH4 m-2 h-1，模拟产率 0.15 对 0.19 µM h-1，差别主要来自藓内氧化——已验证（Parmentier et al. 2011 第 4–5 节，子任务读全文）。
+6. 去除实验：Lakkasuo fen 自然水位下植物介导占生长季通量 68–78 %，其中 Sphagnum 约 1/4、莎草约 3/4，藓的效应为增但不显著；水位降低后各组差别可忽略——已验证（Riutta et al. 2020 摘要、第 3.2、4.1 节，读全文）。
+
+### 3.3 藓层自己的甲烷氧化
+
+| 研究 | 藓与地点 | 氧化或削减 | 水位 | 证据 |
+| --- | --- | --- | --- | --- |
+| Raghoebarsing et al. 2005 | 淹没 S. cuspidatum，荷兰 | 甲烷供藓碳 10–15 %（同位素质量平衡 5–20 %） | 淹没 | 已验证（子任务读全文） |
+| Kip et al. 2010 | 全球 9 个泥炭地 | 所有藓都能氧化，淹没藓最强，随温度升高 | 洼地 > 草坪与丘 | 已验证（子任务只读摘要） |
+| Larmola et al. 2010 | Lakkasuo 23 种 Sphagnum | 23 种全部有活性；甲烷碳可占藓碳 10–30 %；水位为主控 | — | 已验证（子任务只读摘要） |
+| Putkinen et al. 2012 | S. magellanicum 移栽 | 活性点在水位 −3 至 −7 cm；水位 −12 cm 时失活，复湿 3 天恢复 | 近水面 | 已验证（子任务读全文） |
+| Parmentier et al. 2011 | Kytalyk 淹没 Sphagnum | 4–20 °C 时 32–80 µmol g DW-1 d-1；排放约减半 | 淹没 | 已验证（子任务读全文，表 2、第 5 节） |
+| Liebner et al. 2011；Knoblauch et al. 2015 | 西伯利亚池塘褐藓 Scorpidium | 无维管处藓层耗掉底泥产量 61–99 %；有维管处植物传输占 70–90 %，绕过藓层 | 淹没 | 已验证（子任务只读摘要） |
+| van Winden et al. 2012 | 带活 Sphagnum 的泥炭芯 | 产生的 CH4 在 5 °C 时留住 98 %，25 °C 时约 50 % | 洼地与丘芯 | 已验证（子任务只读摘要） |
+| Kox et al. 2021 | 淹没 S. cuspidatum | 野外 4.1 ± 2.1 对去藓后 60 ± 32 mmol m-2 d-1（减 93 %） | 淹没 | 已验证（子任务读全文） |
+| Jentzsch et al. 2024 | Siikaneva bog 洼地 | 对裸泥炭减 83 ± 27 %，夏季约 76 %、晚秋 98 %；水位越高削减越强 | 活藓层 4–5 cm，多半部分在水位以上 | 已验证（BG 页面摘要；子任务读第 3.2、4.1.1 节） |
+
+1. 藓层氧化只对"扩散穿过湿藓层"的通量有效，削减 50–99 %；通气组织通量不经过它——已验证（上表 Knoblauch、Jentzsch、Kox、Parmentier 行）。
+2. 水位是开关：淹没或 0 到约 −7 cm 时强，约 −12 cm 以下失活——已验证（Putkinen et al. 2012，子任务读全文）。
+3. 份额随温度升高下降（产量涨得比氧化快）——已验证（van Winden et al. 2012，子任务只读摘要）。
+4. 甲烷碳占藓碳 5–35 %，是再循环碳，不是新底物——推测。理由：藓固定的是氧化产生的 CO2，碳收支上不应再算一次输入。
+5. 莎草 fen 上藓内氧化作用小（结论 10）；模式已有非饱和层氧化，出水藓那部分与之重叠，真正新增的只是淹没藓那一段——推测。理由：Raghoebarsing 的机制靠藓光合供 O2，而模式饱和层 O2 受限，不会自然产生这部分氧化。
+
+## 4. 其他模型怎么表示藓（问题 3）
+
+| 模型 | 藓 PFT | 光合 | 关键参数 | 藓 NPP 或份额 | 藓碳进 CH4 底物 | 藓层氧化 | 出处与证据 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LPJ-WHy / LPJ-WHyMe | Sphagnum | LPJ 光合；CO2 取孔隙水与大气混合浓度；GPP 乘水位因子 capmoss | capmoss：水位浅于 −150 mm 为 1，−150 至 −280 mm 线性降，深于 −280 mm 为 0.3；叶寿命 1 a；暗呼吸系数 0.03 | 环北极均值 159 g C m-2 yr-1；7 站占总 NPP 0–35 % | 是，经凋落物分解；分泌物比 0.175（调参后 0.15）对全部 NPP 扣 | 无；通道只给洪水耐受禾草 | Wania et al. 2009 第 2.1 节式 2、表 S1；Wania et al. 2010 第 2.2.1 节、表 1、表 6（子任务读全文） |
+| LPX-Bern | Sphagnum | 沿用 LPJ-WHy | 新生物量 C:N 30；无根 | 未查到 | 是；17.5 % NPP 作分泌物 | 未查到 | Spahni et al. 2013 第 2.2 节；Müller and Joos 2020（子任务读全文） |
+| LPJ-GUESS 泥炭版 | Moss（Sphagnum） | 标准 LPJ-GUESS | 叶凋落物 k0 0.055 yr-1（禾草 0.1）；建群水位 +5 至 −50 cm | 未给 | 是，Rh 含藓凋落物；无分泌物库 | 无 | Chaudhary et al. 2017 表 1；Kallingal et al. 2024 式 1–2（子任务读全文） |
+| ORCHIDEE（ORC-HL-VEG） | 非维管 NVP（藓与地衣） | Farquhar，Vcmax 乘干燥函数 | Vcmax25 28；SLA 0.0084 m2 gC-1；叶龄 470 d | 55°N 以北 NPP 降 31 % | 甲烷版不含藓 | 无 | Druel et al. 2017 第 2.2 节、表 2；Qiu et al. 2018；Salmon and Jégou 2022（子任务读全文） |
+| ELM-SPRUCE | Sphagnum | Farquhar，导度改为含水量多项式；淹没按积水高度削减 | SLA 0.00781；叶 C:N 35.56；叶寿命 0.974 a；凋落物 C:N 66、易分解 0.227、纤维素 0.737、木质素 0.036 | 2012 年模拟 139、观测 288 g C m-2 yr-1 | 甲烷版只读摘要，存疑 | 未建 | Shi et al. 2021 第 2.2 节、表 1–3、第 4.2 节（子任务读全文） |
+| ELM 北极 PFT | Bryophyte、Lichen | ELM 标准 | 根:叶 0.1；叶 C:N 55；根深 3.9 cm | 只比生物量 | 无甲烷 | 无 | Sulman et al. 2021 表 2（子任务读全文） |
+| CLM4.5-SPRUCE | 无，C3 草代藓 | — | — | — | — | — | Shi et al. 2015 第 3.3 节（子任务读全文） |
+| JULES / JULES-Peat | 无藓碳，5 cm 隔热层 | — | 导热 0.5（饱和）至 0.06（干）W m-1 K-1 | — | — | — | Chadburn et al. 2015 第 2.2.1 节；Chadburn et al. 2022 讨论（子任务读全文） |
+| JSBACH（LiBry） | 地衣与苔藓，只在高地 | Farquhar，含水量控 CO2 扩散 | 区间抽样 | 全球 0.34–3.3 Gt C yr-1 | 未与甲烷耦合 | 无 | Porada et al. 2013；Porada et al. 2016（摘要）；Kleinen et al. 2020（子任务） |
+| CLASS-CTEM 泥炭版 | 藓碳库与藓凋落物库 | Farquhar | Vmax 夏 14、其余 6.5；活藓厚 fen 3 cm、bog 4 cm | 未查到 | 无甲烷 | 无 | Wu et al. 2016 第 2.2–2.3 节、表 2（子任务读全文） |
+| MWM | 藓 | Farquhar，导度为含水量多项式 | Vcmax25 6/14/7（春/夏/秋）；k0 藓 0.05、维管 0.2 | 藓占 GPP 0.36、占 NPP 0.62 | 无甲烷 | 无 | St-Hilaire et al. 2010 表 1、表 2（读全文） |
+| HPM | 5 种藓 | 经验式：NPPmax 乘水位与泥炭深两个高斯函数 | NPPmax 褐藓 0.56、Sphagnum 0.19、羽藓 0.09（总 NPPmax 定标为 3 kg m-2 yr-1 时的值）；地上比 1.0；k0 0.06–0.13 | 全新世占总 NPP 0.35 | 不分 CO2 与 CH4 | 无 | Frolking et al. 2010 表 1、摘要（读全文） |
+| PEATBOG | 藓 | 非直角双曲线，Pmax 随水位与季节变 | 易分解凋落物比 0.1（禾草 0.3、灌木 0.2） | Mer Bleue 占 GPP 0.26 | 是，凋落物进表层活性库再分解 | 未查到 | Wu and Blodau 2013 第 2.3、2.4.1 节（子任务读全文） |
+| PVN 1.0 | Sphagnum、褐藓 | BIOME3 | 分泌物比 REX 0；最大根深 0.1 m | 未给 | 是 | 通道氧化比 0.7、0.8 | Lippmann et al. 2023 表 1（子任务读全文） |
+| DVM-DOS-TEM | 黑云杉林藓 | TEM 型 | cmax 93.31 g C m-2 month-1；叶凋落 0.02 month-1 | 观测藓 NPP 27.1 ± 11.1、GPP 54.2 g C m-2 yr-1 | 存疑 | 存疑 | Jafarov et al. 2025 表 3、表 5（子任务读全文） |
+| ecosys | 非维管 PFT | 无气孔，冠层水势降则羧化降 | 未查到 | 水位降过约 0.1 m 后藓 GPP 持续降 | 推测是 | 未查到 | Mezbahuddin et al. 2017 第 3.1.4、3.2.1 节（子任务读全文） |
+
+1. 能直接照搬到 CoLM 的最简做法是 HPM 或 LPJ-WHy：藓 NPP = 定值 × 水位因子，不做 Farquhar 与含水量导度——推测。理由：CoLM 的甲烷只要藓碳输入的量、时序与去处，不需要藓的能量与水分过程。
+2. 周转按"当年 NPP 当年成凋落物"：MWM 季末全死，ELM-SPRUCE 约 1 年，LPJ-WHy 叶寿命 1 a——已验证（St-Hilaire et al. 2010 第 3 节读全文；Shi et al. 2021、Wania et al. 2009 子任务读全文）。
+3. 没有先例可照搬藓层氧化：PVN 的氧化比挂在藓自己的通道上，与 CoLM 结构不同——已验证（Lippmann et al. 2023 表 1、第 4.1.3 节，子任务读全文）。
+4. 分泌物：PVN 设 0，LPJ-WHyMe 与 LPX 对全部 NPP 统一扣 15–17.5 %，未区分藓——已验证（同表出处）。藓分泌 DOC 占比小（第 3.2 节第 1 条），取 0 与数据相符——推测。理由：同第 3.2 节第 1 条。
+
+## 5. 最简表示与预期（问题 4）
+
+### 5.1 模式现状（读码）
+
+1. 湿地斑块的植物碳输入 = 冠层同化 × `wetland_npp_frac`（v2_p8f 为 0.5）× 比例项，扣分泌物份额后按甲 0.25、纤维素 0.50、木质素 0.25 进三个凋落物库，`wetland_bg_frac`（0.35）部分沿根剖面、其余沿表层剖面 exp(−surfprof_exp z)——已验证（读码 `MOD_Tracer_Reactive_BgcShim.F90:248-330`；`v2/config/v2_p8f/ch4_parameter.nml:260、264、372`）。
+2. 开阔泥炭没有藓输入；藓只以 C-89 的 max(r, 0.48 × s_moss) 出现在有林份额上——已验证（读码 `MOD_Tracer_Reactive_Methane_WetlandVeg.F90:365-384`，`MOD_Tracer_Reactive_Methane_Const.F90:869-886`）。开阔泥炭维管 LAI 上限默认 0.6——已验证（读码 `MOD_Tracer_Reactive_Methane_Const.F90:765`）。
+3. CLM5 式凋落物库里纤维素与木质素共用周转 0.25 年，甲库 0.066 年，SOM2 为 6.1 年——已验证（CLM50_Tech_Note_Decomposition.rst 第 122-138 行）。现有库里没有一个能给出"比维管凋落物慢 3–5 倍"的去处：进纤维素或木质素库等于按维管速率分解，直接进 SOM2 则慢约 25 倍——已验证（0.25/6.1 由上述周转时间算）。
+
+### 5.2 最简表示与参数
+
+1. 藓 NPP：每天 N_m × g_WT × s_moss ×（1 − f_forest），只在无雪且表层土不冻的日子计。
+   - N_m 取 0.5 g C m-2 d-1（0.4–1.1）。依据：SE-Deg 生长季藓 NPP 63–79 g C m-2，折 5 月中至 10 月约 150 d 为 0.42–0.53——已验证（Hartmann et al. 2026 表 2 与方法节的运行期：2022 年 5 月 15 日至 10 月 24 日、2023 年 5 月 18 日至 10 月 7 日）；SPRUCE 藓 NPP 205 g C m-2（2014）——已验证（Walker et al. 2017 第 4 节）；Mer Bleue 85、汇编 8–190 g C m-2 yr-1——已验证（St-Hilaire et al. 2010 第 3 节）。按日计使年值随无冻季长度变（苔原约 100 d 得约 50，北方约 150 d 得约 75，温带更高）——推测。理由：各地年值随纬度的排列与此一致，但未逐站核。
+   - g_WT 取 LPJ-WHy 的 capmoss：地下水位浅于 0.15 m 为 1，0.15–0.28 m 线性降到 0.3，更深取 0.3——已验证（Wania et al. 2009 第 2.1 节式 2，子任务读全文）。
+   - s_moss 用现有的 `wetland_share_moss_site` 与格点 GLWD 22–25 份额；有林份额仍由 C-89 管，避免重复——推测。理由：C-89 已给有林份额藓保底，两处都加会重算。
+2. 凋落物：当年全部成凋落物，沿表层剖面进库，不进根剖面，不扣分泌物（PVN 的 REX 0），不开通气组织通道。分解率取维管凋落物的 0.3（0.2–0.4）——依据第 3.1 节第 1 条与 HPM、MWM 的 k0 比（0.06–0.13 对 0.32–0.88；0.05 对 0.2）。化学分配可照 ELM-SPRUCE 的易分解 0.227、纤维素 0.737、木质素 0.036（Shi et al. 2021 表 1，子任务读全文）。实现上两条路：
+   - 专用藓凋落物库，基速率 = 0.3 × 纤维素与木质素库速率，分解产物照木质素库去向——推测。理由：只有这样才能单独给出 0.2–0.4 的速率比。
+   - 不加库：进纤维素与木质素库，再对湿地斑块的这两个库乘一个按藓碳占比加权的速率因子——推测。理由：少一个库，但库内藓与维管碳混在一起，速率因子要随占比更新。
+3. 进产甲烷底物：是，只经分解；分解出的 HR 按现有产甲烷份额与氧化计算，表层处于水位以上的部分主要成 CO2——推测。理由：与 LPJ-WHyMe、LPJ-GUESS、PEATBOG 一致（第 4 节表），且藓碳不走根际与通道（第 3.2 节）。
+4. 藓层甲烷氧化：第一步不加。以后要加时，只乘在穿过表层藓层的扩散通量上：水位 0 至 −0.07 m 取 0.5–0.9（5 °C 近 0.98、25 °C 约 0.5），水位深于 −0.12 m 取 0，淹没时取上限；不乘通气组织通量——推测。理由：第 3.3 节第 1–3、5 条；Lakkasuo fen 上作用小（Riutta et al. 2020），而扩散为主的洼地可达 83 %（Jentzsch et al. 2024）。
+5. 维管 LAI 上限：藓输入加上之后，再按维管 GPP 定上限，目标 = 塔上 GPP ×（1 − m）；m 取第 2.3 节第 3 条（SE-Deg 0.5、FI-Si2 0.6、FR-LGt 至多 0.33，其余藓为主开阔泥炭 0.5、灌木多的 bog 与维管为主的 fen 0.3、湿苔原 0.3），不再用 0.48 × s_moss——推测。理由：0.48 是地上 NPP 口径（结论 1），塔级实测按群落在 0.3–0.6 间变。
+
+### 5.3 预期方向
+
+1. 只加藓输入、上限 0.6 不动：
+   - 新增碳输入 ≈ 0.5 g C m-2 d-1 × g_WT，现有输入 ≈ 0.5 × 模式 GPP（藓塔 1.0–3.9 g C m-2 d-1，`lai_from_gpp_260930.txt` 第 5 节表"模式 GPP"列），新增为现有的 25–100 %；乘单位碳甲烷效率 e（上限 0.56，表层慢库在模式里多半只有 0.1–0.3），甲烷升 3–30 %——推测。理由：算式同上，e 未实测。
+   - 升得多的是模式 GPP 低的湿苔原（US-Beo 1.04、US-Bes 1.07、US-NGB 1.17、US-A03 1.38）与水位贴近地表的洼地；升得少的是 CA-SCB、JP-BBY 这类模式 GPP 高的塔——推测。理由：新增量固定而分母不同。
+   - 对量级比：利于 `v2_p9k` 里偏低的藓塔（FI-Lom 0.52、FI-Si2 0.74、US-A03 0.76、CA-SCB 0.78、US-Beo 0.85、SE-Deg 0.87、US-Bes 0.87），不利于已偏高的（FR-LGt 13.1、DE-SfN 5.17、US-A10 2.86、US-ICs 2.66、US-Atq 1.92、US-BZF 1.22）——已验证（`scores77_v2_p9k.csv` 的 beta 列）；后一组的偏高另有原因，不是藓输入能解决的——推测。理由：它们在 V-172 前就偏高。
+   - 季节：藓凋落物分解慢，输入在年内与年际间被摊平，甲烷季节变平、峰后移——推测。理由：第 3.1 节的 k 比。利于 α 偏大的塔（US-ICs 3.84、US-A10 3.05、US-Atq 2.98、DE-SfN 2.82、US-Ivo 1.85、US-BZB 1.43），不利于 α 偏小的（FI-Lom 0.55、FI-Si2 0.60）——已验证（`scores77_v2_p9k.csv` 的 alpha 列）。
+2. 再按维管 GPP 压上限：
+   - 模式 GPP 在上限 0.6 时已等于或超过塔上总 GPP 的塔（CA-SCB 3.89 对 3.17、SE-Deg 2.97 对 2.21、FI-Sii 2.96 对 2.93、US-Atq 1.71 对 1.56、US-Beo、US-Bes、US-ICs、US-NGC 为 0.9 倍左右）——已验证（`lai_from_gpp_260930.txt` 第 5 节表）。按 m 0.3–0.6 压上限后维管输入降 30–65 %，加上藓输入（e 0.1–0.56）补回一部分，甲烷净降约 20–45 %——推测。理由：(1 − m) + m × e 在 m 0.5、e 0.1–0.56 时为 0.55–0.78。这些塔现在量级比 0.78–0.95，压完会偏低。
+   - 所以压上限要与"单位维管碳产甲烷量"的重标同步做（如 V-176、V-182 在调的 `root_exudate_frac`），否则 Q-75 的两难原样重现——推测。理由：现有标定把塔上 GPP 里的藓碳按维管碳用掉了（V-172、Q-75）。
+3. 加藓层氧化（第二步）：扩散为主、水位贴近藓面的洼地与湿苔原甲烷再降，春秋降得多（低温时削减近 98 %），夏季峰相对突出，α 上升——推测。理由：第 3.3 节第 1–3 条；通气组织强的莎草塔（FI-Lom、US-BZF、DE-Zrk）几乎不受影响。
+4. 建议顺序：先 I-33 藓输入（第 5.2 节第 1–3 条），peat 与湿苔原子集对 `v2_p9k`；再按维管 GPP 改上限并同步重标产率；藓层氧化最后看需要——推测。理由：一步只动一个结构项，量级比与 α 的变化才能归因。
+
+## 6. DOI 列表（Crossref 或 DataCite 核对；读全文或只读摘要）
+
+第 2 节
+- 10.1139/x10-072 — Turetsky, Mack, Hollingsworth, Harden 2010, Can. J. For. Res. 40(7), 1237-1264 — 读全文
+- 10.1111/j.1469-8137.2012.04254.x — Turetsky et al. 2012, New Phytol. 196(1), 49-67 — 只读摘要（未用于数值）
+- 10.1111/gcb.70834 — Hartmann et al. 2026, Glob. Change Biol. 32(4), e70834 — 读全文（Europe PMC 全文 XML）
+- 10.5194/bg-14-257-2017 — Korrensalo et al. 2017, Biogeosciences 14(2), 257-269 — 读全文
+- 10.1111/jvs.12602 — Korrensalo et al. 2018, J. Veg. Sci. 29(2), 136-146 — 子任务只读摘要
+- 10.1111/j.1600-0889.2007.00302.x — Riutta et al. 2007, Tellus B 59(5), 838 起 — 子任务读全文
+- 10.5194/bg-16-4085-2019 — Leroy et al. 2019, Biogeosciences 16(20), 4085-4095 — 读全文
+- 10.70322/ecoldivers.2024.10004 — Peregon et al. 2024, Ecol. Divers. 1(1), 10004 — 读全文
+- 10.1002/2016jg003711 — Walker et al. 2017, J. Geophys. Res. Biogeosci. 122(5), 1078-1097 — 读全文
+- 10.1007/s004420100719 — Bisbee et al. 2001, Oecologia 129(2), 261-270 — 只读摘要
+- 10.1093/treephys/17.8-9.537 — Goulden and Crill 1997, Tree Physiol. 17(8-9), 537-542 — 只读摘要
+- 10.1111/j.1365-3040.2007.01697.x — Douma et al. 2007, Plant Cell Environ. 30(10), 1205-1215 — 只读摘要
+- 10.1111/nph.12285 — Street et al. 2013, New Phytol. 199(1), 163-175 — 只读摘要
+- 10.1046/j.0022-0477.2001.00633.x — Moore et al. 2002, J. Ecol. 90(1), 25-36 — 只读摘要（数值经 St-Hilaire 2010 转引）
+- 10.1139/cjfr-2014-0100 — Churchill and Turetsky 2015, Can. J. For. Res. 45(2), 185-193 — 子任务读全文
+- 10.6073/pasta/53db5d8a8352811173b7f49236c66b50 — Churchill and Bonanza Creek LTER 2014, EDI, APEX V – Moss NPP（DataCite） — 子任务读数据
+- 10.6073/pasta/b3a2fcc80debf575c8bd0087ed10f7a7 — Churchill and Bonanza Creek LTER 2014, EDI, APEX IV – Understory Vascular ANPP（DataCite） — 子任务读数据
+- 10.5194/bg-13-707-2016 — Zając and Blodau 2016, Biogeosciences 13(3), 707-722 — 子任务读全文
+- 10.1029/2009gb003487 — Zona et al. 2009, Global Biogeochem. Cycles 23(2), 2009GB003487 — 子任务读全文
+- 10.1111/j.1600-0889.2006.00233.x — Kim et al. 2007, Tellus B 59(2), 223 起 — 子任务读全文
+- 10.1016/j.agrformet.2015.08.247 — Ikawa et al. 2015, Agric. For. Meteorol. 214-215, 80-90 — 子任务只读摘要
+- 10.5194/tc-11-2975-2017 — Göckede et al. 2017, The Cryosphere 11(6), 2975-2996 — 子任务读全文
+
+第 3 节
+- 10.1111/j.1365-2745.2009.01538.x — Lang et al. 2009, J. Ecol. 97(5), 886-900 — 只读摘要
+- 10.1139/b00-138 — Thormann et al. 2001, Can. J. Bot. 79(1), 9-22 — 子任务只读摘要
+- 10.5194/esd-1-1-2010 — Frolking et al. 2010, Earth Syst. Dynam. 1(1), 1-21 — 读全文
+- 10.5194/bg-22-417-2025 — Teickner et al. 2025, Biogeosciences 22(2), 417-433 — 子任务读全文
+- 10.1002/ece3.2119 — Bengtsson et al. 2016, Ecol. Evol. 6(10), 3325-3341 — 子任务读全文
+- 10.1007/s10533-010-9444-3 — Hájek et al. 2010, Biogeochemistry 103(1-3), 45-57 — 子任务只读摘要
+- 10.1073/pnas.1314641111 — Hodgkins et al. 2014, PNAS 111(16), 5819-5824 — 子任务读全文
+- 10.1023/b:plso.0000020981.90823.c1 — Fenner et al. 2004, Plant Soil 259(1-2), 345-354 — 子任务只读摘要
+- 10.1007/s10021-016-9984-z — Pinsonneault et al. 2016, Ecosystems 19(6), 1023-1036 — 子任务只读摘要
+- 10.5194/bg-8-2365-2011 — Dorodnikov et al. 2011, Biogeosciences 8(8), 2365-2375 — 子任务读全文
+- 10.1016/s0038-0717(01)00164-x — King and Reeburgh 2002, Soil Biol. Biochem. 34(2), 173-180 — 子任务读全文（Crossref 作者字段只列 King）
+- 10.5194/bg-8-1267-2011 — Parmentier et al. 2011, Biogeosciences 8(5), 1267-1278 — 子任务读全文
+- 10.5194/bg-17-727-2020 — Riutta et al. 2020, Biogeosciences 17(3), 727-740 — 读全文
+- 10.1038/nature03802 — Raghoebarsing et al. 2005, Nature 436(7054), 1153-1156 — 子任务读全文
+- 10.1038/ngeo939 — Kip et al. 2010, Nat. Geosci. 3(9), 617-621 — 子任务只读摘要
+- 10.1890/09-1343.1 — Larmola et al. 2010, Ecology 91(8), 2356-2365 — 子任务只读摘要
+- 10.3389/fmicb.2012.00015 — Putkinen et al. 2012, Front. Microbiol. 3, 15 — 子任务读全文
+- 10.1111/j.1365-2745.2011.01823.x — Liebner et al. 2011, J. Ecol. 99(4), 914-922 — 子任务只读摘要
+- 10.1002/2015jg003053 — Knoblauch et al. 2015, J. Geophys. Res. Biogeosci. 120(12), 2525-2541 — 子任务只读摘要
+- 10.1371/journal.pone.0039614 — van Winden et al. 2012, PLoS ONE 7(6), e39614 — 子任务只读摘要
+- 10.3389/fmicb.2021.651103 — Kox et al. 2021, Front. Microbiol. 12, 652486 — 子任务读全文
+- 10.5194/bg-21-3761-2024 — Jentzsch et al. 2024, Biogeosciences 21(16), 3761-3788 — 读摘要（BG 页面），子任务读全文
+
+第 4 节
+- 10.1029/2008gb003413 — Wania et al. 2009, Global Biogeochem. Cycles 23(3), 2008GB003413 — 子任务读全文
+- 10.5194/gmd-3-565-2010 — Wania et al. 2010, Geosci. Model Dev. 3(2), 565-584 — 子任务读全文
+- 10.5194/cp-9-1287-2013 — Spahni et al. 2013, Clim. Past 9(3), 1287-1308 — 子任务读全文
+- 10.5194/bg-17-5285-2020 — Müller and Joos 2020, Biogeosciences 17(21), 5285-5308 — 子任务读全文
+- 10.5194/bg-14-2571-2017 — Chaudhary et al. 2017, Biogeosciences 14(10), 2571-2596 — 子任务读全文
+- 10.5194/gmd-17-2299-2024 — Kallingal et al. 2024, Geosci. Model Dev. 17(6), 2299-2324 — 子任务读全文
+- 10.5194/gmd-10-4693-2017 — Druel et al. 2017, Geosci. Model Dev. 10(12), 4693-4722 — 子任务读全文（JATS XML）
+- 10.5194/gmd-11-497-2018 — Qiu et al. 2018, Geosci. Model Dev. 11(2), 497-519 — 子任务读全文
+- 10.5194/gmd-15-2813-2022 — Salmon and Jégou 2022, Geosci. Model Dev. 15(7), 2813-2838 — 子任务读全文
+- 10.1029/2025ms004940 — Liu et al. 2025, J. Adv. Model. Earth Syst. 17(6), e2025MS004940 — 子任务只读摘要
+- 10.5194/bg-18-467-2021 — Shi et al. 2021, Biogeosciences 18(2), 467-486 — 子任务读全文
+- 10.5194/bg-12-6463-2015 — Shi et al. 2015, Biogeosciences 12(21), 6463-6477 — 子任务读全文
+- 10.1029/2020ms002396 — Sulman et al. 2021, J. Adv. Model. Earth Syst. 13(4), e2020MS002396 — 子任务读全文
+- 10.5194/gmd-8-1493-2015 — Chadburn et al. 2015, Geosci. Model Dev. 8(5), 1493-1508 — 子任务读全文
+- 10.5194/gmd-15-1633-2022 — Chadburn et al. 2022, Geosci. Model Dev. 15(4), 1633-1657 — 子任务读全文
+- 10.5194/bg-10-6989-2013 — Porada et al. 2013, Biogeosciences 10(11), 6989-7033 — 子任务读全文
+- 10.5194/tc-10-2291-2016 — Porada et al. 2016, The Cryosphere 10(5), 2291-2315 — 子任务只读摘要
+- 10.5194/cp-16-575-2020 — Kleinen et al. 2020, Clim. Past 16(2), 575-595 — 子任务检索全文
+- 10.5194/gmd-9-2639-2016 — Wu et al. 2016, Geosci. Model Dev. 9(8), 2639-2663 — 子任务读全文
+- 10.5194/bg-7-3517-2010 — St-Hilaire et al. 2010, Biogeosciences 7(11), 3517-3530 — 读全文
+- 10.5194/gmd-6-1173-2013 — Wu and Blodau 2013, Geosci. Model Dev. 6(4), 1173-1207 — 子任务读全文
+- 10.5194/gmd-16-6773-2023 — Lippmann et al. 2023, Geosci. Model Dev. 16(22), 6773-6804 — 子任务读全文
+- 10.5194/gmd-18-3857-2025 — Jafarov et al. 2025, Geosci. Model Dev. 18(12), 3857-3875 — 子任务读全文
+- 10.5194/bg-14-5507-2017 — Mezbahuddin et al. 2017, Biogeosciences 14(23), 5507-5531 — 子任务读全文
+
+无 DOI：D'Angelo 2015 博士论文（本地 `docs/refs/sites/FR-LGt/2015_DAngelo.pdf`）。
+
+未用于结论（只核著录或只见检索摘录）：
+- 10.1657/1523-0430(2005)037[0025:sathov]2.0.co;2 — Riedel, Epstein, Walker 2005, Arct. Antarct. Alp. Res. 37(1), 25-33 — 子任务只见检索摘录
+- 10.5440/1375316 — Sloan et al. 2018, NGEE Arctic 数据集 Leaf Area, Vegetation Biomass and Nutrient Content, Utqiagvik (Barrow), Alaska, 2012 - 2013（DataCite） — 只核元数据

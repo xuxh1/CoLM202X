@@ -1,0 +1,85 @@
+From 61c79cdfd7e4d8a0a840a7073fb0acfd70079133 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Fri, 25 Sep 2026 13:26:23 +0800
+Subject: [PATCH] feat(methane): seed old wetland peat into the passive pool
+ (C-17)
+
+Ledger C-17 (paper V2), namelist switch DEF_WETLAND_PEAT_C_PASSIVE, off by
+default. With DEF_USE_WETLAND_PEAT_C the seeded stock (OM_density x 580 gC
+per kg) was split among the seven pools by the CN steady-state dataset's
+column fractions, which are spun up for mineral soil: only 45-54% went to
+soil3, 29-33% to soil2 and 8-19% to CWD. On the wetland tile soil2 and CWD
+turn over in 26-97 years, so the deep old peat lost 360-520 gC m-2 yr-1 at
+boreal towers after a 30-cycle spin-up and supplied a third of their
+heterotrophic respiration, while the towers are near neutral or sinks.
+Old peat is the humified residue left after about 90% of the litter has
+decomposed near the surface (Clymo 1984), so with the switch on each
+layer's seeded stock goes to soil3 at its fixed C:N; the fresh pools fill
+from the plant input during spin-up.
+
+---
+ mkinidata/MOD_Initialize.F90 | 13 +++++++++++++
+ share/MOD_Namelist.F90       |  9 +++++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/mkinidata/MOD_Initialize.F90 b/mkinidata/MOD_Initialize.F90
+index d8f619ec..7f1dfba0 100644
+--- a/mkinidata/MOD_Initialize.F90
++++ b/mkinidata/MOD_Initialize.F90
+@@ -1170,6 +1170,19 @@ ENDIF
+                            ENDIF
+                            deallocate (wetland_colc, wetland_coln)
+                         ENDIF
++                        ! Old peat is humified residue: move each layer's seeded
++                        ! stock into the passive pool at its fixed C:N (paper V2
++                        ! C-17). The fresh pools then fill from the plant input.
++                        IF (DEF_WETLAND_PEAT_C_PASSIVE) THEN
++                           DO nsl = 1, nl_soil
++                              wetland_layer_c = sum(max(decomp_cpools_vr(nsl, :, i), 0._r8), &
++                                 mask = decomp_cpools_vr(nsl, :, i) < 1.e30_r8)
++                              decomp_cpools_vr(nsl, :, i) = 0._r8
++                              decomp_npools_vr(nsl, :, i) = 0._r8
++                              decomp_cpools_vr(nsl, i_soil3, i) = wetland_layer_c
++                              decomp_npools_vr(nsl, i_soil3, i) = wetland_layer_c / initial_cn_ratio(i_soil3)
++                           ENDDO
++                        ENDIF
+                      ENDIF
+                   ENDIF
+ #endif
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 39c7d400..b1b4cb88 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -216,6 +216,13 @@ MODULE MOD_Namelist
+    ! pool split, instead of rescaling the CN dataset's profile, which piles the
+    ! stock into the top layers (paper V2 C-12). Default off.
+    logical :: DEF_WETLAND_PEAT_C_PROFILE = .false.
++   ! With DEF_USE_WETLAND_PEAT_C, put each layer's seeded stock entirely into
++   ! the passive pool (soil3) instead of the CN dataset's split. Old peat is
++   ! the humified residue left after about 90% of the litter decomposed near
++   ! the surface (Clymo 1984); the dataset's split, spun up for mineral soil,
++   ! puts half of it in pools that turn over in decades (paper V2 C-17).
++   ! Default off.
++   logical :: DEF_WETLAND_PEAT_C_PASSIVE = .false.
+ 
+    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
+    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
+@@ -1254,6 +1261,7 @@ CONTAINS
+       DEF_file_cn_init,                       &
+       DEF_USE_WETLAND_PEAT_C,                 &
+       DEF_WETLAND_PEAT_C_PROFILE,             &
++      DEF_WETLAND_PEAT_C_PASSIVE,             &
+       DEF_BGC_DEBUG_SCALARS,                  &
+ 
+       DEF_USE_WaterTableInit,                 &
+@@ -1870,6 +1878,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_file_cn_init                       ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_WETLAND_PEAT_C                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_C_PROFILE             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_PEAT_C_PASSIVE             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

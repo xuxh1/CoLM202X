@@ -1,0 +1,45 @@
+From fb6de1d666c61c18292c19ffbdb397d1eaf09a61 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Sat, 26 Sep 2026 12:38:42 +0800
+Subject: [PATCH] feat(methane): own f_methane for the tropical peat share of
+ wetland tiles (C-29)
+
+A tropical peat swamp forest tower turns about 0.5% of its heterotrophic
+respiration into CH4 (Maludam) while the model turned 10%, and anaerobic
+incubations of tropical forest peat give 0.2-0.3% (Girkin et al. 2020);
+f_methane 0.2 has no measured source. With DEF_METHANE%wetland_f_tropical_peat
+>= 0 a wetland tile within 23.5 degrees of the equator weighs f_methane by
+its peatland share (C-17c, now read at start-up for C-26 or C-29; the array
+is renamed wetland_tile_peat_share). Off by default.
+
+---
+ main/CoLM.F90 | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/main/CoLM.F90 b/main/CoLM.F90
+index 6d220222..5162e522 100644
+--- a/main/CoLM.F90
++++ b/main/CoLM.F90
+@@ -117,7 +117,7 @@ PROGRAM CoLM
+    USE MOD_Tracer_Reactive_Methane_WetlandVeg, only: wetveg_cap_lai
+    USE MOD_Tracer_Reactive_BgcShim, only: wetland_bgc_sasu_init, wetland_bgc_sasu_cycle_end
+    USE MOD_Tracer_Reactive_Methane_Const, only: DEF_METHANE
+-   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_rss_peat_share
++   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_tile_peat_share
+    USE MOD_Initialize, only: wetland_peat_share_read
+ #endif
+ 
+@@ -345,7 +345,9 @@ PROGRAM CoLM
+       ! land_tracer_init): armed only when this run makes spin-up cycles.
+       CALL wetland_bgc_sasu_init (merge(n_spinupcycle, 0, is_spinup))
+       ! Peatland share of each wetland tile for its moss surface resistance (C-26)
+-      IF (DEF_METHANE%wetland_moss_rss) CALL wetland_peat_share_read (wetland_rss_peat_share)
++      ! and its tropical peat f_methane (C-29)
++      IF (DEF_METHANE%wetland_moss_rss .or. DEF_METHANE%wetland_f_tropical_peat >= 0._r8) &
++         CALL wetland_peat_share_read (wetland_tile_peat_share)
+ #endif
+ 
+       ! Read in SNICAR optical and aging parameters
+-- 
+2.53.0
+

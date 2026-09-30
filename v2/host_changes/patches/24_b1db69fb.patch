@@ -1,0 +1,57 @@
+From b1db69fb9bec1efe1bd38d38af84c657a9418559 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Sun, 27 Sep 2026 23:17:52 +0800
+Subject: [PATCH] feat(rice): paddies are drained from the start of grain fill
+ (C-32e)
+
+---
+ main/MOD_Irrigation.F90        |  4 +++-
+ main/MOD_SoilSnowHydrology.F90 | 10 ++++++----
+ 2 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/main/MOD_Irrigation.F90 b/main/MOD_Irrigation.F90
+index 889535be..70f3a583 100644
+--- a/main/MOD_Irrigation.F90
++++ b/main/MOD_Irrigation.F90
+@@ -331,7 +331,9 @@ CONTAINS
+       DO m = ps, pe
+          ivt = pftclass(m)
+          IF ((ivt >= npcropmin) .and. (irrig_crop(ivt)) .and. &
+-            (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m)<irrig_max_cphase)) THEN
++            (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m)<irrig_max_cphase) .and. &
++            ! C-32e: paddies are not irrigated from the start of grain fill
++            .not. (DEF_PADDY_RICE_BUND .and. irrig_method_p(m) == irrig_method_paddy .and. cphase_p(m) >= 3._r8)) THEN
+             IF (DEF_simulation_time%greenwich) THEN
+                 CALL gmt2local(idate, dlon, ldate)
+                 seconds_since_irrig_start_time = ldate(3) - irrig_start_time + deltim
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index aca71aa4..78f222a2 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -2779,9 +2779,9 @@ ENDIF
+    !-----------------------------------------------------------------------
+    ! A paddy holds surface water behind its bunds (no surface runoff, ponding
+    ! up to pondmxc). Upstream: every pft with the paddy method, all year.
+-   ! C-32 (DEF_PADDY_RICE_BUND): only from planting to harvest, the season
+-   ! the irrigation module waters (irrig_min_cphase <= cphase < irrig_max_cphase);
+-   ! after harvest the field drains like any other soil column.
++   ! C-32 (DEF_PADDY_RICE_BUND): only from planting to the start of grain
++   ! fill (C-32e, irrig_min_cphase <= cphase < 3); the field is then drained
++   ! and after harvest drains like any other soil column.
+    !-----------------------------------------------------------------------
+    logical FUNCTION paddy_bunded(m)
+ 
+@@ -2795,7 +2795,9 @@ ENDIF
+ 
+       paddy_bunded = (irrig_method_p(m) == irrig_method_paddy)
+       IF (paddy_bunded .and. DEF_PADDY_RICE_BUND) THEN
+-         paddy_bunded = (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m) < irrig_max_cphase)
++         ! C-32e: the field is drained from the start of grain fill (cphase 3),
++         ! so it dries in the last two to three weeks before harvest
++         paddy_bunded = (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m) < 3._r8)
+       ENDIF
+ 
+    END FUNCTION paddy_bunded
+-- 
+2.53.0
+

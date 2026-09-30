@@ -1,0 +1,126 @@
+From 7d1b1a3e0b11c98ccc8bbc5b4b4d34780779c7e9 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Sat, 26 Sep 2026 02:58:53 +0800
+Subject: [PATCH] feat(methane): moss and peat surface resistance to wetland
+ ground evaporation (C-26)
+
+A dynamic wetland tile evaporated from its ground as a free water surface:
+the SL14 dry-layer resistance is zero while the top layer holds more than
+0.8 of porosity, which a peat surface does with the water table 0.3 m down.
+DEF_METHANE%wetland_moss_rss floors the snow-free soil surface resistance at
+100 s m-1 with the water table within 0.1 m, rising with an e-folding depth
+of 0.155 m up to 1000 s m-1, weighted by the tile's peatland share (C-17c,
+read at start-up); tropical classes and ponded tiles take none. Off by
+default.
+
+---
+ main/CoLM.F90                      |  5 +++++
+ main/MOD_SoilSurfaceResistance.F90 |  9 ++++++++-
+ main/MOD_Thermal.F90               | 13 ++++++++++++-
+ 3 files changed, 25 insertions(+), 2 deletions(-)
+
+diff --git a/main/CoLM.F90 b/main/CoLM.F90
+index 78521c26..6d220222 100644
+--- a/main/CoLM.F90
++++ b/main/CoLM.F90
+@@ -116,6 +116,9 @@ PROGRAM CoLM
+ #if (defined TRACER) && (defined BGC)
+    USE MOD_Tracer_Reactive_Methane_WetlandVeg, only: wetveg_cap_lai
+    USE MOD_Tracer_Reactive_BgcShim, only: wetland_bgc_sasu_init, wetland_bgc_sasu_cycle_end
++   USE MOD_Tracer_Reactive_Methane_Const, only: DEF_METHANE
++   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_rss_peat_share
++   USE MOD_Initialize, only: wetland_peat_share_read
+ #endif
+ 
+ #ifdef DataAssimilation
+@@ -341,6 +344,8 @@ PROGRAM CoLM
+       ! Wetland semi-analytic spin-up (DEF_METHANE%wetland_bgc_sasu, read by
+       ! land_tracer_init): armed only when this run makes spin-up cycles.
+       CALL wetland_bgc_sasu_init (merge(n_spinupcycle, 0, is_spinup))
++      ! Peatland share of each wetland tile for its moss surface resistance (C-26)
++      IF (DEF_METHANE%wetland_moss_rss) CALL wetland_peat_share_read (wetland_rss_peat_share)
+ #endif
+ 
+       ! Read in SNICAR optical and aging parameters
+diff --git a/main/MOD_SoilSurfaceResistance.F90 b/main/MOD_SoilSurfaceResistance.F90
+index 2807042e..012ebf05 100644
+--- a/main/MOD_SoilSurfaceResistance.F90
++++ b/main/MOD_SoilSurfaceResistance.F90
+@@ -44,7 +44,7 @@ CONTAINS
+ #ifdef vanGenuchten_Mualem_SOIL_MODEL
+                               theta_r, alpha_vgm, n_vgm, L_vgm, sc_vgm, fc_vgm, &
+ #endif
+-                              dz_soisno,t_soisno,wliq_soisno,wice_soisno,fsno,qg,rss)
++                              dz_soisno,t_soisno,wliq_soisno,wice_soisno,fsno,qg,rss,rss_min)
+ 
+ !=======================================================================
+ ! !DESCRIPTION:
+@@ -98,6 +98,9 @@ CONTAINS
+    real(r8), intent(out) :: &
+         rss                           ! soil surface resistance [s/m]
+ 
++   real(r8), intent(in), optional :: &
++        rss_min                       ! floor of the snow-free resistance [s/m]
++
+ !-------------------------- Local Variables ----------------------------
+ 
+    REAL(r8) :: &
+@@ -293,6 +296,10 @@ CONTAINS
+                                       !for wet soil according to Noah-MP v5
+       ENDSELECT
+ 
++      ! floor of the snow-free resistance, e.g. the moss and peat surface
++      ! of a wetland tile (C-26 of the paper V2 methane code)
++      IF (present(rss_min) .and. DEF_RSS_SCHEME .ne. 4) rss = max(rss, rss_min)
++
+ !-----------------------------------------------------------------------
+       ! account for snow fractional cover for rss
+       IF (DEF_RSS_SCHEME .ne. 4) THEN
+diff --git a/main/MOD_Thermal.F90 b/main/MOD_Thermal.F90
+index 475d449b..93951b2b 100644
+--- a/main/MOD_Thermal.F90
++++ b/main/MOD_Thermal.F90
+@@ -137,6 +137,10 @@ CONTAINS
+    USE MOD_SPMD_Task
+    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_RSS_SCHEME, DEF_SPLIT_SOILSNOW, &
+                            DEF_USE_LCT,DEF_USE_PFT,DEF_USE_PC,DEF_PC_CROP_SPLIT
++#ifdef TRACER
++   USE MOD_Vars_TimeVariables, only: zwt, wdsrf
++   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_moss_rss
++#endif
+ 
+    IMPLICIT NONE
+ 
+@@ -486,6 +490,7 @@ CONTAINS
+    real(r8), allocatable :: assimsha_p    (:)
+    real(r8), allocatable :: etrsha_p      (:)
+    real(r8), allocatable :: dheatl_p      (:)
++   real(r8) :: rss_min  ! floor of the snow-free soil surface resistance [s/m]
+ #ifdef TRACER
+    real(r8) :: canopy_smelt_mass_local, canopy_frzc_mass_local
+    real(r8), allocatable :: canopy_smelt_mass_p_local(:), canopy_frzc_mass_p_local(:)
+@@ -631,6 +636,12 @@ ENDIF
+ 
+          !NOTE: If the beta scheme is used, the rss is not soil resistance,
+          !but soil beta factor (soil wetness relative to field capacity [0-1]).
++         rss_min = 0.
++#ifdef TRACER
++         ! moss and peat surface of a dynamic wetland tile (C-26)
++         IF (DEF_USE_Dynamic_Wetland .and. (patchtype==2)) &
++            rss_min = wetland_moss_rss(ipatch, zwt(ipatch), wdsrf(ipatch))
++#endif
+          CALL SoilSurfaceResistance (nl_soil,forc_rhoair,hksati,porsl,psi0, &
+ #ifdef Campbell_SOIL_MODEL
+                             bsw, &
+@@ -638,7 +649,7 @@ ENDIF
+ #ifdef vanGenuchten_Mualem_SOIL_MODEL
+                             theta_r, alpha_vgm, n_vgm, L_vgm, sc_vgm, fc_vgm, &
+ #endif
+-                            dz_soisno,t_soisno,wliq_soisno,wice_soisno,fsno,qg,rss)
++                            dz_soisno,t_soisno,wliq_soisno,wice_soisno,fsno,qg,rss,rss_min)
+       ELSE
+          IF (DEF_RSS_SCHEME == 4) THEN
+             rss = 1.        !LP92
+-- 
+2.53.0
+

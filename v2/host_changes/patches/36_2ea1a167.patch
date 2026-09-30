@@ -1,0 +1,155 @@
+From 2ea1a1679ed8462ef8ae0ef8d819983721dcbefe Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 07:17:53 +0800
+Subject: [PATCH] feat(soil): peat soil profile for the dynamic wetland tile
+ (Q-45)
+
+DEF_WETLAND_PEAT_SOIL (default 0, off): after the soil parameters are
+read in mkinidata, the hydraulic and thermal parameters of each layer of
+a wetland tile are mixed towards a peat column by the tile's peatland
+share. The end member is the CLM4.5 organic soil (porosity 0.93 to 0.83,
+b 2.7 to 12, suction 10.3 to 10.1 mm, conductivity 0.28 to 1e-4 mm/s),
+either as the CLM4.5 depth functions over 0-0.5 m (1) or as an acrotelm
+above DEF_WETLAND_PEAT_C_PASSIVE_ZTOP over a catotelm (2); van Genuchten
+alpha = 1/suction and n = 1 + 1/b, thermal constants of the CoLM soil
+preprocessing at the peat porosity. OM_density is left unchanged.
+
+---
+ mkinidata/MOD_Initialize.F90 | 79 ++++++++++++++++++++++++++++++++++++
+ share/MOD_Namelist.F90       |  9 ++++
+ 2 files changed, 88 insertions(+)
+
+diff --git a/mkinidata/MOD_Initialize.F90 b/mkinidata/MOD_Initialize.F90
+index 91244243..7477e7b6 100644
+--- a/mkinidata/MOD_Initialize.F90
++++ b/mkinidata/MOD_Initialize.F90
+@@ -406,6 +406,9 @@ ENDIF
+       ENDIF
+ #endif
+ 
++      ! Q-45 (paper V2): peat soil of the wetland tile
++      IF (DEF_WETLAND_PEAT_SOIL > 0) CALL wetland_peat_soil ()
++
+ #ifdef vanGenuchten_Mualem_SOIL_MODEL
+       IF (p_is_worker) THEN
+          IF (numpatch > 0) THEN
+@@ -1838,6 +1841,82 @@ ENDIF
+    END SUBROUTINE initialize
+ 
+ #if (defined TRACER) && (defined BGC)
++   SUBROUTINE wetland_peat_soil ()
++      ! Q-45 (paper V2): the soil of a dynamic wetland tile is mixed layer by
++      ! layer towards a peat column by the tile's peatland share (C-17c). The
++      ! peat end member is the organic soil of CLM4.5 (Lawrence and Slater
++      ! 2008; fibric to sapric peat with depth after Letts et al. 2000):
++      ! porosity 0.93 to 0.83, Clapp-Hornberger b 2.7 to 12, saturated suction
++      ! 10.3 to 10.1 mm and saturated conductivity 0.28 to 1e-4 mm/s, either
++      ! over 0-0.5 m as in CLM4.5 (DEF_WETLAND_PEAT_SOIL = 1) or as an
++      ! acrotelm above DEF_WETLAND_PEAT_C_PASSIVE_ZTOP (0.3 m when unset) over
++      ! a catotelm (= 2), so the hydraulic and the carbon boundary coincide.
++      ! The van Genuchten form takes theta_r = 0, alpha = 1/suction and
++      ! n = 1 + 1/b, which follows the Campbell curve beyond the air entry.
++      ! Thermal properties use the organic constants of the CoLM soil
++      ! preprocessing (solid heat capacity 2.51e6 J m-3 K-1, solid and dry
++      ! conductivity 0.25 and 0.05 W m-1 K-1) at the peat porosity.
++      ! Conductivities mix geometrically, the rest linearly; OM_density, and
++      ! the carbon seeded from it, are left alone.
++      USE MOD_Precision
++      USE MOD_SPMD_Task
++      USE MOD_Namelist, only: DEF_WETLAND_PEAT_SOIL, DEF_WETLAND_PEAT_C_PASSIVE_ZTOP
++      USE MOD_LandPatch, only: numpatch
++      USE MOD_Vars_Global, only: nl_soil, z_soi
++      USE MOD_Vars_TimeInvariants
++      real(r8), allocatable :: share(:)
++      real(r8) :: w, zac, f, ps, pb, psuc, pks, pksol
++      integer  :: ip, j
++
++      CALL wetland_peat_share_read (share)
++      IF (p_is_worker .and. numpatch > 0) THEN
++         zac = DEF_WETLAND_PEAT_C_PASSIVE_ZTOP
++         IF (zac <= 0._r8) zac = 0.3_r8
++         DO ip = 1, numpatch
++            IF (patchtype(ip) /= 2) CYCLE
++            w = min(max(share(ip), 0._r8), 1._r8)
++            IF (w <= 0._r8) CYCLE
++            DO j = 1, nl_soil
++               IF (DEF_WETLAND_PEAT_SOIL == 2) THEN
++                  f = merge(0._r8, 1._r8, z_soi(j) < zac)
++               ELSE
++                  f = min(z_soi(j) / 0.5_r8, 1._r8)
++               ENDIF
++               ps    = 0.93_r8 - 0.1_r8 * f          ! porosity
++               pb    = 2.7_r8 + 9.3_r8 * f           ! Clapp-Hornberger b
++               psuc  = 10.3_r8 - 0.2_r8 * f          ! saturated suction [mm]
++               pks   = 0.28_r8 - 0.2799_r8 * f       ! saturated conductivity [mm/s]
++               pksol = 0.25_r8 ** (1._r8 - ps)       ! solids at the peat porosity
++
++               porsl(j,ip) = (1._r8 - w) * porsl(j,ip) + w * ps
++               bsw  (j,ip) = (1._r8 - w) * bsw(j,ip)   + w * pb
++#ifdef vanGenuchten_Mualem_SOIL_MODEL
++               theta_r  (j,ip) = (1._r8 - w) * theta_r(j,ip)
++               alpha_vgm(j,ip) = (1._r8 - w) * alpha_vgm(j,ip) + w * 10._r8 / psuc   ! [1/cm]
++               n_vgm    (j,ip) = (1._r8 - w) * n_vgm(j,ip)     + w * (1._r8 + 1._r8 / pb)
++               L_vgm    (j,ip) = (1._r8 - w) * L_vgm(j,ip)     + w * 0.5_r8
++               wfc      (j,ip) = theta_r(j,ip) + (porsl(j,ip) - theta_r(j,ip)) &
++                  * (1._r8 + (alpha_vgm(j,ip) * 339.9_r8) ** n_vgm(j,ip)) ** (1._r8 / n_vgm(j,ip) - 1._r8)
++#else
++               psi0     (j,ip) = (1._r8 - w) * psi0(j,ip) - w * psuc
++               wfc      (j,ip) = (-3399._r8 / psi0(j,ip)) ** (-1._r8 / bsw(j,ip)) * porsl(j,ip)
++#endif
++               hksati  (j,ip) = hksati(j,ip) ** (1._r8 - w) * pks ** w
++               csol    (j,ip) = (1._r8 - w) * csol(j,ip) + w * 2.51e6_r8 * (1._r8 - ps)
++               k_solids(j,ip) = k_solids(j,ip) ** (1._r8 - w) * pksol ** w
++               dksatu  (j,ip) = dksatu(j,ip)   ** (1._r8 - w) * (pksol * 0.57_r8 ** ps) ** w
++               dksatf  (j,ip) = dksatf(j,ip)   ** (1._r8 - w) * (pksol * 2.29_r8 ** ps) ** w
++               dkdry   (j,ip) = dkdry(j,ip)    ** (1._r8 - w) * 0.05_r8 ** w
++               vf_om     (j,ip) = (1._r8 - w) * vf_om(j,ip) + w
++               vf_sand   (j,ip) = (1._r8 - w) * vf_sand(j,ip)
++               vf_gravels(j,ip) = (1._r8 - w) * vf_gravels(j,ip)
++            ENDDO
++         ENDDO
++      ENDIF
++      IF (allocated(share)) deallocate (share)
++
++   END SUBROUTINE wetland_peat_soil
++
+    SUBROUTINE wetland_peat_share_read (share)
+       ! Peatland share of each patch's wetland tile for C-17c (paper V2):
+       ! GLWD v2 peatland classes 22-27 over the tile classes 16-19 and 22-27
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 29212770..d8c767ce 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -237,6 +237,13 @@ MODULE MOD_Namelist
+    ! Single-point runs give the tower's own share here (0 mineral, 1 peat);
+    ! < 0 keeps the file or, without one, the whole layer.
+    real(r8) :: DEF_WETLAND_PEAT_SHARE_SITE = -1._r8
++   ! Peat soil of the wetland tile (paper V2 Q-45): the soil hydraulic and
++   ! thermal parameters of a dynamic wetland tile are mixed layer by layer
++   ! towards a peat column by the tile's peatland share. 0 off; 1 the organic
++   ! end member of CLM4.5 varying with depth over 0-0.5 m (fibric to sapric);
++   ! 2 an acrotelm above DEF_WETLAND_PEAT_C_PASSIVE_ZTOP (0.3 m when unset)
++   ! over a catotelm.
++   integer  :: DEF_WETLAND_PEAT_SOIL = 0
+ 
+    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
+    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
+@@ -1341,6 +1348,7 @@ CONTAINS
+       DEF_WETLAND_PEAT_C_PASSIVE_ZTOP,        &
+       DEF_WETLAND_PEAT_SHARE_FILE,            &
+       DEF_WETLAND_PEAT_SHARE_SITE,            &
++      DEF_WETLAND_PEAT_SOIL,                  &
+       DEF_BGC_DEBUG_SCALARS,                  &
+ 
+       DEF_USE_WaterTableInit,                 &
+@@ -1970,6 +1978,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_WETLAND_PEAT_C_PASSIVE_ZTOP        ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_SHARE_FILE            ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_SHARE_SITE            ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_PEAT_SOIL                  ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

@@ -1,0 +1,127 @@
+From 95e4985b4182041747daa22ec4e4d7fc41ce0ed3 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Wed, 30 Sep 2026 01:59:36 +0800
+Subject: [PATCH] feat(soil): tropical peat end members of the wetland peat
+ soil (C-91)
+
+DEF_WETLAND_PEAT_TROP_LAT (default -1, off): a wetland tile within this
+latitude [degrees] of the equator mixes its soil towards the acrotelm
+DEF_WETLAND_PEAT_TROP_ACRO and the catotelm DEF_WETLAND_PEAT_TROP_CATO
+(porosity, Clapp-Hornberger b, saturated suction [mm], saturated
+conductivity [mm/s] each) instead of the CLM4.5 organic soil of
+DEF_WETLAND_PEAT_SOIL, which describes boreal Sphagnum over sapric peat.
+The defaults of the two arrays are the CLM4.5 values; with the latitude
+key off the mixing runs the unchanged expressions, so results are
+bitwise identical.
+
+---
+ mkinidata/MOD_Initialize.F90 | 29 +++++++++++++++++++++++------
+ share/MOD_Namelist.F90       | 16 ++++++++++++++++
+ 2 files changed, 39 insertions(+), 6 deletions(-)
+
+diff --git a/mkinidata/MOD_Initialize.F90 b/mkinidata/MOD_Initialize.F90
+index 7477e7b6..173513c1 100644
+--- a/mkinidata/MOD_Initialize.F90
++++ b/mkinidata/MOD_Initialize.F90
+@@ -1858,34 +1858,51 @@ ENDIF
+       ! conductivity 0.25 and 0.05 W m-1 K-1) at the peat porosity.
+       ! Conductivities mix geometrically, the rest linearly; OM_density, and
+       ! the carbon seeded from it, are left alone.
++      ! C-91: a tile within DEF_WETLAND_PEAT_TROP_LAT of the equator mixes
++      ! towards the tropical acrotelm and catotelm of the namelist instead;
++      ! the woody peat of tropical swamp forests is not Sphagnum peat.
+       USE MOD_Precision
+       USE MOD_SPMD_Task
+-      USE MOD_Namelist, only: DEF_WETLAND_PEAT_SOIL, DEF_WETLAND_PEAT_C_PASSIVE_ZTOP
++      USE MOD_Namelist, only: DEF_WETLAND_PEAT_SOIL, DEF_WETLAND_PEAT_C_PASSIVE_ZTOP, &
++         DEF_WETLAND_PEAT_TROP_LAT, DEF_WETLAND_PEAT_TROP_ACRO, DEF_WETLAND_PEAT_TROP_CATO
+       USE MOD_LandPatch, only: numpatch
+-      USE MOD_Vars_Global, only: nl_soil, z_soi
++      USE MOD_Vars_Global, only: nl_soil, z_soi, PI
+       USE MOD_Vars_TimeInvariants
+       real(r8), allocatable :: share(:)
+       real(r8) :: w, zac, f, ps, pb, psuc, pks, pksol
++      real(r8) :: ea(4), ec(4)   ! tropical acrotelm and catotelm end members
++      logical  :: trop
+       integer  :: ip, j
+ 
+       CALL wetland_peat_share_read (share)
+       IF (p_is_worker .and. numpatch > 0) THEN
+          zac = DEF_WETLAND_PEAT_C_PASSIVE_ZTOP
+          IF (zac <= 0._r8) zac = 0.3_r8
++         ea = DEF_WETLAND_PEAT_TROP_ACRO
++         ec = DEF_WETLAND_PEAT_TROP_CATO
+          DO ip = 1, numpatch
+             IF (patchtype(ip) /= 2) CYCLE
+             w = min(max(share(ip), 0._r8), 1._r8)
+             IF (w <= 0._r8) CYCLE
++            trop = (DEF_WETLAND_PEAT_TROP_LAT >= 0._r8) .and. &
++               (abs(patchlatr(ip)) * 180._r8 / PI <= DEF_WETLAND_PEAT_TROP_LAT)
+             DO j = 1, nl_soil
+                IF (DEF_WETLAND_PEAT_SOIL == 2) THEN
+                   f = merge(0._r8, 1._r8, z_soi(j) < zac)
+                ELSE
+                   f = min(z_soi(j) / 0.5_r8, 1._r8)
+                ENDIF
+-               ps    = 0.93_r8 - 0.1_r8 * f          ! porosity
+-               pb    = 2.7_r8 + 9.3_r8 * f           ! Clapp-Hornberger b
+-               psuc  = 10.3_r8 - 0.2_r8 * f          ! saturated suction [mm]
+-               pks   = 0.28_r8 - 0.2799_r8 * f       ! saturated conductivity [mm/s]
++               IF (trop) THEN
++                  ps   = (1._r8 - f) * ea(1) + f * ec(1)
++                  pb   = (1._r8 - f) * ea(2) + f * ec(2)
++                  psuc = (1._r8 - f) * ea(3) + f * ec(3)
++                  pks  = (1._r8 - f) * ea(4) + f * ec(4)
++               ELSE
++                  ps    = 0.93_r8 - 0.1_r8 * f          ! porosity
++                  pb    = 2.7_r8 + 9.3_r8 * f           ! Clapp-Hornberger b
++                  psuc  = 10.3_r8 - 0.2_r8 * f          ! saturated suction [mm]
++                  pks   = 0.28_r8 - 0.2799_r8 * f       ! saturated conductivity [mm/s]
++               ENDIF
+                pksol = 0.25_r8 ** (1._r8 - ps)       ! solids at the peat porosity
+ 
+                porsl(j,ip) = (1._r8 - w) * porsl(j,ip) + w * ps
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 1517e6a5..cf413d3d 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -244,6 +244,16 @@ MODULE MOD_Namelist
+    ! 2 an acrotelm above DEF_WETLAND_PEAT_C_PASSIVE_ZTOP (0.3 m when unset)
+    ! over a catotelm.
+    integer  :: DEF_WETLAND_PEAT_SOIL = 0
++   ! Tropical peat end members of DEF_WETLAND_PEAT_SOIL (paper V2 C-91): a
++   ! tile within this latitude [degrees] of the equator mixes towards the
++   ! acrotelm and catotelm given below instead of the CLM4.5 organic soil,
++   ! which describes boreal Sphagnum (fibric) over sapric peat. Each is
++   ! porosity [-], Clapp-Hornberger b [-], saturated suction [mm] and
++   ! saturated conductivity [mm/s]; the defaults are the CLM4.5 values.
++   ! < 0 off (default).
++   real(r8) :: DEF_WETLAND_PEAT_TROP_LAT = -1._r8
++   real(r8) :: DEF_WETLAND_PEAT_TROP_ACRO(4) = (/0.93_r8,  2.7_r8, 10.3_r8, 0.28_r8/)
++   real(r8) :: DEF_WETLAND_PEAT_TROP_CATO(4) = (/0.83_r8, 12.0_r8, 10.1_r8, 1.e-4_r8/)
+    ! Ponded water on an unfrozen dynamic wetland tile leaves over the surface
+    ! at the lateral outflow of a water table at the surface (paper V2
+    ! candidate 13; PEAT-CLSM semisurficial runoff, Bechtold et al. 2019)
+@@ -1447,6 +1457,9 @@ CONTAINS
+       DEF_WETLAND_PEAT_SHARE_FILE,            &
+       DEF_WETLAND_PEAT_SHARE_SITE,            &
+       DEF_WETLAND_PEAT_SOIL,                  &
++      DEF_WETLAND_PEAT_TROP_LAT,              &
++      DEF_WETLAND_PEAT_TROP_ACRO,             &
++      DEF_WETLAND_PEAT_TROP_CATO,             &
+       DEF_WETLAND_POND_OUTFLOW,               &
+       DEF_WETLAND_INFLOW_AREA_SPLIT,          &
+       DEF_WETLAND_LATERAL_INFLOW,             &
+@@ -2089,6 +2102,9 @@ CONTAINS
+       CALL mpi_bcast (DEF_WETLAND_PEAT_SHARE_FILE            ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_SHARE_SITE            ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_SOIL                  ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_PEAT_TROP_LAT              ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_PEAT_TROP_ACRO             ,4   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_PEAT_TROP_CATO             ,4   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_POND_OUTFLOW               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_INFLOW_AREA_SPLIT          ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_LATERAL_INFLOW             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

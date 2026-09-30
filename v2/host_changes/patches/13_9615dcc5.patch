@@ -1,0 +1,249 @@
+From 9615dcc5e4a65b6f4c9b1bc63d38ac6104aca0ab Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Fri, 25 Sep 2026 20:02:11 +0800
+Subject: [PATCH] feat(bgc): seed the passive pool only on the peatland share
+ of the wetland tile (C-17c)
+
+Ledger C-17c (paper V2). C-17b moves the seeded stock below 0.3 m into the
+passive pool on every wetland tile, but the dataset's pool split was spun up
+for mineral soil and suits the mineral wetlands; only old peat is humified
+residue. The move now applies to the peatland share of the tile: GLWD v2
+peatland classes 22-27 over the tile classes 16-19 and 22-27 in the cell of
+DEF_WETLAND_PEAT_SHARE_FILE nearest to the patch, or the tower's own share in
+DEF_WETLAND_PEAT_SHARE_SITE; the rest keeps the dataset's split. Without a
+file or site share the share is 1, which reproduces C-17b bit for bit.
+Site runs get the share from the config's SITE_MAIN.csv through prep_tag.sh;
+iron rule 8 note in lsf.sh narrowed to mksrf.
+
+---
+ mkinidata/MOD_Initialize.F90 | 148 ++++++++++++++++++++++++++++++++++-
+ share/MOD_Namelist.F90       |  14 ++++
+ 2 files changed, 158 insertions(+), 4 deletions(-)
+
+diff --git a/mkinidata/MOD_Initialize.F90 b/mkinidata/MOD_Initialize.F90
+index 8037e9d0..9bbf0067 100644
+--- a/mkinidata/MOD_Initialize.F90
++++ b/mkinidata/MOD_Initialize.F90
+@@ -119,6 +119,8 @@ CONTAINS
+    integer  :: wetland_ipool
+    real(r8), allocatable :: wetland_colc(:), wetland_coln(:)
+    real(r8) :: wetland_layer_c, wetland_colsum
++   real(r8), allocatable :: wetland_peat_share(:)
++   real(r8) :: wetland_share
+    real(r8), parameter :: wetland_cn_ratio = 15._r8
+    real(r8), parameter :: carbon_per_kg_om = 580._r8
+ #endif
+@@ -1043,6 +1045,12 @@ ENDIF
+             CALL mc2f%grid2pset (livecrootc_grid, livecrootcin_p )
+             CALL mc2f%grid2pset (deadcrootc_grid, deadcrootcin_p )
+ 
++#if (defined TRACER) && (defined BGC)
++            ! C-17c: peatland share of each patch's wetland tile (collective read)
++            IF (DEF_USE_WETLAND_PEAT_C .and. DEF_WETLAND_PEAT_C_PASSIVE) &
++               CALL wetland_peat_share_read (wetland_peat_share)
++#endif
++
+             IF (p_is_worker) THEN
+                DO i = 1, numpatch
+ #ifdef TRACER
+@@ -1174,15 +1182,29 @@ ENDIF
+                         ! stock into the passive pool at its fixed C:N (paper V2
+                         ! C-17). The fresh pools then fill from the plant input.
+                         IF (DEF_WETLAND_PEAT_C_PASSIVE) THEN
++                           ! C-17c: only the peatland share moves; the mineral
++                           ! share keeps the dataset's split (1 without a share).
++                           wetland_share = 1._r8
++                           IF (allocated(wetland_peat_share)) wetland_share = wetland_peat_share(i)
+                            DO nsl = 1, nl_soil
+                               ! C-17b: the acrotelm above ZTOP keeps the dataset's split.
+                               IF (z_soi(nsl) < DEF_WETLAND_PEAT_C_PASSIVE_ZTOP) CYCLE
+                               wetland_layer_c = sum(max(decomp_cpools_vr(nsl, :, i), 0._r8), &
+                                  mask = decomp_cpools_vr(nsl, :, i) < 1.e30_r8)
+-                              decomp_cpools_vr(nsl, :, i) = 0._r8
+-                              decomp_npools_vr(nsl, :, i) = 0._r8
+-                              decomp_cpools_vr(nsl, i_soil3, i) = wetland_layer_c
+-                              decomp_npools_vr(nsl, i_soil3, i) = wetland_layer_c / initial_cn_ratio(i_soil3)
++                              WHERE (decomp_cpools_vr(nsl, :, i) < 1.e30_r8)
++                                 decomp_cpools_vr(nsl, :, i) = (1._r8 - wetland_share) * max(decomp_cpools_vr(nsl, :, i), 0._r8)
++                              ELSEWHERE
++                                 decomp_cpools_vr(nsl, :, i) = 0._r8
++                              END WHERE
++                              WHERE (decomp_npools_vr(nsl, :, i) < 1.e30_r8)
++                                 decomp_npools_vr(nsl, :, i) = (1._r8 - wetland_share) * max(decomp_npools_vr(nsl, :, i), 0._r8)
++                              ELSEWHERE
++                                 decomp_npools_vr(nsl, :, i) = 0._r8
++                              END WHERE
++                              decomp_cpools_vr(nsl, i_soil3, i) = decomp_cpools_vr(nsl, i_soil3, i) &
++                                 + wetland_share * wetland_layer_c
++                              decomp_npools_vr(nsl, i_soil3, i) = decomp_npools_vr(nsl, i_soil3, i) &
++                                 + wetland_share * wetland_layer_c / initial_cn_ratio(i_soil3)
+                            ENDDO
+                         ENDIF
+                      ENDIF
+@@ -1815,6 +1837,124 @@ ENDIF
+ 
+    END SUBROUTINE initialize
+ 
++#if (defined TRACER) && (defined BGC)
++   SUBROUTINE wetland_peat_share_read (share)
++      ! Peatland share of each patch's wetland tile for C-17c (paper V2):
++      ! GLWD v2 peatland classes 22-27 over the tile classes 16-19 and 22-27
++      ! in the cell of DEF_WETLAND_PEAT_SHARE_FILE nearest to the patch; a
++      ! cell without tile classes, or no file, gives 1 (C-17b). A single-point
++      ! run gives its own share in DEF_WETLAND_PEAT_SHARE_SITE.
++#ifdef USEMPI
++      USE MPI
++#endif
++      USE netcdf
++      USE MOD_Precision
++      USE MOD_Namelist, only: DEF_WETLAND_PEAT_SHARE_FILE, DEF_WETLAND_PEAT_SHARE_SITE
++      USE MOD_SPMD_Task
++      USE MOD_LandPatch, only: numpatch
++      USE MOD_Vars_Global, only: PI
++      USE MOD_Vars_TimeInvariants, only: patchlatr, patchlonr
++      real(r8), allocatable, intent(out) :: share(:)
++
++      integer, parameter :: npeat = 6, nmin = 4
++      integer, parameter :: peat_classes(npeat) = (/22, 23, 24, 25, 26, 27/)
++      integer, parameter :: min_classes(nmin) = (/16, 17, 18, 19/)
++      integer :: ncid, vid, ierr, dims(2), bad, nlat, nlon, k, ip, ilat, ilon
++      real(r8), allocatable :: lat_g(:), lon_g(:), share_g(:,:), a(:,:), apeat(:,:), amin(:,:)
++      real(r8) :: lat_deg, lon_deg, d, dmin
++      character(len=16) :: vname
++
++      IF (p_is_worker) THEN
++         allocate (share(max(numpatch,0)))
++         share(:) = 1._r8
++      ENDIF
++      IF (DEF_WETLAND_PEAT_SHARE_SITE >= 0._r8) THEN
++         IF (p_is_worker) share(:) = min(DEF_WETLAND_PEAT_SHARE_SITE, 1._r8)
++         IF (p_is_master) write(*,'(A,F6.3)') ' C-17c peatland share of the wetland tile (site): ', &
++            min(DEF_WETLAND_PEAT_SHARE_SITE, 1._r8)
++         RETURN
++      ENDIF
++      IF (trim(DEF_WETLAND_PEAT_SHARE_FILE) == 'null') RETURN
++
++      bad = 0; dims = 0
++      IF (p_is_master) THEN
++         ierr = nf90_open(trim(DEF_WETLAND_PEAT_SHARE_FILE), NF90_NOWRITE, ncid)
++         IF (ierr == NF90_NOERR) ierr = nf90_inq_dimid(ncid, 'lat', vid)
++         IF (ierr == NF90_NOERR) ierr = nf90_inquire_dimension(ncid, vid, len = dims(1))
++         IF (ierr == NF90_NOERR) ierr = nf90_inq_dimid(ncid, 'lon', vid)
++         IF (ierr == NF90_NOERR) ierr = nf90_inquire_dimension(ncid, vid, len = dims(2))
++         IF (ierr /= NF90_NOERR .or. dims(1) <= 0 .or. dims(2) <= 0) bad = 1
++      ENDIF
++#ifdef USEMPI
++      CALL mpi_bcast (bad,  1, MPI_INTEGER, p_address_master, p_comm_glb, p_err)
++      CALL mpi_bcast (dims, 2, MPI_INTEGER, p_address_master, p_comm_glb, p_err)
++#endif
++      IF (bad /= 0) CALL CoLM_stop (' ***** ERROR: cannot read DEF_WETLAND_PEAT_SHARE_FILE.')
++      nlat = dims(1); nlon = dims(2)
++      allocate (lat_g(nlat), lon_g(nlon), share_g(nlat,nlon))
++
++      IF (p_is_master) THEN
++         allocate (a(nlon,nlat), apeat(nlat,nlon), amin(nlat,nlon))
++         ierr = nf90_inq_varid(ncid, 'lat', vid); IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, lat_g)
++         IF (ierr == NF90_NOERR) ierr = nf90_inq_varid(ncid, 'lon', vid)
++         IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, lon_g)
++         apeat = 0._r8; amin = 0._r8
++         DO k = 1, npeat
++            write(vname,'(A,I2.2)') 'area_class_', peat_classes(k)
++            IF (ierr == NF90_NOERR) ierr = nf90_inq_varid(ncid, trim(vname), vid)
++            IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, a)
++            apeat = apeat + max(transpose(a), 0._r8)
++         ENDDO
++         DO k = 1, nmin
++            write(vname,'(A,I2.2)') 'area_class_', min_classes(k)
++            IF (ierr == NF90_NOERR) ierr = nf90_inq_varid(ncid, trim(vname), vid)
++            IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, a)
++            amin = amin + max(transpose(a), 0._r8)
++         ENDDO
++         IF (ierr /= NF90_NOERR) bad = 1
++         ierr = nf90_close(ncid)
++         ! netCDF fill reads as a huge positive area; no tile class keeps C-17b
++         WHERE (apeat > 1.e30_r8) apeat = 0._r8
++         WHERE (amin  > 1.e30_r8) amin  = 0._r8
++         WHERE (apeat + amin > 0._r8)
++            share_g = apeat / (apeat + amin)
++         ELSEWHERE
++            share_g = 1._r8
++         END WHERE
++         deallocate (a, apeat, amin)
++      ENDIF
++#ifdef USEMPI
++      CALL mpi_bcast (bad,     1,         MPI_INTEGER, p_address_master, p_comm_glb, p_err)
++      CALL mpi_bcast (lat_g,   nlat,      MPI_REAL8,   p_address_master, p_comm_glb, p_err)
++      CALL mpi_bcast (lon_g,   nlon,      MPI_REAL8,   p_address_master, p_comm_glb, p_err)
++      CALL mpi_bcast (share_g, nlat*nlon, MPI_REAL8,   p_address_master, p_comm_glb, p_err)
++#endif
++      IF (bad /= 0) CALL CoLM_stop (' ***** ERROR: DEF_WETLAND_PEAT_SHARE_FILE lacks lat, lon or area_class_NN.')
++
++      IF (p_is_worker) THEN
++         DO ip = 1, numpatch
++            lat_deg = patchlatr(ip) * 180._r8 / PI
++            lon_deg = patchlonr(ip) * 180._r8 / PI
++            dmin = huge(1._r8); ilat = 1
++            DO k = 1, nlat
++               d = abs(lat_g(k) - lat_deg)
++               IF (d < dmin) THEN; dmin = d; ilat = k; ENDIF
++            ENDDO
++            dmin = huge(1._r8); ilon = 1
++            DO k = 1, nlon
++               d = abs(modulo(lon_g(k) - lon_deg + 180._r8, 360._r8) - 180._r8)
++               IF (d < dmin) THEN; dmin = d; ilon = k; ENDIF
++            ENDDO
++            share(ip) = share_g(ilat, ilon)
++         ENDDO
++      ENDIF
++      deallocate (lat_g, lon_g, share_g)
++      IF (p_is_master) write(*,'(A,A)') ' C-17c peatland share of the wetland tile read from ', &
++         trim(DEF_WETLAND_PEAT_SHARE_FILE)
++
++   END SUBROUTINE wetland_peat_share_read
++#endif
++
+ END MODULE MOD_Initialize
+ ! --------------------------------------------------
+ ! EOP
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 884d8890..6d8a529d 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -227,6 +227,16 @@ MODULE MOD_Namelist
+    ! passive pool; the acrotelm above keeps the dataset's split (Clymo 1984
+    ! puts it at 10-50 cm). 0 moves every layer (paper V2 C-17b).
+    real(r8) :: DEF_WETLAND_PEAT_C_PASSIVE_ZTOP = 0._r8
++   ! Only the peatland share of the wetland tile is moved (paper V2 C-17c):
++   ! the rest keeps the dataset's split, which was spun up for mineral soil and
++   ! suits the mineral wetlands. The share is the peatland classes (22-27)
++   ! over the tile classes (16-19, 22-27) of the GLWD v2 cell nearest to the
++   ! patch, read from this file (area_class_NN, as written by
++   ! v2/scripts/glwd_class_2deg.py); 'null' moves the whole layer (C-17b).
++   character(len=256) :: DEF_WETLAND_PEAT_SHARE_FILE = 'null'
++   ! Single-point runs give the tower's own share here (0 mineral, 1 peat);
++   ! < 0 keeps the file or, without one, the whole layer.
++   real(r8) :: DEF_WETLAND_PEAT_SHARE_SITE = -1._r8
+ 
+    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
+    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
+@@ -1281,6 +1291,8 @@ CONTAINS
+       DEF_WETLAND_PEAT_C_PROFILE,             &
+       DEF_WETLAND_PEAT_C_PASSIVE,             &
+       DEF_WETLAND_PEAT_C_PASSIVE_ZTOP,        &
++      DEF_WETLAND_PEAT_SHARE_FILE,            &
++      DEF_WETLAND_PEAT_SHARE_SITE,            &
+       DEF_BGC_DEBUG_SCALARS,                  &
+ 
+       DEF_USE_WaterTableInit,                 &
+@@ -1901,6 +1913,8 @@ CONTAINS
+       CALL mpi_bcast (DEF_WETLAND_PEAT_C_PROFILE             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_C_PASSIVE             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_C_PASSIVE_ZTOP        ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_PEAT_SHARE_FILE            ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_PEAT_SHARE_SITE            ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

@@ -1,0 +1,252 @@
+# lit_woody_conduit_260929：湿地树木怎样传输 CH4 与 O2，模式该怎样表示木本通道
+
+- **日期**：2026.09.29-13:34
+- **读者**：下一会话
+- **来源**：文献调研子任务（只读，未改码、未跑模式）；承接 `v2/results/diag_swamp_260929.txt` 第 5 节、`v2/results/lit_tropical_mech_260929.txt`，并引用 `lit_tropical_peat_260929.txt`、`lit_floodplain_260929.txt`、`lit_convective_flow_260929.txt` 中已核的条目（引用处注明"经某报告第 n 行"）；读码对 `main/TRACER`（树 HEAD 84020b62）；临时文件与换算脚本在 scratchpad `lit_woody/`（`calc.py`、`calc_out.txt`、`doi_check_all.tsv`）
+- **状态**：四问已答；两个候选只到式子、参数区间与离线估算，未实现、未跑；第 7 节 45 个 DOI 全部查过 Crossref（2026-09-29）
+
+单位约定：通量写 CH4 质量或摩尔，折碳时 1 g CH4 = 0.749 g C；"水相导度" G 指通量除以孔隙水溶解 CH4 浓度，单位 m d-1；"单位树干面积"与"单位地面积"分开写。换算式在 `calc.py`，结果在 `calc_out.txt`。
+
+## 0. 覆盖面
+
+1. 检索词：tree stem methane、stem CH4 emission、tree-mediated methane、woody plant pathway、xylem / sap flow / transpiration stream methane、lenticel methane、bark methanotroph、radon tree transport、Alnus / Betula / Fraxinus / Nyssa / Taxodium / Melaleuca / Campnosperma methane、cypress knees methane、Sebangau / Kalimantan tree methane、Amazon floodplain tree methane、tree methane model / land surface model、radial oxygen loss woody / oxidized rhizosphere Nyssa、ecosys aerenchyma tree、"Wang" tree stem methane model。
+2. 渠道：本地 PDF（`docs/refs/WFT/`、`docs/refs/sites/_traits/`）；本地模式文本抽取 `data/_tmp/分析_260925_模拟年份/txt/`（194 个文件，grep 命中数：tree stem 15、stem emission 5、xylem 4、transpiration stream 2、sap flow 1、woody 36、tree-mediated 1、stem flux 7、Pangala 22、Covey 47、Barba 24）；OpenAlex、Semantic Scholar、Crossref、Europe PMC 的接口；WebSearch；出版社摘要页（Springer，curl 带 cookie）；机构仓储（OSTI、HELDA、KURENAI、NORA、UQTR、PMC、bioRxiv、Frontiers XML）。所有网络请求匿名，请求头只带通用 User-Agent，URL 与参数里无邮箱或个人信息。
+3. 读到全文（页码按期刊版；仓储接受稿按节名）：
+   - Pangala 2013 NPH（本地 PDF）、Pangala 2014 NPH（本地）、Pangala 2015 GCB（本地）、Pangala 2017 Nature（本地）
+   - Barba 2019 NPH（OSTI 接受稿）、Covey & Megonigal 2019 NPH（OSTI 接受稿）
+   - Anttila 2024 PCE（HELDA 出版版）、Takahashi 2022 NPH（KURENAI 接受稿）、Blincow 2026 NPH（NORA 版）
+   - Sjögersten 2020 NPH（PMC 全文 XML）、Jeffrey 2021 Nat Commun（PMC 全文 XML）、Girkin 2020 ERL（NORA PDF）
+   - Moisan 2024 STOTEN（UQTR 仓储 PDF）、Gewirtzman 2026 bioRxiv 预印本、Ward 2020 Front Earth Sci（Frontiers XML）
+   - 模式：Riley 2011 BG、Gedney 2019 ERL、Salmon 2022 GMD、Schaphoff 2026 LPJmL6 预印本、Forbrich 2024 JGR-B（本地文本抽取）
+   - 木本根系供氧：Keeley 1979（本地 PDF）、Hook et al. 1970（本地 PDF 首页摘要）、Buchel & Grosse 1990（本地 PDF 首页摘要）
+4. 只读摘要：Jeffrey 2024 NPH（Melaleuca 树皮间输送）、Jeffrey 2023 JGR-B、Jeffrey 2020 Biogeochemistry、Jeffrey 2021 NPH（轴向氧化）、Terazawa 2015 与 2021 Biogeochemistry、Vann & Megonigal 2003、Rusch & Rennenberg 1998、Rice 2010 GRL、Megonigal 2020 NPH（氡示踪）、Zhao 2026 GBC；Wu 2024 AFM 只有检索页转述（不作数值依据）。
+5. 读不到、已试路径：
+   - Jeffrey 2024 NPH、Määttä 2024 GCB（hidden roots）、Wiley 各篇 pdfdirect：Cloudflare 拦截；Määttä 2024 的 ZORA 版为机器人验证页。
+   - Vann & Megonigal 2003 全文：Smithsonian 仓储当时返回"site temporarily unavailable"，改读 Springer 摘要。
+   - Terazawa 2007 SBB、Garnet 2005 Aquatic Botany：ScienceDirect 拦截，OpenAlex 与 Semantic Scholar 无摘要；两篇只经 Pangala 2014、Covey 2019 转述引用。
+   - Gauci 2025 NRE、Wu 2024 AFM：付费，无仓储版。
+   - 用户点名的"Wang et al. 2021/2023 的树干甲烷模型"：OpenAlex、Semantic Scholar、WebSearch 以 "tree stem methane model"、"Wang tree stem CH4 process-based model" 等词检索均未检出；最接近的过程模型是 Anttila 2024，统计模型是 Zhao 2026——存疑（可能指别的作者或年份，需用户给出处）。
+   - ecosys 的木本通气：本地 Grant 1998 文本无树木专项；Grant 2002 GBC 未读。
+   - LPJ-GUESS（Kallingal 2024、2025）、ELM（Ricciuto 2021、Yazbeck 2025）：本地文本 grep tree / woody / stem，无树干通道的式子。
+6. 读码（本树 `main/TRACER`，HEAD 84020b62）：`MOD_Tracer_Reactive_Methane_WetlandVeg.F90:357–363`（有林份额的孔隙度混合）；`MOD_Tracer_Reactive_Methane_Physics.F90:2862–2881`（非禾草孔隙度与非饱和子柱比）、`3002–3010`（蒸腾损失项）、`3012–3059`（分蘖截面、通气组织导度、O2 送入）、`3486–3493`（旧式定额氧化）、`3560–3577`（D-59 定额根际氧化）、`4551–4569`（非禾草斑块判定）；`v2/config/v2_p2xrx25/ch4_parameter.nml:230–239、365、374`。
+
+## 1. 结论
+
+1. 湿地树干是林地 CH4 的主要出口之一，但份额随林型、林下草本与水位变化极大：东南亚泥炭林 62–87%，亚马孙洪泛林（树干加叶）44–65%，佛罗里达柏树沼泽的"柏树膝"26–39%，澳洲 Melaleuca 林淹水期 50–70%、干期 3–28%，巴拿马泥炭林按林型 0.5–30%，英国桤木桦木沼泽林 6–27%——已验证（第 2.1 节各条原文页码）。
+2. 湿地树干排的 CH4 来自土壤而不是树体内部：通量随离地高度快速衰减（e 折高度约 0.6–1.8 m），与孔隙水 CH4 浓度正相关，δ13C 与孔隙水一致，亚马孙树芯能产 CH4 的不到 4%——已验证（第 2.2、2.4 节）。
+3. 耐淹树种的传输以气相分子扩散为主（根皮层胞间隙、树皮间隙或通气组织，出口是下部树干的皮孔），不随日变；随蒸腾流溶解上运只是次要分量（桤木的液流相关分量不超过约 11–12%，Melaleuca 的轴向输送与蒸腾无关）；对不耐淹的北方树种，液流平流加径向扩散能解释树干通量——已验证（第 3.1 节）。
+4. 能直接进模式的量有三类：单位树干面积对孔隙水的水相导度（东南亚泥炭林约 1e-3、桤木幼树 5e-3、亚马孙 0.02–0.15 m d-1，计算）、树干通量的高度 e 折尺度（0.6–1.8 m，计算）、树内与树皮甲烷氧化份额（33%、36 ± 5%）；没有现成的"树干表面积指数"或"溶解 CH4 随蒸腾的传输系数"实测值——已验证（第 3.2 节）。
+5. 木本根系确实向根际放 O2（沼泽紫树淹水后增强对根供氧，桤木经皮孔供氧，巴拿马泥炭林挡根后表面通量升 85–92%），但没有一篇给出"每单位根或每单位树通道的根际氧化份额"；Girkin 2020 的 85–92% 是去根后的总效应，含根系通道被去掉等混杂——推测（第 3.3 节给依据）。
+6. 本模式把有林份额按莎草分蘖算，MY-MLM 的通气截面 0.0096 m2 m-2，折合水相导度约 0.6–1.8 m d-1；由实测反推的东南亚泥炭林树木地面导度约 5e-5 至 4e-3 m d-1，模式高 2–4 个量级；模式 MY-MLM 植物通道年通量约 65 g C m-2 yr-1，而同为东南亚泥炭林的 Sebangau 树干实测只有 0.18–0.78 g C m-2 yr-1——推测（计算，第 5.1 节）。
+7. 全球模式里单独表示树干通道的只有 JULES（Gedney 2019）：按水位以下根比例加一个调到"亚马孙树占 50%"的效率 A；CLM4Me 与 CTSM 有蒸腾溶解项但结论是全球小于 1 Tg；ORCHIDEE、Walter、DLEM、LPJmL6 都把树当弱通道或零通道；过程层面只有 Anttila 2024 的单株树干模型——已验证（第 4 节）。
+8. 候选①（推荐）：有林份额与洪泛林的通道截面改为一个与 NPP、LAI 无关的定值 A_w（沿用 CLM4Me 的 Fick 式，只换截面），默认关；参数区间 1e-6 至 3e-4 m2 m-2（现为 1e-2 量级）。候选②（备选）：JULES 式按产量分额走树通道。蒸腾溶解项不推荐（用户 2026-09-23 已关，文献也支持其小）——推测（第 5 节）。
+9. 预期：在 D-59 基底上，① 对 MY-MLM 与 ID-Pag 年排放的影响在 −17% 至 +28% 之间，不是压低东南亚偏高的手段；US-NC4 只有把有林份额改为 1 才受影响，可降 20–52%；① 的价值在于把树通道的绝对量改到实测量级、把被错误加在树上的"3646 根分蘖"去掉——推测（第 5.6 节算式）。
+10. 与 D-59 的配合：① 的通道通量照样乘 D-59 的定额 x 在根际氧化、不送 O2，树内与树皮氧化（33–36%）并入 x、不另设参数；但通道缩小后木本根际氧化在 D-59 下几乎为零，木本根系向土层放 O2 的效应不再有落点，是否扩展 D-59 的作用对象需用户定（第 6 节 Q-a）——推测。
+
+## 2. 问一：实测
+
+### 2.1 树干占生态系统通量的份额
+
+- Sebangau（印尼中加里曼丹，帕朗卡拉亚东南约 20 km 的混合泥炭沼泽林）：两周湿季测量，洼地水位 +4.7 cm、丘上 −16 cm；树干下 3 m 的排放 6.7 ± 0.7 g CH4 ha-1 d-1，占生态系统 62%，按幂函数外推到 15 m 为 28.5 ± 3.4 g ha-1 d-1，占 87%；洼地 3.9 ± 1.0 g ha-1 d-1——已验证（Pangala 2013 p.524 摘要、p.525 站点、p.528 正文与图 5）。折碳约 0.18–0.78 g C m-2 yr-1（按全年连续，计算）——推测。
+- 同文：8 个优势种中 7 个排放，单位树干面积 17.0 ± 1.4 至 185 ± 7 μg CH4 m-2 h-1；Cratoxylum arborescens 测不到排放；Shorea balangeran 排放最高——已验证（Pangala 2013 p.527）。ID-Pag 的优势种含 Cratoxylum arborescens，MY-MLM 的优势种为 Shorea albida（`scripts/sites/site_facts.csv` 两塔"优势种"行）；ID-Pag 塔（−2.320, 113.900）与 Sebangau 样地同在帕朗卡拉亚附近，Sebangau 树干的湿季排放（0.18–0.78 g C m-2 yr-1 当量）高于 ID-Pag 塔的全年净通量 0.09–0.17 g C m-2 yr-1——推测（两地林型与距离未核；塔上旱季为净吸收，湿季树干排放与之可以并存）。
+- 亚马孙洪泛林（13 个样地、2357 株）：成树单位树干面积 0.33–337 mg m-2 h-1，幼树 0.39–581；树干加叶占样地通量 44–65%，水面 27–41%，土面 2.5–15.7%；树干排放约为东南亚泥炭林的 200 倍；全流域树通道 15.1 ± 1.8 Tg yr-1（只计 0–1.4 m 树干）至 21.2 ± 2.5 Tg yr-1（外推到 5 m）——已验证（Pangala 2017 p.231–232、表 1）。表 1 的成树生态系统贡献 474–2866 g ha-1 d-1，折 13–78 g C m-2 yr-1（计算）——推测。
+- 英国 Flitwick 温带沼泽林（Alnus glutinosa、Betula pubescens，树占地面不到 2%，林下芦苇与苔草占 35%）：树干占季节生态系统通量 6–22%（不计幼树）、9–27%（计幼树）；成树按下 3 m 夏季 5.73 ± 0.59、冬季 2.08 ± 0.31 g ha-1 d-1，按 10 m 为 10.8 与 4.23——已验证（Pangala 2015 p.2642 摘要、p.2647、表 1、p.2650）。每公顷树干通量与 Sebangau 相近（5.7 对 6.7 g ha-1 d-1），份额相差大是因为林下草本通道与洼地排放的多少不同——已验证（Pangala 2015 p.2650–2651）。
+- 巴拿马 Changuinola 新热带泥炭林：Campnosperma panamensis 林淹水期树干占净通量 30%（全文讨论写 10–30%），混合林只占 0.5%；Campnosperma 林的林分树干通量 386 g ha-1 d-1，作者把 Kalimantan 记为 48 g ha-1 d-1——已验证（Sjögersten 2020 Results "Ecosystem-level tree CH4 emissions"、Discussion 第 1–2 段，PMC 全文）。
+- 澳洲 Melaleuca quinquenervia 林：低位带与过渡带淹水期树干占净通量 49.9% 与 70.2%，干期 3.1% 与 28.2%；高位带干期树干排放抵消土壤汇的约 51%——已验证（Jeffrey 2023 JGR-B 只读摘要）。
+- 佛罗里达 Big Cypress 柏树沼泽：柏树膝通量 42.0 ± 6.33 mmol m-2 d-1（按膝表面积），为水面与土面的 3.7 与 2.3 倍；按面积放大后膝占总排放 26 ± 5%，有膝的三块湿地中占 39 ± 5%——已验证（Ward 2020 Front Earth Sci 摘要，Frontiers XML）。膝密度取 Pulliam 1992 的 0.315 个 m-2——已验证（同文 Methods，Frontiers XML）。
+- 温带湿地（美国东北）：湿地树 1.96 对高地树 0.05 nmol m-2 s-1；湿地专性种 Nyssa sylvatica 树级均值 5.67 ± 1.61 nmol m-2 s-1（约 327 μg m-2 h-1，计算），比同地泛化种高一个量级——已验证（Gewirtzman 2026 bioRxiv 预印本摘要与 Results，未经同行评审）。US-NC4 乔木层以 Nyssa sylvatica、N. biflora、Taxodium distichum 为主（`site_facts.csv` US-NC4"优势种"行），本站无树干通量实测——已验证（读 csv；检索 Alligator River tree stem methane 未检出站点测量）。
+- 综述口径：Barba 2019 与 Covey & Megonigal 2019 都把"湿地树是源、份额可达主导"作为共识，并指出多数研究只测下部 1–3 m——已验证（Barba 2019 接受稿 Sect. 1 "Stem height"；Covey 2019 接受稿 Sect. V）。
+
+### 2.2 随高度的衰减
+
+- Sebangau：7 个排放种全部随高度显著下降（P < 0.001），5 个种为幂函数关系——已验证（Pangala 2013 p.527–528，表 S1 未读）。
+- 亚马孙：四个高度段（20–50、50–80、80–110、110–140 cm）逐段下降，线性或指数；按表 1 的 20–50 cm 与 110–140 cm 两段折 e 折高度，Negro 0.87 m、Amazon 0.88 m、Solimões 0.94 m、Tapajós 0.90 m、Madeira 1.79 m（计算）——已验证（Pangala 2017 表 1 与 p.232；换算见 `calc_out.txt`）。
+- 巴拿马：500 cm 处通量为 35 cm 处的 3.5%（0.35 对 9.97 mg m-2 d-1），115 cm 处为 26%；按两段折 e 折高度 0.59 m（35–115 cm）与 1.39 m（35–500 cm）（计算），分种 500 cm/35 cm 比从 C. panamensis 的 0.18% 到 Pithecollobium 的 54.7%——已验证（Sjögersten 2020 Results "Variation in stem-level CH4 fluxes with height"）。
+- 温带：成树为幂函数，幼树为线性；Betula 在 11–3 月转为线性——已验证（Pangala 2015 p.2646）。
+- 机理解释：稳态下沿高度的通量 ∝ exp(−(D/V)·x)，D 为径向有效扩散系数、V 为液流速度——已验证（Anttila 2024 p.151）。Melaleuca 与 Casuarina 上部树干 δ13C 富集，下 0–40 cm 与淹水土冒泡 δ13C 相同，约 33% 的 CH4 在上行途中被氧化——已验证（Jeffrey 2021 NPH 只读摘要）。
+
+### 2.3 季节与水位
+
+- 水位是首要控制：巴拿马树级排放在水位高于地表时均值 133 ± 22 mg 株-1 d-1，低于地表时 20 ± 28；最佳回归（含胸径、水位、土温、土面通量）解释 54% 方差，种间差异占 34%——已验证（Sjögersten 2020 Results "Tree-level CH4 emissions"）。
+- Melaleuca：湿期低位带与过渡带单株排放为干期的 46 与 52 倍；最高 123,227 μmol m-2 d-1——已验证（Jeffrey 2020 摘要）。水位是树干通量最强的驱动，但土壤一淹水排放即达峰、水更深不再增加——已验证（Jeffrey 2023 摘要）。
+- 日本 Fraxinus mandshurica 与 Alnus japonica：个体间 81–1305 μg m-2 h-1，空间梯度对应水位；人工淹水 4 天内树干通量升 10 倍以上；创纪录降雨后超过 10,000 μg m-2 h-1；土温与水位显著——已验证（Terazawa 2015、2021 摘要）。
+- 温带季节：Alnus 季节变化小、11 月落叶后出现 194 ± 21 μg m-2 h-1 的峰；Betula 夏季是冬季的 3.8 倍；树干在生态系统中的份额冬春最大（冬 17–25%、春 11–27%，含幼树），因为草本通道冬季衰退；土温与 20–25 cm 孔隙水 CH4 解释 Alnus 季节变化的 75%、Betula 的 69%，水位因常年高位影响小——已验证（Pangala 2015 p.2642、p.2646–2648、表 1）。
+- 温带湿地三因子：土温 × 水位 × 种的交互解释湿地树干通量方差的 65%——已验证（Gewirtzman 2026 预印本摘要）。
+- 模式分蘖质量按当前 LAI 缩放：`m_tiller = anpp * nppratio * lai`——已验证（读码 `Physics.F90:3020`）。
+- 含义：本节 Pangala 2015、Terazawa 2015 显示树干通道在落叶期仍然工作，而按当前 LAI 缩放的分蘖截面会在冬季把树通道关掉，两者方向相反——推测。
+
+### 2.4 来源：土壤经根上运，还是树体内部产生
+
+- 湿地树：Sebangau 树芯无心材腐朽，通量随高度降、孔隙水 CH4 113–1539 μmol L-1（50–150 cm），作者判土壤为主源——已验证（Pangala 2013 p.527）。亚马孙树芯只有不到 4% 有产 CH4 能力，树干 CH4 的 δ13C 均值 −66.2 ± 6.4‰，与孔隙水 −70.8 至 −54.5‰ 一致——已验证（Pangala 2017 p.232、表 2–3）。日本树干 CH4 比孔隙水 CH4 贫 13C 2–3‰，归于扩散或氧化分馏——已验证（Terazawa 2021 摘要）。
+- 高地树相反，树体内部（湿心材）产生为主；湿地里心材腐朽反而降低净排放，被解释为腐朽阻碍了土壤 CH4 的传输——已验证（Covey 2019 接受稿 Sect. IV；Gewirtzman 2026 预印本摘要）。
+- 新鲜根源碳驱动土壤产甲烷（环剥降 67%）已在 `lit_tropical_mech_260929.txt` 第 144–148 行，不重复——已验证（该报告读 Girkin 2025 全文）。
+- 结论：对模式而言，湿地树通道可按"土壤孔隙水 CH4 经根与下部树干排出"处理，不需要树内产生项——推测。
+
+## 3. 问二：机制与可测参数
+
+### 3.1 传输机制
+
+- 桤木幼苗：淹水 40 天后树干通量达 3750 μmol m-2 h-1，随高度降，与土壤气相 CH4 相关，作者判为经通气组织的扩散——已验证（Rusch & Rennenberg 1998 摘要）。
+- 桤木幼树（4 年生）：高水位下 61 ± 3%（差减法）至 71 ± 3.8%（回归法）的中宇宙通量经树排出，其中 2–22 cm 树干占树通量 37 ± 5%；叶片测不到排放；孔隙水 CH4（20 cm）与皮孔密度共解释树干通量变异的 84%；与叶面积、蒸腾、气孔导度、同化均无显著关系；日夜差不到 13%；作者结论为分子扩散、皮孔出口，无加压通气迹象——已验证（Pangala 2014 p.887 摘要、p.890–891 表 1、p.892 表 2、p.893 表 3–4、p.895）。据此作者指出 LAI 不宜作树通道的缩放量——已验证（Pangala 2014 p.893）。
+- Alnus japonica 成树：叶期树干通量有与液流同相的日变分量叠在稳定底值上；液流相关分量占比在 7 月最高，不超过约 11%（表 1 逐月 1.0–12.2%）；底值归于气相 CH4 经细根皮层胞间隙与空导管的扩散——已验证（Takahashi 2022 接受稿 Summary、第 283–284 行、表 1）。
+- Betula pubescens 落叶后通量骤降，作者推为对流或蒸腾驱动；同地 Alnus 落叶后不降——已验证（Pangala 2015 p.2652）。
+- Melaleuca：层状海绵树皮内的轴向输送 1.42 mm s-1，径向穿树皮扩散慢约 20 倍，环剥后切口上方通量即刻下降，与蒸腾无关；硬皮的 Casuarina 以穿皮径向扩散为主——已验证（Jeffrey 2024 NPH 摘要）。
+- 北方高地树（Pinus sylvestris、Betula pendula，不耐淹）：实验室与野外的树干通量都可用"随液流的轴向平流加径向扩散"解释，树皮渗透性在实验中不限制通量，轴向扩散作用未定；因 CH4 在树干中的滞留时间长，树干通量的日变可与液流明显脱节——已验证（Anttila 2024 p.140 摘要、p.151）。
+- 氡示踪：树在夜间蒸腾近零时仍排土壤气体，作者认为轴向扩散是被低估的机制——已验证（Megonigal 2020 摘要）。Anttila 认为这一日变也可由液流滞后生成，两种解释在野外分不开——已验证（Anttila 2024 p.151）。
+- 蒸腾溶解运输在幼苗上有报告（Alnus、Fraxinus latifolia、Populus trichocarpa、Salix fluviatilis、Taxodium distichum），Garnet 2005 显示叶片通量随气孔导度相关变量变化——已验证（Covey 2019 接受稿 Sect. III.2 转述；Garnet 2005 原文未读）。Rice 2010 按叶面积 0.7 ± 0.3 μg cm-2 h-1 外推全球淹水林 60 ± 20 Tg yr-1——已验证（Rice 2010 摘要）；CLM4Me 用同一机制（土壤水 CH4 × 蒸腾）算全球不到 1 Tg yr-1——已验证（Riley 2011 p.1931、p.1939）。
+- 综合：据本节 Pangala 2014、Takahashi 2022、Jeffrey 2024 与 Pangala 2015 的冬季数据，耐淹湿地树以气相扩散为主、蒸腾溶解项为次，成树冬季与夜间仍排放，主导通道不依赖蒸腾；Anttila 2024 的滞后论证使"无日变即无平流"不能完全成立，所以蒸腾分量的上限只能取 Takahashi 的约 11–12%——推测。
+
+### 3.2 可直接用的参数
+
+| 量 | 取值 | 由来 | 状态 | 证据 |
+| --- | --- | --- | --- | --- |
+| 单位树干面积的水相导度 k_stem（m d-1） | 东南亚泥炭林 4e-4–1e-3；桤木幼树 5e-3；亚马孙 0.02–0.15 | Pangala 2013 表 2 回归斜率 0.646 μg m-2 h-1 per μmol L-1（20–50 cm）与 0.253（60–90 cm）；Pangala 2014 表 4 斜率 0.208 mg m-2 h-1 per mg L-1；Blincow 2026 p.6 通量除以 50 cm 孔隙水浓度（várzea 129、igapó 64.6 μmol L-1） | 已验证 | 原文页码如左；换算见 `calc_out.txt` |
+| 树干通量 e 折高度 λ（m） | 0.6–1.8，多数约 0.9 | Pangala 2017 表 1；Sjögersten 2020 | 已验证 | 第 2.2 节 |
+| 树地面导度 G（m d-1，单位地面积） | Sebangau 3e-4–4e-3；亚马孙 2e-3–0.1 | 生态系统树干通量除以根区孔隙水浓度（Sebangau ≤123 μmol L-1 于 0–50 cm；亚马孙 0.13–1.38 mmol L-1） | 推测 | 计算；浓度与通量不同时同点，只作量级 |
+| 径向扩散系数 D_r（m2 s-1） | 9.7e-11（松）、1.43e-10（桦） | 实验室拟合后验均值；气液平衡速率 γ ≈ 0.011 s-1 | 已验证 | Anttila 2024 p.148、图 3 |
+| 树皮 CH4 渗透率（1e-14 mol m-1 s-1 Pa-1） | 松 4.3–13.0；桦 7.5–123.9 | 渗透仪实测 | 已验证 | Anttila 2024 p.147 表 3 |
+| 树干气相体积分数 | 被子植物心材约 25%、裸子约 50%；松桦活树段 14–29% | MacDougal 1927 等转述；实测 | 已验证 | Covey 2019 接受稿 Sect. III.2；Anttila 2024 表 2 |
+| 树皮轴向输送速度 | 1.42 mm s-1（Melaleuca） | 脉冲注射与室内模拟 | 已验证 | Jeffrey 2024 摘要 |
+| 树内甲烷氧化 | 轴向上行 33%；树皮甲烷氧化菌减排 36 ± 5% | δ13C 与抑制剂实验 | 已验证 | Jeffrey 2021 NPH 摘要；Jeffrey 2021 Nat Commun 摘要与 "Field-based MOB inhibition" 节 |
+| 皮孔密度的作用 | 树干通量 = 0.563 × 皮孔密度（cm-2）+ 1.063（mg m-2 h-1，R2 0.77） | 桤木幼树 | 已验证 | Pangala 2014 表 4、图 5 |
+| 木材密度的作用 | 通量与木材密度、胸径负相关，三者加孔隙水 CH4 解释 81% | Sebangau | 已验证 | Pangala 2013 p.527–529、表 2 |
+| 液流相关分量 | 不超过约 11–12% | Alnus japonica | 已验证 | Takahashi 2022 表 1 |
+| "树干表面积指数"与"溶解 CH4 随蒸腾的传输系数" | 无现成实测；前者可由胸径、株数与 λ 算（本文第 5.1 节），后者 CLM4Me 取 1（不在树内氧化） | — | 已验证 | 检索未检出；Riley 2011 p.1931 |
+
+### 3.3 木本根系是否向根际放 O2，Girkin 2020 挡根实验怎么读
+
+- 直接证据（定性为主）：沼泽型 Nyssa sylvatica（var. biflora）种群淹水一年后向根的内部 O2 输送升高，河漫滩种群淹水后也显著升高并在根中积累更多 Fe、Mn——已验证（Keeley 1979 p.89 摘要、Results "Oxygen transport"）。沼泽紫树淹水时皮孔肥大、胞间隙连通，并长出"水根"——已验证（Hook et al. 1970 p.217 摘要）。桤木下部树干皮孔的周皮有 14 ± 7 nm 细孔，被认为是热渗透加压供气的隔层——已验证（Buchel & Grosse 1990 首页摘要）；后续工作认为给淹水根供氧的是茎的光合而非加压通气——已验证（经 `lit_convective_flow_260929.txt` 第 84 行，Armstrong & Armstrong 2005 题名与摘要前半）。
+- 综述：湿地树在缺氧下形成通气组织，并有"氧化根际"的证据；根放 O2 还能再生 Fe(III) 氧化物、以竞争电子受体压制产甲烷；一处林地湿地甲烷氧化使排放减少最多 80%，因 6 cm 以下常年缺氧，作者推为植物介导的氧化——已验证（Covey 2019 接受稿 Sect. III.1–2，转述 Megonigal & Schlesinger 2002、Weiss 2005，原文未读）。巴拿马作者同样把皮孔与支柱根看作向根系供氧的适应——已验证（Sjögersten 2020 Discussion）。
+- Girkin 2020 挡根实验（Changuinola，C. panamensis 阔叶树与 R. taedigera 棕榈）：挡根后表面 CH4 通量比留根时高 92 ± 4% 与 85 ± 6%，10–15 cm 溶解氧降得最多（1.6–2.9%），甲烷氧化菌标志物 C16:1ω5 显著减少；留根处 92.3 与 87.8、挡根处 517.8 与 613.8 "mg CH4 m-2 hr-1"——已验证（Girkin 2020 p.1 摘要、p.5 第 3.1–3.2 节，NORA PDF 原文）。该单位在 PDF 原文即为 mg，而同址其他测值约 1 mg m-2 h-1，差三个量级，`lit_tropical_mech_260929.txt` 所列的单位疑问读 PDF 后仍未解决——存疑（需作者补充材料或致函核实）。
+- 怎么读这 85–92%：去根同时去掉了根系供氧、根源碳与根系通道三件事。根源碳去掉应使 CH4 下降，与观测方向相反；根系通道被去掉会迫使 CH4 改走泥炭表面，但作者注明该址成年植物只承担约 30% 的 CH4 传输；所以升幅主要来自根系供氧消失，作者也如此解释，同时承认根系通道与冒泡排除两项未量化——已验证（Girkin 2020 p.5–6）。对模式而言，它是"树根对穿过泥炭表面的扩散通量的总削减"，不是"每经树通道的 CH4 在根际被氧化的份额"——推测。理由：实验测的是表面箱，树干排放未测，挡根也不改变树干通道本身。
+- 量级缺口：没有检出任何湿地树种的根际氧化份额或径向泌氧速率（ROL）实测值；`lit_floodplain_260929.txt` 第 0 节第 5 条同样记"洪泛林树种的根际氧化份额实测未检出"——已验证（本次检索词见第 0 节；该报告读码行）。
+
+## 4. 问三：模式做法
+
+### 4.1 已有实现
+
+- JULES（Gedney 2019）：假定水位以下有根处即可经植被排出 CH4。根分布 P(z) 按根深 z_r 指数衰减（式 1）；有效湿地面积分成植被部分 f_wev = Σ_i f_vi · A · [∫ P_i(z) f_w'(z) dz + f_w] 与土壤部分 f_wes = Σ_i f_vi (1 − A) f_w + (1 − Σ_i f_vi) f_w；排放 F = f_we · K · C_s（或 NPP）· Q10 项，f_we = f_wes + f_wev；效率 A 只能按"亚马孙树通道占总通量约 0.5"（Pangala 2017）调定，并假定对所有植被类型通用——已验证（Gedney 2019 p.2 式 1 与 f_wev、p.3 f_wes 与 A 的定法）。调后亚马孙 24.6–53.9 Tg yr-1、其中树通道 12.3–27.0，与 Pangala 2017 的 24.4–53.5 与 11.5–26.2 相符；作者注明亚马孙以外树通量可能更小（Covey & Megonigal 2019）——已验证（Gedney 2019 p.5）。该式不区分扩散与蒸腾，也没有 O2 路径——已验证（同页读式）。
+- CLM4Me 与 CTSM：通气组织按分蘖截面（年 NPP × 地下份额 × LAI / 0.22 g C × πR2 × 孔隙度，孔隙度草 0.3、非草 0.1），作者注明这些参数"developed for sedges and may not be appropriate for woody pfts"，若用适合树的参数"might lead to lower aerenchyma area and CH4 oxidation in inundated systems"——已验证（Riley 2011 p.1931、p.1944；经 `lit_floodplain_260929.txt` 第 209 行）。另有蒸腾溶解项：各层土壤水 CH4 浓度 × 各 PFT 蒸腾，假定植物体内不氧化，全球不到 1 Tg CH4 yr-1——已验证（Riley 2011 p.1931、p.1939）。CTSM 至今保留 `transpirationloss` 与 `nongrassporosratio`，代码注释写"should be refined for woody plants"——已验证（读码 `~/mode/Wetland/CTSM/src/biogeochem/ch4Mod.F90:95、128、3120–3126、3145`）。
+- ORCHIDEE-PCH4：f_PMT = k_PMT · T_veg · f_root · LAI · ([CH4]soil − [CH4]atm) · (1 − M_rox)，T_veg 取 0–15，灌木与乔木效率低、禾草与莎草高——已验证（Salmon 2022 p.2816 式 9）。Walter 2001 的 τveg 同类，乔木取值远低于禾草——已验证（经 `lit_floodplain_260929.txt` 第 211 行，Walter 2001 表 2）。
+- DLEM：植物通道 F_P = V_plant,trans × ([CH4] − [CH4]max) × min(GPP/GPP_max, 1)，木本置零——已验证（经 `lit_convective_flow_260929.txt` 第 93 行，Tian 2010 p.2677 式 8–9）。
+- LPJmL6（预印本）：分蘖法只用于"能形成通气组织的 PFT"，作者假设树基本无通气组织；另加一个耐淹热带常绿阔叶树 PFT，只改淹水胁迫，不改气体通道——已验证（Schaphoff 2026 预印本 p.17–18 式 46–49、Sect. 2.4）。
+- ELM、LPJ-GUESS：本地文本未检出树干通道——已验证（grep，见第 0 节第 5 条）。综述口径：LSM 的植物传输按 PFT 的根密度与茎径、茎密度近似，O2 的通气组织传输一般不算；热带沼泽需要表示液流、树干木质部输送与冠层湍流——已验证（Forbrich 2024 p.9、p.11）。
+- 过程层面：Anttila 2024 的单株树干模型——圆柱单元、气液两相、溶解气随液流轴向平流、气相轴向与径向扩散、气液按速率 γ 趋向亨利平衡，树干基部为唯一源；代码公开（github janivaltteri/stem-gas-transport）——已验证（Anttila 2024 p.144、p.145 表 1）。它针对单株与北方树种，参数（D_r、γ、树皮渗透率）可引，但结构超出陆面模式所需——推测。
+- 统计层面：Zhao 2026 汇编 90 项研究 13,547 个树干通量，用随机森林以采样高度、胸径、深层（100–289 cm）土温土湿与地下生物量等 5 个预测量建模，湿地 R2 0.65、RMSE 3.26 nmol m-2 s-1——已验证（Zhao 2026 摘要）。它不给过程式，只能作为量级对照——推测。
+
+### 4.2 最简可实现式（三种写法的比较）
+
+- 写法 ①，定导度扩散：F_tree = f_w · Σ_{j>jwt} r_j · A_w · D_g,j / (z_j · rob) · (C_g,j − C_atm)，即 CLM4Me 式只把截面换成与 NPP、LAI 无关的定值 A_w。依据：耐淹树以扩散为主、冬季与夜间仍排（第 3.1 节）、通量与孔隙水浓度成正比（第 3.2 节表中斜率）——推测。
+- 写法 ②，按产量分额：F_tree = a_t · f_w · Σ_{j>jwt} r_j · P_j，a_t 为调定的效率（JULES 的 A 在分层模式里的对应）。依据：Gedney 2019——推测。缺点：树通量随产量同比例放大，把产率偏差原样带进树通量；不对孔隙水积累作出反应——推测。
+- 写法 ③，蒸腾溶解：F_tr = f_w · E_t · Σ_j r_j · C_w,j（CLM4Me 原式）。依据：Rice 2010、Anttila 2024——推测。缺点：夜间与落叶期归零，与第 2.3 节冬季排放相反；在淹水层孔隙水接近饱和时量级可观（E_t 3 mm d-1 × C_w 0.05–0.5 mol m-3 = 0.66–6.6 g C m-2 yr-1，计算）——推测。
+
+## 5. 问四：对本模式的含义
+
+### 5.1 现状定量：树通道偏大多少
+
+- 模式树的通道：湿地斑块孔隙度 = 0.3 × (1 − f + f/3)，半径 2.9 mm、每分蘖 0.22 g C，截面 = 分蘖数 × 孔隙度 × πR2；土壤斑块非禾草类孔隙度 0.1；非饱和子柱再乘 `unsat_aere_ratio`——已验证（读码 `WetlandVeg.F90:357–363`、`Physics.F90:2862–2881、3012–3024`；`diag_swamp_260929.txt` 第 5 节）。导度 = A · r_j · D_g / (z_j · rob)，rob = 3——已验证（读码 `Physics.F90:3025`；`ch4_parameter.nml:235`）。
+- 折合水相导度：MY-MLM 截面 0.0096 m2 m-2，D_g 取 26 °C 的 2.21e-5 m2 s-1，气液分配 K_cc 取 299 K 的 0.0338，z_j 取 0.1–0.3 m，得 G_model ≈ 0.6–1.8 m d-1（计算，`calc_out.txt`）——推测。
+- 由实测反推的树地面导度：Sebangau 3e-4–4e-3 m d-1（第 3.2 节）；按 MY-MLM 林分（胸径 >5 cm 的株数 1173 ha-1、胸径多在 10–20 cm，`site_facts.csv`）算基部周长密度 0.037–0.074 m m-2，乘 λ 1 m 至 3 m 得有效排放树干面积 0.04–0.22 m2 m-2，再乘 k_stem 1e-3 m d-1 得 4e-5–2e-4 m d-1（计算）——推测。两种估法都比 G_model 低 2–4 个量级——推测。
+- 同一量换成模式的"截面"口径：A_w = G · z · rob · K_cc / D_g，G 取 1e-4、1e-3、1e-2、0.1 m d-1 时 A_w 为 1.1e-6、1.1e-5、1.1e-4、1.1e-3 m2 m-2（z · rob 取 0.6 m，计算）；MY-MLM 现为 9.6e-3——推测。以林分基面积 9e-4–3.7e-3 m2 m-2（计算）衡量，东南亚泥炭树的有效通道约为基面积的 0.1–1%——推测。
+- 绝对量对照：模式 MY-MLM 植物通道约 0.43 × 150.7 = 65 g C m-2 yr-1，ID-Pag 约 0.84 × 154.6 = 130，而 Sebangau 树干实测 0.18–0.78；前两者比后者高 80–700 倍（计算；通道份额与年排放取自 `diag_swamp_260929.txt` 第 2.1、3.3 节）——推测。这说明即使塔上总量分不出通道，现行写法给东南亚泥炭树的通道也不在实测量级。
+
+### 5.2 候选①（推荐）：木本通道截面取定值 A_w
+
+- 作用范围：湿地斑块的有林份额 f_w（`wetveg_forest`），以及木本土壤斑块（`methane_patch_is_nongrass`）的饱和子柱（sat == 1，即洪泛林）；非饱和子柱与非木本不变——推测。
+- 输入量：f_w（已有，站点在 `_conf/ch4_param/<塔>.nml`）；各层根比例 r_j、水位层 jwt、气相浓度（均已有）；新增一个参数 A_w——已验证（读码，`WetlandVeg.F90:343–345`、`Physics.F90:3025`）。
+- 式子：截面 A_eff = (1 − f_w) · A_tiller + f_w · A_w，A_tiller 照旧（NPP × 地下份额 × LAI / tillerC × 孔隙度 × πR2），A_w 不乘 LAI、NPP、`unsat_aere_ratio`；其余同现式：F_aere,j = A_eff · r_j · D_g,j / (z_j · rob) · (C_g,j − C_atm) · fliq_j，j > jwt——推测。
+- 参数取值与依据：A_w 的文献区间 1e-6 至 3e-4 m2 m-2（东南亚泥炭林与温带沼泽林在 1e-6–4e-5，亚马孙洪泛林在 2e-5–1e-3，第 5.1 节换算）；建议照 D-59 的做法先取单值，在 77 塔上于区间内拟合，起点 1e-5——推测。拟合不出单值（东南亚与亚马孙差 10–30 倍）时交用户定是否分林型（第 6 节 Q-b）。
+- 开关：新键 `DEF_METHANE%wetland_wood_aere`，缺省 `.false.`，即回到现式；另一个键 `DEF_METHANE%wood_aere_area` 取 A_w；键名只是建议，未与现有命名核对——推测。
+- 与 O2：通道只输 CH4 不输 O2，与 D-59 一致；D-59 下湿地斑块与淹水土壤子柱的通气组织 O2 已置零——已验证（读码 `Physics.F90:1453、1613`）。
+- 与 D-59 定额氧化：`wetland_aereoxid` 作用于 `methane_aere_depth`，① 的木本通量自动被乘同一 x，不另设树内或树皮氧化（文献 33%、36 ± 5% 与 x 的扫描档 0.25–0.55 同量级，由 x 吸收）——已验证（读码 `Physics.F90:3570–3577`；份额见第 3.2 节）。
+- 不做：不引入胸径、株数、树高等新输入；不引入树内产甲烷；不引入蒸腾项；不给树通道单独的 O2。理由是如无必要勿增实体，且第 2.4、3.1 节的证据不支持树内产生与蒸腾为主导——推测。
+
+### 5.3 候选②（备选）：JULES 式按产量分额
+
+- 式子：在氧化竞争之前，从饱和有根层的产量中取 a_t · f_w · r_j · P_j 直接经树排到大气，其余照旧走扩散、冒泡与分蘖通道；a_t 按"亚马孙洪泛林树占 44–65%"或"东南亚泥炭林占 62–87%"调，写法照 Gedney 2019 p.2–3，目标份额见第 2.1 节——推测。
+- 不推荐先做：a_t 把产率偏差原样带进树通量，MY-MLM、ID-Pag 的产率已偏高一个量级以上（`diag_swamp_260929.txt` 第 3.1 节 f_adj 0.23 对培养 0.2–0.9%），按份额调出的树通量会同样偏高；Gedney 自己也只能用一个区域目标调一个全球值——推测。
+
+### 5.4 不推荐：蒸腾溶解项
+
+- 代码里已有 `tranloss = C_w · rootr · etr / dz / 1000`，v2 配置为 `.false.`——已验证（读码 `Physics.F90:3002–3010`；`v2/config/v2_p2xrx25/ch4_parameter.nml:239`）。用户 2026-09-23 定关掉该通道、不去修 rootr（植物水力开时宿主 rootr 恒为 0）；关前量级为全球总排放的 0.11%、23 站中位 0.67%（记忆条目 transpiration-channel-dropped-260923 第 13 行所记，本文未复算）——推测。
+- 文献方向与该决定一致：耐淹树的液流相关分量不超过约 11–12%，Melaleuca 的输送与蒸腾无关，CLM4Me 算全球不到 1 Tg；而且该项在夜间与落叶期为零，与冬季树干排放的实测相反——已验证（第 3.1 节各条）。
+
+### 5.5 与 D-59 定额根际氧化的配合（小结）
+
+- ① 的木本通量乘 x、O2 不入土，与 D-59 的"一种写法"一致——已验证（读码与 D-59 原文 `v2/迭代账本.md` 第 274 行）。
+- 缺口：① 把树通道缩小 2–4 个量级后，木本份额上的"x × 通道通量"也随之接近零；而第 3.3 节的证据是树根向土层放 O2、削减穿过泥炭表面的扩散通量（Girkin 2020 的总效应 85–92%），这一效应在 D-59 下没有落点——推测。现行 oo5 基底里这部分由植物输 O2 承担（MY-MLM 水位以下根际氧化占产量 21%），换到 D-59 后已经没有，① 不加重也不填补这个缺口——已验证（`diag_swamp_260929.txt` 第 3.2 节表；D-59 原文）。是否把 x 的作用对象从"通道通量"扩到"有根饱和层的产量"属于改 D-59，交用户（第 6 节 Q-a）。
+
+### 5.6 预期方向与量级（候选①，D-59 基底，离线算）
+
+- 算法：被①挪出植物通道的 CH4 改走扩散或冒泡；淹水子柱（淹水比例 MY-MLM 0.24、ID-Pag 0.23、US-NC4 0.22）里按全部排出计，非饱和子柱里按现模式水位以上层对上行扩散 CH4 的氧化效率计（全部月：MY-MLM 47.7/(47.7+0.25×150.7) ≈ 56%，ID-Pag 23.7/(23.7+0.14×154.6) ≈ 52%，US-NC4 3.0/(3.0+0.01×64.4) ≈ 82%）；再与 D-59 下通道 CH4 的排出比例 (1 − x) 相比。数据取自 `diag_swamp_260929.txt` 第 2.1–2.2、3.1–3.3 节，氧化效率用的是 oo5 基底的值，通量加大后可能因 O2 不足而下降——推测。
+- MY-MLM（f_w = 1）：挪出部分的排出比例 0.24 + 0.76 × 0.44 = 0.57，对 (1 − x) 0.75、0.60、0.45 为 −23%、−4%、+28%；乘植物通道占比 43–63% 后年排放变 −15% 至 +18%，β 11.75 约落在 10–14——推测。
+- ID-Pag（f_w = 1）：排出比例 0.23 + 0.77 × 0.48 = 0.60，对 (1 − x) 为 −20% 至 +33%，乘占比 84% 后年排放变 −17% 至 +28%，与塔上仍差约三个量级——推测。
+- US-NC4：现有林份额为 0，① 不起作用；若同时把有林份额改为 1（站点数据改动，V-47 曾在植物输氧基底上试过未采用），排出比例 0.22 + 0.78 × 0.18 = 0.36，年排放降 20–52%，β 2.13 约落在 1.0–1.7；冷季偏高来自产量温度敏感性，① 不解决——推测。V-47 的记录见 `v2/迭代账本.md` 第 123、125 行（经 `diag_swamp_260929.txt` 第 5 节转引）。
+- BR-Npw（洪泛林，土壤斑块 IGBP 2）：饱和子柱的木本截面由 0.0093 降到 A_w，若 A_w 取亚马孙端 1e-4–3e-4 则降 30–90 倍；挪出的 CH4 在水层下多经扩散与冒泡排出、不再乘 x，年排放略升，方向对但量小，主因仍是淹水范围与时长——推测。
+- 树通道的绝对量：① 下 MY-MLM 树通道上限约 G × C_sat（G 2e-4 m d-1、C_sat 1.3 mol m-3）≈ 1.1 g C m-2 yr-1，与 Sebangau 的 0.18–0.78 同量级（计算）；冬季 LAI 为零时树通道不再被关掉——推测。
+- 结论：① 用来修正树通道的结构与绝对量，不是压低东南亚两塔偏高的手段；那部分仍在产率一侧（`lit_tropical_peat_260929.txt` 第 58–60 行同判）——推测。
+- 存疑（需实验）：实际变化取决于 x 的拟合值（V-126 排队中）与非饱和层氧化是否饱和；需在 V-126 定下 x 后，用 A_w 1e-6、1e-5、1e-4 三档在 77 塔上跑，看 MY-MLM、ID-Pag、US-NC4、BR-Npw 的 β 与树通道绝对量——存疑。
+
+## 6. 待用户定的问题与存疑
+
+- Q-a（改不改 D-59 的作用对象）：木本根系向土层放 O2 有定性证据（第 3.3 节），D-59 下它只以"x × 通道通量"出现；① 使木本通道很小后，这一效应在木本份额上基本消失。是否把 x 的作用对象扩到"饱和有根层的产量"，由用户定——推测。
+- Q-b（A_w 单值还是分林型）：东南亚泥炭林与温带沼泽林约 1e-6–4e-5，亚马孙洪泛林约 2e-5–1e-3，相差 10–30 倍；先单值拟合，拟合不出再交用户定——推测。
+- Q-c（US-NC4 有林份额）：站点乔木层为 Nyssa 与 Taxodium，模式有林份额为 0；是否改为 1 由用户定——已验证（`site_facts.csv` US-NC4"优势种"行；`diag_swamp_260929.txt` 第 5 节表）。
+- Q-d（"Wang et al. 2021/2023 树干甲烷模型"出处）：检索未检出，请给作者全名或期刊——存疑。
+- 存疑：Girkin 2020 的通量单位（PDF 原文即 mg CH4 m-2 hr-1，与同址其他测值差三个量级）；需作者补充材料或致函核实——存疑。
+- 存疑：① 的实际 Δβ（第 5.6 节末条的实验）——存疑。
+
+## 7. DOI 清单（全部经 Crossref 核对题名、第一作者、刊名、卷、页或文章号、年，2026-09-29；原始返回见 `doi_check_all.tsv`）
+
+树干通量实测
+- Pangala et al., 2013｜Trees are major conduits for methane egress from tropical forested wetlands｜New Phytologist 197(2): 524-531｜10.1111/nph.12031
+- Pangala et al., 2014｜Controls on methane emissions from Alnus glutinosa saplings｜New Phytologist 201(3): 887-896｜10.1111/nph.12561
+- Pangala et al., 2015｜The contribution of trees to ecosystem methane emissions in a temperate forested wetland｜Global Change Biology 21(7): 2642-2654｜10.1111/gcb.12891
+- Pangala et al., 2017｜Large emissions from floodplain trees close the Amazon methane budget｜Nature 552(7684): 230-234｜10.1038/nature24639
+- Sjögersten et al., 2020｜Methane emissions from tree stems in neotropical peatlands｜New Phytologist 225(2): 769-781｜10.1111/nph.16178
+- Blincow et al., 2026｜Tree stem methane emissions are regulated by site-level biogeochemistry over species identity in Amazon floodplain forests｜New Phytologist 251(1): 179-190｜10.1111/nph.71168
+- Jeffrey et al., 2020｜Tree stem methane emissions from subtropical lowland forest (Melaleuca quinquenervia) regulated by local and seasonal hydrology｜Biogeochemistry 151(2-3): 273-290｜10.1007/s10533-020-00726-y
+- Jeffrey et al., 2023｜Large Methane Emissions From Tree Stems Complicate the Wetland Methane Budget｜Journal of Geophysical Research: Biogeosciences 128(12): e2023JG007679｜10.1029/2023JG007679
+- Terazawa et al., 2007｜Methane emissions from stems of Fraxinus mandshurica var. japonica trees in a floodplain forest｜Soil Biology and Biochemistry 39(10): 2689-2692｜10.1016/j.soilbio.2007.05.013（未读，转引）
+- Terazawa et al., 2015｜Spatial and temporal variability in methane emissions from tree stems of Fraxinus mandshurica in a cool-temperate floodplain forest｜Biogeochemistry 123(3): 349-362｜10.1007/s10533-015-0070-y
+- Terazawa et al., 2021｜Seasonal and weather-related controls on methane emissions from the stems of mature trees in a cool-temperate forested wetland｜Biogeochemistry 156(2): 211-230｜10.1007/s10533-021-00841-4
+- Ward et al., 2020｜Pathways for Methane Emissions and Oxidation that Influence the Net Carbon Balance of a Subtropical Cypress Swamp｜Frontiers in Earth Science 8: 573357｜10.3389/feart.2020.573357
+- Pulliam, 1992｜Methane emissions from cypress knees in a southeastern floodplain swamp｜Oecologia 91(1): 126-128｜10.1007/BF00317250（未读，转引）
+- Gewirtzman et al., 2026｜Contrasting controls on tree methane emissions in upland and wetland forests｜bioRxiv 预印本（Crossref 无卷页）｜10.64898/2026.01.29.702553
+- Gauci et al., 2022｜Non-flooded riparian Amazon trees are a regionally significant methane source｜Philosophical Transactions of the Royal Society A 380(2215): 20200446｜10.1098/rsta.2020.0446（本文未引数值，承 lit_floodplain）
+- Wu et al., 2024｜Tree stem methane emissions: Global patterns and controlling factors｜Agricultural and Forest Meteorology 350: 109976｜10.1016/j.agrformet.2024.109976（只有检索页转述，未作依据）
+
+机制与参数
+- Rusch & Rennenberg, 1998｜Black alder (Alnus Glutinosa (L.) Gaertn.) trees mediate methane and nitrous oxide emission from the soil to the atmosphere｜Plant and Soil 201(1): 1-7｜10.1023/A:1004331521059
+- Vann & Megonigal, 2003｜Elevated CO2 and water depth regulation of methane emissions: Comparison of woody and non-woody wetland plant species｜Biogeochemistry 63(2): 117-134｜10.1023/A:1023397032331
+- Garnet et al., 2005｜Physiological control of leaf methane emission from wetland plants｜Aquatic Botany 81(2): 141-155｜10.1016/j.aquabot.2004.10.003（未读，转引）
+- Rice et al., 2010｜Emissions of anaerobically produced methane by trees｜Geophysical Research Letters 37(3): 2009GL041565（Crossref 文章号）｜10.1029/2009GL041565
+- Takahashi et al., 2022｜Insights into the mechanism of diurnal variations in methane emission from the stem surfaces of Alnus japonica｜New Phytologist 235(5): 1757-1766｜10.1111/nph.18283
+- Jeffrey et al., 2024｜Rapid bark-mediated tree stem methane transport occurs independently of the transpiration stream in Melaleuca quinquenervia｜New Phytologist 242(1): 49-60｜10.1111/nph.19404
+- Jeffrey et al., 2021｜Bark-dwelling methanotrophic bacteria decrease methane emissions from trees｜Nature Communications 12(1): 2127｜10.1038/s41467-021-22333-7
+- Jeffrey et al., 2021｜Isotopic evidence for axial tree stem methane oxidation within subtropical lowland forests｜New Phytologist 230(6): 2200-2212｜10.1111/nph.17343
+- Megonigal et al., 2020｜Radon as a natural tracer of gas transport through trees｜New Phytologist 225(4): 1470-1475｜10.1111/nph.16292
+- Anttila et al., 2024｜Model of methane transport in tree stems: Case study of sap flow and radial diffusion｜Plant, Cell & Environment 47(1): 140-155｜10.1111/pce.14718
+- Girkin et al., 2020｜Root oxygen mitigates methane fluxes in tropical peatlands｜Environmental Research Letters 15(6): 064013｜10.1088/1748-9326/ab8495
+- Girkin et al., 2025｜Plant root carbon inputs drive methane production in tropical peatlands｜Scientific Reports 15(1): 3244｜10.1038/s41598-025-87467-w（承 lit_tropical_mech）
+- Keeley, 1979｜Population Differentiation along a Flood Frequency Gradient: Physiological Adaptations to Flooding in Nyssa sylvatica｜Ecological Monographs 49(1): 89-108｜10.2307/1942574
+- Hook et al., 1970｜Lenticel and Water Root Development of Swamp Tupelo Under Various Flooding Conditions｜Botanical Gazette 131(3): 217-224｜10.1086/336535
+- Justin & Armstrong, 1987｜The anatomical characteristics of roots and plant response to soil flooding｜New Phytologist 106(3): 465-495｜10.1111/j.1469-8137.1987.tb00153.x（本文未引数值，检索记录）
+- Buchel & Grosse, 1990｜Localization of the porous partition responsible for pressurized gas transport in Alnus glutinosa (L.) Gaertn.｜Tree Physiology 6(3): 247-256｜10.1093/treephys/6.3.247
+- Armstrong & Armstrong, 2005｜Stem Photosynthesis not Pressurized Ventilation is Responsible for Light-enhanced Oxygen Supply to Submerged Roots of Alder (Alnus glutinosa)｜Annals of Botany 96(4): 591-612｜10.1093/aob/mci213
+- Colmer, 2003｜Long-distance transport of gases in plants: a perspective on internal aeration and radial oxygen loss from roots｜Plant, Cell & Environment 26(1): 17-36｜10.1046/j.1365-3040.2003.00846.x（本文未引数值，检索记录）
+
+综述
+- Barba et al., 2019｜Methane emissions from tree stems: a new frontier in the global carbon cycle｜New Phytologist 222(1): 18-28｜10.1111/nph.15582
+- Covey & Megonigal, 2019｜Methane production and emissions in trees and forests｜New Phytologist 222(1): 35-51｜10.1111/nph.15624
+- Moisan et al., 2024｜How tree traits modulate tree methane fluxes: A review｜Science of The Total Environment 940: 173730｜10.1016/j.scitotenv.2024.173730
+- Gauci, 2025｜Tree methane exchange in a changing world｜Nature Reviews Earth & Environment 6(7): 471-483｜10.1038/s43017-025-00692-9（未读）
+- Forbrich et al., 2024｜Three Decades of Wetland Methane Surface Flux Modeling by Earth System Models-Advances, Applications, and Challenges｜Journal of Geophysical Research: Biogeosciences 129(3): e2023JG007915｜10.1029/2023JG007915
+
+模式
+- Riley et al., 2011｜Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM｜Biogeosciences 8(7): 1925-1953｜10.5194/bg-8-1925-2011
+- Gedney et al., 2019｜Significant feedbacks of wetland methane release on climate change and the causes of their uncertainty｜Environmental Research Letters 14(8): 084027｜10.1088/1748-9326/ab2726
+- Salmon et al., 2022｜Assessing methane emissions for northern peatlands in ORCHIDEE-PEAT revision 7020｜Geoscientific Model Development 15(7): 2813-2838｜10.5194/gmd-15-2813-2022
+- Schaphoff et al., 2026｜Implementing methane dynamics into the LPJmL6 model｜EGUsphere 预印本（Crossref 无卷页）｜10.5194/egusphere-2025-6210
+- Tian et al., 2010｜Spatial and temporal patterns of CH4 and N2O fluxes in terrestrial ecosystems of North America during 1979–2008: application of a global biogeochemistry model｜Biogeosciences 7(9): 2673-2694｜10.5194/bg-7-2673-2010（承 lit_convective_flow）
+- Zhao et al., 2026｜Assessment of Modeling Tree Stem Methane Fluxes Using Gridded Environmental Data Sets｜Global Biogeochemical Cycles 40(9): e2026GB009258｜10.1029/2026GB009258

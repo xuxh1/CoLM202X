@@ -1,0 +1,42 @@
+From 017b6479893c8fe320b669e92fb3305c0a12050e Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 05:52:39 +0800
+Subject: [PATCH] fix(crop): return unemerged seed when a crop is sown right
+ after a harvest (C-45)
+
+A second-season rice crop that is still in phase 1 on the first-season
+sowing date is harvested through the offset path and keeps its seed in
+leafc_xfer; the first season sown on the next step overwrote that pool,
+losing initial_seed_at_planting of carbon (global O-4 stopped on a
+column carbon balance error of 3.0 gC m-2 at 27N 105E on 2008-04-08).
+The sowing transfer now nets the leftover seed out of the seed deficit;
+with an empty leaf*_xfer it is unchanged.
+
+---
+ main/BGC/MOD_BGC_Veg_CNPhenology.F90 | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/main/BGC/MOD_BGC_Veg_CNPhenology.F90 b/main/BGC/MOD_BGC_Veg_CNPhenology.F90
+index 67054c7d..88dd8202 100644
+--- a/main/BGC/MOD_BGC_Veg_CNPhenology.F90
++++ b/main/BGC/MOD_BGC_Veg_CNPhenology.F90
+@@ -1068,10 +1068,14 @@ CONTAINS
+                   cropplant_p(m)   = .true.
+                   idop_p(m)        = jday
+                   harvdate_p(m)    = NOT_Harvested
++                  ! C-45: a crop harvested on the step before (second rice
++                  ! season ended on the first-season sowing date) may still
++                  ! hold unemerged seed in leaf*_xfer; it goes back to the seed
++                  ! pool as the new seed replaces it (zero otherwise)
++                  crop_seedc_to_leaf_p(m) = (initial_seed_at_planting - leafc_xfer_p(m))/deltim
++                  crop_seedn_to_leaf_p(m) = (initial_seed_at_planting/leafcn(ivt) - leafn_xfer_p(m))/deltim
+                   leafc_xfer_p(m)  = initial_seed_at_planting
+                   leafn_xfer_p(m)  = leafc_xfer_p(m) / leafcn(ivt) ! with onset
+-                  crop_seedc_to_leaf_p(m) = leafc_xfer_p(m)/deltim
+-                  crop_seedn_to_leaf_p(m) = leafn_xfer_p(m)/deltim
+                ENDIF
+             ENDIF
+            ! calculate gddmaturity
+-- 
+2.53.0
+

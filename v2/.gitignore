@@ -1,0 +1,5 @@
+# kept locally, not in the repository
+_scratch/
+data/
+lanes_session.txt
+scripts/lanes_stop_hook.py

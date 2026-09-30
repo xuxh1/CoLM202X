@@ -1,0 +1,142 @@
+# lit_flood_ch4_lag_260930：热带洪泛区甲烷相对淹水的季节相位与滞后（L-17）
+
+- **日期**：2026.09.30-07:15
+- **读者**：下一会话
+- **来源**：文献线 L-17 只读子任务（中控称 methane-lit-floodlag）；承接 `v2/results/lit_nafrica_floodplain_260930.txt` 第 1、2.2、3、5 节与 `lit_floodplain_260929.txt`，账本 Q-42、Q-72、V-88、V-128、V-175、V-179；读码按 case `sp_v2_c91`（`CODE_COMMIT.txt` 04842b9e）与工作树 HEAD，二者在滞后与 C-41 段无差异（`git diff 04842b9e HEAD` 该文件无相关 hunk）；取数脚本 `v2/_scratch/floodlag/f1_series.py`（三塔逐月）、`f2_lag.py`（相位、滞后、离线滞后与 C-41）、`f3_giems_cells.py`（塔周 GIEMS-MC 逐格）、`f4_global_phase.py`（全球 `v260929/g2_bf` 2018 分框）、`f5_c41_sites.py`（站点开关 C-14、C-41 对照），均在 node112 跑，输出同目录 `*.log`
+- **状态**：第 3、4 节（模式机制、塔上与模式对照）已完成；第 2 节文献只核完苏德（Pandey 2021 原文网页），亚马孙、潘塔纳尔区域、奥卡万戈淹水月份、刚果三项文献子任务在交回时未收回，相应条目标"存疑"或"未看"；第 6 节 DOI 已逐条查 Crossref
+- **失效于**：宿主汇流修正苏德季节，或站点洪泛序列改用塔上水位，或 C-41、通气组织送氧改写后
+
+口径：
+- 滞后 k 为正表示甲烷晚于淹水；"相位"指 12 个月气候态第一谐波的极大所在月（1 = 1 月中）；r(k) 为 corr(CH₄(m), X(m − k))，12 个月循环取。
+- 单位：甲烷 mg CH₄ m⁻² d⁻¹（塔与站点）、Tg 每月（全球分框）；淹水为比例或 Mkm²。
+- 站点洪泛序列 = `v2/data/site_flood_giems.nc`（C-48：塔周 3×3 格 GIEMS-MC 月 Fw 最大值 ÷ 1992–2020 最大值）。
+- "只读摘要""转引"含义同 `lit_nafrica_floodplain_260930.txt`。
+
+## 0. 覆盖面
+
+1. 读码：`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90` 检索 `finundated_lag`（命中 12）、`floodplain_sif`（1）、`redoxlag`（14）、`sif`、`annavg_finrw`，读 600–625、1015–1040、1100–1190、2213–2300、2480–2530、2626–2640 行；`MOD_Tracer_Reactive_Methane_BgcLink.F90:1389–1475`（`get_biome_redoxlag`）；`MOD_Tracer_Reactive_Methane_Driver.F90:455–480、680–705`（`is_floodplain_active` 与滞后查表）；`MOD_Tracer_Reactive_Methane_Const.F90` 170–197、339–410、570–582、740–752、1040–1050（缺省值与注释）；站点 `sites_v2_p9f/_conf/ch4_param/BW-Nxr.nml` 全部非注释行；全球 `v260929/g2_bf/bld/run/ch4_parameter.nml` 相关键。
+2. 数据：塔 `data/FLUXNET-CH4/Observation/{BR-Npw_2013-2016,BW-Nxr_2018-2018,BW-Gum_2018-2018}_FLUXNET-CH4_Flux.nc`（FCH4_f 按 `score_series_v2.obs_monthly` 取月、WTD_f、TS_1、GPP；BW 两塔无 WTD、TS）；`v2/data/site_flood_giems.nc`；GIEMS-MC 0.25° 原文件；站点 tag `v2_p9f`、`v2_p9j`、`v2_p9k`、`v2_p9kn` 历史文件；全球 `g2_bf` 2018。
+3. 文献：Pandey 2021 读原文网页第 3.3.2、4 节与图 5；Lunt 2019、2021，Balasus 2026，Helfter 2022 两篇，Dalmagro 2019，Delwiche 2021 的季节与滞后内容由三个只读子任务读，交回时未收回，本文只采已在 `lit_nafrica_floodplain_260930.txt`、`lit_floodplain_260929.txt` 核过的句子（注"转引"）。
+4. 未看：亚马孙流域反演与塔外实测的季节相位（Bloom 2012、Wilson 2016/2021、Tunnicliffe 2020、Basso 2016/2021、Melack 2004/2022、Barbosa 2020/2021）；刚果中央盆地反演季节；奥卡万戈 Nxaraga 塔足迹的实际淹水月份；静水压控制冒泡的一手文献（Maeck 2014 等）。原因：文献子任务未在交回前完成。
+5. 存疑（要跑才能定）：BW-Nxr 10–12 月塔上高排放是局地淹水持续（GIEMS 窗口时间错）还是退水后土壤与底物记忆，需要塔足迹水位或箱式序列；苏德模式 3–4 月峰的氧化份额季节是否由通气组织送氧驱动，需要关通气组织送氧（或乘系数）短跑。
+
+## 1. 结论
+
+1. 苏德：TROPOMI 反演的排放 JJA 最低、2018 年 DJF 最高；按季平均，排放比河道水位（测高，SON 最高）晚一整季，计入该滞后后相关 0.24 → 0.80；以往遥感给苏德最大淹水在 9 月至次年 1 月；作者给两种解释——排放对温度更敏感、淹水后缺氧建立需要时间——已验证（Pandey 2021 第 3.3.2、4 节与图 5，原文网页）。即苏德滞后约 3 个月（季分辨率），相对淹水面积峰（9–1 月）只晚 0–2 个月——推测。理由：面积峰跨 9–1 月，季平均分不出更细。
+2. 潘塔纳尔 BR-Npw 塔：甲烷与站点洪泛序列同相，r(0) = 0.84，相位 3.31 对 3.32 月；与塔上水位同相或略早（r(−1) 0.89、r(0) 0.87）；塔上 2–6 月是一个平顶（98–206），7 月水位落到地面以下 0.46 m 即停（7）——已验证（`f2_lag.log` BR-Npw 段）。淹水即开、退水即关，Eh 数日内转负——已验证（Dalmagro 2019 p.1972，转引 `lit_floodplain_260929.txt` 第 1.6 节第 4 条）。
+3. 奥卡万戈 BW-Nxr 塔（2018）：甲烷比塔周 GIEMS 淹水晚 2–3 个月，r(+2) 0.83、r(+3) 0.84，相位 9.07 对 6.96 月（晚 2.1 个月）；10 月达峰 342，10–12 月 GIEMS 淹水为 0 时仍有 207–342；落水期单位淹水排放是涨水期的 2.7 倍——已验证（`f2_lag.log` BW-Nxr 段）。塔所在格与 3×3 窗口 GIEMS-MC 峰都在 7 月，塔格并不比窗口晚——已验证（`f3_giems_cells.log`）。
+4. BW-Gum（常年纸莎草沼泽）与淹水反相：r(0) −0.80，7–8 月最低（187–226）、3–4 月与 9–10 月最高（396–475），属温度与物候控制，不是洪泛滞后问题——已验证（`f2_lag.log`；Helfter 2022 Nat Commun 物候控制结论转引 `lit_floodplain_260929.txt` 第 2.1 节第 5 条）。
+5. 模式里能产生滞后的只有两项，都做不出 2–3 个月：氧化还原滞后 `finundated_lag` 是一阶松弛，只在涨水段（`finundated_lag < finundated`）按 `finundated_lag / finundated` 压产量，退水段不起作用（`Physics.F90:1130–1135、2635–2636`）；土壤斑块淹水时查表取 7 d、不淹时 30 d（`BgcLink.F90:1449–1452`，`Driver.F90:684–704`）——已验证（读码）。离线按三塔实际洪泛序列算，它使年淹水加权量减 5.5–6.5 %，相位只后移 0.10–0.11 月——已验证（`f2_lag.log` 离线段）。
+6. C-41 季节淹水因子只压峰不移相：离线三塔峰与年均之比 3.0–3.5 → 2.3–2.8，相位变化 ≤ 0.07 月——已验证（`f2_lag.log`）；站点开 C-14、C-41（`v2_p9j`）后 BR-Npw 相位 3.76 → 3.62、年均 61.8 → 34.4，BW-Nxr 相位 7.64 → 7.73、年均 37.8 → 15.8——已验证（`f5_c41_sites.log`）。`v2_p9kn`（V-179）在这两塔上与 `v2_p9f` 逐月相同，两塔在 p9f 与 p9k 之间只差 C-14、C-41——已验证（同上）。
+7. 站点模式（p9f）基本与淹水同相：BR-Npw k = 0（相位比塔上晚 0.45 月，峰在 4 月而塔上在 2 月）；BW-Nxr k = +1，来源是淹水峰（6–7 月）正值最冷土温（12 cm 14–16 °C），8–9 月回暖时单位淹水排放升高——已验证（`f1_series.log`、`f2_lag.log`）。模式缺 BW-Nxr 10–12 月（35、0、0 对塔上 342、271、207），因为输入洪泛为 0——已验证（同上）。
+8. 全球 `g2_bf` 的洪泛排放在多数框里已比面积晚：亚马孙干流 +1 至 +2 个月（面积 5 月峰、排放 8 月峰）、内尼日尔三角洲 +2、班韦乌卢—卡富埃 +3、潘塔纳尔 0；成因是单位淹水排放在低水与落水期高、高水期低——亚马孙每平方米产量 1.3–1.8（高水）对 3.3–4.2（10–11 月），氧化份额 0.8 对 0.35–0.50——已验证（`f4_global_phase_g2_bf_2018.log`）。这与 C-41（超出年均的淹水只按 0.2 产）方向一致，但不是文献所说的退水冒泡或新鲜底物——推测。理由：C-41 式把高水期的超出部分打折，使单位面积产量与面积反向；离线单算 C-41 不移相，全球的移相还叠加了氧化份额随水深与植被的变化。
+9. 苏德在模式里是反相：面积几乎不变（峰与年均之比 1.10，9 月峰，与 GIEMS-MC 同相 r(0) 0.83），排放 3–4 月峰、7–12 月谷，排放对面积 r(0) −0.48；单位面积产量只变 9.2–13.8，变的是氧化份额（2–4 月 0.37–0.41，6–10 月 0.80–0.81），与格点 LAI 相关 0.85（LAI 0.57 → 2.80）——已验证（`f4_global_phase_g2_bf_2018.log`）。萨凡纳型洪泛框里氧化份额都随 LAI 走（内尼日尔 0.95、班韦乌卢 0.87、奥卡万戈 0.81），单位面积排放与 LAI 负相关（−0.38 至 −0.94）——已验证（同上）。模式的季节于是由通气组织送氧决定：植被越盛、送氧越多、排放越低，与塔上"排放随物候"的方向相反——推测。理由：相关不等于因果，LAI 与雨季、水深同向变化；需第 0 节第 5 条的短跑。
+10. 模式缺的项按对三类系统的作用排：① 洪泛面积的时间本身（苏德全年常淹、内尼日尔晚 GIEMS 2 个月、BW-Nxr 输入在 10–12 月为 0），这是季节错的第一原因；② 通气组织送氧使排放与植被反相（候选②，`lit_floodplain_260929.txt` 第 5.2 节）；③ 落水与低水期的增强（浅暖水、冒泡、淹没植物分解）模式只有 C-41 的代数副作用，没有显式机制；④ 氧化还原滞后已在、量级够（Pandey 的"缺氧建立需时"解释在 BR-Npw 不成立：数日即转负）——①② 已验证（第 8、9 条数据），③④ 推测，理由见第 5 节。
+
+## 2. 问一：实测相位
+
+### 2.1 苏德
+
+1. TROPOMI 2018–2019：排放 JJA 最低，2018 年 DJF 最高，2019 年 DJF、MAM、SON 相近；过程模式最低在 DJF——已验证（Pandey 2021 第 3.3.2 节）。
+2. 淹水：测高河道水位 SON 最高，WetCHARTs 淹水 JJA 最高；以往遥感最大淹水在 9 月至次年 1 月——已验证（同上）。苏德淹水通常 10 月到峰——已验证（Lunt 2021 第 3 节，转引 `lit_nafrica_floodplain_260930.txt` 第 2.2 节）。
+3. 滞后：排放比（河道水位代表的）淹水晚一整季，计入后相关 0.80；未计时对淹水 0.24、对温度 0.49；数据为季平均——已验证（Pandey 2021 第 3.3.2、4 节，图 5 图注）。
+4. 机制（作者原话为可能解释）：温度依赖更强；淹水后缺氧建立需时间（产甲烷"激活"时间）——已验证（同上）。
+5. 模式对照：`g2_bf` 苏德面积 9 月峰但幅度 ±8 %，排放 3 月峰（相位 3.05），与实测 DJF 高、JJA 低只在 JJA 谷上对上——已验证（`f4_global_phase_g2_bf_2018.log`；实测季见第 1 条）。
+
+### 2.2 亚马孙
+
+未看（子任务未收回）。已知旁证：落水期冒泡增强、落水期总通量常高于涨水期（Engle & Melack 2000；Barbosa 2020、2021），但也有高水期更高的（Devol 1990）——已验证（转引 `lit_floodplain_260929.txt` 第 1.6 节第 3 条，除 Barbosa 2020 外只读摘要）。
+
+### 2.3 潘塔纳尔（BR-Npw）
+
+1. 塔上逐月（2014–2016 平均）：1–6 月 98、206、178、154、135、97，7–12 月 −6 至 7；塔上水位 2–5 月高出地面 0.18–0.22 m，6 月 −0.18 m，9–10 月 −1.32 m——已验证（`f2_lag.log`）。
+2. 相位：对站点洪泛 r(0) 0.84、对塔上水位 r(0) 0.87、r(−1) 0.89；逐月序列（非气候态）对洪泛 r(0) 0.61、对塔上水位 0.77——已验证（同上）。滞后为 0。
+3. 机制：淹水厌氧期 134–160 mg m⁻² d⁻¹、落干期约 1/50；Eh 由 +472 降到 −189 mV 只用数日；汛初高排放推测由旱季积累的凋落物与活性 DOC 供给——已验证（Dalmagro 2019 表 1、p.1972、p.1977，转引 `lit_floodplain_260929.txt` 第 1.1、1.6、2.1 节）。
+
+### 2.4 奥卡万戈（BW-Nxr、BW-Gum）
+
+1. BW-Nxr 2018 塔上：1–12 月 11、40、102、135、127、136、170、304、291、342、271、207；站点洪泛 5–9 月（6–7 月 0.58–0.66）——已验证（`f2_lag.log`）。滞后 +2 至 +3 月，相位差 2.1 月（第 1 节第 3 条）。
+2. 塔周 GIEMS-MC：塔格 1992–2020 峰 7 月（相位 6.75），窗口最大峰 6 月（6.31），2018 年两者峰都在 7 月；10 月以后全部为 0——已验证（`f3_giems_cells.log`）。
+3. 用模式本身"每单位淹水面积的饱和子柱通量"去除塔上值，得等效淹水份额：4–11 月 0.83–1.44、12 月 0.65、1–3 月 0.04–0.31——已验证（`f3_giems_cells.log`）。即塔上在 4–11 月一直像被全淹一样排放，比 GIEMS 淹水多出 10–11 月两个月——推测。理由：模式单位面积通量不一定等于真实值，这里只用来看时间形状。
+4. BW-Gum：反相与物候控制见第 1 节第 4 条；模式已在 V-170 改为湿地斑块（`v2_p9gm` r 0.84）。
+5. Nxaraga 足迹的实际淹水月份：未看（子任务未收回），是判别第 0 节第 5 条的关键。
+
+### 2.5 刚果中央盆地
+
+未看（子任务未收回）。模式 `g2_bf` 该框洪泛面积 11 月峰，与 GIEMS-MC 同相（r(0) 0.85），排放 8–9 月出现孤立尖峰（单位面积 19–22 对其余月 2–7 g m⁻² 月⁻¹）——已验证（`f4_global_phase_g2_bf_2018.log`）；尖峰成因未查——存疑，要逐步输出才能定。
+
+## 3. 问二：与模式机制对照
+
+### 3.1 现行两项的写法与取值
+
+1. 氧化还原滞后：每步 `finundated_lag = finundated_lag·e^(−Δt/τ) + finundated·(1 − e^(−Δt/τ))`（`Physics.F90:1130–1135`）；产量只在饱和子柱且 `finundated_lag < finundated` 时乘 `finundated_lag / finundated`（`:2635–2636`）；非饱和子柱水位以下按 `layer_sat_lag` 同样松弛（`:1442–1447`）——已验证（读码）。
+2. τ 的取值：`use_biome_redoxlag = .true.` 时土壤斑块在 `is_floodplain_active`（淹水比例大于 0 且大于湿地份额）时取 `redoxlag_tropical_floodplain` 7 d，否则 `redoxlag_upland_soil` 30 d；湿地斑块在 `wetland_dim_class` 下取 `redoxlag_wetland_dim` 27 d（`BgcLink.F90:1449–1455`；`Const.F90:182、187、197`；`Driver.F90:684–704`）——已验证（读码）。站点 p9f 与全球 g2_bf 均为 7 d、30 d（`ch4_param/BW-Nxr.nml:138–155`；`g2_bf/bld/run/ch4_parameter.nml:126、136、138`）——已验证（读 nml）。常数注释写明 7 d 是"author-chosen order-of-magnitude"，依据 Pangala 2017 的定性结论——已验证（`Const.F90:170–182`）。
+3. C-41：淹水子柱分解乘 sif = (min(finrw, f) + 0.2·max(f − finrw, 0)) / f，finrw 为按呼吸加权的年均淹水（每年更新一次）；开关 `floodplain_sif`，站点 p9f 关、全球 g2_bf 开（`Physics.F90:2509–2521`；`Const.F90:1044–1048`；`g2_bf` nml 第 122、339 行）——已验证（读码与 nml）。
+4. 其余可带记忆的机制都关着：动态受体库 C-68（`acceptor_pool`，与滞后互斥）、产甲烷菌活性 C-63（`methanogen_activity`，只作用湿地斑块）——已验证（`Const.F90:339–410`）。C-68 站点试过，BW 两塔量级比跌到 0.03–0.06，因为每个旱季受体都被重新氧化——已验证（账本 V-128）。
+5. 退水时的状态处理：面积缩小时饱和子柱中的 CH₄ 与 O₂ 按面积并入非饱和子柱，不留底物记忆（`Physics.F90:1145–1156`）——已验证（读码）。
+
+### 3.2 能不能做出滞后或反相
+
+1. 氧化还原滞后：离线（日步长，τ 淹 7 d、干 30 d，输入为三塔实际洪泛序列）只削涨水头一个月，年量减 5.5–6.5 %，相位后移 0.10–0.11 月；它本质上只能延迟开启，不能让排放在退水后继续——已验证（`f2_lag.log` 离线段；读码第 3.1 节第 1 条）。
+2. C-41：离线只压峰（峰/年均 3.0–3.5 → 2.3–2.8），相位变化 ≤ 0.07 月；站点实跑同样不移相、只减量 44–58 %（第 1 节第 6 条）——已验证。
+3. 全球模式的"已有滞后"（亚马孙、内尼日尔、班韦乌卢排放晚面积 1–3 个月）来自单位面积排放在低水与落水期升高（第 1 节第 8 条）；苏德的"反相"来自氧化份额随 LAI 的季节（第 1 节第 9 条）——已验证（数据）；两者都不是文献机制——推测（理由见第 1 节第 8、9 条）。
+4. 缺的项（对照第 2 节实测）：
+   - 洪泛面积与时间本身：苏德全年常淹（`lit_nafrica_floodplain_260930.txt` 第 2.2 节）、内尼日尔模式面积晚 GIEMS 2 个月（r(+2) 0.91）、BW-Nxr 输入 10–12 月为 0——已验证（`f4`、`f2` 日志）。
+   - 退水期的浅暖水与冒泡增强：模式淹水子柱冒泡近零（`lit_floodplain_260929.txt` 第 2.7 节第 3 条），不存在"水变浅 → 静水压降 → 冒泡释放"的通道——已验证（转引该文件与账本 V-87、V-88）。
+   - 淹没植物的新鲜底物：模式淹水子柱底物是宿主斑块 HR（同上第 3.1 节第 3 条），无随淹水积累、随退水释放的活性碳库（Bloom 2012 的产甲烷可用碳库思路）——已验证（读码第 3.1 节第 5 条）；Bloom 2012 的具体滞后月数未看。
+   - 植被与排放方向：模式通气组织送氧随 LAI 增加氧化（第 1 节第 9 条），塔上 BW-Gum 排放随 GPP 升——已验证（数据与转引）；方向相反是否由送氧造成——推测。
+
+## 4. 问三：塔上与模式的滞后对照
+
+| 塔 | 年份 | 塔上峰月 / 相位 | 洪泛峰月 / 相位 | 塔上对洪泛最佳 k（r） | p9f 峰月 / 相位 | p9f 对洪泛最佳 k（r） | p9j（开 C-14、C-41）相位 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| BR-Npw | 2014–2016 | 2 / 3.31 | 3 / 3.32 | 0（0.84）；对塔上水位 −1 至 0（0.89、0.87） | 4 / 3.76 | 0（0.95） | 3.62 |
+| BW-Nxr | 2018 | 10 / 9.07 | 7 / 6.96 | +3（0.84），+2（0.83） | 8 / 7.64 | +1（0.95） | 7.73 |
+| BW-Gum | 2018 | 4（10 个月有数） / — | 6 / 6.41 | 反相，r(0) −0.80 | 8 / 7.22 | +1（0.93） | — |
+
+- 全表——已验证（`f2_lag.log`、`f5_c41_sites.log`）。
+- 单位淹水排放落水/涨水之比：BR-Npw 塔上 1.18、p9f 1.84；BW-Nxr 塔上 2.67、p9f 2.99——已验证（`f2_lag.log`）。模式并不缺"落水期单位面积高"，缺的是 BW-Nxr 10–12 月的淹水本身与 BR-Npw 涨水头（1–2 月塔上 98–206 对模式 41–86）——已验证（同上）。
+- BR-Npw 涨水头偏低的原因：站点洪泛是 3×3 窗口的面积份额，1–2 月 0.14–0.24，而塔足迹 2 月水位已高出地面 0.18 m；塔上值除以模式单位淹水通量得等效份额 1–6 月 0.30–0.67 呈平顶——已验证（`f3_giems_cells.log`）。塔是点、洪泛序列是区域份额，二者形状天然不同——推测。
+
+## 5. 问四：改法候选（作用对象、依据、预期方向）
+
+A. 洪泛面积的时间与时长（根治项，作用对象：宿主汇流的淹水面积；站点为 `site_flood_file`）。
+- 依据：苏德常年淹水、季节仅 ±8 %，实测 SON 水位峰（Pandey 2021；`lit_nafrica_floodplain_260930.txt` 第 5 节 A）；内尼日尔模式面积晚 GIEMS 2 个月——已验证（`f4` 日志）。
+- 站点先做：BW-Nxr 洪泛序列改为塔足迹的淹水（Helfter 2022 若给出淹水月份或水位，或用 GIEMS 塔格加入 10–11 月退水尾），看 10–12 月能否回来——推测。理由：等效淹水份额 4–11 月约 1（第 2.4 节第 3 条）。
+- 预期：苏德排放峰移到 SON–DJF，与 TROPOMI 同季；BW-Nxr r 与量级比同升——推测。
+
+B. 通气组织送氧打折（`lit_floodplain_260929.txt` 候选②，新键 `aere_o2_frac`，作用对象：`oxaere`）。
+- 依据：根通气组织 O₂ 至多 30–40 % 漏入土壤（Colmer 2003 p.22，转引）；本文所见萨凡纳洪泛框氧化份额随 LAI 走、排放与 LAI 反相（第 1 节第 9 条）——已验证（数据）。
+- 先做：`g2_bf` 重启续跑一年，苏德、内尼日尔、班韦乌卢三框看氧化份额季节是否消失——推测。
+- 预期：模式排放季节从"反物候"转向"随淹水与温度"；苏德 3–4 月假峰减弱；单位面积排放整体升高——推测。证据：机制强、相位效果未跑。
+
+C. 落水期浅水增强（新机制，作用对象：淹水子柱冒泡或水—气交换，按水深变浅速率或水深）。
+- 依据：落水期冒泡与总通量常高于涨水期（Engle & Melack 2000；Barbosa 2020、2021，转引 `lit_floodplain_260929.txt` 第 1.6 节第 3 条）；塔上 BW-Nxr 落水/涨水 2.67——已验证。静水压的一手定量未看。
+- 预期：排放峰向落水期后移 0.5–1 个月——推测。证据弱：模式已有 2.99 的落水/涨水比（C-41 与氧化副作用），再加可能过头；须在 A、B 之后看。
+
+D. 淹没植物新鲜底物池（作用对象：淹水子柱底物，照 Bloom 2012 产甲烷可用碳库或 `lit_floodplain_260929.txt` 候选①）。
+- 依据：汛初高排放由旱季凋落物与活性 DOC 供给（Dalmagro 2019 p.1977，作者推断）；BW-Gum 排放随 GPPmax（Helfter 2022）——已验证（转引）。Bloom 2012 的滞后月数与池时间常数未看。
+- 预期：涨水头排放升（BR-Npw 1–2 月），池耗尽后回落；若池由旱季凋落物积累，峰前移而非后移——推测。与苏德"晚一季"方向相反，只对 BR-Npw 型有利。
+
+E. 不建议：加长氧化还原滞后。BR-Npw 实测 Eh 数日转负、塔上与水位同相（第 2.3 节）；7 d 已使涨水头减量，τ 加到 30–60 d 只会把 BR-Npw 1–2 月进一步压低；Pandey 的"缺氧建立需时"只是候选解释之一——推测。理由：离线相位对 τ 不敏感（7 d 仅 0.1 月），要移 2–3 个月须 τ 达 60–90 d，远超热带土壤实测。
+
+F. 不建议：为相位改 C-41。它不移相（第 3.2 节第 2 条），全球保留与否按 G-22 的量级检验定。
+
+## 6. DOI 列表（Crossref 查得，2026-09-30）
+
+- Balasus, 2026｜2019–2024 trends in African livestock and wetland emissions as contributors to the global methane rise｜Atmospheric Chemistry and Physics 26: 4601–4617｜10.5194/acp-26-4601-2026
+- Bloom, 2012｜Seasonal variability of tropical wetland CH₄ emissions: the role of the methanogen-available carbon pool｜Biogeosciences 9: 2821–2830｜10.5194/bg-9-2821-2012（正文未看）
+- Chadburn, 2020｜Modeled Microbial Dynamics Explain the Apparent Temperature Sensitivity of Wetland Methane Emissions｜Global Biogeochemical Cycles 34(11): e2020GB006678｜10.1029/2020GB006678
+- Chang, 2021｜Substantial hysteresis in emergent temperature sensitivity of global wetland CH4 emissions｜Nature Communications 12: 2266｜10.1038/s41467-021-22452-1（正文未看）
+- Dalmagro, 2019｜Radiative forcing of methane fluxes offsets net carbon dioxide uptake for a tropical flooded forest｜Global Change Biology 25(6): 1967–1981｜10.1111/gcb.14615
+- Delwiche, 2021｜FLUXNET-CH4: a global, multi-ecosystem dataset and analysis of methane seasonality from freshwater wetlands｜Earth System Science Data 13: 3607–3689｜10.5194/essd-13-3607-2021
+- Helfter, 2022｜Phenology is the dominant control of methane emissions in a tropical non-forested wetland｜Nature Communications 13: 133｜10.1038/s41467-021-27786-4
+- Helfter, 2021（Crossref issued 年）｜From sink to source: high inter-annual variability in the carbon budget of a Southern African wetland｜Philosophical Transactions of the Royal Society A 380(2215): 20210148｜10.1098/rsta.2021.0148
+- Knox, 2021｜Identifying dominant environmental predictors of freshwater wetland methane fluxes across diurnal to seasonal time scales｜Global Change Biology 27(15): 3582–3604｜10.1111/gcb.15661（正文未看）
+- Lunt, 2019｜An increase in methane emissions from tropical Africa between 2010 and 2016 inferred from satellite data｜Atmospheric Chemistry and Physics 19: 14721–14740｜10.5194/acp-19-14721-2019
+- Lunt, 2021｜Rain-fed pulses of methane from East Africa during 2018–2019 contributed to atmospheric growth rate｜Environmental Research Letters 16: 024021｜10.1088/1748-9326/abd8fa
+- Pandey, 2021｜Using satellite data to identify the methane emission controls of South Sudan's wetlands｜Biogeosciences 18: 557–572｜10.5194/bg-18-557-2021
+- Rebelo, 2012｜Flood Pulsing in the Sudd Wetland: Analysis of Seasonal Variations in Inundation and Evaporation in South Sudan｜Earth Interactions 16(1): 1–19｜10.1175/2011EI382.1
+- Riley, 2011｜Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM｜Biogeosciences 8: 1925–1953｜10.5194/bg-8-1925-2011
+- Segers, 2001｜Modeling methane fluxes in wetlands with gas-transporting plants: 1. Single-root scale｜Journal of Geophysical Research: Atmospheres 106(D4): 3511–3528｜10.1029/2000JD900484
+- 转引条目（Engle & Melack 2000、Barbosa 2020/2021、Devol 1990、Colmer 2003、Pangala 2017）的著录见 `lit_floodplain_260929.txt` 第 6 节，本文未重查。

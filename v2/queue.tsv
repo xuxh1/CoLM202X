@@ -1,0 +1,109 @@
+id	status	tree	tag	cfg	spin	sites	lib	node	started	finished	note
+1	done	paper_v2/v260929/sp_v2_c51	v2_oo5w0	v2_oo5w0	5	all	-	node110	09-29 07:16	09-29 09:28	V-98
+2	done	paper_v2/v260929/sp_v2_c51	v2_oo5w3	v2_oo5w3	5	all	-	node111	09-29 07:16	09-29 09:19	V-99
+3	done	paper_v2/v260929/sp_v2_c52	v2_oo5p1	v2_oo5p1	5	all	-	node112	09-29 07:22	09-29 09:45	V-100
+4	done	paper_v2/v260929/sp_v2_c52	v2_oo5p2	v2_oo5p2	5	all	-	node112	09-29 07:22	09-29 09:46	V-101
+5	done	paper_v2/v260929/sp_v2_c52	v2_oo5p1w0	v2_oo5p1w0	5	all	-	node114	09-29 07:22	09-29 09:41	V-102
+6	done	paper_v2/v260929/sp_v2_c52	v2_oo5qh	v2_oo5qh	5	all	-	node114	09-29 07:22	09-29 09:42	V-103
+7	done	paper_v2/v260929/sp_v2_c52	v2_oo5	v2_oo5	5	all	-	node110	09-29 07:56	09-29 10:12	library baseline on c52
+8	done	paper_v2/v260929/sp_v2_c52	v2_oo5p2w0	v2_oo5p2w0	5	all	-	node111	09-29 08:07	09-29 10:19	V-104 two-layer peat plus no floor
+10	done	paper_v2/v260929/sp_v2_c56	v2_oo5	v2_oo5	5	all	-	node111	09-29 09:20	09-29 11:30	library baseline on c56 (candidates 4, 5 off); bit check vs O-5
+11	done	paper_v2/v260929/sp_v2_c57	v2_oo5c4a	v2_oo5c4a	5	wet	-	node110	09-29 09:29	09-29 10:51	candidate 4 at 0.25, wetland towers, full spin
+13	done	paper_v2/v260929/sp_v2_c57	v2_oo5g	v2_oo5g	5	wet	-	node114	09-29 09:43	09-29 10:51	diagnostic: ground methane conductance 0.01 m/s (CLM magnitude) instead of 1e-6
+12	done	paper_v2/v260929/sp_v2_c57	v2_oo5c5	v2_oo5c5	5	rice	-	node114	09-29 09:43	09-29 10:36	candidate 5, rice towers, full spin
+14	done	paper_v2/v260929/sp_v2_c57	v2_oo5po	v2_oo5po	5	boreal	-	node112	09-29 09:48	09-29 11:08	candidate 13 pond outflow, boreal peat and tundra towers, full spin
+9	done	paper_v2/v260929/sp_v2_c52	v2_oo5p1qh	v2_oo5p1qh	5	all	-	node112	09-29 09:48	09-29 11:51	V-105 peat profile 1 plus half-acclimated Q10
+15	done	paper_v2/v260929/sp_v2_c57	v2_oo5ua	v2_oo5ua	5	wet	-	node110	09-29 10:17	09-29 11:27	wetland survey B: unsat aerenchyma ratio 0.6 (Visser 2000 flooded/non-flooded porosity) instead of the CTSM upland 1/6
+16	done	paper_v2/v260929/sp_v2_c58	v2_oo5	v2_oo5	5	all	-	node111	09-29 10:28	09-29 12:37	library baseline on c58 (all candidate switches off); frozen for subset screening
+17	done	paper_v2/v260929/sp_v2_c57	v2_oo5c4b	v2_oo5c4b	5	wet	-	node114	09-29 11:00	09-29 12:22	C-54 at 0.10 (in-situ lower bound; sedges low)
+18	done	paper_v2/v260929/sp_v2_c57	v2_oo5c5b	v2_oo5c5b	5	rice	-	node110	09-29 11:00	09-29 11:40	C-55 with rice_aereoxid 0.65 (C-25 value: paddies oxidise 40-90% of production)
+19	done	paper_v2/v260929/sp_v2_c63	v2_c63p2	v2_oo5p2	5	all	-	node110	09-29 11:38	09-29 13:53	new baseline for O-7 screens: C-52 mode 2 on the c63 tree (all newer keys off); library
+20	done	paper_v2/v260929/sp_v2_c63	v2_p2gh	v2_p2gh	5	wet	-	node111	09-29 11:38	09-29 13:03	candidate 9 proper: ground conductance from the host resistance, on p2
+21	done	paper_v2/v260929/sp_v2_c63	v2_p2ma	v2_p2ma	5	wet	-	node112	09-29 11:38	09-29 12:55	candidate 30: methanogen activity and dormancy (Chadburn 2020), on p2
+22	done	paper_v2/v260929/sp_v2_c63	v2_p2ua	v2_p2ua	5	wet	-	node114	09-29 11:38	09-29 13:06	unsat aerenchyma ratio 0.6 on p2 (V-112 gained on peat, lost on marsh)
+23	done	paper_v2/v260929/sp_v2_c63	v2_p2fl	v2_p2fl	5	boreal	-	node110	09-29 11:41	09-29 13:00	candidate 29: no liquid-fraction multiplier on production, on p2
+24	done	paper_v2/v260929/sp_v2_c63	v2_p2pf	v2_p2pf	5	rice	-	node112	09-29 11:52	09-29 12:44	candidate 25: paddy pre-season flooding 30 days
+25	dropped	paper_v2/v260929/sp_v2_c63	v2_p2ghua	v2_p2ghua	5	wet	-				candidates 9 and 28 together on p2 (both raise peat levels; substitutes?)
+ | dropped: plant O2 path goes under the one rhizosphere scheme											
+26	done	paper_v2/v260929/sp_v2_c63	v2_p2rx25	v2_p2rx25	5	all	-	node114	09-29 12:23	09-29 14:38	one rhizosphere scheme for all plants (user 2026-09-29): wetland and rice share 0.25, no plant O2 into soil; on p2
+27	dropped	paper_v2/v260929/sp_v2_c63	v2_p2rx40	v2_p2rx40	5	all	-				one rhizosphere scheme for all plants (user 2026-09-29): wetland and rice share 0.40, no plant O2 into soil; on p2
+ | moved to the C-70 tree on the exudate-fixed base (rows 30-32)											
+28	dropped	paper_v2/v260929/sp_v2_c63	v2_p2rx55	v2_p2rx55	5	all	-				one rhizosphere scheme for all plants (user 2026-09-29): wetland and rice share 0.55, no plant O2 into soil; on p2
+ | moved to the C-70 tree on the exudate-fixed base (rows 30-32)											
+29	done	paper_v2/v260929/sp_v2_c70	v2_p2x	v2_p2x	5	all	-	node111	09-29 12:38	09-29 14:53	new base: p2 with C-23 retired (C-70) and root exudates booked after the pool update (C-69, 0.15, all non-lake tiles)
+30	done	paper_v2/v260929/sp_v2_c70	v2_p2xrx25	v2_p2xrx25	5	all	-	node112	09-29 12:45	09-29 15:04	D-59 one rhizosphere scheme, share 0.25, on p2x
+31	done	paper_v2/v260929/sp_v2_c70	v2_p2xrx40	v2_p2xrx40	5	all	-	node112	09-29 12:56	09-29 15:09	D-59 one rhizosphere scheme, share 0.40, on p2x
+32	done	paper_v2/v260929/sp_v2_c70	v2_p2xrx55	v2_p2xrx55	5	all	-	node110	09-29 13:01	09-29 15:14	D-59 one rhizosphere scheme, share 0.55, on p2x
+33	done	paper_v2/v260929/sp_v2_c70	v2_p2xli3	v2_p2xli3	5	all	-	node111	09-29 13:04	09-29 15:17	C-67 finite lateral inflow, r = min(sub-basin ratio, 3), upland runoff of g2_mr
+34	done	paper_v2/v260929/sp_v2_c70	v2_p2xli10	v2_p2xli10	5	all	-	node114	09-29 13:07	09-29 15:18	C-67 finite lateral inflow, cap 10
+35	done	paper_v2/v260929/sp_v2_c70	v2_p2xnl	v2_p2xnl	5	all	-	node110	09-29 13:54	09-29 15:51	control for C-68: all redox lags off
+36	done	paper_v2/v260929/sp_v2_c70	v2_p2xap	v2_p2xap	5	all	-	node114	09-29 14:39	09-29 16:22	C-68 acceptor pool, Segers defaults (k_reox 1e-5)
+37	done	paper_v2/v260929/sp_v2_c70	v2_p2xap6	v2_p2xap6	5	all	-	node111	09-29 14:54	09-29 16:38	C-68 acceptor pool, k_reox 1e-6
+38	done	paper_v2/v260929/sp_v2_c72	v2_p2xbf	v2_p2xbf	5	peat	-	node112	09-29 15:05	09-29 15:43	C-72 open-bog share floor 0.30 m on the six open-bog towers; fens must stay bit-identical to v2_p2x
+39	done	paper_v2/v260929/sp_v2_c74	v2_p2xgd	v2_p2x	5	rice	-	node112	09-29 15:10	09-29 15:48	C-74 (Q-48) GDD year closed at spin-up wraps: JP-Mse, US-HRA, US-HRC rice season; the other rice towers must stay bit-identical to v2_p2x
+40	done	paper_v2/v260929/sp_v2_c72	v2_p2xbf20	v2_p2xbf20	5	peat	-	node110	09-29 15:46	09-29 16:25	C-71 open-bog share floor 0.20 m (BAWLD-CH4 bog deepest growing-season table median); 0.30 dried CA-SCB and FI-Si2
+41	done	paper_v2/v260929/sp_v2_c70	v2_p2xrx40r65	v2_p2xrx40r65	5	rice	-	node111	09-29 15:46	09-29 16:34	D-59 split option: wetlands 0.40, rice 0.65 (rice towers only; wetland towers as v2_p2xrx40)
+42	done	paper_v2/v260929/sp_v2_c74	v2_p7	v2_p7	5	all	-	node110	09-29 16:59	09-29 18:45	new site base (user 2026-09-29 went with the recommendations): p2x + D-59 split (wetlands 0.40, rice 0.65) + US-NC4 forested + C-74 GDD fix + US-ICs snow top-up
+43	done	paper_v2/v260929/sp_v2_c74	v2_p7gh	v2_p7gh	5	wet	-	node111	09-29 16:59	09-29 18:07	C-64 host ground conductance retest on the v2_p7 base
+44	done	paper_v2/v260929/sp_v2_c79	v2_p7rr	v2_p7rr	5	all	-	node112	09-29 17:26	09-29 19:08	C-79 (D-62 item 1): rhizosphere share on rooted saturated production instead of the plant-pathway flux
+45	done	paper_v2/v260929/sp_v2_c79	v2_p7mm	v2_p7mm	5	marsh	-	node114	09-29 17:26	09-29 18:02	C-77 (D-62 item 5): managed-marsh pond target and vascular cover
+46	done	paper_v2/v260929/sp_v2_c79	v2_p7hs	v2_p7hs	5	tundra	-	node110	09-29 17:26	09-29 18:21	C-78 (D-62 item 4): tundra high-microsite share, diagnostic only
+47	done	paper_v2/v260929/sp_v2_c80	v2_p7mp	v2_p7mp	5	marsh	-	node111	09-29 17:54	09-29 18:30	C-80 (V-138): measured pond depth as target and cap at US-Tw1, US-Tw5, US-WPT, US-OWC; compare with v2_p7mm
+48	done	paper_v2/v260929/sp_v2_c81	v2_p7ph	v2_p7ph	5	all	-	node114	09-29 18:07	09-29 19:45	C-81 (V-139): ponded water heat capacity in the first soil layer on v2_p7mp; marsh towers vs v2_p7mp, others vs v2_p7
+49	done	paper_v2/v260929/sp_v2_c80	v2_p7fh	v2_p7fh	5	wet	-	node111	09-29 18:43	09-29 19:48	C-66 (V-140): forested wetland share takes the herb-layer plant input, site screen of the key g2_bf ran globally; vs v2_p7
+50	done	paper_v2/v260929/sp_v2_c74	v2_p7gh55	v2_p7gh55	5	wet	-	node110	09-29 18:50	09-29 20:17	V-141: C-64 host ground conductance with wetland rhizosphere share 0.55 (C-64 raises levels, D-59 share lowers them); vs v2_p7gh
+51	done	paper_v2/v260929/sp_v2_c74	v2_p7gh25	v2_p7gh25	5	wet	-	node110	09-29 18:50	09-29 20:18	V-141: C-64 host ground conductance with wetland rhizosphere share 0.25; vs v2_p7gh
+52	done	paper_v2/v260929/sp_v2_c82	v2_p7lr80	v2_p7lr80	5	wet	-	node111	09-29 19:51	09-29 20:54	V-142: C-82 litter resistance 80 s/m over ponded wetland water, on v2_p7mp; marsh vs v2_p7mp, other wetlands vs v2_p7
+53	done	paper_v2/v260929/sp_v2_c82	v2_p7lr160	v2_p7lr160	5	wet	-	node112	09-29 19:51	09-29 20:59	V-142: C-82 litter resistance 160 s/m (sensitivity), on v2_p7mp
+54	done	paper_v2/v260929/sp_v2_c82	v2_p8a	v2_p8a	5	all	-	node110	09-29 21:04	09-29 22:49	V-143: combined pre-promotion base v2_p7 + C-64 + C-77/C-80 measured marsh ponds + C-82 litter 80 s/m; reference for C-83
+55	done	paper_v2/v260929/sp_v2_c83	v2_p8b	v2_p8b	5	marsh	-	node111	09-29 21:10	09-29 21:46	V-144: C-83 tower wetland vegetated fraction at the seven managed marsh towers, C-77 methane cover off there; vs v2_p8a
+56	done	paper_v2/v260929/sp_v2_c82	v2_p8vm	v2_p8vm	5	all	-	node112	09-29 21:12	09-29 22:56	V-145: candidate 10, saturated oxidation vmax 20 uM/h (Segers 1998 multi-study geometric mean) instead of 45 uM/h (one Michigan site), on v2_p8a
+57	done	paper_v2/v260929/sp_v2_c82	v2_p8nl	v2_p8nl	5	wet	-	node110	09-30 00:03	09-30 01:12	V-147: v2_p8a without C-82 litter resistance (attribution of V-143)
+58	done	paper_v2/v260929/sp_v2_c82	v2_p8s55	v2_p8s55	5	wet	-	node111	09-30 00:03	09-30 01:25	V-147: v2_p8a with wetland rhizosphere share 0.55 (re-fit on the raised channel physics)
+59	done	paper_v2/v260929/sp_v2_c82	v2_p8fh	v2_p8fh	5	wet	-	node112	09-30 00:03	09-30 01:26	V-147: v2_p8a with C-66 forested herb input
+60	done	paper_v2/v260930/sp_v2_c84	v2_p8m	v2_p8a	5	wet	-	node114	09-30 00:09	09-30 01:37	V-149: C-86 pond litter on temperate marsh only, config of v2_p8a on the new tree; vs v2_p8a
+61	done	paper_v2/v260930/sp_v2_c85	v2_p8bu	v2_p8bu	5	marsh	-	node110	09-30 00:15	09-30 01:05	V-150: C-85 burial share 0.5 at the five Delta restored marshes, on v2_p8a; vs v2_p8a
+62	done	paper_v2/v260930/sp_v2_c87	v2_p8w5	v2_p8w5	5	all	-	node111	09-30 00:29	09-30 02:32	V-151: C-87 woody conduit fixed area 1e-5, on v2_p8a
+63	done	paper_v2/v260930/sp_v2_c87	v2_p8w6	v2_p8w6	5	all	-	node112	09-30 00:29	09-30 02:33	V-151: C-87 woody conduit fixed area 1e-6, on v2_p8a
+64	done	paper_v2/v260930/sp_v2_c87	v2_p8w4	v2_p8w4	5	all	-	node114	09-30 00:29	09-30 02:36	V-151: C-87 woody conduit fixed area 1e-4, on v2_p8a
+65	done	paper_v2/v260930/sp_v2_c87	v2_p8L	v2_p8L	5	marsh	-	node110	09-30 01:06	09-30 01:48	V-152: footprint LAI caps US-Myb 1.1, US-Sne 0.3, US-WPT 1.2 (lit_marsh_lai_260929), on v2_p8a
+66	done	paper_v2/v260930/sp_v2_c87	v2_p8Lb	v2_p8Lb	5	marsh	-	node110	09-30 01:13	09-30 01:51	V-152: LAI caps plus per-tower burial shares (Tw1 0.45, Tw4 0.53, Tw5 0.47, Myb 0.47, WPT 0.21, OWC 0.12, ORv 0.32; Sne none)
+67	done	paper_v2/v260930/sp_v2_c88	v2_p8d	v2_p8d	5	wet	-	node111	09-30 01:38	09-30 02:56	V-154: C-88 wetland dimension shares step 1 (floor, litter and moss resistance on shares); vs v2_p8m
+68	done	paper_v2/v260930/sp_v2_c90	v2_p9a	v2_p8a	5	all	-	node112	09-30 01:42	09-30 03:29	V-155: new site reference after the C-90 accumulator fix (config v2_p8a)
+69	done	paper_v2/v260930/sp_v2_c90	v2_p9d	v2_p8d	5	wet	-	node114	09-30 01:42	09-30 02:51	V-155: C-88 dimension shares on the fixed tree (config v2_p8d); vs v2_p9a
+70	done	paper_v2/v260930/sp_v2_c90	v2_p9Lb	v2_p8Lb	5	marsh	-	node110	09-30 01:49	09-30 02:43	V-155: footprint LAI and burial on the fixed tree (config v2_p8Lb); vs v2_p9a
+71	done	paper_v2/v260930/sp_v2_c91	v2_p9dl	v2_p8d	5	wet	-	node110	09-30 01:52	09-30 02:59	V-156: C-88 plus C-89 lag 27 d (config v2_p8d on the C-89 tree); vs v2_p9d
+72	done	paper_v2/v260930/sp_v2_c91	v2_p9e	v2_p8e	5	wet	-	node111	09-30 02:34	09-30 03:44	V-156: C-88, C-89 lag and moss floor with C-66 (config v2_p8e); vs v2_p9dl
+73	done	paper_v2/v260930/sp_v2_c90	v2_p9Lc	v2_p8Lc	5	marsh	-	node112	09-30 02:34	09-30 03:24	V-152 corrected: US-Sne LAI cap 0.8 (Beer-law back-calculation of the patch-mean LAI from the tower GPP), other caps and burial shares as v2_p8Lb; fixed tree; vs v2_p9a
+74	done	paper_v2/v260930/sp_v2_c91	v2_p9f	v2_p8f	5	all	-	node114	09-30 02:57	09-30 04:40	V-158: candidate site base = C-88 + C-89 (lag 27 d, C-66 with moss floor) + marsh LAI caps and burial (US-Sne cap 0.8); fixed tree; vs v2_p9a
+75	done	paper_v2/v260930/sp_v2_c90	v2_p9s55	v2_p8s55	5	wet	-	node110	09-30 03:02	09-30 04:28	V-159: wetland rhizosphere share 0.55 on the fixed tree (the conduit now stays open all year); vs v2_p9a
+76	done	paper_v2/v260930/sp_v2_c90	v2_p9s25	v2_p8s25	5	wet	-	node110	09-30 03:02	09-30 04:29	V-159: wetland rhizosphere share 0.25 on the fixed tree; vs v2_p9a
+77	done	paper_v2/v260930/sp_v2_c92	v2_p9h	v2_p8h	5	peat	-	node111	09-30 03:10	09-30 03:49	V-161: bog floor 0.20 m plus moss surface resistance on the water-source dimension (C-92); vs v2_p9f
+78	done	paper_v2/v260930/sp_v2_c90	v2_p9nc	v2_p8nc	5	wet	-	node111	09-30 04:02	09-30 05:22	V-164: C-64 host ground conductance off on the fixed tree; vs v2_p9a (recheck of V-134 after C-90)
+79	done	paper_v2/v260930/sp_v2_c94	v2_p9al	v2_p8al	5	all	-	node112	09-30 04:04	09-30 06:07	V-165: C-94 van Genuchten alpha in 1/mm on the candidate base v2_p8f; vs v2_p9f
+80	done	paper_v2/v260930/sp_v2_c91	v2_p9w	v2_p8w	5	peat	-	node110	09-30 04:30	09-30 05:22	V-167 diagnostic: prescribed tower water table at the peat towers on v2_p8f; splits water table from GPP (Q-61); vs v2_p9f
+81	done	paper_v2/v260930/sp_v2_c91	v2_p9ph	v2_p8ph4	5	all	-	node110	09-30 04:36	09-30 06:46	V-168: C-84 pH factor floor 0.4 on the candidate base v2_p8f, the value of the global screen V-146; vs v2_p9f
+82	done	paper_v2/v260930/sp_v2_c94	v2_p9tp	v2_p8tp	5	wet	-	node111	09-30 04:36	09-30 05:41	V-169: C-91 tropical peat soil end members on v2_p8f, values of the global run g2_o7t; vs v2_p9f
+83	done	paper_v2/v260930/sp_v2_c91	v2_p9gm	v2_p8gum	5	swamp	-	node114	09-30 04:41	09-30 05:01	V-170: BW-Gum as a permanent papyrus wetland patch (landtype 11, river-fed pond target 0.2 m, emergent share 1) instead of grassland plus seasonal flood; vs v2_p9f
+84	done	paper_v2/v260930/sp_v2_c91	v2_p9lg	v2_p8lg	5	all	-	node112	09-30 04:53	09-30 06:43	V-172: footprint LAI caps from tower GPP (lai_from_gpp.py, model k 0.32) at 19 towers on v2_p8f; vs v2_p9f
+85	done	paper_v2/v260930/sp_v2_c96	v2_p9sa	v2_p8salt	5	salt	-	node114	09-30 05:10	09-30 05:44	V-173: C-96 measured nitrate at five salt-marsh towers and DE-Hte as fresh rewetted peat with standing water; vs v2_p9f
+86	done	paper_v2/v260930/sp_v2_c96	v2_p9i	v2_p8i	5	all	-	node110	09-30 05:23	09-30 07:17	V-174: next site base = v2_p8h (V-161) + BW-Gum (V-170) + the global-only mechanisms C-14, C-41, C-65 (site-global consistency) + no C-77 cover at 7 marsh towers (Q-64); vs v2_p9f, v2_p9h, v2_p9gm
+87	done	paper_v2/v260930/sp_v2_c96	v2_p9j	v2_p8j	5	warm	-	node111	09-30 05:47	09-30 06:31	V-175: v2_p8i + C-95 rice second season (15 d) + burial US-WPT 0 (tower years a net C source) and US-Tw5 0.25 (Q-64); vs v2_p9i
+88	done	paper_v2/v260930/sp_v2_c96	v2_p9ex	v2_p8ex	5	wet	-	node114	09-30 06:13	09-30 07:28	V-176: root_exudate_frac 0.15 -> 0.30 on v2_p8i (fresh-carbon share, seasonal amplitude; Q-64); vs v2_p9i
+89	done	paper_v2/v260930/sp_v2_c96	v2_p9k	v2_p8k	5	all	-	node111	09-30 06:50	09-30 08:37	V-178: candidate site base = v2_p8j (V-174 + V-175) + DE-Hte as fresh rewetted peat (V-173); 77 towers; the reference for later screens
+90	done	paper_v2/v260930/sp_v2_c96	v2_p9kn	v2_p8kn	5	swamp	-	node112	09-30 06:50	09-30 07:10	V-179 diagnostic: v2_p8k with C-14 and C-41 off, floodplain towers BR-Npw and BW-Nxr (Q-72); vs v2_p9k
+91	done	paper_v2/v260930/sp_v2_c96	v2_p9lm	v2_p8lm	5	peat	-	node112	09-30 07:15	09-30 07:54	V-180: FI-Lom moss-carpet share 1 -> 0.57 (patchy moss cover 57 %, Aurela et al. 2009, site_facts.csv:636) on v2_p8k; vs v2_p9k
+92	done	paper_v2/v260930/sp_v2_c96	v2_p9kna	v2_p8kn	5	all	-	node110	09-30 07:22	09-30 09:18	V-181: v2_p8k without C-14 and C-41 on all 77 towers (the upland and floodplain towers lost most of their CH4 to them in V-174); vs v2_p9k
+93	done	paper_v2/v260930/sp_v2_c96	v2_p9ex25	v2_p8ex25	5	wet	-	node114	09-30 07:30	09-30 08:46	V-182: root_exudate_frac 0.25, upper end of the literature range 0.10-0.25 (Q-73), on v2_p8i; vs v2_p9i and v2_p9ex (0.30)
+94	done	paper_v2/v260930/sp_v2_c96	v2_p9ks10	v2_p8k	10	wet	-	node112	09-30 07:59	09-30 09:19	V-183 robustness: the candidate base v2_p8k with 10 spin-up cycles instead of 5 on the wet towers; is the base at equilibrium; vs v2_p9k
+95	done	paper_v2/v260930/sp_v2_c96	v2_p9q20	v2_p8q20	5	wet	-	node110	09-30 08:07	09-30 09:24	V-184: temperature structure on the new base: q10methane 2.0, local and unfrozen-season baseline, weight 0.5, q10lake 2.0 (L-19 option 1, as V-103 on the old tree); vs v2_p9k
+96	done	paper_v2/v260930/sp_v2_c96	v2_p9q27	v2_p8q27	5	wet	-	node111	09-30 08:07	09-30 09:11	V-185: as V-184 with q10methane 2.7 (seasonal CH4:CO2 0.71 eV, L-19 median); vs v2_p9k
+97	done	paper_v2/v260930/sp_v2_c96	v2_p9m	v2_p8m	5	all	-	node111	09-30 09:12	09-30 10:50	V-187: site base v2_p8k + root_exudate_frac 0.25 (V-182) + FI-Lom moss share 0.57 (V-180) + tower crops at US-Bi1, US-Bi2, US-Tw3 (C-102) + US-A10 measured air temperature in the data (C-101); 77 towers; vs v2_p9k
+98	done	paper_v2/v260930/sp_v2_c104	v2_p9n	v2_p8n	5	all	-	node110	09-30 11:29	09-30 13:07	V-189: site base v2_p8m + C-104 Walter normalization fix; 77 towers; vs v2_p9m
+99	done	paper_v2/v260930/sp_v2_c104	v2_p9o	v2_p8o	5	peat	-	node110	09-30 15:48	09-30 16:32	V-191: FR-LGt water-table floor 0.25 m (drained by a road ditch, tower summer water table 0.17-0.32 m; diag_peat_high_260930) on v2_p8n; vs v2_p9n
+100	done	paper_v2/v260930/sp_v2_c105	v2_p9p	v2_p8p	5	all	-	node110	09-30 18:07	09-30 19:44	V-194: site base v2_p8o + C-105 key 2 (C-14 on the flooded subcolumn only); 77 towers; vs v2_p9n and v2_p9o
+101	done	paper_v2/v260930/sp_v2_c105	v2_p9pc	v2_p8pc	5	boreal	-	node111	09-30 18:11	09-30 18:58	V-195: v2_p8p + C-99 perched water table on the ice (Q-85, US-Uaf table 1.1-2.1 m vs tower 0.1-0.2 m); peat and tundra; vs v2_p9p
+102	done	paper_v2/v260930/sp_v2_c105	v2_p9pz	v2_p8pz	5	peat	-	node112	09-30 18:13	09-30 18:51	V-196: v2_p8p + tower pond targets DE-Zrk 0.23 m, FI-Lom 0.03 m (Delwiche 2021 Table B2 tower-scale annual water level; Q-85); peat; vs v2_p9p
+103	done	paper_v2/v260930/sp_v2_c105	v2_p9pu	v2_p8pu	5	peat	-	node111	09-30 19:03	09-30 19:39	V-197: v2_p8p + US-Uaf bog share 1 (floor 0.20 m on the rain-fed share; tower water table 0.10-0.18 m, Delwiche 2021 Table B2; Q-85); peat; vs v2_p9o
+104	done	paper_v2/v260930/sp_v2_c105	v2_p9q	v2_p8q	5	all	-	node110	09-30 19:45	09-30 21:25	V-199: next site base v2_p8p + V-196 fen ponds + global-adopted C-97 grass share and root profile + k_m_unsat 1.5e-4 (Q-82, V-190); 77 towers; vs v2_p9p
+105	pending	paper_v2/v260930/sp_v2_c105	v2_p9r	v2_p8r	5	boreal	-	-	-	-	V-200: v2_p8q + C-60 prod_fliq_off (frozen layers not multiplied again by the liquid fraction; Q-27 item 4); peat and tundra; vs v2_p9q

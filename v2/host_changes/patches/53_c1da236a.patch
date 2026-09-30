@@ -1,0 +1,65 @@
+From c1da236a0131173d23325d2e753983a03eeaac4b Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 21:07:06 +0800
+Subject: [PATCH] feat(thermal): pond litter resistance under the canopy only
+ on a tower wetland
+
+With DEF_WETLAND_FVEG_SITE a tower wetland patch averages a canopy part with open ground, and the bare-ground fluxes of step [3] are the open part. The litter floor of DEF_WETLAND_POND_LITTER_RSS belongs under the emergent canopy (Goulden et al. 2007: 8-21 s/m over open water), so step [3] now takes rss_open, the surface resistance with the moss floor only, while the canopy part keeps rss. rss_open equals rss unless the litter key is on, the patch is ponded and the vegetated fraction is between 0 and 1 with a canopy present.
+
+---
+ main/MOD_Thermal.F90 | 25 ++++++++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
+
+diff --git a/main/MOD_Thermal.F90 b/main/MOD_Thermal.F90
+index 23e8a925..f33a6472 100644
+--- a/main/MOD_Thermal.F90
++++ b/main/MOD_Thermal.F90
+@@ -498,6 +498,7 @@ CONTAINS
+    real(r8) :: raw_grnd_pc  ! ground to reference height resistance of the PC canopy [s/m]
+    real(r8) :: cond_grnd    ! fraction-weighted ground to reference height conductance [m/s]
+    real(r8) :: rss_min  ! floor of the snow-free soil surface resistance [s/m]
++   real(r8) :: rss_open ! soil surface resistance of the open ground of [3] [s/m]
+ 
+    ! canopy on a fraction of a tower wetland patch (C-83)
+    real(r8) :: fcan                        ! vegetated fraction of the patch [-]
+@@ -677,6 +678,28 @@ ENDIF
+          ENDIF
+       ENDIF
+ 
++      ! Tower wetland with a vegetated fraction (C-83): the pond litter lies
++      ! under the canopy only; the open water, the bare ground of [3] when the
++      ! canopy is solved in [4], evaporates without it
++      rss_open = rss
++      IF (DEF_RSS_SCHEME>0 .and. rss/=spval .and. (patchtype==2) .and. (wdsrf(ipatch) > 1.) &
++          .and. (DEF_WETLAND_POND_LITTER_RSS > 0.) .and. (fveg(ipatch) > 0.) .and. (fveg(ipatch) < 1.) &
++          .and. (lai+sai > 1e-6)) THEN
++         rss_min = 0.
++#ifdef TRACER
++         IF (DEF_USE_Dynamic_Wetland) &
++            rss_min = wetland_moss_rss(ipatch, zwt(ipatch), wdsrf(ipatch))
++#endif
++         CALL SoilSurfaceResistance (nl_soil,forc_rhoair,hksati,porsl,psi0, &
++#ifdef Campbell_SOIL_MODEL
++                            bsw, &
++#endif
++#ifdef vanGenuchten_Mualem_SOIL_MODEL
++                            theta_r, alpha_vgm, n_vgm, L_vgm, sc_vgm, fc_vgm, &
++#endif
++                            dz_soisno,t_soisno,wliq_soisno,wice_soisno,fsno,qg,rss_open,rss_min)
++      ENDIF
++
+ !=======================================================================
+ ! [3] Compute sensible and latent fluxes and their derivatives with respect
+ !     to ground temperature using ground temperatures from previous time step.
+@@ -686,7 +709,7 @@ ENDIF
+       ! Always CALL GroundFluxes for bare ground CASE
+       CALL GroundFluxes (zlnd,zsno,forc_hgt_u,forc_hgt_t,forc_hgt_q,forc_hpbl, &
+                          forc_us,forc_vs,forc_t,forc_q,forc_rhoair,forc_psrf, &
+-                         ur,thm,th,thv,t_grnd,qg,rss,dqgdT,htvp, &
++                         ur,thm,th,thv,t_grnd,qg,rss_open,dqgdT,htvp, &
+                          fsno,cgrnd,cgrndl,cgrnds, &
+                          t_soil,t_snow,q_soil,q_snow, &
+                          !taux,tauy,fseng,fevpg,tref,qref, &
+-- 
+2.53.0
+

@@ -1,0 +1,4 @@
+ID,obs_Syear,obs_Eyear,Source,IGBP,SITE_CLASSIFICATION,qair_floored_pct,SITE_wetland_class,SITE_ph,SITE_salinity
+BR-Npw,2013,2016,FLUXNET-CH4,WSA,Swamp,0.0,,,
+BW-Gum,2018,2018,FLUXNET-CH4,WET,Swamp,0.0,,,
+BW-Nxr,2018,2018,FLUXNET-CH4,GRA,Swamp,0.0,,,

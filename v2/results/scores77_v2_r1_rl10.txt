@@ -1,0 +1,12 @@
+# paper_v2/v260927f/sp_v2_o1 v2_r1_rl10: all 77 towers; KGE_ln / beta / alpha / r; means mg CH4 m-2 d-1
+site     class         n  KGEln   beta  alpha     r     obs   model
+IT-Cas   rice         21   0.47   0.79   0.72  0.66   90.65   71.58
+JP-Mse   rice         10  -0.10   1.36   1.65  0.07   45.01   61.20
+KR-CRK   rice         43   0.71   1.01   1.13  0.73  108.77  109.73
+PH-RiF   rice         23  -0.42   1.94   2.85  0.30   55.32  107.26
+US-Twt   rice         91  -0.16   1.59   1.78  0.11   46.42   73.97
+# unscored: AT-Neu (0 common months), BR-Npw (0 common months), BW-Gum (0 common months), BW-Nxr (0 common months), CA-SCB (0 common months), CA-SCC (0 common months), CH-Cha (0 common months), CH-Dav (0 common months), CH-Oe2 (<8 obs months), CN-Hgu (0 common months), DE-Dgw (0 common months), DE-Hte (0 common months), DE-SfN (0 common months), DE-Zrk (0 common months), FI-Hyy (<8 obs months), FI-Lom (0 common months), FI-Si2 (0 common months), FI-Sii (0 common months), FR-LGt (0 common months), ID-Pag (0 common months), IT-BCi (<8 obs months), JP-BBY (0 common months), JP-SwL (<8 obs months), MY-MLM (0 common months), NL-Hor (<8 obs months), NZ-Kop (0 common months), RU-Ch2 (0 common months), RU-Che (0 common months), RU-Cok (<8 obs months), RU-Fy2 (0 common months), SE-Deg (0 common months), US-A03 (0 common months), US-A10 (0 common months), US-Atq (0 common months), US-BZB (0 common months), US-BZF (0 common months), US-BZS (0 common months), US-Beo (0 common months), US-Bes (0 common months), US-Bi1 (0 common months), US-Bi2 (0 common months), US-CRT (0 common months), US-DPW (0 common months), US-EDN (<8 obs months), US-EML (0 common months), US-HRA (<8 obs months), US-HRC (<8 obs months), US-Ho1 (0 common months), US-ICs (0 common months), US-Ivo (0 common months), US-LA1 (0 common months), US-LA2 (0 common months), US-Los (0 common months), US-MAC (0 common months), US-MRM (0 common months), US-Myb (0 common months), US-NC4 (0 common months), US-NGB (0 common months), US-NGC (<8 obs months), US-ORv (0 common months), US-OWC (<8 obs months), US-Pfa (0 common months), US-Snd (0 common months), US-Sne (0 common months), US-Srr (0 common months), US-StJ (0 common months), US-Tw1 (0 common months), US-Tw3 (<8 obs months), US-Tw4 (0 common months), US-Tw5 (0 common months), US-Uaf (0 common months), US-WPT (0 common months)
+
+group          n  KGEln   beta  alpha     r
+all            5  -0.10   1.36   1.65   0.30
+rice           5  -0.10   1.36   1.65   0.30

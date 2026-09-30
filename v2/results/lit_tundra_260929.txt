@@ -1,0 +1,466 @@
+# lit_tundra_260929：湿苔原单位呼吸产甲烷率为何低于北方泥沼——文献调研
+
+- **日期**：2026.09.29-09:15
+- **读者**：下一会话
+- **来源**：文献线只读调研，承接 `v2/迭代账本.md` 的 Q-46、V-95、V-96（相关行 Q-26、Q-27、Q-31、Q-45、C-27、C-51、C-53、V-103）；四个只读子任务分读足迹与微地形（第 1 节）、机制（第 2 节）、其他模式（第 3 节）、温度敏感性（第 4 节），主会话抽核子任务的关键数与原句、读本树 `main/TRACER` 定第 5 节候选的消费点，并对第 6 节全部 DOI 重查 Crossref
+- **状态**：第 0 至 6 节成文；第 6 节所列 DOI 逐条查过 Crossref（2026-09-29）；第 5 节候选只到文献依据、改法与预期，未动代码与配置
+
+口径约定：塔上比值写 E/(Reco/2)，模式比值写 E/HR（排放占异养呼吸），文献比值照原文写 CH4/ER 或 CH4/Rh；百分数照原文，不换算碳与 CH4 质量。
+出处简写"作者 年 位置"，完整著录见第 6 节。"全文"指读了原文并给页码、表号或节号；"只读摘要"指只读到摘要；"转引"指数值取自另一篇的转述。
+
+## 0. 覆盖面
+
+1. 检索词（本地文本抽取 `data/_tmp/分析_260926_苔藓蒸发阻抗/txt/` 共 721 个文件，另有子任务对 `docs/refs/observations/` 与网络 PDF 做的 pdftotext；不分大小写）：
+   - 足迹与微地形：inundat、surface water、standing water、ponded、footprint、fraction、proportion、cover、polygon、low-/flat-/high-centred、trough、rim、tussock、hummock、hollow、lawn、elevation、relief、standard deviation、LiDAR、water table。11 座塔（9 座苔原加 FI-Sii、SE-Deg）的站点文本共 70 个，逐个检索后读命中段；站点事实表 `scripts/sites/site_facts.csv` 取 11 塔 × 12 个变量（常年积水面积比例、微地形丘洼高差、活动层深度、水位均值与范围、孔隙水铁与硫酸盐、优势种、维管植物盖度、泥炭分界深度、水文地貌类型、永冻状态）。
+   - 机制：CO2:CH4、production ratio、anaerobic incubation、lag、Fe(III)、iron、humic、oxidation、isotope、brown moss、Scorpidium、high-affinity、sedge、moss、cold season、zero curtain、freeze、% of ER。本地读全文 22 份，网络读全文 9 份，网络只读摘要约 25 份。
+   - 模式：f_ch4、CH4:CO2、ratio、R0、MGO、Q10、tundra、permafrost、polygon、microtop、hummock、inundat、TOPMODEL、water table；CTSM 源码另查 q10ch4、finundat、perch、highlatfact。本地模式文本主读 18 份，另由三个下级子任务读 52 份（LPJ 家族 13、ORCHIDEE/JULES/ISBA/CLASS-CTEM/ICON-XPP/WetCHARTs 21、联网多边形方案 18）。
+   - 温度：Q10、activation energ、Arrhenius、temperature sensitiv、acclimat、hysteres、eV、Tmean。20 组苔原与北方站点文本检索后 46 个文件至少命中一次，其中只有 5 篇给出站内 CH4 的 Q10 或指数系数（Rinne 2007、Rinne 2018、Alekseychik 2021、Hashemi 2021、Zona 2016），其余命中是 CO2 呼吸的 Q10。
+2. 范围：`docs/refs/{sites,models,reviews,observations}`；`scripts/sites/site_facts.csv`；CTSM 源码与参数文件（`~/mode/Wetland/CTSM`、`~/mode/Wetland/v1/CLM_params`）；本树 `main/TRACER`（只读码，定消费点）；网络：Copernicus、Frontiers、MDPI、PMC、Europe PMC、OpenAlex、NSF PAR、OSTI、机构仓储、Crossref。
+3. 主会话逐字抽核过的项（均与子任务所记一致）：Treat 2015 Results 的四处原句（苔原与北方 CO2:CH4 中位 7 与 387、冻土有无 "nearly double"、Q10 中位 1.18、淹水样滞后 <20 d）；Olefeldt 2013 表 1 全表（p. 595）；Yvon-Durocher 2014 p. 490 两处原句与扩展数据图 2 面板 b、e 的回归式；Zona 2016 p. 41–42 三处原句与冷季份额；Davidson 2017 p. 10 足迹原句；Xu 2016 图 2 图注；Sturtevant 2012 p. 1430–1431 淹水份额原句；Hashemi 2021、Rinne 2018、Wille 2008 表 1 的 Q10；Zhuang 2004 表 1；Chadburn 2020 的 0.55 与 0.53 eV 原句；Riley 2011 两处原句；Knoblauch 2018 的 0.92 ± 0.18 与 635 ± 620 d；Treat 2018 的 42 % 与 16 %；Lipson 2013、Throckmorton 2015、Galera 2023、Miller 2015、Miller 2019、Knoblauch 2015、Christensen 1996、Grant 2017b、Wang 2022、Xu 2016、Hicks Pries 2013 的摘要（OpenAlex 或 Europe PMC 取回原文）；FLUXNET-CH4 站名 "RU-Ch2 Chersky reference"（Delwiche 2021 数据引文）。
+4. 读法：子任务读全文的条目，数值与原句由子任务摘录，主会话抽核见上条；未抽核的条目照子任务所记的页码与读法标注。
+5. 尝试而读不到全文（按"只读摘要"或"转引"标出，不当全文用）：Zona 2016 补充材料（pnas.org 返回 403、PMC 验证码）；Lara 2015、Wainwright 2015、Engstrom 2005（出版社 403，区域份额改用 Lara 2020 与 Dengel 2021 的转引）；Sachs 2008、Jackowicz-Korczyński 2010、Lipson 2010、Lipson 2013、Throckmorton 2015、Knoblauch 2015、Herndon 2015 两篇（Wiley 被 Cloudflare 挡）；Christensen 2003、Knox 2021、Ström 2012（付费）；Grant 2017b 补充材料（甲烷方程与 Q10）；一篇 1985 年的草丘高度实测文（Taylor & Francis 返回 403，著录未能核，不列入第 6 节）；Hubbard 2012（Raz-Yaseef 2017 转引"约 1 m"的出处，未检到该篇）。
+6. 未看：无。
+7. 检索有结果但为零：Degerö、Lompolojänkkä、Mer Bleue 的塔级 CH4 表观 Q10；Imnavait、Atqasuk、Ivotuk 的单站 CH4 Q10；US-A03、US-A10、US-NGB 塔足迹的湿干面积份额；巴罗从融雪到夏末淹水面积的逐日曲线；Eriophorum vaginatum 草丘高度的同行评审实测；逐站对比苔原与北方泥沼产甲烷菌丰度的定量研究；ATS 与甲烷耦合、跑在多边形上的论文。
+8. 不入项：Liljedahl 2016（冰楔退化与苔原水文，检索命中，但无足迹份额与甲烷数）。
+9. 存疑：
+   - ① 模式巴罗两塔的淹水份额 0.84–0.94 与"水位离地表 0.01–0.03 m"按 σ = 0.11 m 的正态式对不上：水位在地表下 0.01–0.03 m 时 Φ(h/σ) 只有 0.39–0.46，在地表上时 0.54–0.61；要得 0.84–0.94，水面须在微地形均值以上 0.11–0.17 m。读码：方案 8 的动态湿地在积水 wdsrf > 0 时以积水深定水面（`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90` 第 874–884 行，本树 HEAD `a01c6451`），而宿主的 zwt 只按液态水取，冰封表层下会落到地面以下。推测是夏季积水 0.1–0.2 m 与液态水位 1–3 cm 并存，要读 US-Beo、US-Bes 的月均 wdsrf 才能定。——存疑
+   - ② Herndon 2015 Biogeochemistry 称溶解 CH4/CO2 与溶解 Fe(III) 占比正相关（子任务只见 OSTI 页转述），与 Lipson 2012、Miller 2015 的负相关相反；原文读不到。——存疑
+   - ③ Raz-Yaseef 2017 称 US-NGB 埂顶到槽底约 1 m（转引 Hubbard 2012），而 Hubbard 2013 样线全幅 0.71 m、Kumar 2016 样区全幅 0.4–0.6 m；原出处未检到。——存疑
+
+## 1. 塔足迹的湿干份额与微地形
+
+湿指湿薹草草甸、低心多边形的中心与槽、积水面；干指高心、平心、埂、草丘与地衣石楠。
+
+### 1.1 逐塔
+
+- US-Beo：塔周 300 m 圆内湿薹草草甸 39.8–47.1 %，中湿薹草禾草杂类草草甸（平心加埂）38.8–52.5 %，干地衣石楠（高心）3.8–19.2 %，水面 0–2.2 %（四种分类法的范围）——已验证（Davidson 2017 表 3，p. 10，全文；原句 "covered by about 50% of mesic sedge-grass-herb meadow and 42–47.1% of wet sedge meadow tundra, and only 3–10% dry lichen heath"）。低心、槽与排干湖盆的水位在地表或以上，高心、平心与埂水位最深——已验证（Davidson 2016 p. 1123，全文）。
+- US-Bes：湿薹草草甸 62.7–66.1 %，中湿草甸 22.0–29.3 %，干地衣石楠 5.1–12.2 %，水面 0–3.4 %——已验证（Davidson 2017 表 3，全文）。2009 年夏末按水位与 DGPS 地形算得的淹水份额：南段（对照）86 %、北段（灌水）82 %；9 月 9–21 日北段 90 %、中段（排水）67 %——已验证（Sturtevant 2012 第 4.1 节，p. 1430–1431，全文；原句 "approximately 82 % of the surface was inundated in the North section compared to 86 % in the South section"）。该站 "the water table was on average above the surface for the entire measuring period"——已验证（Zona 2016 p. 42，全文）。
+- US-Atq：草丘苔原 63.5–83.9 %，湿薹草 12.6–32.5 %，水面 2.0–4.0 %——已验证（Davidson 2017 表 3，全文）；台地上丘状 21 %、丘间 79 %——已验证（Davidson 2016 p. 1120，全文）；淹水份额"最佳估计" 10–30 %——已验证（Xu 2016 图 2 图注，全文；估法正文未写）。
+- US-Ivo：非沙质草丘苔原 44.4–59.9 %，灌木薹草草丘 18.3–46.5 %，湿薹草 1.2–24.0 %，水面 0–1.5 %——已验证（Davidson 2017 表 3，全文）；"the highest emissions from IVO with <5% inundation"——已验证（Zona 2016 p. 42，全文）；Xu 2016 估 5–25 %——已验证（图 2 图注，全文）。
+- US-ICs：200 m 足迹 "52% wet sedge, and 47% tussock tundra, with the balance being made up of open water and bare soil"——已验证（Euskirchen 2012 p. 3，全文）；Xu 2016 估 Imnavait 淹水 5–25 %——已验证（图 2 图注，全文）。
+- US-NGB：塔足迹份额未见，塔论文原句 "no attempt was made in classifying each individual footprint"；塔北以低心多边形为主，南与西以平心、高心为主——已验证（Dengel 2021 第 2.1、2.2.4 节，全文）。NGEE 样区 A（低心）中心 35 %、埂 24 %、槽 41 %；样区 B（高心）中心 39 %、埂 21 %、槽 40 %——已验证（Kumar 2016 p. 2243–2244，全文）。按"低心中心与槽饱和、高心中心排水"归，A 区湿约 76 %、B 区约 40 %——推测。
+- US-A10：塔足迹份额未见。按坐标（71.32° N、156.61° W）与 Hashemi 2021 的 US-Brw、Zona 2016 的 CMDL 为同一地点——推测；US-Brw 原句 "a moist upland tundra containing the driest soils"，足迹 WorldView NDWI 均值 Brw −0.204、Beo −0.144、Bes −0.079——已验证（Hashemi 2021 第 2 节，全文）；Zona 2016 把 CMDL、ATQ、IVO 列为最干的三站——已验证（p. 42，全文）。
+- US-A03：塔足迹份额未见；四篇本地 PDF 只有 Prudhoe Bay 区域的定性描述——已验证（站点事实表"常年积水面积比例"行）。
+- RU-Ch2：塔号归属按对照塔。FLUXNET-CH4 数据引文的站名为 "RU-Ch2 Chersky reference"——已验证（Delwiche 2021 参考文献与站表）；Göckede 2019 写 "RU‐Che (drainage), RU‐Ch2 (control)"——已验证（第 2.1 节，全文）；Kittler 2017 写反（"RU-Che for the control site and RU-Ch2 for the drained site"）——已验证（第 2.1 节，全文）。对照区原句 "predominantly inundated surfaces in the undisturbed sections"，融雪期积水可达 0.5 m——已验证（Göckede 2019 第 2.1 节，全文）；对照区 10 口井 8 口判为湿（2017 年 6–9 月平均水位高于 −0.138 m）——已验证（Raab 2024 表 A1，p. 2588，全文；井点比例，不是面积比）。
+
+### 1.2 北方泥沼对照
+
+- FI-Sii：原句 "The site has a relatively flat topography with no pronounced string and hollow structures"——已验证（Rinne 2007 p. 450，全文）。
+- SE-Deg：坪（lawn）占涡度足迹 85–95 %——已验证（Noumonvi 2025 第 2 节，全文）；"lawn and hollow microforms (76 % of the footprint area)"——已验证（Nijp 2026 第 2 节，全文）；丘位水位 −25 至 −35 cm、坪位约 −5 cm——已验证（Noumonvi 2025 第 3.2 节，站点事实表转录）。
+- 两塔足迹淹水份额的实测未见（见第 0 节第 7 条）。
+
+### 1.3 区域份额
+
+- 巴罗半岛（不含湖与河）：低心 34 %、平心 24 %、高心 16 %、合并低心 11 %、排水坡 11 %、无纹理排干湖盆 3 %、热融塘 1 %——已验证（Lara 2020 p. 2，全文）。含湖的口径：低心与湖各约 24 %、平心 17 %、高心 11 %——已验证（Dengel 2021 第 1 节，转引 Lara 2015 与 Wainwright 2015）。
+- 勒拿三角洲 Samoylov 一级阶地：开阔水 15 %、长草水面 10 %、湿苔原 17 %、干苔原 58 %——已验证（Boike 2013 表 1，p. 2108，全文）；涡度足迹干 54 %、湿 37 %、水 9 %——已验证（Muster 2012 表 3，p. 9，全文）；多边形中心 45 %、埂 55 %——已验证（Kutzbach 2004 p. 343，全文）。
+
+### 1.4 微地形高差与 σ
+
+- PEAT-CLSM 的 σ = 0.11 m 是全球泥炭地统一取值，原句 "we subjectively combined the heterogeneous information about elevation variability and assumed a standard deviation of 0.11 m … slightly higher than the values reported in two of the studies of Table 1"；表 1 的两例实测 σ 为 Schechenfilz bog 0.06–0.09 m、Mer Bleue bog 0.07 m，11 项来源中 8 项 bog、2 项 fen、1 项复合体，没有冻土多边形或苔原；该文未启用冻土模块——已验证（Bechtold 2019 第 2.2.1 节与表 1，p. 2135–2137，全文）。
+- 巴罗：NGEE 四个样区全幅高程 0.4–0.6 m——已验证（Kumar 2016 表 1，全文）；BEO 样线 "71 cm range from 4.79 to 5.53 m"——已验证（Hubbard 2013，全文）；巴罗半岛多边形地貌 "low relief (<0.5 m)"——已验证（Lara 2020 p. 2，全文）。
+- Prudhoe Bay：低心多边形全幅约 0.4 m——已验证（Abolt 2018 第 2 节，全文）；埂或槽 "less than 50 cm of relief"——已验证（Abolt and Young 2020 p. 1，全文）。
+- Samoylov：埂比中心高约 0.5 m——已验证（Kutzbach 2004 p. 343，全文）；0.2–1.0 m——已验证（Muster 2012 p. 2，全文）；"rims 0.38 m above the centre"——已验证（Smith 2022 图 1 图注，p. 3605，全文）。
+- 模式里用的几何：ecosys 低心多边形脊比中心高 0.2 m、槽比脊低 0.2 m，面积中心 36 %、脊 28 %、槽 36 %——已验证（Grant 2017b 第 3.2 节，p. 3176，子任务全文）；ATS 巴罗子网格高程跨度 Δmax 高心 41.6 cm、中间 30.6 cm、低心 36.0 cm——已验证（Jan 2018 表 5，子任务读接受稿）。
+- 把全幅当约 4σ，多边形苔原的 σ 约 0.10–0.18 m，与 0.11 m 同量级——推测。差别不在 σ 大小，而在分布形状：高处（埂、高心、草丘）与低处（中心、槽）是两团，水面只在低处那团里升降；单峰正态围绕一个均值，水面一过均值就把高处也算进淹水——推测。依据是 Davidson 2016 p. 1123 分微地形的水位；Kutzbach 2004 与 Grant 2017b 的几何。
+
+### 1.5 淹水份额与水位的实测关系
+
+- 唯一找到的"水位加地形算淹水面积"实测是 Sturtevant 2012（第 4.1 节，全文）：2009 年 8 月 19 日南段水位 +2.5 cm（标准差 5.2）时淹水 86 %，北段 +9.9 cm（标准差 12）时 82 %；9 月北段模型延推 +16 至 +18 cm 时 90 %，中段 +1 至 +4 cm 时 67 %——已验证（Sturtevant 2012 第 4.1 节，p. 1430–1431，全文）。按正态反推 σ 在 0.02–0.14 m 之间且各段互不一致，说明井读数不是相对微地形均值，不能据此定 σ——推测。
+- 巴罗融雪后 "About 10 cm of water accumulated above the ground surface following snowmelt"，积水持续数周；2001、2008 年夏末再淹 "for at least half of the summer's duration"；2007 年干，水位低于 −15 cm——已验证（Liljedahl 2011 p. 3380，子任务全文）。
+- Samoylov 低心中心水位在地表上下约 10 cm 波动——已验证（Boike 2013 p. 2111，全文）；1999 年 8 月低心中心水位在地表下 0–4.5 cm——已验证（Kutzbach 2004 p. 349，全文）。
+
+### 1.6 与模式对照
+
+模式值取自账本 Q-46（苔原夏季 0.3–0.9，巴罗两塔 0.84–0.94，北方泥沼 0.15–0.2）与 Q-26（D-33 下 US-Atq 0.52、RU-Ch2 0.25）。
+
+- US-Beo：文献湿份额 0.40–0.47（加水面至多 0.02），模式 0.84–0.94，约高一倍——推测。理由：口径不同，分类面积对模式淹水份额。
+- US-Bes：湿年实测淹水 0.67–0.90、湿薹草 0.63–0.66，模式 0.84–0.94 落在湿年实测上沿——推测。
+- US-Atq：文献 0.10–0.33（淹水估计或湿薹草加水面），模式 0.52，高 1.5–5 倍——推测。
+- US-Ivo、US-ICs：文献淹水 <0.05 至 0.25，模式在苔原 0.3–0.9 区间内即偏高——推测。
+- RU-Ch2：文献以淹水为主、10 口井 8 口湿，模式 0.25 反偏低；账本 Q-26 已记模式的干湿次序与实际相反——推测。
+- 北方泥沼：足迹为均一坪面、水位略低于地表（第 1.2 节），模式 0.15–0.2 与之不矛盾——推测。
+- 小结：苔原淹水份额偏高集中在草丘苔原（ATQ、IVO、ICs）与高低心混杂的 BEO；湿年的 BES 与积水的 RU-Ch2 不偏高。这与 σ 取值关系不大，与"高处被当成同一正态分布的一部分"有关——推测。
+- 逐站比值再读（O-4 基线 `v2_oo4`，同月对比塔上 E/(Reco/2) 与模式 E/HR，%）：US-Atq 8–9 月塔 2.2、2.7，模式 9.3、7.5；US-ICs 6–9 月塔 1.1–1.7，模式 3.4–5.5；US-Ivo 6–7 月塔 1.4、2.0，模式 2.8、3.8，8–9 月塔 3.9、5.8，模式 4.6、3.4；US-NGB 6 月塔 2.8、模式 4.5，7 月塔 5.6、模式 4.7；US-Bes 7–9 月塔 13.0、7.4、4.7，模式 10.0、9.7、7.2；RU-Ch2 6–10 月塔 4.1–6.7，模式 4.1–5.7；US-A03 6–8 月塔 3.4–7.0，模式 3.2–6.3；US-Beo 塔上只有 9–12 月（3.3–6.6）；北方泥沼 FI-Sii 6–8 月塔 10.2–10.3、模式 4.7–5.1，SE-Deg 塔 10.0–12.1、模式 4.8–5.1——已验证（`v2/results/month_decomp_v2_oo4_tundra.txt`、`month_decomp_v2_oo4.txt`）。
+- 由上条：基线下模式比值偏高 2.5–4 倍的是草丘或偏干足迹的 US-Atq、US-ICs，以及 US-Ivo、US-NGB 的早夏；积水或湿薹草为主的 US-Bes、RU-Ch2、US-A03 与塔上相当（0.7–1.5 倍）；北方泥沼偏低约一半。塔上"苔原 1–7 %"的低端也正是 ATQ、ICs、IVO 早夏这几处——推测。V-96 的 C-51 把湿苔原类中位 β 由 1.27 抬到 2.57（约 2 倍，账本 V-95、V-96 行），开 C-51 后湿足迹的苔原塔也会偏高约 2 倍——推测。
+
+## 2. 苔原单位呼吸产率低于北方泥沼：文献解释
+
+### 2.1 直接对照的数与口径
+
+- 按生态系统类型的站点中位（Olefeldt 2013 表 1，p. 595，全文）：CH4 占 ER 湿苔原 2.7 %（48 站中 31 % 有 ER）、冻土 fen 6.3 %（34 %）、fen 8.7 %（65 站中 12 %）、bog 1.8 %（9 %）；5–25 cm 土温中位湿苔原 3.7 °C、fen 11.8 °C；CH4 通量中位湿苔原 64.5、fen 37.1 mg CH4 m−2 d−1；ER 中位 1.42、1.99 g C m−2 d−1——已验证（Olefeldt 2013 表 1，p. 595，全文）。湿苔原与 fen 之比 2.7/8.7 ≈ 0.31，与塔上苔原 1–7 % 对北方泥沼 8–10 % 同向——推测。
+- 苔原湿地单位面积并不低（上条通量中位；BAWLD-CH4 暖季按类站点中位 PermWet 74.1、Fen 58.0 mg CH4 m−2 d−1，账本 Q-31），差在分母呼吸与分子各自的构成——推测。
+- BAWLD-CH4 表 3 的中位：苔原湿地 CH4 65、fen 54 mg CH4 m−2 d−1，ER 1.4、1.93——已验证（Kuhn 2021 表 3，p. 5170，子任务全文；表中 ER 单位印作 g C m−2 yr−1，按数值应为每天）。中位比中位粗算苔原湿地约 3.5 %、fen 约 2.1 %，与 Olefeldt 方向相反；两个中位来自不同子集，综述层面这一差别不稳健——推测。
+- 按异养呼吸比例写排放的经验值：非森林湿地与湿苔原 "3±2% of heterotrophic respiration"——已验证（Christensen 1996 第 2.3 节 p. 654，子任务读扫描页；摘要证实 "CH4 emission as a proportion of HR"）。
+- FLUXNET-CH4 年尺度 CH4:ER 0.4–7.9 %，中位 2.8 %，沿地理温度梯度上升——已验证（Knox 2019 p. 2617–2618，子任务全文）。
+- 口径注意一（Reco/2 代 Rh）：阿拉斯加湿润酸性苔原 "Autotrophic respiration ranged from 40 to 70% of Reco"——已验证（Hicks Pries 2013，只读摘要）；Degerö 的 Ra/Rh 约 1.5，即 Rh 约为 ER 的 40 %——已验证（Rankin 2023 正文引 Järveoja 2018；Järveoja 2018 只读摘要，摘要无此数）。两处 Reco/2 都略高估 Rh，偏差量级相近，解释不了苔原与泥沼差一倍——推测。
+- 口径注意二（冷季）：非生长季排放占全年，苔原 42 %、北方 16 %——已验证（Treat 2018 p. 11，子任务读接受稿）；北坡五塔冷季（9–5 月）占 50 ± 9 %（BES 37 %、BEO 43 %、CMDL 64 %、ATQ 47 %、IVO 59 %）——已验证（Zona 2016 p. 42，全文）。塔与模式都取夏季比值，冷季份额本身不造成模式与塔的差；但若苔原夏季产量有一部分存在土中、到冻结期才释放（Zackenberg 冻结期排放积分约等于整个夏季，Mastepanov 2008，子任务全文；Zona 2016 称表层冻结后氧化被抑制，p. 42），塔上夏季 E/Rh 会低于夏季产量/Rh，而模式夏季偏高、冷季偏低（账本 Q-27）正与此同向——推测。
+
+### 2.2 厌氧 CH4:CO2、冻土与滞后
+
+- 泛北极厌氧培养：CO2:CH4 中位北方 387、苔原 7；湿地 19；最大产 CH4（按单位碳）北方与苔原无显著差（P = 0.12）；无冻土站约为有冻土站的两倍（原句 "nearly double"，P = 0.04）；有冻土站内冻土层 CO2:CH4 中位 1163、活动层 37；矿质土 11.6、有机土 19.0（P = 0.13）——已验证（Treat 2015 Results，全文）。
+- 同文：到最大产 CH4 的滞后，淹水或周期淹水样 <20 d，干样 >45 d；矿质土的滞后显著长于有机土；各培养温度之间滞后无差——已验证（Treat 2015 Results 与表 2，全文）。
+- 冻土矿质沉积物 4 °C 培养，滞后 635 ± 620 d（n = 60），之后 CO2:CH4 = 0.92 ± 0.18；滞后原因 "the absence of methanogens"——已验证（Knoblauch 2018 正文与方法，子任务读接受稿，数值主会话抽核）。
+- 厌氧产物中 CH4-C 约 5.7 %（95 % CI 2.7–8.7 %）——已验证（Schädel 2016 p. 951 与图 3，子任务全文）。
+- Samoylov 原位（剪草样方呼吸对比通量）：湿苔原 CO2:CH4 由 7 月初 95 降到 8–9 月约 10，全季中位 12.2（7.70–17.1）；产 CH4 随 40 cm 土温变、异养呼吸随 5 cm 土温变；湿苔原 CH4-C 占碳损失 6.91 %，干苔原 0.27 %——已验证（Galera 2023，只读摘要）。
+- 巴罗高心多边形：中心 mcrA 未检出、50 天内不产 CH4；槽的矿质层 +8 °C 下 CH4 占总碳损失 67 %——已验证（Roy Chowdhury 2021，子任务全文）。
+- 判读：苔原土单位厌氧碳的 CH4 产出不低于北方土，"苔原的固定比例 f 应更低"得不到培养的支持；培养支持的是冻土有无、滞后与矿质土差异——推测。
+
+### 2.3 底物质量（莎草与藓类）
+
+- 北坡四站样方：CH4 通量湿莎草 1.68、丛生莎草 0.46、纯藓 0.25、藓-地衣 0.00 mg CH4-C m−2 h−1；三类植被单项解释 54 % 的变异，加土壤湿度等多因子为 58 %；与 GPP、DOC 无关；原句 "CH4 production in these ecosystems is not usually limited by C input"——已验证（Davidson 2016 Results 与 Discussion，全文）。
+- 巴罗：原句 "CH4 production in this system is not limited by available carbohydrates"——已验证（Zona 2009 第 [29] 段，全文）。
+- Ivotuk：干样点维管盖度由 <10 % 升到 >10 % 时 CH4 由 0.35 升到 2.45 mg C m−2 h−1，湿样点只由 3.3 升到 4.69——已验证（McEwing 2015 p. 45，全文）。
+- 泛北极：莎草占优的样点在同样水位下通量更高、低温下也高；Sphagnum 覆盖无影响——已验证（Olefeldt 2013 p. 593–594，全文）。
+- Zackenberg 遮光同时压 ER 与 CH4——已验证（Joabsson and Christensen 2001，只读摘要）；Eriophorum 根际乙酸形成高于 Dupontia——已验证（Ström 2003，只读摘要）。
+- 判读：莎草对藓与地衣的差别，主要体现为足迹内湿莎草与草丘、藓、地衣的空间构成（第 1 节），不是苔原整体缺底物——推测。
+
+### 2.4 活动层、冻土顶板与冷温度剖面
+
+- 原句 "Sites with near-surface permafrost had lower CH4 fluxes than sites without permafrost at comparable water table positions, a difference that was explained by lower soil temperatures"；活动层深度与有机层厚度与 CH4 无关——已验证（Olefeldt 2013 摘要与 p. 596，全文）。
+- 站内季节的 CH4:CO2 通量比随温度上升，38 站中 35 站如此，平均活化能 0.71 eV（95 % CI 0.46–0.97）——已验证（Yvon-Durocher 2014 p. 490，全文）。若把这一站内关系搬到跨站，3.7 °C 对 11.8 °C 的比值差约 2.3 倍（exp[0.71/k × (1/276.85 − 1/284.95)]）——推测；同文明言站内关系不适用于跨站地理梯度（第 4.3 节），所以 2.3 倍只是上限。
+- 巴罗有机层产 CH4 的 Q10（+8 与 −2 °C 之比）中心 22、脊 5.6、槽 5.7，−2 °C 几乎不产——已验证（Roy Chowdhury 2015，子任务读 OSTI 接受稿）。
+- 勒拿三角洲涡度通量偏低（18.7 mg m−2 d−1），作者归因于冷冻土、底物受限与非淹水面积比例高——已验证（Sachs 2008，只读摘要）。
+
+### 2.5 产甲烷菌群落
+
+- 高北极泥炭 4 °C 产率为 25 °C 的 25 %；原句 "this methane-producing Arctic ecosystem has a lower temperature sensitivity than temperate/sub-Arctic ecosystems"；7 °C 以下限速步为互营丙酸氧化——已验证（Tveit 2015，只读摘要）。
+- 亚北极冻土泥炭里同型产乙酸竞争不过氢营养型产甲烷——已验证（Metje and Frenzel 2007，只读摘要）；反面：低温下同型产乙酸可与氢营养型竞争——已验证（Kotsyurbenko 2005，只读摘要）。
+- 逐站比较苔原与北方泥沼菌群丰度的定量研究未检出（第 0 节第 7 条）。
+
+### 2.6 氧化：被氧化的产量份额（模式巴罗 13–20 %，北方泥沼约 50 %）
+
+| 地点与情形 | 被氧化或减少的份额 | 状态 | 证据 |
+| --- | --- | --- | --- |
+| 巴罗 17 处流域排水道的孔隙水，冻土顶处产出的 CH4 | 好氧氧化 2.51 ± 0.82 %（7 月）、0.79 ± 0.79 %（9 月），多数经植物与冒泡绕过 | 已验证 | Throckmorton 2015，只读摘要 |
+| 巴罗泥炭离体培养，厌氧氧化潜力 | 估计消耗产量 25–34 % | 已验证 | Miller 2019，只读摘要 |
+| Samoylov 湿苔原 | 氧化使原位通量减少 10–31 % | 已验证 | Galera 2023，只读摘要 |
+| Lena 池塘，无维管植物处 | 61–99 % 在水下 Scorpidium 藓层被氧化；有挺水植物处植物传输占 70–90 % | 已验证 | Knoblauch 2015，只读摘要 |
+| 费尔班克斯苔原 | "about half of the CH4 production in tundra systems is oxidized" | 已验证 | Whalen and Reeburgh 1992 p. 155，子任务全文 |
+| 巴罗多边形序列 | 只给定性：退化高心中心与脊氧化最强，低心中心与槽最弱，作者不做定量 | 已验证 | Vaughn 2016，子任务全文 |
+
+- 干苔原是大气汇：Zackenberg 干苔原季节平均 −8.3 ± 3.7 µmol m−2 h−1，湿润苔原 −3.1——已验证（Juncher Jørgensen 2015，子任务只读摘要）；折合约 −3.2 mg CH4 m−2 d−1，是湿苔原夏季排放的几十分之一——推测。北纬 50° 以北旱地汇因高亲和力氧化菌加倍——已验证（Oh 2020，只读摘要）。
+- 判读：巴罗湿处的好氧氧化实测只有百分之几，模式的 13–20 % 不偏低；"苔原氧化太弱"不是产率偏高的原因——推测。
+
+### 2.7 铁与腐殖质等替代电子受体
+
+- 巴罗四个排干湖盆：Fe 氧化物净还原发生在夏季后半段，占 ER 的 40–45 %（有机层厚）与 61–63 %（有机层薄）；前半段可溶铁库逐渐还原，作者解释为腐殖酸还原——已验证（Lipson 2013，只读摘要）。
+- BES 所在湖盆：Fe 还原速率低处 28.0–36.4、高处 6.4–27.4 mmol Fe m−2 d−1；溶解 CH4 与可溶铁中 Fe3+ 占比负相关（R² = 0.406）；培养 CO2:CH4 几何均值低洼淹水处 30–100、高处 958–2118——已验证（Lipson 2012 第 3.4 节与表 5，全文）。
+- 野外加铁与腐殖酸后 CH4 净通量平均为对照的 0.74 倍；有机层越厚铁越少、CH4 越多、CO2:CH4 越低——已验证（Miller 2015，只读摘要）。
+- +8 °C 培养中 Fe 还原占 CO2 产量 7 %（中心有机层）至 44 %（矿质层）；有机层里产甲烷菌耗的乙酸约为铁还原菌的 4.5 倍，矿质层里反过来约 6 倍——已验证（Roy Chowdhury 2015，子任务读接受稿）。
+- 模式研究：原句 "With lower substrate availability, Fe(III) reduction decreased total CH4 production"——已验证（Sulman 2022，只读摘要）；Zheng 2019 在多边形土壤上得同一方向——已验证（子任务全文）。
+- 抑制持续多久：没有一篇直接给出"融化后第几天结束"；间接的是培养中 CO2:CH4 约 20 天内明显下降（Roy Chowdhury 2015）与原位 7 月初到 8 月的下降（Galera 2023）——已验证（出处同上条）。
+
+### 2.8 判断（与上面证据分开）
+
+1. 塔上苔原比值低有文献对应（Olefeldt 2013 湿苔原 2.7 %、fen 8.7 %），但厌氧培养里苔原土单位碳的 CH4 产出并不低，差距在野外尺度而不在"固定比例"本身——推测。
+2. 按证据强弱排的解释：（a）足迹里的高处（草丘、埂、高心、地衣石楠）照常呼吸却几乎不排放，站点差异大，量级约 0.3–0.75 倍（第 5.1 节算法），正对上基线下偏高的 ATQ、ICs（第 1.6 节）；（b）融化层的滞后与冷剖面：产甲烷所在的深层融得晚、冷，早夏 CO2:CH4 高达约 95，对上 IVO、NGB 早夏偏高与模式排放峰早一个月；（c）冻土本身：同温下单位碳最大产 CH4 约为无冻土的一半，在开 C-51 后成为湿足迹苔原塔需要的那一半；（d）北坡海岸平原薄有机层下的铁与腐殖质分流，量级约 0.55–0.75 倍，站点特异；（e）温度，但模式已带温度项，且 V-96 表明温度律分不开苔原与泥沼——推测。
+3. 不支持的方向：苔原氧化偏弱（巴罗 1–3 %）；苔原缺易分解底物（Davidson 2016、Zona 2009）——推测。
+
+## 3. 其他模式怎么处理苔原的湿地份额与产率
+
+### 3.1 要点
+
+- 没有一个模式按"苔原"标签单设产率系数。压低高纬产率的做法有四类：冷区单设比例系数（LPJ-wsl 北方 F_B 比热带 F_T 低 3–7 倍；TEM 的 MGO 按生态系统标定）；给产甲烷比例本身加温度依赖（CLM 在 22 °C 取 f_CH4 再乘 Q10 1.33；MPI 在 295 K 取 0.35、Q10 1.8）；北方单独的面积或通量乘子（LPX-Bern 北方泥炭面积 ×0.38、通量 ×0.75 后改 0.26；ORCHIDEE 北方卫星淹水 ×0.68）；北方单独标定（Bohn 2013 西西伯利亚北半部 rq10 中位 3.4、南半部 10.7）——已验证（各条出处见第 3.2 节）。
+- 按呼吸比例写排放的模式，比例低于 CoLM 苔原的 5–9 %：Christensen 1996 为 Rh 的 3 ± 2 %；ecosys 巴罗低心与平心多边形按面积加权 CH4/Rh 为 3.2 % 与 1.0 %——推测。由 Grant 2017b 表 4 相除，表值子任务读全文、主会话回原文核过。
+- 显式分微地形单元的模式里，甲烷几乎全部来自低处：ecosys 低处 4–6、高处 0.0–0.1 g C m−2 yr−1——已验证（Grant 2017b 摘要）；JSBACH 按 65 % 埂、35 % 中心混合，中心占排放的份额是埂的 6.8 倍——已验证（Kaiser 2017 p. 342，全文）。
+- 同一批塔上 CLM-Microbe 显式用 4 m 高程仍偏高：原句 "flux was overestimated at US-Brw, US-Atq, and US-Ivo due to the higher simulated CH4 flux in early growing seasons"；US-Atq 为观测的 2.4 倍——已验证（Wang 2022 摘要与表 3，子任务全文）。CLM4.5 在同批塔上用外部给定淹水份额（Barrow 60–100 %、Atqasuk 10–30 %、Ivotuk 5–25 %），反而低估 6–7 月——已验证（Xu 2016 图 2 图注与 p. 5050，全文）。
+- 除 PEAT-CLSM 与 CLM5 地表积水外，没有模式用"水位加高程正态分布 σ"算淹水份额；CLM5 地表积水的 σ 在平地约 0.4 m（σ_max = 0.4，η = −3）——已验证（CTSM 技术手册 Hydrology 式 7.68，读码）。
+
+### 3.2 逐模式
+
+| 模式 | 淹水或湿地份额 | 产率比例，是否分区 | Q10 与基准温度 | 多边形或微地形 | 出处（读法） |
+| --- | --- | --- | --- | --- | --- |
+| CLM4Me/CLM4.5/CLM5 | 卫星反演 TWS 或 ZWT；ZWT 反演优先用冻土顶托水水位；非淹水部分水位取冻结饱和层之上；纬度 ≥ 45° 地表径流滞后加倍（highlatfact = 2） | f_CH4 = 0.2 × Rh；季节淹水因子 S（β = 0.2）；不分区 | 附加 1.33（与分解 1.5 合成约 2），基准 22 °C；f 上限 0.5 | 无；Riley 2011 明言不含丘洼 | Riley 2011 式 2、式 11；CTSM `ch4Mod.F90` 第 1843–1847、2514–2527、2574–2576、4193–4200 行；参数文件（读码与全文） |
+| ELM 默认与 ECA | 同 CLM；ECA 在北坡塔上用 Xu 2016 的外部淹水份额 | 0.2 | 分解 Q10 标定 BES 2.0、BEO 2.5 | 无 | Tao 2021（子任务全文） |
+| ELM-SPRUCE、ELM-Wet | 丘洼两列 75/25、高差 0.3 m；Wet 为湿地地块 | Xu 2015 微生物模块；Wet 标定 f 0.11–0.50 | 2.0；Wet 1.93–2.67 | 丘洼两列，甲烷只差 "slight differences" | Ricciuto 2021 p. 7、p. 10；Shi 2015 p. 6466；Yazbeck 2025 表 2（全文） |
+| CLM-Microbe | 手工给定（低处 0.99） | 微生物模块 | 未读到 | 7 类单元或 4 m 网格；Brw、Atq、Ivo 仍高 1.6–2.4 倍 | Wang 2019（手稿全文）；Wang 2022（全文） |
+| ecosys | 侧向水与雪重分配直接算 | 发酵菌与两类产甲烷菌种群，无固定比例 | 在补充材料，未读到 | 中心、脊、槽 36/28/36 %，高差各 0.2 m | Grant 2017a、2017b（子任务全文） |
+| ATS | 子网格体积–水深三次式 | 无甲烷 | — | Δmax 30.6–41.6 cm | Jan 2018、2020（子任务全文） |
+| LPJ-wsl | TOPMODEL 加 F_max 卡顶加冻融折减 | 0.03 × F × Rh；F_B 0.025（Hodson）或 0.049（WETCHIMP），F_T 0.175 或 0.152 | 只经 Rh 的 Lloyd–Taylor，基准 10 °C | 无 | Zhang 2016；Hodson 2011；Wania 2013（子任务全文，主会话核原句） |
+| LPJ-WHyMe | 处方泥炭图加单一水位 | CH4/CO2 0.1（7 站最优 0.1–0.3），不分区 | Lloyd–Taylor | WETCHIMP 中丘洼各跑一次 | Wania 2010 表 4、表 7（子任务全文） |
+| LPX-Bern | 45° N 以北全算泥炭，面积 ×0.38；DYPTOP 冻土顶托水，苔原年最大淹水约 25 % | 北方泥炭 25 → 20 → 10 %；淹水湿地 2.4–5.4 %；湿矿质土 0.5–0.7 % | Lloyd–Taylor | 全局乘子 0.75，WETCHIMP 改 0.26 | Spahni 2011 表 1 与第 3.1 节；Stocker 2014（子任务全文，主会话核表 1） |
+| LPJ-GUESS | 泥炭地块（PEATMAP） | 先验 0.085，14 站联合标定 0.14，不分区 | 未读到（在补充材料） | 无 | Kallingal 2024、2025（子任务全文） |
+| ORCHIDEE-WET | 卫星淹水 × 纬带系数（北方 0.68）或去偏 TOPMODEL | a0 按纬带或植被型分三套 | Walter 式，零点为站点年均温；Q10 2.6/3.2/1.2，后统一 3 | 两个水位类 | Ringeval 2010、2011、2012（子任务全文） |
+| ORCHIDEE-PEAT | 泥炭次网格加预报水位 | 有氧分解 ÷ 9.6，高纬站标定值更低 | 未读到 | 无 | Salmon 2022（子任务全文） |
+| JSBACH | 含水量 ≥ 90 % 田间持水量定水位；TOPMODEL χmin = 12 | 水位下分解碳的 0.5 | 只经分解 | 埂与中心分跑，65/35 混合 | Kaiser 2017 p. 335–336、342；Castro-Morales 2018 p. 2694（全文） |
+| MPI（Kleinen 2020）、ICON-XPP | TOPMODEL 加冻结缩面积 | 0.35 → 0.24，另乘厌氧分解系数 0.35 | f 自带 Q10 1.8 → 1.2，基准 295 K | 无 | Kleinen 2020 p. 577–578；Wilkenskjeld 2025（子任务全文） |
+| JULES | TOPMODEL 加 Λ 阈值，冻结加权 | k × fw × Cs，不分区 | Q10(T) = Q10(T0)^(T0/T)，T0 = 273.15 K，Q10(T0) 3.7（3.0–4.7） | 两块方案：多边形站 +0 至 9 % | Gedney 2004、2019；Parker 2022；Smith 2022（子任务全文） |
+| JULES-HIMMELI | 站点实测水位 | fm 0.5 → 0.063–0.257（六站无苔原） | 活化能形式 | 无 | Gao 2025 表 4（子任务全文） |
+| TEM | 处方湿地图 | MGO 按生态系统：高山苔原 0.45、湿苔原 1.0、北方湿地 1.3 mmol L−1 h−1；NPPMAX 150 对 250 | PQ10 3.5/4.0/4.5，TPR 3.0/5.5/10.0 °C | 无 | Zhuang 2004 表 1（全文，主会话核表） |
+| WetCHARTs | GLWD 或 GLOBCOVER × SWAMPS | s × Rh，全局 | q10 取 1、2、3 | 无 | Bloom 2017（子任务全文） |
+| CLASS-CTEM | 平坦份额 × 湿度斜坡，阈值分纬带 | αw δs = 0.061（净值），全局 | Rh 的 Q10 | 无 | Arora 2018（子任务全文） |
+| ISBA | 苔原站强制 10 cm 以下饱和，原句 "the saturated soil is the result of some microtopographic features" | 有氧分解 ÷ 10 | 分解 Q10 = 2，锚 30 °C；Q10 2 → 6 时 Zackenberg 通量降 85 倍 | 以强制饱和代替 | Morel 2019 p. 318（子任务全文） |
+| Christensen 1995、1996 | 单柱；1996 用处方面积 | 1995 与呼吸无关；1996 为 Rh 的 3 ± 2 %，森林湿地 1.5 % | 1995 Q10 = 2、基准 2 °C | 无 | Christensen and Cox 1995 p. 303；Christensen 1996 p. 654（子任务读扫描页） |
+| Walter and Heimann 2000、Walter 2001 | 处方湿地加水位模型 | R0 按站标定（阿拉斯加苔原 0.30、芬兰 0.34、密歇根 0.60 µM h−1） | Q10 = 6，零点为站点年均土温 | 无 | Walter and Heimann 2000 式 5 与表 2 p. 748–752；Walter 2001（全文） |
+| Cresto Aleina 2013、2015 | Voronoi 多边形；gamma 高程分布 | 固定排放系数；R0 = 0.3 | Q10 = 6 | 有；泥沼上微地形使累计通量约 3 倍 | Cresto Aleina 2013（子任务全文）；2015（全文） |
+| Bohn 2013 | 脊洼离散分布，总跨 70 cm，脊份额 0.5 | r0 南北相近 | rq10 北 3.4、南 10.7 | 脊洼 | Bohn 2013 附录 A 与表 3（全文） |
+| PEAT-CLSM | 正态高程 σ = 0.11 m | 无甲烷 | — | 无苔原 | Bechtold 2019（全文） |
+
+### 3.3 对 CoLM 可借鉴的点
+
+1. 多边形与草丘苔原上，显式模式都把高处与低处分开，高处甲烷近零；单峰正态加一个 σ 的做法只在泥沼上有先例——推测。依据是第 3.1 节第 3 条与第 1.4 节。
+2. 分单元本身对通量的改变有限（JULES 两块方案 +0 至 9 %，CLM-Microbe 分网格后仍偏高），问题更多在"高处的面积份额"与"早季产量"——推测。依据是 Smith 2022；Wang 2022。
+3. 按冷区或冻土单设系数在 LPJ-wsl、LPX-Bern、ORCHIDEE、TEM、Bohn 2013 都有先例，但都是按区域通量或反演标定，不是按机制——已验证（第 3.2 节各行）。
+4. 铁还原分流只在 ELM 的研究版（Sulman 2022、Zheng 2019）里出现，全球模式都没有——已验证（第 3.2 节与第 2.7 节）。
+
+## 4. 温度敏感性
+
+### 4.1 站内季节的表观 Q10：苔原与北方泥沼
+
+| 站或研究 | 类型 | Q10 或系数 | 温度变量与时段 | 出处（读法） |
+| --- | --- | --- | --- | --- |
+| Samoylov | 苔原 | 3.93 ± 0.50（Tref 1.94 °C） | 湿多边形中心 20 cm 土温，2003–04 无雪期日均 | Wille 2008 表 1（全文，主会话核） |
+| US-Beo / US-Bes / US-Brw | 苔原 | 4.6 / 4.2 / 3.1 | 土温周均，2014–17，层位正文未写 | Hashemi 2021 第 3.4 节（全文，主会话核） |
+| 北坡五塔合并 | 苔原 | 0 → 5 °C 升 2.7 倍（折 Q10 约 7.3，推算） | 土温，2013–14 | Zona 2016 p. 41（全文，主会话核） |
+| Zackenberg | 高北极苔原 | b = 0.06–0.71 °C−1，逐年差异极大 | 10 cm 土温，2007–10 | Mastepanov 2013 表 3（子任务全文） |
+| Seida | 亚北极苔原 | 2.4 | 25 cm | 转引 Rinne 2018 表 5 |
+| Stordalen | 亚北极冻土泥沼 | 3.3–5.3 | 3 cm | 转引 Rinne 2018 表 5 |
+| FI-Sii | 北方泥沼 | 5.3（年值 3.8–12）；用 5 cm 土温为 3.1 | 35 cm，2005–15 日均 | Rinne 2018 第 3.3、4.2 节（全文，主会话核） |
+| FI-Sii 2005 | 北方泥沼 | b = 0.25 °C−1（折 Q10 约 12），只拟合 T < 12 °C | 35 cm，日均 | Rinne 2007（全文） |
+| FI-Si2 | 北方 bog | 4.91（4.43–5.39） | 20 cm，2011–16 | Alekseychik 2021 表 3（子任务全文） |
+| 71 个湿地合并箱式 | 泥沼为主 | 深层/表层：bog 15.8/2.6，poor fen 4.1/1.7，rich fen 3.2/2.0 | >20 cm / 0–5 cm | Turetsky 2014 表 2（子任务全文） |
+
+- 苔原塔 2.4–4.6、北方泥沼塔 3.1–5.3，两类重叠，没有系统差别——已验证（上表）。同一站换测温深度 Q10 差近一倍（FI-Sii 5 cm 3.1、35 cm 5.3），年际可差数倍，都大于两类之间的差——已验证（Rinne 2018 第 4.2 节；Mastepanov 2013 表 3）。
+- 七个多为苔原与冻土的站，月尺度季节活化能中位约 1 eV（读图估读）——已验证（Chadburn 2020 图 6，子任务读图）。
+
+### 4.2 培养中的产甲烷 Q10
+
+- 泛北极培养 CH4 产量表观 Q10 中位 1.18，同研究多温度求得 0.96–3.10——已验证（Treat 2015 Results，全文，主会话核中位值）。
+- 巴罗多边形（+8 与 −2 °C 之比）中心有机层 22、脊 5.6、槽 5.7，活化能 1.5 eV；近冰点 Q10 框架失效——已验证（Roy Chowdhury 2015，子任务读接受稿）。
+- Stordalen 活动层 4–24 °C：莎草沼 1.9–3.5、Sphagnum 沼 2.4–5.8；原句 "Q10 values are not significantly different in Arctic permafrost wetlands than non-Arctic northern wetlands"——已验证（Lupascu 2012，子任务全文）。
+- 泥炭 10–25 °C 为 5.3–16，"In the 0-10°C range, CH4 production was negligible"——已验证（Dunfield 1993 表 2，子任务全文）；综述合并 4.1、范围 1.5–28——已验证（Segers 1998 p. 27–29，全文）。
+
+### 4.3 跨站地理温度依赖
+
+- 站内季节 E_M = 0.96 eV（95 % CI 0.86–1.07）；原句 "the average apparent activation energy we report here (EM = 0.96 eV), based on the seasonal temperature dependence of CH4 emissions within sites, does not apply across sites along geographic temperature gradients"——已验证（Yvon-Durocher 2014 p. 490，全文）。
+- 扩展数据图 2：天然湿地站均排放 ln F 对站均温 y = 0.04x + 3.81（r² = 0.09，P = 0.04）；固定温度 15.6 °C 下的排放 ln F(T_C) 对站均温 y = −0.07x + 5.71（r² = 0.24，P < 1e−4）；水体与稻田无此负相关——已验证（面板 b、e 的回归式与图注，全文）。站均温是各站现场测温的平均（测量季）——已验证（p. 490 图注与方法）。
+- 换算：0.96 eV 在 15.6 °C 相当于 d ln F / dT ≈ 0.134 K−1，跨站 −0.07 抵消其约 52 %——推测。由上列数值计算得出。模式产甲烷 Q10 = 2 时 d ln / dT = ln2/10 ≈ 0.069 K−1，完全驯化（`q10methane_base_weight` = 1）给出的固定温度斜率正是 −0.069，与图 2e 的 −0.07 相符；"只补偿一半"只在季节 Q10 取 0.96 eV（约 4）时成立——推测。由上列数值计算得出。
+- 其他跨站量：42 个淡水湿地年排放对年均气温 Q10 2.57——已验证（Delwiche 2021 p. 3615，子任务全文）；跨站活化能 0.53 eV——已验证（Chadburn 2020 第 3.3 节，主会话核原句）；JULES-microbe 的驯化因子 0.55 取自呼吸研究（原句 "reduced by a factor of approximately 0.55 after acclimation"，数取自该文所引的土壤呼吸驯化研究），不是产甲烷菌实测——已验证（Chadburn 2020 附录 A2，主会话核原句）。
+- 冻土：同温下单位碳最大产 CH4 无冻土站约为有冻土站的两倍（P = 0.04）——已验证（Treat 2015，全文）。
+- 模式内的先例：Riley 2011 原句 "the baseline temperature used in the Q10 formulation likely varies spatially, since microbes can adapt to their local climatic conditions"（p. 1942–1943）；Q10 由 2 调到 3 使高纬排放 "closer to top-down inversion values"（p. 1936）——已验证（全文，主会话核）。
+
+### 4.4 各模式的温度基准
+
+| 模式 | 式与基准 | 取值 | 出处（读法） |
+| --- | --- | --- | --- |
+| Walter and Heimann 2000 | Q10^((T − T_mean)/10)，T_mean 为站点年均土温（式 5） | Q10 = 6；T_mean 阿拉斯加苔原 0、芬兰 3.5、密歇根 12 °C | p. 748–752（全文） |
+| TEM | PQ10^((T − TPR)/10)，按生态系统标定 | 湿苔原 4.0、5.5 °C；高山苔原 3.5、3.0 °C；北方湿地 4.5、10.0 °C | Zhuang 2004 表 1（全文，主会话核） |
+| JULES | Q10(T) = Q10(T0)^(T0/T)，T0 = 273.15 K | Q10(T0) = 3.7 | Gedney 2004（子任务全文） |
+| CLM4Me/CLM5 | T_B = 22 °C | 产甲烷附加 Q10 1.33（合成约 2），氧化 1.9 | Riley 2011；CTSM 参数文件（读码） |
+| MPI | f 在 295 K，Q10 1.8 | — | Kleinen 2020（子任务全文） |
+| JULES-microbe | 最大速率按年均温部分驯化，时间常数约 5 年 | 驯化因子 0.55 | Chadburn 2020 附录 A2（主会话核） |
+
+- 按 TEM 表 1 推算同为 5 °C 时的相对产率：湿苔原 0.93、北方湿地 0.61、高山苔原 0.58（MGO × PQ10^((5 − TPR)/10)）——推测。由上列数值计算得出。TEM 的标定对湿苔原等效于"驯化后反而更高"，对高山苔原则压低。
+
+### 4.5 判断
+
+1. 站内季节 Q10 不需要按苔原与北方泥沼分开——推测。依据是第 4.1、4.2 节两类重叠。
+2. C-51 的"未冻期均温作基准、Q10 2、权重 1"与 Yvon-Durocher 2014 图 2e 的跨站斜率相容；约束的是乘积"权重 × ln(Q10)/10 ≈ 0.07 K−1"：季节 Q10 取约 4（0.96 eV）时权重约 0.5，Q10 取 2 时权重约 1。正在跑的 V-103（Q10 2、权重 0.5，账本 C-53 行）给出的固定温度斜率约 −0.035 K−1，是图 2e 的一半——推测。由第 4.3 节的数值计算得出。
+3. V-96 的结论"任何温度律都拉不开苔原与泥沼"与文献相容：温度文献没有给出"苔原同温下更低"的菌群证据（Tveit 2015 反而说高北极温度敏感性更低），能分开两类的只有冻土有无（Treat 2015，P = 0.04）与非温度因素——推测。
+
+## 5. 候选机制（开关一律默认关）
+
+代码行号均按本树 HEAD `a01c6451`（2026-09-29 08:55）。出发点是第 1.6 节的逐站比值：基线下偏高的是草丘与偏干足迹（ATQ 需乘 0.24–0.36，ICs 需乘 0.24–0.43，由同月塔值除以模式值）和早夏（IVO、NGB）；湿足迹的 BES、RU-Ch2、A03 已相当；开 C-51 后苔原整体再抬约 2 倍。四条候选都不改 FI-Sii、SE-Deg（无冻土、深泥炭、均一坪面），这是设计要求。模式排放对 f 的弹性按账本 Q-37 的约 1.17 次方估，苔原上未测。
+
+### 5.1 候选① 苔原湿地斑块的高处份额（草丘、埂、高心不进淹水分布、近乎不产甲烷）
+
+- 物理依据：
+  - 苔原塔足迹里高处占相当份额：US-Beo 中湿加干 53–60 %，US-Atq 草丘 64–84 %，US-Ivo 草丘类 76–98 %，US-ICs 草丘 47 %，US-Bes 27–35 %——已验证（Davidson 2017 表 3；Euskirchen 2012 p. 3）。
+  - 高处水位最深（Davidson 2016 p. 1123），排放远低于低处：藓-地衣 0.00、纯藓 0.25、丛生莎草 0.46、湿莎草 1.68 mg CH4-C m−2 h−1——已验证（Davidson 2016 Results，全文）；ecosys 高处 0.0–0.1、低处 4–6 g C m−2 yr−1——已验证（Grant 2017b 摘要）。高处照常呼吸：ecosys 脊的 Rh 132–151 g C m−2 yr−1，不低于槽与中心的 103–147——已验证（Grant 2017b 表 4，子任务全文，主会话回原文核过）。
+  - 高低之差 0.2–0.5 m（第 1.4 节），单峰正态 σ = 0.11 m 覆盖不了两团分布——推测。
+- 落到模式里改什么：新键 `wetland_high_frac`（高处份额，默认 −1 即关），可选 `wetland_high_dh`（高处抬升，m）。
+  - 消费点一：方案 8 动态湿地的淹水份额分支（`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90` 第 874–884 行），淹水份额改为 (1 − f_high) × Φ(h/σ) + f_high × Φ((h − Δh)/σ)。
+  - 消费点二：高处份额的产甲烷乘相对系数（草丘 0.27、藓 0.15、地衣 0，由 Davidson 2016 的通量比得出）；最简做法是高处整块不产甲烷，只留非饱和柱的氧化与大气吸收。异养呼吸不动。
+- 文献数值：
+  - 逐站 f_high：BEO 0.53–0.60；BES 0.27–0.35；ATQ 0.64–0.84；IVO 0.76–0.98；ICs 0.47；NGB 0.24（低心区）至 0.60（高心区）；RU-Ch2 约 0.2（井点比例）；北方泥沼 0（出处见第 1.1、1.2 节）。
+  - 区域：巴罗半岛高心 16 %、平心 24 %（Lara 2020）；Samoylov 干苔原 54–58 %（Muster 2012、Boike 2013）。
+  - Δh：0.2 m（ecosys）、0.35–0.38 m（Smith 2022）、约 0.5 m（Kutzbach 2004）。
+- 预期（相对于把整块斑块当低处；按 Davidson 2017 四种分类法的面积乘上面的相对系数）：ATQ 0.39–0.54，BEO 0.46–0.60，IVO 0.28–0.45，ICs 约 0.65，BES 0.69–0.74；E/HR 同比例下降，因为呼吸不变——推测。由上列数值计算得出。对照所需（第 5 节开头），按对数计 ATQ 补上约四到九成，ICs 约三到五成；BES 会被压到塔值的 0.55–1.1 倍，仍在可接受范围——推测。北方泥沼不变。
+- 风险：
+  - 全球用哪张图给 f_high：若 GLWD 的湿地份额已按像元扣掉高处，再乘就重复计算；BAWLD 永冻湿地（PermWet）单位面积通量本就高（第 2.1 节），全球一律打折可能把北极湿地压过头——推测。
+  - 站点上按文献逐站给 f_high 是用观测定参数，只能作诊断，不能当标定结果——推测。
+  - 高处水分侧排到低处（Kaiser 2017 把埂的径流加到中心）会让低处更湿，抵掉一部分降幅——推测。
+
+### 5.2 候选② 新融层的产甲烷滞后（融化后替代电子受体与菌群恢复）
+
+- 物理依据：
+  - 淹水样到最大产 CH4 的滞后 <20 d，干样 >45 d；矿质土滞后长于有机土——已验证（Treat 2015 Results，全文）。
+  - 原位湿苔原 CO2:CH4 由 7 月初 95 降到 8–9 月约 10，产 CH4 随 40 cm 土温——已验证（Galera 2023，只读摘要）；巴罗 Fe 氧化物还原在夏季后半段，前半段先还原腐殖质——已验证（Lipson 2013，只读摘要）。
+  - 同批塔上 CLM-Microbe 偏高的原因是 "higher simulated CH4 flux in early growing seasons"——已验证（Wang 2022 摘要）；本模式 IVO、NGB 早夏比值偏高 1.6–2 倍、IVO 9 月反偏低（第 1.6 节），账本 Q-45 记苔原排放峰早一个月——已验证（`v2/results/month_decomp_v2_oo4_tundra.txt`；账本 Q-45 行）。
+- 落到模式里改什么：新键 `redoxlag_thaw`（天，≤ 0 即关）。读码：现有逐层滞后 `layer_sat_lag` 只按水位上下更新（`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90` 第 1324–1335 行），只在非饱和柱水位以下的层使用（第 2328–2329 行）；冻结层在水位以下时按饱和计，融化时没有滞后；饱和柱只有淹水份额的 30 天滞后（第 2326–2327 行）。改法：另设逐层"融化滞后"状态，层内冰占孔隙超过阈值时衰减到 0，融化后按 1 − exp(−t/τ) 恢复，饱和柱与非饱和柱的产甲烷都乘它，状态随重启文件保存。
+- 文献数值：τ 取 20 d（淹水样滞后上限；Roy Chowdhury 2015 培养中 CO2:CH4 约 20 天内明显下降），敏感性取 45 d（干样与矿质土）。
+- 预期：一层融化后 T 天内的平均系数为 1 − (τ/T)(1 − e^(−T/τ))；苔原 9–29 cm 融期约 60–90 d，τ = 20 d 时 0.68–0.78，τ = 45 d 时 0.45–0.57；排放峰后移约 2–4 周，早夏降、秋季相对升；北方泥沼深于季节冻结层（FI-Sii 冻结 5–30 cm，站点事实表）的层不受影响，冻结层 4–5 月融化后到 7 月，τ = 20 d 时已恢复 95 % 以上，τ = 45 d 时为 74–86 %——推测。由上列数值计算得出。
+- 风险：
+  - 模式北方泥沼冬季土温比塔上冷约 4 °C（账本 Q-45），冻得过深会把滞后错加到泥沼的产甲烷层上，要先修或同时看 Q-45——推测。
+  - 与淹水份额 30 天滞后在融雪积水期叠加——推测。
+  - 冰量阈值没有文献值，要做敏感性——推测。
+
+### 5.3 候选③ 冻土湿地不驯化或产率折半（只在开 C-51 时需要）
+
+- 物理依据：同温下单位碳最大产 CH4 无冻土站约为有冻土站的两倍（原句 "nearly double"，P = 0.04）——已验证（Treat 2015，全文）；TEM 按站标定的产甲烷上限 MGO 高山苔原湿地 0.45、湿苔原湿地 1.0、北方湿地 1.3 mmol L−1 h−1——已验证（Zhuang 2004 表 1，全文）；冻土 fen 的 CH4/ER 6.3 %、fen 8.7 %——已验证（Olefeldt 2013 表 1）。
+- 为什么和 C-51 配套：基线下湿足迹苔原塔的比值已与塔上相当（第 1.6 节），C-51 让湿苔原类中位 β 翻倍（1.27 → 2.57）；若 C-51 留给北方泥沼，冻土斑块就要抵掉这约 2 倍——推测。
+- 落到模式里改什么，二选一：
+  - 甲：冻土斑块的 `q10methane_base_weight` 取 0（即不驯化，仍用 295 K），无冻土斑块照 C-51。
+  - 乙：新键 `wetland_f_permafrost_ratio`（默认 −1 即关），仿 C-30 `wetland_f_tree_ratio`（`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90` 第 2136–2142 行），冻土斑块的 f 乘该值。
+  - 两者都要宿主给出"上一年最大融深"或"全年冻结层"作判据，实现前须读码确认宿主有无现成量。
+- 文献数值：乙取 0.5（Treat 2015），区间 0.35–0.77（TEM 的 MGO 比 0.45/1.3 与 1.0/1.3）。
+- 预期：乙使苔原排放约乘 0.44（0.5^1.17），V-96 的湿苔原 β 2.57 约回到 1.1；甲的效果随站而异，冷的冻土站抵得多——推测。北方泥沼不变。
+- 风险：
+  - 这是把冷剖面、滞后、铁、菌群几种原因打成一个数，与①②同开时要先扣掉①②已解释的部分——推测。
+  - Walter and Heimann 2000 以站点年均土温为基准时，阿拉斯加苔原 R0 0.30 与芬兰 0.34 µM h−1 相近——已验证（表 2，全文）；即在他们的"完全驯化"框架下苔原不需要折减。差别可能在基准温度口径（他们给阿拉斯加苔原 T_mean 0 °C，C-51 用未冻期均温）——推测。
+  - BAWLD 按类通量里冻土本身不是决定因素（有 33.5、无 40.0，账本 Q-31），全球上会压低本来对的永冻湿地——推测。
+  - Treat 2015 同篇里苔原的 CO2:CH4 反而更低（7 对 387），方向与"冻土产率低"相反，说明冻土效应按单位碳成立、按厌氧碳分配不成立——已验证（Treat 2015 Results）。
+
+### 5.4 候选④ 矿质层的铁与腐殖质分流（北坡海岸平原）
+
+- 物理依据：巴罗湖盆 Fe 还原占 ER 40–63 %，有机层越薄占比越高；加铁与腐殖酸使 CH4 净通量降到对照的 0.74 倍；Fe 还原占 CO2 产量有机层 7 %、矿质层 44 %——已验证（Lipson 2013 摘要；Miller 2015 摘要；Roy Chowdhury 2015 接受稿）。苔原湿地有机层 10–35 cm 下即矿质土（BES 12–15 cm、Barrow 0–30 cm 以上、ICs 34 cm、ATQ 约 95 % 砂），北方泥沼泥炭 2–6 m（FI-Sii）——已验证（站点事实表"泥炭分界深度""泥炭厚度"行所引原文）。
+- 落到模式里改什么：新键 `wetland_aea_share`（替代电子受体分流份额，默认 −1 即关）。消费点：`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90` 第 2317–2323 行 C-42（硫酸盐按盐度打折）之后的 f_methane_adj 链上，逐层乘 (1 − φ × (1 − om))，om 为该层有机质份额（C-11 已用 OM_density / organic_max 的同一口径）。只改产甲烷份额，分解总量不动，碳守恒不受影响。
+- 文献数值：φ 0.4–0.6（Lipson 2013 的 40–45 % 与 61–63 % 是占 ER，占厌氧呼吸会更高，取下端）；Miller 2015 的野外 0.74 倍作对照。
+- 预期：北坡海岸平原各塔产甲烷层多在有机与矿质过渡带，产量约乘 0.6–0.8，排放约 0.55–0.77 倍；深泥炭的北方泥沼 om ≈ 1，不变——推测。它能替代③在海岸平原上的一部分，但这些塔基线下比值已对，只在开 C-51 后才需要——推测。
+- 风险：
+  - 铁库有限，季节内耗尽、冻融与排水时再生，常数份额会高估夏末的抑制——推测。依据是 Lipson 2013 的前后半段分工。
+  - 证据集中在巴罗，勒拿三角洲与 Chersky 的铁数据未检到；Herndon 2015 Biogeochemistry 方向相反（第 0 节第 9 条②）——存疑。
+  - 与 pH 项、盐度项叠乘，要查各站 f 的总乘子——推测。
+
+### 5.5 未列为候选（理由）
+
+- 提高苔原氧化：巴罗湿处实测好氧氧化只有百分之几（Throckmorton 2015），模式 13–20 % 不偏低——推测。
+- 按"苔原"标签降固定比例 f：培养里苔原土单位碳 CH4 产出不低（Treat 2015），无依据——推测。
+- 对所有斑块部分驯化（权重 < 1，即 V-103 的做法）：会同时压回北方泥沼在 V-96 的改善；按第 4.3 节算术，Q10 2 配权重 1 已与跨站斜率相容，权重 0.5 只剩一半——推测。
+- 干高处的高亲和力大气吸收单列：量级约 −2 至 −3 mg CH4 m−2 d−1（Juncher Jørgensen 2015 的 −8.3 µmol m−2 h−1 与 Voigt 2023 的 0.092 mg CH4 m−2 h−1 折算，均只读摘要），只占夏季排放的百分之几，并入①的高处份额即可——推测。
+
+### 5.6 建议的检验顺序
+
+1. 先在 9 座苔原塔与 FI-Sii、SE-Deg 上用①跑诊断（按第 5.1 节逐站 f_high，不标定），看 ATQ、ICs 的比值差能补多少；同时读 US-Beo、US-Bes 的月均 wdsrf，了结第 0 节存疑①——推测。
+2. 再试②（τ 取 20 d 与 45 d），看 IVO、NGB 早夏与排放峰相位、10–11 月（账本 Q-27、Q-45）——推测。
+3. 若要保留 C-51，再在①②之上加③，甲、乙各跑一次；④只对北坡海岸平原各塔有意义，作为③在那里的机制化替代——推测。
+
+## 6. 文献清单（字段取自 Crossref，2026-09-29 查询；格式：第一作者，年｜题名｜刊 卷(期): 页或文章号｜DOI）
+
+- Abolt, 2018｜Microtopographic control on the ground thermal regime in ice wedge polygons｜The Cryosphere 12(6): 1957-1968｜10.5194/tc-12-1957-2018
+- Abolt, 2020｜High-resolution mapping of spatial heterogeneity in ice wedge polygon geomorphology near Prudhoe Bay, Alaska｜Scientific Data 7(1): 87｜10.1038/s41597-020-0423-9
+- Alekseychik, 2021｜Carbon balance of a Finnish bog: temporal variability and limiting factors based on 6 years of eddy-covariance data｜Biogeosciences 18(16): 4681-4704｜10.5194/bg-18-4681-2021
+- Arora, 2018｜An assessment of natural methane fluxes simulated by the CLASS-CTEM model｜Biogeosciences 15(15): 4683-4709｜10.5194/bg-15-4683-2018
+- Bechtold, 2019｜PEAT‐CLSM: A Specific Treatment of Peatland Hydrology in the NASA Catchment Land Surface Model｜Journal of Advances in Modeling Earth Systems 11(7): 2130-2162｜10.1029/2018MS001574
+- Bloom, 2017｜A global wetland methane emissions and uncertainty dataset for atmospheric chemical transport models (WetCHARTs version 1.0)｜Geoscientific Model Development 10(6): 2141-2156｜10.5194/gmd-10-2141-2017
+- Bohn, 2013｜Modeling the large-scale effects of surface moisture heterogeneity on wetland carbon fluxes in the West Siberian Lowland｜Biogeosciences 10(10): 6559-6576｜10.5194/bg-10-6559-2013
+- Boike, 2013｜Baseline characteristics of climate, permafrost and land cover from a new permafrost observatory in the Lena River Delta, Siberia (1998–2011)｜Biogeosciences 10(3): 2105-2128｜10.5194/bg-10-2105-2013
+- Castro-Morales, 2018｜Year-round simulated methane emissions from a permafrost ecosystem in Northeast Siberia｜Biogeosciences 15(9): 2691-2722｜10.5194/bg-15-2691-2018
+- Chadburn, 2020｜Modeled Microbial Dynamics Explain the Apparent Temperature Sensitivity of Wetland Methane Emissions｜Global Biogeochemical Cycles 34(11): e2020GB006678｜10.1029/2020GB006678
+- Christensen, 1995｜Response of methane emission from arctic tundra to climatic change: results from a model simulation｜Tellus B: Chemical and Physical Meteorology 47(3): 301｜10.3402/tellusb.v47i3.16049
+- Christensen, 1996｜Methane flux from northern wetlands and tundra｜Tellus B: Chemical and Physical Meteorology 48(5): 652｜10.3402/tellusb.v48i5.15938
+- Christensen, 2003｜Factors controlling large scale variations in methane emissions from wetlands｜Geophysical Research Letters 30(7): 2002GL016848｜10.1029/2002GL016848
+- Cresto Aleina, 2013｜A stochastic model for the polygonal tundra based on Poisson–Voronoi diagrams｜Earth System Dynamics 4(2): 187-198｜10.5194/esd-4-187-2013
+- Cresto Aleina, 2015｜Modeling micro-topographic controls on boreal peatland hydrology and methane fluxes｜Biogeosciences 12(19): 5689-5704｜10.5194/bg-12-5689-2015
+- Davidson, 2016｜Vegetation Type Dominates the Spatial Variability in CH4 Emissions Across Multiple Arctic Tundra Landscapes｜Ecosystems 19(6): 1116-1132｜10.1007/s10021-016-9991-0
+- Davidson, 2017｜Upscaling CH4 Fluxes Using High-Resolution Imagery in Arctic Tundra Ecosystems｜Remote Sensing 9(12): 1227｜10.3390/rs9121227
+- Delwiche, 2021｜FLUXNET-CH 4 : a global, multi-ecosystem dataset and analysis of methane seasonality from freshwater wetlands｜Earth System Science Data 13(7): 3607-3689｜10.5194/essd-13-3607-2021
+- Dengel, 2021｜Influence of Tundra Polygon Type and Climate Variability on CO2 and CH4 Fluxes Near Utqiagvik, Alaska｜Journal of Geophysical Research: Biogeosciences 126(12): e2021JG006262｜10.1029/2021JG006262
+- Dunfield, 1993｜Methane production and consumption in temperate and subarctic peat soils: Response to temperature and pH｜Soil Biology and Biochemistry 25(3): 321-326｜10.1016/0038-0717(93)90130-4
+- Engstrom, 2005｜Spatial distribution of near surface soil moisture and its relationship to microtopography in the Alaskan Arctic coastal plain｜Hydrology Research 36(3): 219-234｜10.2166/nh.2005.0016
+- Euskirchen, 2012｜Seasonal patterns of carbon dioxide and water fluxes in three representative tundra ecosystems in northern Alaska｜Ecosphere 3(1): 1-19｜10.1890/ES11-00202.1
+- Galera, 2023｜Ratio of In Situ CO2 to CH4 Production and Its Environmental Controls in Polygonal Tundra Soils of Samoylov Island, Northeastern Siberia｜Journal of Geophysical Research: Biogeosciences 128(4): e2022JG006956｜10.1029/2022JG006956
+- Gao, 2025｜Assessing modelled methane emissions over northern wetlands by the JULES-HIMMELI model｜Science of The Total Environment 980: 179526｜10.1016/j.scitotenv.2025.179526
+- Gedney, 2004｜Climate feedback from wetland methane emissions｜Geophysical Research Letters 31(20): 2004GL020919｜10.1029/2004GL020919
+- Gedney, 2019｜Significant feedbacks of wetland methane release on climate change and the causes of their uncertainty｜Environmental Research Letters 14(8): 084027｜10.1088/1748-9326/ab2726
+- Grant, 2017｜Mathematical Modelling of Arctic Polygonal Tundra with Ecosys : 1. Microtopography Determines How Active Layer Depths Respond to Changes in Temperature and Precipitation｜Journal of Geophysical Research: Biogeosciences 122(12): 3161-3173｜10.1002/2017JG004035
+- Grant, 2017｜Mathematical Modelling of Arctic Polygonal Tundra with Ecosys: 2. Microtopography Determines How CO2 and CH4 Exchange Responds to Changes in Temperature and Precipitation｜Journal of Geophysical Research: Biogeosciences 122(12): 3174-3187｜10.1002/2017JG004037
+- Göckede, 2019｜Negative feedback processes following drainage slow down permafrost degradation｜Global Change Biology 25(10): 3254-3266｜10.1111/gcb.14744
+- Hashemi, 2021｜Seasonality buffers carbon budget variability across heterogeneous landscapes in Alaskan Arctic Tundra｜Environmental Research Letters｜10.1088/1748-9326/abe2d1
+- Herndon, 2015｜Geochemical drivers of organic matter decomposition in arctic tundra soils｜Biogeochemistry 126(3): 397-414｜10.1007/s10533-015-0165-5
+- Herndon, 2015｜Pathways of anaerobic organic matter decomposition in tundra soils from Barrow, Alaska｜Journal of Geophysical Research: Biogeosciences 120(11): 2345-2359｜10.1002/2015JG003147
+- Hicks Pries, 2013｜Thawing permafrost increases old soil and autotrophic respiration in tundra: Partitioning ecosystem respiration using δ13C and ∆14C｜Global Change Biology 19(2): 649-661｜10.1111/gcb.12058
+- Hodson, 2011｜The El Niño-Southern Oscillation and wetland methane interannual variability｜Geophysical Research Letters 38(8)｜10.1029/2011GL046861
+- Hubbard, 2013｜Quantifying and relating land-surface and subsurface variability in permafrost environments using LiDAR and surface geophysical datasets｜Hydrogeology Journal 21(1): 149-169｜10.1007/s10040-012-0939-y
+- Jackowicz‐Korczyński, 2010｜Annual cycle of methane emission from a subarctic peatland｜Journal of Geophysical Research: Biogeosciences 115(G2): 2008JG000913｜10.1029/2008JG000913
+- Jan, 2018｜A Subgrid Approach for Modeling Microtopography Effects on Overland Flow｜Water Resources Research 54(9): 6153-6167｜10.1029/2017WR021898
+- Jan, 2020｜Evaluating integrated surface/subsurface permafrost thermal hydrology models in ATS (v0.88) against observations from a polygonal tundra site｜Geoscientific Model Development 13(5): 2259-2276｜10.5194/gmd-13-2259-2020
+- Joabsson, 2001｜Methane emissions from wetlands and their relationship with vascular plants: an Arctic example｜Global Change Biology 7(8): 919-932｜10.1046/j.1354-1013.2001.00044.x
+- Juncher Jørgensen, 2015｜Net regional methane sink in High Arctic soils of northeast Greenland｜Nature Geoscience 8(1): 20-23｜10.1038/ngeo2305
+- Järveoja, 2018｜Partitioning of the net CO2 exchange using an automated chamber system reveals plant phenology as key control of production and respiration fluxes in a boreal peatland｜Global Change Biology 24(8): 3436-3451｜10.1111/gcb.14292
+- Kaiser, 2017｜Process-based modelling of the methane balance in periglacial landscapes (JSBACH-methane)｜Geoscientific Model Development 10(1): 333-358｜10.5194/gmd-10-333-2017
+- Kallingal, 2024｜Optimising CH 4 simulations from the LPJ-GUESS model v4.1 using an adaptive Markov chain Monte Carlo algorithm｜Geoscientific Model Development 17(6): 2299-2324｜10.5194/gmd-17-2299-2024
+- Kallingal, 2025｜Assimilating multi-site eddy-covariance data to calibrate the wetland CH 4 emission module in a terrestrial ecosystem model｜Biogeosciences 22(16): 4061-4086｜10.5194/bg-22-4061-2025
+- Kittler, 2017｜Long‐Term Drainage Reduces CO2 Uptake and CH4 Emissions in a Siberian Permafrost Ecosystem｜Global Biogeochemical Cycles 31(12): 1704-1717｜10.1002/2017GB005774
+- Kleinen, 2020｜Terrestrial methane emissions from the Last Glacial Maximum to the preindustrial period｜Climate of the Past 16(2): 575-595｜10.5194/cp-16-575-2020
+- Knoblauch, 2015｜Regulation of methane production, oxidation, and emission by vascular plants and bryophytes in ponds of the northeast Siberian polygonal tundra｜Journal of Geophysical Research: Biogeosciences 120(12): 2525-2541｜10.1002/2015JG003053
+- Knoblauch, 2018｜Methane production as key to the greenhouse gas budget of thawing permafrost｜Nature Climate Change 8(4): 309-312｜10.1038/s41558-018-0095-z
+- Knox, 2019｜FLUXNET-CH4 Synthesis Activity: Objectives, Observations, and Future Directions｜Bulletin of the American Meteorological Society 100(12): 2607-2632｜10.1175/BAMS-D-18-0268.1
+- Knox, 2021｜Identifying dominant environmental predictors of freshwater wetland methane fluxes across diurnal to seasonal time scales｜Global Change Biology 27(15): 3582-3604｜10.1111/gcb.15661
+- Kotsyurbenko, 2005｜Trophic interactions in the methanogenic microbial community of low-temperature terrestrial ecosystems｜FEMS Microbiology Ecology 53(1): 3-13｜10.1016/j.femsec.2004.12.009
+- Kuhn, 2021｜BAWLD-CH 4 : a comprehensive dataset of methane fluxes from boreal and arctic ecosystems｜Earth System Science Data 13(11): 5151-5189｜10.5194/essd-13-5151-2021
+- Kumar, 2016｜Modeling the spatiotemporal variability in subsurface thermal regimes across a low-relief polygonal tundra landscape｜The Cryosphere 10(5): 2241-2274｜10.5194/tc-10-2241-2016
+- Kutzbach, 2004｜Effect of microrelief and vegetation on methane emission from wet polygonal tundra, Lena Delta, Northern Siberia｜Biogeochemistry 69(3): 341-362｜10.1023/B:BIOG.0000031053.81520.db
+- Lara, 2015｜Polygonal tundra geomorphological change in response to warming alters future CO2 and CH4 flux on the Barrow Peninsula｜Global Change Biology 21(4): 1634-1651｜10.1111/gcb.12757
+- Lara, 2020｜Local-scale Arctic tundra heterogeneity affects regional-scale carbon dynamics｜Nature Communications 11(1): 4925｜10.1038/s41467-020-18768-z
+- Liljedahl, 2011｜Nonlinear controls on evapotranspiration in arctic coastal wetlands｜Biogeosciences 8(11): 3375-3389｜10.5194/bg-8-3375-2011
+- Liljedahl, 2016｜Pan-Arctic ice-wedge degradation in warming permafrost and its influence on tundra hydrology｜Nature Geoscience 9(4): 312-318｜10.1038/ngeo2674
+- Lipson, 2010｜Reduction of iron (III) and humic substances plays a major role in anaerobic respiration in an Arctic peat soil｜Journal of Geophysical Research: Biogeosciences 115(G4): 2009JG001147｜10.1029/2009JG001147
+- Lipson, 2012｜Water-table height and microtopography control biogeochemical cycling in an Arctic coastal tundra ecosystem｜Biogeosciences 9(1): 577-591｜10.5194/bg-9-577-2012
+- Lipson, 2013｜The contribution of Fe(III) and humic acid reduction to ecosystem respiration in drained thaw lake basins of the Arctic Coastal Plain｜Global Biogeochemical Cycles 27(2): 399-409｜10.1002/gbc.20038
+- Lupascu, 2012｜Temperature Sensitivity of Methane Production in the Permafrost Active Layer at Stordalen, Sweden: A Comparison with Non-permafrost Northern Wetlands｜Arctic, Antarctic, and Alpine Research 44(4): 469-482｜10.1657/1938-4246-44.4.469
+- Marushchak, 2016｜Methane dynamics in the subarctic tundra: combining stable isotope analyses, plot- and ecosystem-scale flux measurements｜Biogeosciences 13(2): 597-608｜10.5194/bg-13-597-2016
+- Mastepanov, 2008｜Large tundra methane burst during onset of freezing｜Nature 456(7222): 628-630｜10.1038/nature07464
+- Mastepanov, 2013｜Revisiting factors controlling methane emissions from high-Arctic tundra｜Biogeosciences 10(7): 5139-5158｜10.5194/bg-10-5139-2013
+- McEwing, 2015｜Environmental and vegetation controls on the spatial variability of CH4 emission from wet-sedge and tussock tundra ecosystems in the Arctic｜Plant and Soil 388(1-2): 37-52｜10.1007/s11104-014-2377-1
+- Metje, 2007｜Methanogenesis and methanogenic pathways in a peat from subarctic permafrost｜Environmental Microbiology 9(4): 954-964｜10.1111/j.1462-2920.2006.01217.x
+- Miller, 2015｜Methane suppression by iron and humic acids in soils of the Arctic Coastal Plain｜Soil Biology and Biochemistry 83: 176-183｜10.1016/j.soilbio.2015.01.022
+- Miller, 2019｜Anaerobic Methane Oxidation in High-Arctic Alaskan Peatlands as a Significant Control on Net CH4 Fluxes｜Soil Systems 3(1): 7｜10.3390/soilsystems3010007
+- Morel, 2019｜A New Process‐Based Soil Methane Scheme: Evaluation Over Arctic Field Sites With the ISBA Land Surface Model｜Journal of Advances in Modeling Earth Systems 11(1): 293-326｜10.1029/2018MS001329
+- Muster, 2012｜Subpixel heterogeneity of ice-wedge polygonal tundra: a multi-scale analysis of land cover and evapotranspiration in the Lena River Delta, Siberia｜Tellus B: Chemical and Physical Meteorology 64(1): 17301｜10.3402/tellusb.v64i0.17301
+- Nijp, 2026｜Ecohydrological feedbacks increase water storage, streamflow and resilience of natural peatlands｜Journal of Hydrology 664: 134282｜10.1016/j.jhydrol.2025.134282
+- Noumonvi, 2025｜Variations in Ecosystem‐Scale Methane Fluxes Across a Boreal Mire Complex Assessed by a Network of Flux Towers｜Global Change Biology 31(5): e70223｜10.1111/gcb.70223
+- Oh, 2020｜Reduced net methane emissions due to microbial methane oxidation in a warmer Arctic｜Nature Climate Change 10(4): 317-321｜10.1038/s41558-020-0734-z
+- Olefeldt, 2013｜Environmental and physical controls on northern terrestrial methane emissions across permafrost zones｜Global Change Biology 19(2): 589-603｜10.1111/gcb.12071
+- Parker, 2022｜Evaluation of wetland CH 4 in the Joint UK Land Environment Simulator (JULES) land surface model using satellite observations｜Biogeosciences 19(24): 5779-5805｜10.5194/bg-19-5779-2022
+- Raab, 2024｜Small-scale hydrological patterns in a Siberian permafrost ecosystem affected by drainage｜Biogeosciences 21(10): 2571-2597｜10.5194/bg-21-2571-2024
+- Rankin, 2023｜Partitioning autotrophic and heterotrophic respiration in an ombrotrophic bog｜Frontiers in Earth Science 11: 1263418｜10.3389/feart.2023.1263418
+- Raz‐Yaseef, 2017｜Large CO2 and CH4 emissions from polygonal tundra during spring thaw in northern Alaska｜Geophysical Research Letters 44(1): 504-513｜10.1002/2016GL071220
+- Ricciuto, 2021｜An Integrative Model for Soil Biogeochemistry and Methane Processes: I. Model Structure and Sensitivity Analysis｜Journal of Geophysical Research: Biogeosciences 126(8): e2019JG005468｜10.1029/2019JG005468
+- Riley, 2011｜Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM｜Biogeosciences 8(7): 1925-1953｜10.5194/bg-8-1925-2011
+- Ringeval, 2010｜An attempt to quantify the impact of changes in wetland extent on methane emissions on the seasonal and interannual time scales｜Global Biogeochemical Cycles 24(2): 2008GB003354｜10.1029/2008GB003354
+- Ringeval, 2011｜Climate-CH 4 feedback from wetlands and its interaction with the climate-CO 2 feedback｜Biogeosciences 8(8): 2137-2157｜10.5194/bg-8-2137-2011
+- Ringeval, 2012｜Modelling sub-grid wetland in the ORCHIDEE global land surface model: evaluation against river discharges and remotely sensed data｜Geoscientific Model Development 5(4): 941-962｜10.5194/gmd-5-941-2012
+- Rinne, 2007｜Annual cycle of methane emission from a boreal fen measured by the eddy covariance technique｜Tellus B: Chemical and Physical Meteorology 59(3): 449｜10.1111/j.1600-0889.2007.00261.x
+- Rinne, 2018｜Temporal Variation of Ecosystem Scale Methane Emission From a Boreal Fen in Relation to Temperature, Water Table Position, and Carbon Dioxide Fluxes｜Global Biogeochemical Cycles 32(7): 1087-1106｜10.1029/2017GB005747
+- Roy Chowdhury, 2015｜Stoichiometry and temperature sensitivity of methanogenesis and CO2 production from saturated polygonal tundra in Barrow, Alaska｜Global Change Biology 21(2): 722-737｜10.1111/gcb.12762
+- Roy Chowdhury, 2021｜Temporal, Spatial, and Temperature Controls on Organic Carbon Mineralization and Methanogenesis in Arctic High-Centered Polygon Soils｜Frontiers in Microbiology 11: 616518｜10.3389/fmicb.2020.616518
+- Sachs, 2008｜Environmental controls on ecosystem‐scale CH4 emission from polygonal tundra in the Lena River Delta, Siberia｜Journal of Geophysical Research: Biogeosciences 113(G3): 2007JG000505｜10.1029/2007JG000505
+- Salmon, 2022｜Assessing methane emissions for northern peatlands in ORCHIDEE-PEAT revision 7020｜Geoscientific Model Development 15(7): 2813-2838｜10.5194/gmd-15-2813-2022
+- Schädel, 2016｜Potential carbon emissions dominated by carbon dioxide from thawed permafrost soils｜Nature Climate Change 6(10): 950-953｜10.1038/nclimate3054
+- Segers, 1998｜Methane production and methane consumption: a review of processes underlying wetland methane fluxes｜Biogeochemistry 41(1): 23-51｜10.1023/A:1005929032764
+- Shi, 2015｜Representing northern peatland microtopography and hydrology within the Community Land Model｜Biogeosciences 12(21): 6463-6477｜10.5194/bg-12-6463-2015
+- Smith, 2022｜Explicitly modelling microtopography in permafrost landscapes in a land surface model (JULES vn5.4_microtopography)｜Geoscientific Model Development 15(9): 3603-3639｜10.5194/gmd-15-3603-2022
+- Spahni, 2011｜Constraining global methane emissions and uptake by ecosystems｜Biogeosciences 8(6): 1643-1665｜10.5194/bg-8-1643-2011
+- Stocker, 2014｜DYPTOP: a cost-efficient TOPMODEL implementation to simulate sub-grid spatio-temporal dynamics of global wetlands and peatlands｜Geoscientific Model Development 7(6): 3089-3110｜10.5194/gmd-7-3089-2014
+- Ström, 2003｜The effect of vascular plants on carbon turnover and methane emissions from a tundra wetland｜Global Change Biology 9(8): 1185-1192｜10.1046/j.1365-2486.2003.00655.x
+- Ström, 2012｜Presence of Eriophorum scheuchzeri enhances substrate availability and methane emission in an Arctic wetland｜Soil Biology and Biochemistry 45: 61-70｜10.1016/j.soilbio.2011.09.005
+- Sturtevant, 2012｜Soil moisture control over autumn season methane flux, Arctic Coastal Plain of Alaska｜Biogeosciences 9(4): 1423-1440｜10.5194/bg-9-1423-2012
+- Sulman, 2022｜Simulated Hydrological Dynamics and Coupled Iron Redox Cycling Impact Methane Production in an Arctic Soil｜Journal of Geophysical Research: Biogeosciences 127(10): e2021JG006662｜10.1029/2021JG006662
+- Tao, 2021｜Improved ELMv1-ECA simulations of zero-curtain periods and cold-season CH 4 and CO 2 emissions at Alaskan Arctic tundra sites｜The Cryosphere 15(12): 5281-5307｜10.5194/tc-15-5281-2021
+- Throckmorton, 2015｜Pathways and transformations of dissolved methane and dissolved inorganic carbon in Arctic tundra watersheds: Evidence from analysis of stable isotopes｜Global Biogeochemical Cycles 29(11): 1893-1910｜10.1002/2014GB005044
+- Treat, 2015｜A pan‐Arctic synthesis of CH4 and CO2 production from anoxic soil incubations｜Global Change Biology 21(7): 2787-2803｜10.1111/gcb.12875
+- Treat, 2018｜Nongrowing season methane emissions–a significant component of annual emissions across northern ecosystems｜Global Change Biology 24(8): 3331-3343｜10.1111/gcb.14137
+- Turetsky, 2014｜A synthesis of methane emissions from 71 northern, temperate, and subtropical wetlands｜Global Change Biology 20(7): 2183-2197｜10.1111/gcb.12580
+- Tveit, 2015｜Metabolic and trophic interactions modulate methane production by Arctic peat microbiota in response to warming｜Proceedings of the National Academy of Sciences 112(19)｜10.1073/pnas.1420797112
+- Vaughn, 2016｜Isotopic insights into methane production, oxidation, and emissions in Arctic polygon tundra｜Global Change Biology 22(10): 3487-3502｜10.1111/gcb.13281
+- Voigt, 2023｜Arctic soil methane sink increases with drier conditions and higher ecosystem respiration｜Nature Climate Change 13(10): 1095-1104｜10.1038/s41558-023-01785-3
+- Wainwright, 2015｜Identifying multiscale zonation and assessing the relative importance of polygon geomorphology on carbon fluxes in an Arctic tundra ecosystem｜Journal of Geophysical Research: Biogeosciences 120(4): 788-808｜10.1002/2014JG002799
+- Walter, 2000｜A process‐based, climate‐sensitive model to derive methane emissions from natural wetlands: Application to five wetland sites, sensitivity to model parameters, and climate｜Global Biogeochemical Cycles 14(3): 745-765｜10.1029/1999GB001204
+- Walter, 2001｜Modeling modern methane emissions from natural wetlands: 1. Model description and results｜Journal of Geophysical Research: Atmospheres 106(D24): 34189-34206｜10.1029/2001JD900165
+- Wang, 2019｜Mechanistic Modeling of Microtopographic Impacts on CO2 and CH4 Fluxes in an Alaskan Tundra Ecosystem Using the CLM‐Microbe Model｜Journal of Advances in Modeling Earth Systems 11(12): 4288-4304｜10.1029/2019MS001771
+- Wang, 2022｜Upscaling Methane Flux From Plot Level to Eddy Covariance Tower Domains in Five Alaskan Tundra Ecosystems｜Frontiers in Environmental Science 10: 939238｜10.3389/fenvs.2022.939238
+- Wania, 2010｜Implementation and evaluation of a new methane model within a dynamic global vegetation model: LPJ-WHyMe v1.3.1｜Geoscientific Model Development 3(2): 565-584｜10.5194/gmd-3-565-2010
+- Wania, 2013｜Present state of global wetland extent and wetland methane modelling: methodology of a model inter-comparison project (WETCHIMP)｜Geoscientific Model Development 6(3): 617-641｜10.5194/gmd-6-617-2013
+- Whalen, 1992｜Interannual variations in tundra methane emission: A 4‐year time series at fixed sites｜Global Biogeochemical Cycles 6(2): 139-159｜10.1029/92GB00430
+- Wilkenskjeld, 2025｜Natural wetland methane emissions simulated by ICON-XPP｜EGUsphere｜10.5194/egusphere-2025-3601
+- Wille, 2008｜Methane emission from Siberian arctic polygonal tundra: eddy covariance measurements and modeling｜Global Change Biology 14(6): 1395-1408｜10.1111/j.1365-2486.2008.01586.x
+- Xu, 2015｜A microbial functional group‐based module for simulating methane production and consumption: Application to an incubated permafrost soil｜Journal of Geophysical Research: Biogeosciences 120(7): 1315-1333｜10.1002/2015JG002935
+- Xu, 2016｜A multi-scale comparison of modeled and observed seasonal methane emissions in northern wetlands｜Biogeosciences 13(17): 5043-5056｜10.5194/bg-13-5043-2016
+- Yazbeck, 2025｜ELM‐Wet: Inclusion of a Wet‐Landunit With Sub‐Grid Representation of Eco‐Hydrological Patches and Hydrological Forcing Improves Methane Emission Estimations in the E3SM Land Model (ELM)｜Journal of Advances in Modeling Earth Systems 17(2): e2024MS004396｜10.1029/2024MS004396
+- Yvon-Durocher, 2014｜Methane fluxes show consistent temperature dependence across microbial to ecosystem scales｜Nature 507(7493): 488-491｜10.1038/nature13164
+- Zhang, 2016｜Modeling spatiotemporal dynamics of global wetlands: comprehensive evaluation of a new sub-grid TOPMODEL parameterization and uncertainties｜Biogeosciences 13(5): 1387-1408｜10.5194/bg-13-1387-2016
+- Zheng, 2019｜Modeling anaerobic soil organic carbon decomposition in Arctic polygon tundra: insights into soil geochemical influences on carbon mineralization｜Biogeosciences 16(3): 663-680｜10.5194/bg-16-663-2019
+- Zhuang, 2004｜Methane fluxes between terrestrial ecosystems and the atmosphere at northern high latitudes during the past century: A retrospective analysis with a process‐based biogeochemistry model｜Global Biogeochemical Cycles 18(3): 2004GB002239｜10.1029/2004GB002239
+- Zona, 2009｜Methane fluxes during the initiation of a large‐scale water table manipulation experiment in the Alaskan Arctic tundra｜Global Biogeochemical Cycles 23(2): 2009GB003487｜10.1029/2009GB003487
+- Zona, 2016｜Cold season emissions dominate the Arctic tundra methane budget｜Proceedings of the National Academy of Sciences 113(1): 40-45｜10.1073/pnas.1516017113

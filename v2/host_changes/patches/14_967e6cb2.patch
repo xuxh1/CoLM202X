@@ -1,0 +1,33 @@
+From 967e6cb2f96db10a10fd8e6af26fa3ed65b3e651 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Fri, 25 Sep 2026 22:00:55 +0800
+Subject: [PATCH] fix(bgc): C-17c peat-share reader takes the MPI names from
+ MOD_SPMD_Task
+
+The global (USEMPI) build failed: the reader USEd MPI and MOD_SPMD_Task in one
+scope, and MOD_SPMD_Task already re-exports the MPI module, so MPI_INTEGER and
+MPI_REAL8 reached it twice (error #6405). Single-point builds have no USEMPI
+and were not affected.
+
+---
+ mkinidata/MOD_Initialize.F90 | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/mkinidata/MOD_Initialize.F90 b/mkinidata/MOD_Initialize.F90
+index 9bbf0067..91244243 100644
+--- a/mkinidata/MOD_Initialize.F90
++++ b/mkinidata/MOD_Initialize.F90
+@@ -1844,9 +1844,7 @@ ENDIF
+       ! in the cell of DEF_WETLAND_PEAT_SHARE_FILE nearest to the patch; a
+       ! cell without tile classes, or no file, gives 1 (C-17b). A single-point
+       ! run gives its own share in DEF_WETLAND_PEAT_SHARE_SITE.
+-#ifdef USEMPI
+-      USE MPI
+-#endif
++      ! MPI names come through MOD_SPMD_Task (a second USE MPI here clashes)
+       USE netcdf
+       USE MOD_Precision
+       USE MOD_Namelist, only: DEF_WETLAND_PEAT_SHARE_FILE, DEF_WETLAND_PEAT_SHARE_SITE
+-- 
+2.53.0
+

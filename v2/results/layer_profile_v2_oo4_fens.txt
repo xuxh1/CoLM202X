@@ -1,0 +1,22 @@
+# v2_oo4: summer layer shares (%); layer bottoms (m) 0.02 0.05 0.09 0.17 0.29 0.49 0.83 1.38
+FI-Sii: zwt 0.12 m, inundated fraction 0.17
+   C        11   15   19   20   16   10    5    3
+   root     10   19   23   20   14    8    4    2
+   decomp   16   20   23   18   13    7    3    1
+   prod      4    5    7   45   27   10    2    0
+   oxid     17   28   54    1    0    0    0    0
+   oxid/prod 0.52
+SE-Deg: zwt 0.12 m, inundated fraction 0.18
+   C        11   14   18   19   16    9    7    5
+   root     10   19   23   20   14    8    4    1
+   decomp   16   20   22   18   13    7    3    1
+   prod      4    5    7   44   26   10    3    0
+   oxid     19   29   51    0    0    0    0    0
+   oxid/prod 0.49
+FI-Lom: zwt 0.11 m, inundated fraction 0.18
+   C        12   16   19   20   16    9    5    4
+   root     10   19   23   20   14    8    4    2
+   decomp   16   20   22   18   13    7    3    1
+   prod      5    6   10   43   25    9    2    0
+   oxid     21   31   48    1    0    0    0    0
+   oxid/prod 0.51

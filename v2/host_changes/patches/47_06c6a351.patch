@@ -1,0 +1,125 @@
+From 06c6a3519f7e6ee41d3bcb403ec01af0cc23ff23 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 17:11:13 +0800
+Subject: [PATCH] feat(hydro): managed-wetland ponding target for single-point
+ towers
+
+DEF_WETLAND_POND_TARGET_SITE (m, default -1 = off, single-point builds only):
+the dynamic wetland tile of a tower whose standing water is held by pumps,
+siphons or weirs is refilled from the side up to this ponding depth, in
+place of the class water-table floor and of the candidate-17 lateral
+inflow. The refill (aquifer deficit, pore space from the water table to
+the surface, ponding short of the target) enters as negative subsurface
+runoff like the floor refill; at or above the target the peat outflow
+runs as above the floor, and ponding above wetwatmax spills as before.
+The target is capped at wetwatmax. With the key below zero the branch is
+never entered and the floor and lateral-inflow branches are unchanged.
+
+---
+ main/MOD_SoilSnowHydrology.F90 | 41 ++++++++++++++++++++++++++++++++--
+ share/MOD_Namelist.F90         |  9 ++++++++
+ 2 files changed, 48 insertions(+), 2 deletions(-)
+
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index cf59060b..9c5225ed 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -12,7 +12,7 @@ MODULE MOD_SoilSnowHydrology
+                            DEF_PADDY_RICE_BUND,     DEF_FLOODPLAIN_INFILTRATION, &
+                            DEF_FLOODPLAIN_INFILT_FIX, &
+                            DEF_WETLAND_POND_OUTFLOW, DEF_WETLAND_INFLOW_AREA_SPLIT, &
+-                           DEF_WETLAND_LATERAL_INFLOW
++                           DEF_WETLAND_LATERAL_INFLOW, DEF_WETLAND_POND_TARGET_SITE
+ #if (defined CaMa_Flood)
+    USE YOS_CMF_INPUT,      only: LWINFILT
+ #endif
+@@ -777,6 +777,7 @@ ENDIF
+    real(r8) :: zwt_floor, wsupply, ztop, zbot   ! wetland water-table floor (mm)
+    real(r8) :: finfl, wrefill                   ! share taking lateral inflow (-), its refill (mm)
+    real(r8) :: fbog                             ! open-bog share of a wetland tile (-)
++   real(r8) :: pond_target                      ! managed ponding depth of a tower's wetland (mm), < 0 off
+    real(r8) :: qpond                            ! overland outflow of wetland ponding (mm s-1)
+    real(r8) :: sp_zc(1:nl_soil), sp_zi(0:nl_soil), sp_dz(1:nl_soil) ! in mm
+    logical  :: is_permeable(1:nl_soil)
+@@ -1278,7 +1279,43 @@ IF((patchtype<=1) .or. is_dry_lake &
+       ! takes in from below and rnof books. Layers the solver treats as
+       ! impermeable (ice-filled) take none; it passes over them as the
+       ! exchange does, so the water perches above frozen ground.
+-      IF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2) .and. DEF_WETLAND_LATERAL_INFLOW) THEN
++      pond_target = -1._r8
++#ifdef SinglePoint
++      IF (DEF_WETLAND_POND_TARGET_SITE >= 0._r8) &
++         pond_target = min(DEF_WETLAND_POND_TARGET_SITE * 1000._r8, wetwatmax)
++#endif
++      IF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2) .and. (pond_target >= 0._r8)) THEN
++         ! Managed wetland at a tower (paper V2, marsh towers): pumps,
++         ! siphons and weirs hold standing water on the tile year-round,
++         ! which neither the rain nor the class floor gives. In place of the
++         ! floor, and of the lateral inflow of candidate 17, the tile is
++         ! refilled from the side up to the ponding depth pond_target: the
++         ! aquifer deficit, the pore space from the water table up to the
++         ! surface and the ponding short of the target. It enters as the
++         ! floor refill does, as negative subsurface runoff through the
++         ! aquifer exchange of the solver, which fills the pores from the
++         ! water table up and passes the rest to the ponding store. At or
++         ! above the target the tile drains as above the floor; the wetland
++         ! bucket below spills ponding above wetwatmax.
++         wsupply = max(-wa, 0.)
++         DO j = 1, nl_soil
++            ztop = sp_zi(j-1)
++            zbot = min(sp_zi(j), zwtmm)
++            IF ((zbot > ztop) .and. is_permeable(j)) THEN
++               wsupply = wsupply + max(eff_porosity(j) - vol_liq(j), 0.) * (zbot - ztop)
++            ENDIF
++         ENDDO
++         wsupply = wsupply + max(pond_target - wdsrf, 0.)
++         IF (wsupply > 0.) THEN
++            rsubst = - wsupply / deltim
++         ELSE
++            rsubst = wetland_peat_outflow(nl_soil, zi_soisno(0:nl_soil), hksati(1:nl_soil), &
++               OM_density(1:nl_soil,ipatch), zwtmm / 1000.)
++         ENDIF
++         ! The whole tile is fed; the refill is the tile's lateral inflow.
++         IF (DEF_WETLAND_LATERAL_INFLOW) wetinflow(ipatch) = wsupply / deltim
++         IF (DEF_WETLAND_INFLOW_AREA_SPLIT) wetdef_noinfl(ipatch) = 0._r8
++      ELSEIF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2) .and. DEF_WETLAND_LATERAL_INFLOW) THEN
+          ! Candidate 17: in place of the floor, the tile takes the lateral
+          ! inflow wetlatin offered this step, r R_up (the upland runoff of
+          ! its element at the previous step times the upland-to-wetland area
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 655ee74b..60e839fd 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -286,6 +286,13 @@ MODULE MOD_Namelist
+    ! and the upland-to-wetland area ratio r of the tower; zero is rain-fed.
+    real(r8) :: DEF_WETLAND_INFLOW_SITE_RUNOFF(12) = 0._r8
+    real(r8) :: DEF_WETLAND_INFLOW_RATIO_SITE = 0._r8
++   ! Single point, managed wetland (paper V2, marsh towers): target depth [m]
++   ! of standing water on the dynamic wetland tile of a tower whose water is
++   ! held by pumps, siphons or weirs. In place of the water-table floor (and
++   ! of the lateral inflow) the tile is refilled from the side up to this
++   ! ponding depth; at most the wetland bucket wetwatmax (0.2 m). < 0 off
++   ! (default); ignored outside single-point builds.
++   real(r8) :: DEF_WETLAND_POND_TARGET_SITE = -1._r8
+ 
+    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
+    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
+@@ -1419,6 +1426,7 @@ CONTAINS
+       DEF_WETLAND_INFLOW_RATIO_MAX,           &
+       DEF_WETLAND_INFLOW_SITE_RUNOFF,         &
+       DEF_WETLAND_INFLOW_RATIO_SITE,          &
++      DEF_WETLAND_POND_TARGET_SITE,           &
+       DEF_BGC_DEBUG_SCALARS,                  &
+ 
+       DEF_USE_WaterTableInit,                 &
+@@ -2056,6 +2064,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_WETLAND_INFLOW_RATIO_MAX           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_INFLOW_SITE_RUNOFF         ,12  ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_INFLOW_RATIO_SITE          ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_POND_TARGET_SITE           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

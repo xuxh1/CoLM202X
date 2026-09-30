@@ -1,0 +1,874 @@
+{
+ "table": [
+  {
+   "wetland_type": "sedge fen",
+   "quantity": "oxidation_fraction",
+   "basis": "根际或植物通道氧化，分母是本应排出的 CH4，不是整柱产生量。三种方法：CH3F 整株抑制 <20%；δ13C/δD 质量平衡 0–34%；实验室 14C-乙酸标记的 Carex 整块土柱 20–40%（每种植物仅 n=1，结果是标记的占比）",
+   "season": "生长季。CH3F 法在生长季早期最大，到夏末排放峰时几乎测不到",
+   "typical": 20,
+   "low": 0,
+   "high": 40,
+   "sources": [
+    "Popp 1999",
+    "Popp 2000",
+    "Ström 2005"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "sedge fen",
+   "quantity": "oxidation_fraction",
+   "basis": "分母是产生量：实验室厌氧培养的产量减去现场排放。作者自己认为这样算会偏高，只能当上界",
+   "season": "三个生长季",
+   "typical": null,
+   "low": 58,
+   "high": 92,
+   "sources": [
+    "Popp 2000"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "sedge fen",
+   "quantity": "plant_share",
+   "basis": "占排放的比例，全部是实测。方法有：有无地上部对比、单株箱按叶面积放大后与 EC 或总通量箱对比、实验室隔离茎的整块土柱",
+   "season": "生长季。FI-Lom 干亚区 C. rostrata 盛夏 85、初秋 68；FI-Sii 季均 20.8（日值 7–41；只计绿色生物量，作者说落在文献低端）；实验室土柱 31–51；Sallie's Fen 夏季 35–74",
+   "typical": 65,
+   "low": 20,
+   "high": 95,
+   "sources": [
+    "Whiting 1992",
+    "Ge 2023",
+    "Korrensalo 2022",
+    "Dorodnikov 2011",
+    "Noyce 2011"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "sedge fen",
+   "quantity": "plant_share",
+   "basis": "占模拟排放的比例，是过程模式结果，不是观测。LPJ-WHyMe 在 7 个泥炭地站为 67.8–84.5；Granberg 模式在 Degerö 为 52–94；HIMMELI 在 Siikaneva 随冒泡方案不同为 60–90；JULES-HIMMELI 6 站均值 50–54，站间 22–70",
+   "season": "年",
+   "typical": 70,
+   "low": 22,
+   "high": 94,
+   "sources": [
+    "Wania 2010",
+    "Peltola 2018",
+    "Gao 2025"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "sedge fen",
+   "quantity": "ebullition_share",
+   "basis": "占排放的比例。实验室整块土柱：Carex 23.4、Eriophorum 3.5、Juncus 未检出；瑞典三处泥炭地的 4 块土柱 17.0–51.5（19 °C，按目测基线分离）。现场只有偶然捕获的单次事件：阿拉斯加富营养泥炭沼 2005 年 0.1%、2006 年 46.3%（分母可能不含冒泡，含进去后约 32%）",
+   "season": "实验室恒温；现场为生长季",
+   "typical": 20,
+   "low": 0,
+   "high": 52,
+   "sources": [
+    "Ström 2005",
+    "Christensen 2003",
+    "Turetsky 2008"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "sedge fen",
+   "quantity": "ebullition_share",
+   "basis": "占模拟排放的比例（模式）。LPJ-WHyMe 0–1.4；HIMMELI 直达地表的冒泡 0–1（冒泡多释放到地表以下，再算进扩散）；JULES-HIMMELI 站均 6–8，FI-Lom 单站 23–40",
+   "season": "年",
+   "typical": 3,
+   "low": 0,
+   "high": 8,
+   "sources": [
+    "Wania 2010",
+    "Peltola 2018",
+    "Gao 2025"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "sedge fen",
+   "quantity": "diffusion_share",
+   "basis": "占模拟排放的比例（模式）。LPJ-WHyMe 15.5–30.9；HIMMELI 10–40；JULES-HIMMELI 站均 42。没有直接观测值",
+   "season": "年",
+   "typical": 25,
+   "low": 10,
+   "high": 42,
+   "sources": [
+    "Wania 2010",
+    "Peltola 2018",
+    "Gao 2025"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "sedge fen",
+   "quantity": "seasonal_share_of_annual_emission (winter)",
+   "basis": "FI-Sii 的 EC 年净排放按季节拆分，不涉及通道",
+   "season": "冬季：2005–06 年的 12–3 月为 5.7%；2005–2014 年的 1–3 月为 6±2%",
+   "typical": 6,
+   "low": 4,
+   "high": 8,
+   "sources": [
+    "Rinne 2007",
+    "Rinne 2018"
+   ],
+   "confidence": "high"
+  },
+  {
+   "wetland_type": "sedge fen",
+   "quantity": "seasonal_share_of_annual_emission (snowmelt)",
+   "basis": "FI-Sii 的 EC 年净排放。融雪期总量占 3.4%，其中比温度回归预期多出的只有 2.1–2.2%（0.27 g CH4 m-2），作者认为这部分来自冰下冬储释放",
+   "season": "融雪期（2005 年 4 月，27 天）",
+   "typical": 3.4,
+   "low": 2.1,
+   "high": 3.4,
+   "sources": [
+    "Rinne 2007"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "sedge fen",
+   "quantity": "seasonal_share_of_annual_emission (snow-free)",
+   "basis": "FI-Sii 的 EC 年净排放",
+   "season": "2005 年无雪期 90.9%；2005–2014 年 5–11 月 88±3%",
+   "typical": 90,
+   "low": 85,
+   "high": 91,
+   "sources": [
+    "Rinne 2007",
+    "Rinne 2018"
+   ],
+   "confidence": "high"
+  },
+  {
+   "wetland_type": "sedge fen",
+   "quantity": "seasonal_share_of_annual_emission (ice-cover)",
+   "basis": "Stordalen 亚北极无冻土融化泥炭沼的 EC 年净排放，比例由其表 3 推算",
+   "season": "冰封期 19.0–20.2%（两年）",
+   "typical": 20,
+   "low": 19,
+   "high": 20.2,
+   "sources": [
+    "Jammet 2017"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "sedge fen",
+   "quantity": "seasonal_share_of_annual_emission (thaw)",
+   "basis": "Stordalen 亚北极融化泥炭沼的 EC 年净排放，比例由其表 3 推算",
+   "season": "融化期 6.9–7.7%（两年）",
+   "typical": 7.3,
+   "low": 6.9,
+   "high": 7.7,
+   "sources": [
+    "Jammet 2017"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "Sphagnum bog",
+   "quantity": "oxidation_fraction",
+   "basis": "占产生量，年尺度，来自 Bibai 冷温带沼泽 JP-BBY 的 EC 约束模式-数据融合。多年均值 38%（9.4/24.9 g C m-2 a-1），被氧化的几乎全是 0–20 cm 表层的产量。注意：最大氧化速率参数收敛到了先验上界",
+   "season": "年；逐年 17–50",
+   "typical": 38,
+   "low": 17,
+   "high": 50,
+   "sources": [
+    "Ueyama 2022"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "Sphagnum bog",
+   "quantity": "oxidation_fraction",
+   "basis": "占产生量，现场上界。洼地的离体潜在产量按温度和假定容重放大后减去箱式排放，得 ~99%；同一篇文章用现场 C2H2 抑制只得到 5%（裸泥炭）到 65%（藻垫）。垫状植物沼泽的根际氧化可接近 100%，属极端情形",
+   "season": "生长季（6–7 月）",
+   "typical": null,
+   "low": 5,
+   "high": 99,
+   "sources": [
+    "Frenzel 2000",
+    "Bridgham 2013"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "Sphagnum bog",
+   "quantity": "oxidation_fraction (Eriophorum plant pathway)",
+   "basis": "Eriophorum 植物通道上的氧化不显著：单株用 CH3F 处理后通量不变，排放只由产量和扩散决定。这不能当作生态系统氧化比",
+   "season": "8–9 月",
+   "typical": 0,
+   "low": null,
+   "high": null,
+   "sources": [
+    "Frenzel 1998"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "Sphagnum bog",
+   "quantity": "plant_share",
+   "basis": "占排放的比例。与 EC 对照得到的生长季均值为 27–36：Siikaneva 泥炭藓沼 2013 年 35.8、2014 年 27.1；Bibai 模式-数据融合无雪期 36、全年 30。以 Scheuchzeria 或 Eriophorum 为主的样方更高：剪除后排放降 56；Scheuchzeria 占 64–90；用差值估的上界 ≤75",
+   "season": "生长季。季内首尾两端占比最高，日值 6–90；Bibai 雪期的植物通道设为 0（模式假设，无 LAI）",
+   "typical": 33,
+   "low": 27,
+   "high": 90,
+   "sources": [
+    "Korrensalo 2022",
+    "Ueyama 2022",
+    "Shannon 1994",
+    "Greenup 2000",
+    "Wania 2010"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "Sphagnum bog",
+   "quantity": "ebullition_share",
+   "basis": "北方泥炭藓沼，水塘和裸泥炭按面积放大：占 EC 通量 2–8，占箱式加捕集器总量 2–5。实验室土柱的阵发冒泡 <3.3（不含稳态冒泡）",
+   "season": "生长盛期 6–8 月；初秋开始后阵发冒泡几乎停止",
+   "typical": 5,
+   "low": 2,
+   "high": 8,
+   "sources": [
+    "Männistö 2019",
+    "Green 2013"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "Sphagnum bog",
+   "quantity": "ebullition_share",
+   "basis": "受排水影响的冷温带沼泽 Bibai（泥炭藓加 Moliniopsis 和莎草）。现场箱式在气压下降期测得 50–64；模式-数据融合无雪期 64、全年 70，改变参与约束的数据年数时收敛在 66–72；深层产量约 70% 以冒泡排出",
+   "season": "7 月短期观测；无雪期 64；全年 70",
+   "typical": 64,
+   "low": 50,
+   "high": 72,
+   "sources": [
+    "Tokida 2007",
+    "Ueyama 2022"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "Sphagnum bog",
+   "quantity": "diffusion_share",
+   "basis": "占净排放。用孔隙水梯度按 Fick 定律算扩散，再除以箱式净通量；Bibai 模式-数据融合中扩散只是边缘通道（~0）",
+   "season": "1992–93 年生长季 <5；1991 年 9 月低水位时 25",
+   "typical": 5,
+   "low": 0,
+   "high": 25,
+   "sources": [
+    "Shannon 1994",
+    "Ueyama 2022"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "wet tundra",
+   "quantity": "oxidation_fraction (diffusive pathway)",
+   "basis": "扩散通道：CH4 向上扩散穿过好氧表层时被氧化的比例，分母是这一通道的 CH4，不是整柱产生量。有莎草的多边形中心为 43–50（δ13C 剖面，单日）；无维管植物、有沉水藓的塘为 61–99，有植被处更低",
+   "season": "夏季（单剖面在 2009-07-19；塘为夏季）",
+   "typical": 50,
+   "low": 43,
+   "high": 99,
+   "sources": [
+    "Preuss 2013",
+    "Knoblauch 2015"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "wet tundra",
+   "quantity": "oxidation_fraction (sedge plant pathway)",
+   "basis": "西格陵兰北极湿泥炭沼，莎草为主（Carex aquatilis、Eriophorum angustifolium），上 20 cm 泥炭整块。从底部注入 13CH4，回收的标记中 >98% 以 CH4 逸出，被氧化的只有 1.0–1.3%（<2%）",
+   "season": "实验室 3 周（9 月采样）",
+   "typical": 1.3,
+   "low": 1,
+   "high": 2,
+   "sources": [
+    "Nielsen 2017"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "wet tundra",
+   "quantity": "plant_share",
+   "basis": "饱和莎草区（多边形中心、湿草甸、有挺水植物的塘缘）占排放的比例。北坡有植被的站 92–98；Toolik 湿草甸均值 ~75（37–100）；Samoylov 多边形中心 66±20（37–102）；塘缘 70–90；去掉莎草后排放降 87–89，但其中含底物减少，只能当上界",
+   "season": "夏季快照（6–8 月）",
+   "typical": 75,
+   "low": 37,
+   "high": 98,
+   "sources": [
+    "Morrissey 1992",
+    "Schimel 1995",
+    "Kutzbach 2004",
+    "Knoblauch 2015",
+    "King 1998"
+   ],
+   "confidence": "high"
+  },
+  {
+   "wetland_type": "wet tundra",
+   "quantity": "plant_share",
+   "basis": "较干的多边形边缘（湿润但不饱和）占排放的比例",
+   "season": "1999 年 8 月",
+   "typical": 27,
+   "low": 12,
+   "high": 38,
+   "sources": [
+    "Kutzbach 2004"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "wet tundra",
+   "quantity": "plant_share",
+   "basis": "占模拟年排放的比例，JSBACH-methane，Chersky 洪泛苔原；只有 C3 禾草所在处才计植物通道",
+   "season": "年（2014 年 61.4，2015 年 61.7）",
+   "typical": 61.5,
+   "low": 61.4,
+   "high": 61.7,
+   "sources": [
+    "Castro-Morales 2018"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "wet tundra",
+   "quantity": "ebullition_share",
+   "basis": "占模拟年排放的比例（JSBACH-methane）。现场没有冒泡占比的实测：Lena 三角洲的塘开阔水面以扩散为主，只在一个塘测到冒泡 12 mg CH4 m-2 d-1；EC 研究只推测气压下降和湍流会触发冒泡",
+   "season": "年",
+   "typical": 35,
+   "low": 33.9,
+   "high": 35.7,
+   "sources": [
+    "Castro-Morales 2018",
+    "Knoblauch 2015",
+    "Sachs 2008"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "wet tundra",
+   "quantity": "diffusion_share",
+   "basis": "占模拟年排放的比例（JSBACH-methane）：夏季分子扩散 0.02，冬季穿过积雪的扩散 2.7–4.7。观测侧没有直接值，只能用 1 − 植物占比推出有植被站扩散与冒泡合计约 2–34（推导）",
+   "season": "冬季经积雪 / 夏季",
+   "typical": 4,
+   "low": 0.02,
+   "high": 4.7,
+   "sources": [
+    "Castro-Morales 2018",
+    "Morrissey 1992",
+    "Kutzbach 2004"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "wet tundra",
+   "quantity": "seasonal_share_of_annual_emission (cold season)",
+   "basis": "阿拉斯加北坡 5 个站的 EC 年净排放，按季节拆分，不涉及通道。冷季排放最大的是非淹水的高地苔原",
+   "season": "冷季 9–5 月：均值 50±9，站间 37–64",
+   "typical": 50,
+   "low": 37,
+   "high": 64,
+   "sources": [
+    "Zona 2016"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "wet tundra",
+   "quantity": "seasonal_share_of_annual_emission (zero curtain)",
+   "basis": "EC 年净排放中秋季零幕期（活动层冻结之前）所占的比例",
+   "season": "零幕期 ~20，站间 16–32",
+   "typical": 20,
+   "low": 16,
+   "high": 32,
+   "sources": [
+    "Zona 2016"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "freshwater marsh",
+   "quantity": "oxidation_fraction (rhizosphere)",
+   "basis": "根际或好氧层氧化，分母是潜在排放（用抑制剂或暗厌氧处理作对照）。Scirpus 34.7、Phragmites 16.1（生长季均值）；Equisetum 有机底质 27–52、砂底 0–41（中型实验箱）；混合植被中进入好氧层的扩散 CH4 年均 43% 被氧化（15–76）；亚热带湿地由 δ13C 得夜间 15、白天 36",
+   "season": "生长季均值。Scirpus 生长早期 >55（分母为生成量），植株成熟后最低；砂底 9 月为 0",
+   "typical": 35,
+   "low": 0,
+   "high": 76,
+   "sources": [
+    "Laanbroek 2010",
+    "Kankaala 2004",
+    "Jeffrey 2019"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "freshwater marsh",
+   "quantity": "oxidation_fraction (rhizosphere, upper-limit methods)",
+   "basis": "根际氧化的上限法估计：挺水植物 39–98；Sagittaria 两种方法分别得 65±24 和 79±20。另有实验室参照：无沉积物的整株分室实验中，氧化占根区介质 CH4 损失的 0–88（Sparganium 在缺氧时为 0，Pontederia 52–68）",
+   "season": "未说明",
+   "typical": null,
+   "low": 39,
+   "high": 98,
+   "sources": [
+    "Walter 2000",
+    "Calhoun 1997"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "freshwater marsh",
+   "quantity": "oxidation_fraction",
+   "basis": "占产生量，是实验室筛土培养得到的潜在值，样品来自 Mayberry 复淹泥炭湿地 US-Myb。有植被土壤的氧化毛量为产量的 43%，由 δ13C 推算的被氧化比例为 34–48；开阔水体沉积物为 1–29",
+   "season": "实验室培养（4 月采样）",
+   "typical": 43,
+   "low": 34,
+   "high": 48,
+   "sources": [
+    "McNicol 2019"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "freshwater marsh",
+   "quantity": "plant_share",
+   "basis": "占排放的比例，方法有剪除、切割、茎叶箱和昼夜差分。Scirpus/Phragmites 实验湿地 >90；潮汐淡水沼泽 >85；芦苇切割后排放降 62；三江平原 Carex lasiocarpa 72、C. meyeriana 86、Deyeuxia 31；莎草科 73–86，禾本科 28–31；芦苇白天对流通气约 60（34–74，只算对流部分，是下界）；温带沼泽生长季 38；文献综合区间 30–90",
+   "season": "生长季",
+   "typical": 70,
+   "low": 30,
+   "high": 95,
+   "sources": [
+    "Laanbroek 2010",
+    "Kao-Kniffin 2010",
+    "Bhullar 2013",
+    "Kim 1998",
+    "Gao 2025",
+    "Villa 2020"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "freshwater marsh",
+   "quantity": "plant_share",
+   "basis": "表土冻结期占排放的比例：冻层阻断了扩散，植物茎成为主通道。数据是温带沼泽箱式观测，本表经二手引用取得（Sun 2012）",
+   "season": "表土冻结期 84；同一站生长季为 38",
+   "typical": 84,
+   "low": null,
+   "high": null,
+   "sources": [
+    "Gao 2025"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "freshwater marsh",
+   "quantity": "plant_share",
+   "basis": "亚热带浅水淡水湿地（以睡莲为主）占年排放的比例，三季测量后按植被覆盖度加权。同一研究中冒泡 ~20、扩散 ~20",
+   "season": "年",
+   "typical": 59,
+   "low": null,
+   "high": null,
+   "sources": [
+    "Jeffrey 2019"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "freshwater marsh",
+   "quantity": "plant_share",
+   "basis": "占模拟排放的比例（模式）。PEPRMT-DAMM 在复淹沼泽为 75–76，该模式没有冒泡项，植物通道先按固定 35% 扣除氧化；ELM-Wet 在 US-LA2 对照试验为 53，敏感性试验 41–67",
+   "season": "年；PEPRMT 冬季为 31–35",
+   "typical": 65,
+   "low": 41,
+   "high": 76,
+   "sources": [
+    "Oikawa 2017",
+    "Yazbeck 2025"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "freshwater marsh",
+   "quantity": "ebullition_share",
+   "basis": "占生态系统排放的比例。亚热带睡莲湿地全年 ~20。Mayberry 开阔水面冒泡的单位面积通量只相当于塔通量的 1.3%，这是单位面积比，不是通道份额。模式：ELM-Wet 37（27–45）；河口三角洲沼泽模式 <20，但该模式没有植物通道",
+   "season": "年",
+   "typical": 20,
+   "low": 1,
+   "high": 45,
+   "sources": [
+    "Jeffrey 2019",
+    "McNicol 2017",
+    "Yazbeck 2025",
+    "Wang 2024"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "freshwater marsh",
+   "quantity": "ebullition_share (open water only)",
+   "basis": "只算开阔水面，分母是水面的扩散加冒泡。Mayberry 全年 ~29（扩散 ~71；文中几个数彼此对不上）；夏季下风样地 32.5、上风样地 4.7，冬季为 0。OWC 在生长季末水面以冒泡为主，只有定性描述",
+   "season": "年；夏季 4.7–32.5；冬季 0",
+   "typical": 29,
+   "low": 0,
+   "high": 33,
+   "sources": [
+    "McNicol 2017",
+    "Villa 2021"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "freshwater marsh",
+   "quantity": "diffusion_share",
+   "basis": "占生态系统排放的比例。睡莲湿地全年 ~20；Mayberry 开阔水面扩散的单位面积通量相当于塔通量的 4.1%（单位面积比）；ELM-Wet 模式 9（6–14，指水柱扩散）",
+   "season": "年",
+   "typical": 10,
+   "low": 4,
+   "high": 20,
+   "sources": [
+    "Jeffrey 2019",
+    "McNicol 2017",
+    "Yazbeck 2025"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "freshwater marsh",
+   "quantity": "seasonal_share_of_annual_emission (spring thaw)",
+   "basis": "三江平原少数热点的春融排放为 31.3±10.1 g C m-2，约等于前人在同一区域算出年排放的 80%。这是两项研究之间的比，只针对热点，不是面积平均",
+   "season": "春季冻融期",
+   "typical": 80,
+   "low": null,
+   "high": null,
+   "sources": [
+    "Song 2012"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "reed fen (Phragmites floodplain fen)",
+   "quantity": "ebullition_share",
+   "basis": "阵发冒泡占总排放的比例，用漏斗捕集器加箱式测量。计算假设：稳态冒泡为 0；水位低于地表 5 cm 时冒泡为 0；气泡到达地表前不被氧化。高养分站 38，低养分站 54",
+   "season": "3–9 月积分；只算高水位期时为 54–81",
+   "typical": 46,
+   "low": 38,
+   "high": 81,
+   "sources": [
+    "Stanley 2019"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "temperate forested swamp",
+   "quantity": "plant_share (tree stems)",
+   "basis": "英国桤木/桦木沼泽林，树干排放占生态系统排放的比例。树干高度分 3 m 和 10 m 两种估算",
+   "season": "夏 8.8–13.5，秋 6–15.1，冬 17–25，春 11–27（含幼树）",
+   "typical": 15,
+   "low": 6,
+   "high": 27,
+   "sources": [
+    "Pangala 2015"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "temperate forested swamp",
+   "quantity": "plant_share (herbaceous vegetated plots)",
+   "basis": "有草本植被的洼地与丘占生态系统排放的比例，由表 1 相加得出。这些样方的通量里也含土壤通量",
+   "season": "春 46–52，夏 47–49，秋 39–42，冬 26–29",
+   "typical": 45,
+   "low": 26,
+   "high": 52,
+   "sources": [
+    "Pangala 2015"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "tropical floodplain/swamp",
+   "quantity": "oxidation_fraction",
+   "basis": "洪泛湖开阔水体的水柱，分母是产生量。分母可能只含溶解 CH4，冒泡绕过了氧化",
+   "season": "覆盖一年中各个水位期",
+   "typical": 80,
+   "low": 34,
+   "high": 100,
+   "sources": [
+    "Barbosa 2018"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "tropical floodplain/swamp",
+   "quantity": "oxidation_fraction",
+   "basis": "低水位时出露的无植被沉积物，分母是进入好氧层的 CH4。这是上限，此时没有冒泡",
+   "season": "低水位期",
+   "typical": null,
+   "low": null,
+   "high": 75,
+   "sources": [
+    "Koschorreck 2000"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "tropical floodplain/swamp",
+   "quantity": "plant_share",
+   "basis": "占生态系统排放的比例。亚马孙洪泛森林树干加叶为 44–65，再加浮水植物为 56.6–64.6；婆罗洲泥炭沼泽林树干为 62–87（87 是外推到 15 m 树高的结果）。这是木本树干通道，不是草本通气组织",
+   "season": "淹水期（2013–2014 年；婆罗洲为 3 月湿季）",
+   "typical": 60,
+   "low": 44,
+   "high": 87,
+   "sources": [
+    "Pangala 2017",
+    "Pangala 2013"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "tropical floodplain/swamp",
+   "quantity": "water_surface_share (diffusion+ebullition)",
+   "basis": "水面通量（扩散与冒泡合计，文中未分开）占生态系统排放的比例。出露土壤另占 2.5–15.7，其中 15.7 来自未淹水样地",
+   "season": "2013–2014 年，以淹水期为主",
+   "typical": 34,
+   "low": 27,
+   "high": 41,
+   "sources": [
+    "Pangala 2017"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "tropical floodplain/swamp",
+   "quantity": "ebullition_share (open water)",
+   "basis": "开阔水面，分母是水面的扩散加冒泡，不含植物通道。亚马孙退水期开阔水 49、Lago Calado 70；潘塔纳尔 ~90；Janauacá 湖涨水和高水期 1、低水期 89",
+   "season": "季节变化很强：涨水和高水期最低，退水和低水期最高",
+   "typical": 60,
+   "low": 1,
+   "high": 90,
+   "sources": [
+    "Bartlett 1988",
+    "Crill 1988",
+    "Marani 2007",
+    "Barbosa 2021",
+    "Melack 2022",
+    "Bartlett 1990"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "tropical floodplain/swamp",
+   "quantity": "ebullition_share (flooded forest and floating mats, water surface)",
+   "basis": "淹水森林与浮草垫的水面，分母是水面排放，不含树干。淹水森林 54（退水期）、73（涨水期）到 93（退水期）；浮草垫 64；全部生境合并 85",
+   "season": "涨水期低、退水期高",
+   "typical": 70,
+   "low": 54,
+   "high": 93,
+   "sources": [
+    "Bartlett 1988",
+    "Barbosa 2021",
+    "Melack 2022",
+    "Devol 1988"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "tropical floodplain/swamp",
+   "quantity": "diffusion_share (water surface)",
+   "basis": "占水面排放的比例，由 1 − 冒泡占比推导。Lago Calado 扩散为 8.3/27，约 31%",
+   "season": "涨水和高水期开阔水面可达 ~99；退水期 7–51",
+   "typical": 35,
+   "low": 7,
+   "high": 99,
+   "sources": [
+    "Crill 1988",
+    "Bartlett 1988",
+    "Barbosa 2021"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "wetlands in general (review/global)",
+   "quantity": "oxidation_fraction",
+   "basis": "占产生量。全球湿地氧化汇为产量的 40–70；Le Mer 综述为 60 到 >90，但正文证据多来自稻田；Segers 综述为 1–90，含稻田，作者也说方法有争议；CLM4Me 模拟全球陆地约 61（433/707 Tg）",
+   "season": "年或未说明",
+   "typical": 60,
+   "low": 40,
+   "high": 90,
+   "sources": [
+    "Bridgham 2013",
+    "Le Mer 2001",
+    "Segers 1998",
+    "Riley 2011"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "wetlands in general (review/global)",
+   "quantity": "plant_share",
+   "basis": "占排放的跨系统区间，所据研究多为挺水植物",
+   "season": "未说明",
+   "typical": null,
+   "low": 30,
+   "high": 100,
+   "sources": [
+    "Bridgham 2013",
+    "Villa 2020",
+    "Dorodnikov 2011"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "model reference (CLM4Me)",
+   "quantity": "oxidation_fraction",
+   "basis": "占产生量，CLM4Me 基线参数模拟，覆盖所有格点，不限于湿地",
+   "season": "45°N 以北 35–75，4–5 月最低、9–10 月最高；热带 50–70，5 月最低、7–8 月最高",
+   "typical": 60,
+   "low": 35,
+   "high": 75,
+   "sources": [
+    "Riley 2011"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "model reference (process models)",
+   "quantity": "oxidation_fraction (plant pathway)",
+   "basis": "进入根和通气组织的 CH4 在排出前被根际氧化的比例。固定参数：PEPRMT 35、TEM 40、Walter-Heimann 50；CLM4Me 诊断值为全球通量加权 ~60（分母是本应经通气组织逸出的量）",
+   "season": "常数或年",
+   "typical": 45,
+   "low": 35,
+   "high": 60,
+   "sources": [
+    "Oikawa 2017",
+    "Zhuang 2004",
+    "Walter 2000",
+    "Riley 2011"
+   ],
+   "confidence": "low"
+  },
+  {
+   "wetland_type": "lakes/ponds (reference, not wetland)",
+   "quantity": "ebullition_share",
+   "basis": "占开阔水面排放的比例。北温带三湖 52–74；全球内陆水体 ~59（由表 1 推算，各通道样本不同）；北方小泥炭湖无冰期 ~55（由类别均值推算）；西伯利亚热融湖 95",
+   "season": "夏季分层期、无冰期或全年",
+   "typical": 59,
+   "low": 52,
+   "high": 95,
+   "sources": [
+    "Bastviken 2008",
+    "Bastviken 2011",
+    "Kuhn 2021",
+    "Walter 2006"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "lakes/ponds (reference, not wetland)",
+   "quantity": "oxidation_fraction",
+   "basis": "深层沉积物释放的 CH4 在水柱中被氧化的比例，分母是这部分释放量。浅层沉积物释放的 CH4 大多逃逸",
+   "season": "夏季分层期",
+   "typical": null,
+   "low": 51,
+   "high": 80,
+   "sources": [
+    "Bastviken 2008"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "rice paddy (reference)",
+   "quantity": "oxidation_fraction",
+   "basis": "占产生量，随生育期和水管理在 0–97 之间变化。得州连续灌溉稻田产量高峰期 ~70；植物通道为主（占 97%）时 ~90；稻田杂草 95。另两项口径不同：经土-水界面扩散的 CH4 约 80% 被氧化（分母为这部分扩散量）；单根模式 8.5–33",
+   "season": "随生育期变化",
+   "typical": 70,
+   "low": 0,
+   "high": 97,
+   "sources": [
+    "Le Mer 2001",
+    "Walter 2000",
+    "Laanbroek 2010",
+    "van Bodegom 2001"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "rice paddy (reference)",
+   "quantity": "plant_share",
+   "basis": "占排放的比例。生殖期 >90；二手引用给出早期 ~60 到后期 ~90；生育早期以冒泡为主",
+   "season": "生育早期 60，到生殖期 >90",
+   "typical": 90,
+   "low": 60,
+   "high": 97,
+   "sources": [
+    "Le Mer 2001",
+    "Hwang 2020",
+    "Walter 2000"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "rice paddy (reference)",
+   "quantity": "ebullition_share",
+   "basis": "占总排放的比例，用 EC 小波相似性方法分割，站点为韩国间歇灌溉稻田 KR-CRK。剩余部分包含植物通道",
+   "season": "生长期 10–17（逐年 12、17、10）；中期排水前 31–34，排水期间及之后 7–12",
+   "typical": 12,
+   "low": 10,
+   "high": 17,
+   "sources": [
+    "Hwang 2020"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "wetland_type": "rice paddy (reference)",
+   "quantity": "diffusion_share (water column)",
+   "basis": "从水柱扩散的部分占总排放的比例，经二手引用取得（Butterbach-Bahl 1997）",
+   "season": "年均 2；生长期 <10",
+   "typical": 2,
+   "low": null,
+   "high": 10,
+   "sources": [
+    "Hwang 2020"
+   ],
+   "confidence": "low"
+  }
+ ],
+ "notes": [
+  "口径：所有数值都是百分比，只取 VERIFIED 行，同一论文的重复行已合并。分母分三种（占产生量、占排放、占某一通道内的 CH4），分开列出，不能互相换算；季节列写明是生长季、全年还是实验室。typical 是对各来源的综合判断，不是统计中位数——推测",
+  "对照模式时应分别比两个氧化量。(a) 整柱的氧化量/产生量：北方湿地的模式基准是 35–75（CLM4Me），现场只有上界（泥炭藓沼 99、莎草泥沼 58–92）或单站模式-数据值（Bibai 38）。(b) 植物通道上的根际氧化：实测（抑制剂或同位素）泥炭莎草 <20–34，挺水植物生长季均值 16–35，Eriophorum 接近 0，北极莎草 13CH4 标记 1–2；综述称通气组织内的氧化占总甲烷氧化 <1%（Xu 2016）。模式里这一参数常设 35–60——已验证（Oikawa 2017 行、Zhuang 2004 行、Walter 2000 行、Riley 2011 行）。模式若把植物通道氧化设在 50% 以上，会高于多数实测——推测",
+  "植物通道占排放的生长季目标：湿苔原饱和莎草区约 75（37–98），淡水挺水沼泽约 70（禾草约 30），莎草泥沼约 65（20–95），泥炭藓沼约 33（EC 季均 27–36），热带洪泛林树干加叶约 60。FI-Sii 实测季均 21%，作者说这是低端值；HIMMELI 在同一站给出 60–90。当前模式在 FI-Sii 的植物通道接近 0，与实测和其他模式都对不上——推测",
+  "冒泡占比分成两群。北方泥炭藓沼和莎草泥沼的现场或实验值为 2–25。Bibai 沼泽、英国芦苇泥沼和热带洪泛水面为 38–93。过程模式之间的冒泡占比从 0 到 70，差异很大，观测对它的约束很弱",
+  "氧化的季节变化：CH3F 法测得早季最大，夏末排放峰时接近 0（Popp 2000）；Scirpus 生长早期 >55，成熟后最低（Laanbroek 2010）；CLM4Me 在 45°N 以北 4–5 月最低、9–10 月最高，热带 5 月最低、7–8 月最高；Equisetum 各月之间差异不显著（Kankaala 2004）",
+  "植物通道的季节变化：FI-Lom 从盛夏 85 降到初秋 68（Ge 2023）；Siikaneva 泥炭藓沼在生长季首尾两端占比最高（Korrensalo 2022）；温带沼泽表土冻结期植物通道占 84，生长季只占 38（Sun 2012，经 Gao 2025 引用）；温带沼泽林草本占比从夏季约 48 降到冬季 26–29，树干占比反向升到 17–25（Pangala 2015）；PEPRMT 模式冬季为 31–35；Bibai 模式把雪期植物通道设为 0，这是模式假设，不是观测",
+  "冒泡的季节与触发条件：芦苇在生长季前后冒泡显著（Laanbroek 2010）；Mayberry 冬季冒泡为 0，开阔水面排放有 >65% 出在夏季；泥炭藓沼初秋开始后阵发冒泡几乎停止（Green 2013）；Sallie's Fen 夏季冒泡事件频率约为春季的 2 倍、秋季的 3 倍，单次事件通量约 33–160 mg CH4 m-2 d-1，是推导值（Goodrich 2011）；芦苇泥沼水位低于地表 5 cm 时冒泡为 0，高水位期占比升到 54–81（Stanley 2019）；Bibai 的冒泡由气压下降触发（Tokida 2007）；塌陷沼泽 >90% 的冒泡来自表层泥炭（Klapstein 2014）；热带洪泛区涨水和高水期开阔水面冒泡约 1%，退水和低水期 89–93%",
+  "冬季与春融（按季节拆分，不涉及通道）：FI-Sii 冬季占 5.7–6%，融雪期 3.4%，其中超出温度预期的只有 2.1–2.2%（0.27 g CH4 m-2），无雪期 88–91%。由此算得冬季平均通量约 0.72 g/122 d，即约 6 mg CH4 m-2 d-1——推测（由 Rinne 2007 表 2 推算）。其他站：Stordalen 融化泥炭沼冰封期 19–20%、融化期 7–8%；阿拉斯加北坡苔原冷季均值 50%（37–64），零幕期约 20%；Bibai 雪盖下几乎没有排放，冰面融化的瞬间有 >10 mg m-2 h-1 的冲量，与夏季阵发冒泡同量级（Tokida 2007 Chemosphere）；三江平原的少数热点春融排放可达年值的 80%，只限热点",
+  "对照上一轮 FI-Sii S3 诊断：模式冬储从 5.8 增到 10.3 g m-2，3–4 月以冒泡释放，4 月冒泡 146 mg m-2 d-1；实测融雪期只占全年 3.4%，超出温度预期的只有 0.27 g m-2。模式春季冒泡释放的量级比实测大约一个量级——推测（需要用模式 3–4 月释放量除以模式全年总量再核）。模式冬季深层产甲烷 44–85 mg m-2 d-1，实测冬季平均排放约 6 mg m-2 d-1。两者相差的部分就是储量增长，单看这一点并不矛盾；但春季释放不能超过实测的春融增量——推测",
+  "同一研究同时给出三个通道配比的很少。观测类：Jeffrey 2019 全年为植物 59、冒泡 20、扩散 20；Ueyama 2022（模式-数据融合）全年为植物 30、冒泡 70、扩散约 0，无雪期植物 36、冒泡 64；Pangala 2017 为树 44–65、水面 27–41、土壤 2.5–16。模式类：JSBACH 为 61/35/4，ELM-Wet 为 53/37/9，LPJ-WHyMe 为 68–85/0–1.4/15–31，JULES-HIMMELI 为 50–54/6–8/42（均按植物/冒泡/扩散）",
+  "站点锚点，站号按各行所给：FI-Sii（植物 ≥21，冬季 6%，融雪 3.4%）；FI-Lom（C. rostrata 68–85）；JP-BBY（冒泡 64/70，植物 36/30，氧化 38）；US-Myb（开阔水面冒泡 1.3、扩散 4.1，都是相对塔通量的单位面积比；实验室氧化 34–48）；US-OWC（生长季末水面以冒泡为主）；US-LA2（ELM-Wet 模式 53/37/9）；KR-CRK（稻田冒泡 10–17）；BR-Npw 所在的潘塔纳尔（开阔水面冒泡约 90）；US-BZF（单次冒泡事件 0.1/46.3）；SE-Deg 只有模式值（LPJ-WHyMe 74.3，Granberg 52–94）；Siikaneva 泥炭藓沼（冒泡 2–8；行内标为 FI-Si2，论文本身不用这个站号）",
+  "口径陷阱：(1) 剪除或去除植物后的降幅里混有底物减少，只能当植物占比的上界——King 1998 用硅管替代莎草只恢复了约一半的排放。(2) Mayberry 的 1.3 和 4.1 是单位面积比，不是份额。(3) Wania 2010 的 Degerö 总量没有计入冒泡。(4) Turetsky 2008 的分母可能不含冒泡。(5) 热带冒泡占比大多只占水面排放，不含树干。(6) Pangala 2017 土壤占比上限 15.7 来自未淹水样地。(7) Frenzel 2000 的 99% 是用潜在产量算的上界。(8) Ström 2005 的氧化比是 14C-乙酸标记的占比，每种植物 n=1。(9) Castro-Morales 2018 的整柱氧化只有约 1.6%，因为大部分氧化已经折进产甲烷比例参数里，不能拿来和观测比",
+  "年份与著录：McNicol 的氧化行在 Crossref 中的发行日期是 2019-12，卷号属 2020；Laanbroek 在线发表于 2009，卷号属 2010；Noyce 2011 是硕士论文，没有 DOI；Ding 2005、Sun 2012、Butterbach-Bahl 1997、Shannon 1996、Schipper & Reddy 1996 等都只经二手引用取数，原文未核"
+ ],
+ "gaps": [
+  "莎草泥沼、湿苔原和热带有植被沼泽都没有整柱氧化量/产生量的现场实测。现有的值只针对单一通道（根际或扩散层），或者是上界，或者是模式值",
+  "莎草泥沼与湿苔原的冒泡、扩散占比没有现场的年尺度分割，只有实验室整块土柱、偶然捕获的单次事件和模式值",
+  "冬季与春融期几乎没有按通道分割的观测：只有温带沼泽冻结期植物占 84（二手引用）和模式值。Tokida 2007 只给出春融冲量的量级，没有占比；FI-Sii 的冬季和春融只有总量占全年的比例，不分通道",
+  "泥炭藓沼的氧化比从 17 到 99 跨度很大。唯一的年尺度值来自单站模式-数据融合（Bibai），而且其中的氧化参数收敛到了先验上界",
+  "热带：有植被的洪泛土壤和根际氧化没有核实数据；Pangala 2017 没有把水面扩散和冒泡分开；多数陆面模式不表示树干通道",
+  "淡水沼泽的全年三通道分割只有一项（亚热带睡莲湿地）。温带挺水沼泽的冒泡、扩散年占比缺少实测",
+  "盐沼和半咸水沼泽：只有不含植物通道的模式（Wang 2024），以及一条二手引用（Reid 2013 引 Chanton 1989：无植被潮汐沉积物冒泡最多占 50）。植物通道占比和氧化比都缺",
+  "较多数值是二手引用（Laanbroek、Kao-Kniffin、Walter、Gao、Hwang、Melack、Bridgham、Bhullar），原始文献未核",
+  "US-Uaf 在核实行里没有任何通道或氧化数据；SE-Deg 只有模式值；FI-Sii 没有冒泡和扩散的实测分割",
+  "冒泡占比的方法依赖人为选定的基线，或只计阵发冒泡（Christensen 2003、Green 2013、Stanley 2019）；稳态冒泡常被算进扩散，或者直接排除",
+  "Le Mer 2001 称温带沼泽林植物通道约占 90，但所引文献多为稻田和亚北极泥沼，本表没有采用"
+ ]
+}

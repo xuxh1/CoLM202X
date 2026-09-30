@@ -1,0 +1,225 @@
+From b3e66306cba38f2fa0c5ebab5fd79741bac7b9c1 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 11:38:26 +0800
+Subject: [PATCH] feat(hydrology): split the wetland floor refill by area
+ (boreal wetlands)
+
+DEF_WETLAND_INFLOW_AREA_SPLIT (default off): the dynamic wetland tile is
+the area mean of a share fed by lateral inflow, held at the water-table
+floor, and a share without inflow (1 - wetland_inflow_share: the BAWLD
+permafrost-bog share of the wetland classes from rainfed_share, or
+wetland_ombro_share_site at a tower). The share without inflow keeps the
+deficit it builds up below the floor; it is carried between steps in the
+new restart field wetdef_noinfl (patch, mm), read with a default of 0 and
+written only when the switch is on. Each step the change of the tile
+deficit since the last refill, wsupply - (1 - finfl) wetdef_noinfl, is
+taken as falling on both shares alike; only the fed share's part is
+refilled. Above the floor the two shares merge and the carried deficit
+is cleared.
+
+C-38 scales the refill by the fed share, but the refill is recomputed
+from the whole deficit every step, so any share below one still pulls
+the tile back to the floor within a few steps; the tile-mean table now
+falls with the share without inflow. Share 0 refills the whole deficit
+as before; share 1 refills nothing, as under C-38.
+
+Off, the refill, the restart files and all output are unchanged.
+
+---
+ main/MOD_SoilSnowHydrology.F90  | 35 ++++++++++++++++++++++++++++++---
+ main/MOD_Vars_TimeVariables.F90 | 16 +++++++++++++--
+ share/MOD_Namelist.F90          | 16 +++++++++++++++
+ 3 files changed, 62 insertions(+), 5 deletions(-)
+
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index 0f83983a..62d1ba4d 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -10,7 +10,7 @@ MODULE MOD_SoilSnowHydrology
+                            DEF_DA_TWS_GRACE,        DEF_Optimize_Baseflow, &
+                            DEF_USE_Dynamic_Wetland, USE_SITE_WTD,          &
+                            DEF_PADDY_RICE_BUND,     DEF_FLOODPLAIN_INFILTRATION, &
+-                           DEF_WETLAND_POND_OUTFLOW
++                           DEF_WETLAND_POND_OUTFLOW, DEF_WETLAND_INFLOW_AREA_SPLIT
+ #if (defined CaMa_Flood)
+    USE YOS_CMF_INPUT,      only: LWINFILT
+ #endif
+@@ -609,6 +609,7 @@ ENDIF
+ #ifdef TRACER
+    USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_max_wtd_of, wetland_peat_outflow, wetland_inflow_share
+    USE MOD_Vars_TimeInvariants, only: OM_density
++   USE MOD_Vars_TimeVariables,  only: wetdef_noinfl
+ #endif
+ #ifdef DataAssimilation
+    USE MOD_DA_TWS, only: fslp_k
+@@ -768,6 +769,7 @@ ENDIF
+ 
+    real(r8) :: zwtmm
+    real(r8) :: zwt_floor, wsupply, ztop, zbot   ! wetland water-table floor (mm)
++   real(r8) :: finfl, wrefill                   ! share taking lateral inflow (-), its refill (mm)
+    real(r8) :: qpond                            ! overland outflow of wetland ponding (mm s-1)
+    real(r8) :: sp_zc(1:nl_soil), sp_zi(0:nl_soil), sp_dz(1:nl_soil) ! in mm
+    logical  :: is_permeable(1:nl_soil)
+@@ -1248,13 +1250,40 @@ IF((patchtype<=1) .or. is_dry_lake &
+                   wsupply = wsupply + max(eff_porosity(j) - vol_liq(j), 0.) * (zbot - ztop)
+                ENDIF
+             ENDDO
+-            ! C-38: the rain-fed share of the tile takes no lateral inflow
+-            rsubst = - wsupply / deltim * wetland_inflow_share(ipatch)
++            ! finfl, the share taking lateral inflow, is 1 minus the rainfed_share
++            ! of DEF_METHANE%wetland_veg_file, which v2/scripts/mk_rainfed_share.py
++            ! fills with the BAWLD permafrost-bog (PEB) share of the wetland
++            ! classes (D-40: open bogs keep the floor), or 1 minus
++            ! DEF_METHANE%wetland_ombro_share_site at a tower; 1 without C-13.
++            IF (DEF_WETLAND_INFLOW_AREA_SPLIT) THEN
++               ! Area split: the column is the area mean of the fed share,
++               ! held at the floor, and the share without inflow, whose own
++               ! deficit below the floor wetdef_noinfl carries between steps.
++               ! The change of the tile deficit since the last refill,
++               ! wsupply - (1 - finfl) wetdef_noinfl, falls on both shares
++               ! alike; the fed share takes its part back, the other keeps
++               ! it. Water lifting the fed share above the floor is not kept
++               ! apart: the next step books the change as if it sat there.
++               finfl = wetland_inflow_share(ipatch)
++               IF (finfl < 1._r8) THEN
++                  wrefill = finfl * max(wsupply - (1._r8 - finfl) * wetdef_noinfl(ipatch), 0._r8)
++                  wetdef_noinfl(ipatch) = wsupply + finfl * wetdef_noinfl(ipatch)
++               ELSE
++                  wrefill = wsupply
++                  wetdef_noinfl(ipatch) = 0._r8
++               ENDIF
++               rsubst = - wrefill / deltim
++            ELSE
++               ! C-38: the rain-fed share of the tile takes no lateral inflow
++               rsubst = - wsupply / deltim * wetland_inflow_share(ipatch)
++            ENDIF
+          ELSE
+             ! Above the floor the tile drains laterally through its
+             ! saturated zone (peat transmissivity, off unless configured).
+             rsubst = wetland_peat_outflow(nl_soil, zi_soisno(0:nl_soil), hksati(1:nl_soil), &
+                OM_density(1:nl_soil,ipatch), zwtmm / 1000.)
++            ! With the area split the two shares merge above the floor.
++            IF (DEF_WETLAND_INFLOW_AREA_SPLIT) wetdef_noinfl(ipatch) = 0._r8
+          ENDIF
+       ENDIF
+ #endif
+diff --git a/main/MOD_Vars_TimeVariables.F90 b/main/MOD_Vars_TimeVariables.F90
+index c8a3843b..03c64b81 100644
+--- a/main/MOD_Vars_TimeVariables.F90
++++ b/main/MOD_Vars_TimeVariables.F90
+@@ -535,6 +535,7 @@ MODULE MOD_Vars_TimeVariables
+    real(r8), allocatable :: zwt           (:) ! the depth to water table [m]
+    real(r8), allocatable :: wa            (:) ! water storage in aquifer [mm]
+    real(r8), allocatable :: wetwat        (:) ! water storage in wetland [mm]
++   real(r8), allocatable :: wetdef_noinfl (:) ! deficit below the floor of the wetland share without inflow [mm]
+    real(r8), allocatable :: wat           (:) ! total water storage [mm]
+    real(r8), allocatable :: wdsrf         (:) ! depth of surface water [mm]
+    real(r8), allocatable :: rss           (:) ! soil surface resistance [s/m]
+@@ -728,6 +729,7 @@ CONTAINS
+             allocate (zwt                         (numpatch)); zwt           (:) = spval
+             allocate (wa                          (numpatch)); wa            (:) = spval
+             allocate (wetwat                      (numpatch)); wetwat        (:) = spval
++            allocate (wetdef_noinfl               (numpatch)); wetdef_noinfl (:) = 0._r8
+             allocate (wat                         (numpatch)); wat           (:) = spval
+             allocate (wdsrf                       (numpatch)); wdsrf         (:) = spval
+             allocate (rss                         (numpatch)); rss           (:) = spval
+@@ -928,6 +930,7 @@ CONTAINS
+             deallocate (zwt                    )
+             deallocate (wa                     )
+             deallocate (wetwat                 )
++            deallocate (wetdef_noinfl          )
+             deallocate (wat                    )
+             deallocate (wdsrf                  )
+             deallocate (rss                    )
+@@ -1083,7 +1086,8 @@ CONTAINS
+ 
+    USE MOD_SPMD_Task
+    USE MOD_Namelist, only: DEF_REST_CompressLevel, DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, &
+-                           DEF_USE_IRRIGATION, DEF_USE_Dynamic_Lake, SITE_landtype
++                           DEF_USE_IRRIGATION, DEF_USE_Dynamic_Lake, SITE_landtype, &
++                           DEF_WETLAND_INFLOW_AREA_SPLIT
+    USE MOD_LandPatch
+    USE MOD_NetCDFVector
+    USE MOD_Vars_Global
+@@ -1208,6 +1212,8 @@ ENDIF
+       CALL ncio_write_vector (file_restart, 'zwt     '   , 'patch', landpatch, zwt       , compress)                    ! the depth to water table [m]
+       CALL ncio_write_vector (file_restart, 'wa      '   , 'patch', landpatch, wa        , compress)                    ! water storage in aquifer [mm]
+       CALL ncio_write_vector (file_restart, 'wetwat  '   , 'patch', landpatch, wetwat    , compress)                    ! water storage in wetland [mm]
++      IF (DEF_WETLAND_INFLOW_AREA_SPLIT) &
++      CALL ncio_write_vector (file_restart, 'wetdef_noinfl', 'patch', landpatch, wetdef_noinfl, compress)               ! deficit of the wetland share without inflow [mm]
+       CALL ncio_write_vector (file_restart, 'wdsrf   '   , 'patch', landpatch, wdsrf     , compress)                    ! depth of surface water [mm]
+       CALL ncio_write_vector (file_restart, 'rss     '   , 'patch', landpatch, rss       , compress)                    ! soil surface resistance [s/m]
+ 
+@@ -1421,6 +1427,10 @@ ENDIF
+       CALL ncio_read_vector (file_restart, 'zwt     '   , landpatch, zwt        ) ! the depth to water table [m]
+       CALL ncio_read_vector (file_restart, 'wa      '   , landpatch, wa         ) ! water storage in aquifer [mm]
+       CALL ncio_read_vector (file_restart, 'wetwat  '   , landpatch, wetwat     ) ! water storage in wetland [mm]
++      ! A restart written with DEF_WETLAND_INFLOW_AREA_SPLIT off starts the
++      ! share without inflow at the floor.
++      IF (DEF_WETLAND_INFLOW_AREA_SPLIT) &
++      CALL ncio_read_vector (file_restart, 'wetdef_noinfl', landpatch, wetdef_noinfl, defval = 0._r8) ! [mm]
+       CALL ncio_read_vector (file_restart, 'wdsrf   '   , landpatch, wdsrf      ) ! depth of surface water [mm]
+       CALL ncio_read_vector (file_restart, 'rss     '   , landpatch, rss        ) ! soil surface resistance [s/m]
+ 
+@@ -1537,7 +1547,7 @@ ENDIF
+    USE MOD_SPMD_Task
+    USE MOD_RangeCheck
+    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, DEF_USE_IRRIGATION, &
+-                           DEF_USE_SNICAR, DEF_USE_Dynamic_Lake
++                           DEF_USE_SNICAR, DEF_USE_Dynamic_Lake, DEF_WETLAND_INFLOW_AREA_SPLIT
+    USE MOD_Vars_TimeInvariants, only: dz_lake
+ 
+    IMPLICIT NONE
+@@ -1578,6 +1588,8 @@ ENDIF
+       CALL check_vector_data ('zwt         [m]    ', zwt        ) ! the depth to water table [m]
+       CALL check_vector_data ('wa          [mm]   ', wa         ) ! water storage in aquifer [mm]
+       CALL check_vector_data ('wetwat      [mm]   ', wetwat     ) ! water storage in wetland [mm]
++      IF (DEF_WETLAND_INFLOW_AREA_SPLIT) &
++      CALL check_vector_data ('wetdef_noinfl [mm] ', wetdef_noinfl) ! deficit of the wetland share without inflow [mm]
+       CALL check_vector_data ('wdsrf       [mm]   ', wdsrf      ) ! depth of surface water [mm]
+       CALL check_vector_data ('rss         [s/m]  ', rss        ) ! soil surface resistance [s/m]
+ IF (DEF_USE_Dynamic_Lake) THEN
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 545ff4df..0a85fed6 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -249,6 +249,20 @@ MODULE MOD_Namelist
+    ! candidate 13; PEAT-CLSM semisurficial runoff, Bechtold et al. 2019)
+    ! instead of staying until the wetland water store overflows. Default off.
+    logical  :: DEF_WETLAND_POND_OUTFLOW = .false.
++   ! Split the dynamic wetland tile by area at the water-table floor instead
++   ! of scaling the refill by the share that takes lateral inflow (paper V2
++   ! C-38, boreal wetlands). The fed share is held at the floor; the share
++   ! without inflow (1 - wetland_inflow_share of the methane module, the
++   ! permafrost peat plateaus, PEB, of BAWLD, Olefeldt et al. 2021) keeps the
++   ! deficit it builds up below the floor, carried between steps in
++   ! wetdef_noinfl, so the tile-mean table falls with that share. Scaled
++   ! alone, the refill recomputed from the whole deficit each step pulls the
++   ! tile back to the floor within a few steps. Permafrost bogs, raised
++   ! above the surrounding water by ground ice, emit a warm-season median of
++   ! 2.5 mg CH4 m-2 d-1 at a table 20 cm below the surface, against 35 for
++   ! bogs and 58 for fens (BAWLD-CH4, Kuhn et al. 2021); northern bogs and
++   ! fens average 5.6 and 8.4 g CH4 m-2 yr-1 (Treat et al. 2018). Default off.
++   logical  :: DEF_WETLAND_INFLOW_AREA_SPLIT = .false.
+ 
+    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
+    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
+@@ -1367,6 +1381,7 @@ CONTAINS
+       DEF_WETLAND_PEAT_SHARE_SITE,            &
+       DEF_WETLAND_PEAT_SOIL,                  &
+       DEF_WETLAND_POND_OUTFLOW,               &
++      DEF_WETLAND_INFLOW_AREA_SPLIT,          &
+       DEF_BGC_DEBUG_SCALARS,                  &
+ 
+       DEF_USE_WaterTableInit,                 &
+@@ -1999,6 +2014,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_WETLAND_PEAT_SHARE_SITE            ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_SOIL                  ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_POND_OUTFLOW               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_INFLOW_AREA_SPLIT          ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

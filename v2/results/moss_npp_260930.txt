@@ -1,0 +1,344 @@
+# moss_npp_260930：开阔泥炭藓层凋落物输入（I-33）
+
+- **日期**：2026.09.30-17:11
+- **读者**：下一会话
+- **来源**：中控派活 methane-mossnpp（实现 I-33）；依据 `v2/results/lit_moss_productivity_260930.txt` 第 5.2 节与 `v2/迭代账本.md` 的 Q-83、Q-75、V-172、C-89、C-66、C-13 行；代码在克隆 `<worktree>/CoLM202X-moss` 的分支 `moss-npp`（`9a401b04`，父提交 `aa43cf07`）；单点树 `cases/paper_v2/v260930/sp_v2_dev_moss`；tag `v2_mn_off`、`v2_mn_on`、`v2_mn_onv`；脚本与比对输出在本克隆 `v2/_scratch/mossnpp/`
+- **状态**：代码提交于 `moss-npp`，未合并、未 push；键关两塔逐位相同；键开 0.5 及其加维管上限的变体都使藓塔甲烷偏高，均不宜采用，键保持缺省关
+- **失效于**：`moss-npp` 改写或合入后再改动，`wetland_moss_npp`、`wetland_moss_decay_ratio` 的语义改变，或站点基底 `v2_p8n` 换代
+
+## 0. 覆盖面
+
+1. 检索范围为父提交 `aa43cf07` 的 `main/`、`mkinidata/`、`share/`，检索词与命中（文件数、行数）见 `v2/_scratch/mossnpp/coverage.txt`；与本输入路径直接相关的词为 `wetland_plant_litter_input`（1 个文件、3 行）、`wetveg_forest_input_ratio`（2、7）、`wetland_moss_input_frac`（3、11）、`wetveg_moss`（2、13）、`wetveg_forest`（2、30）、`i_cwd`（15、58）、`is_cwd`（6、18）、`decomp_cpools_sourcesink`（5、33）、`CDecompStateUpdate`（4、10）、`tracer_ch4_bgc_finalize_step`（3、8）、`cellorg`（5、38）。
+2. `i_cwd` 与 `is_cwd` 命中的 18 个文件逐一核对了命中行：`MOD_BGC_CNCStateUpdate2/3.F90`、`MOD_BGC_CNNStateUpdate1/2/3.F90`、`MOD_BGC_CNSASU.F90`、`MOD_BGC_Veg_CNFireLi2016.F90`、`MOD_BGC_Veg_CNFireBase.F90` 只经 `bgc_driver` 调用，而 `bgc_driver` 只对 patchtype 0 调用，湿地斑块不经过——已验证（读码 `main/CoLMDRIVER.F90:251-258`，`main/BGC/MOD_BGC_driver.F90:131-147`）。`MOD_Vars_1DAccFluxes.F90:2559、2601` 只做历史累加，`MOD_BGC_Vars_TimeInvariants.F90` 只声明与读写下标，其余 8 个文件在第 2 节逐条引用。
+3. 未看：无。
+4. 存疑（读码定不了，要跑）：藓凋落物在水位以上的表层应以好氧分解为主、少产甲烷，模式对这一部分的单位产率偏高到什么程度，需把藓凋落物的产甲烷份额单独压低（例如只计水位以下层的藓凋落物 HR）再跑一次 peat 与 tundra 子集才能定。
+
+## 1. 结论
+
+1. 藓输入以新键 `wetland_moss_npp` 实现，其值为藓层潜在 NPP（净初级生产力，g C m⁻² d⁻¹），取 ≤ 0 时关闭，缺省为 0——已验证（读码 `main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90:915-946`，提交 `9a401b04`）。键开时湿地斑块每个时步获得 N_m × s_m ×（1 − f）×（1 − f_sno）× g_wt 的藓凋落物，只在表层土解冻的时步计入——已验证（读码 `main/TRACER/MOD_Tracer_Reactive_BgcShim.F90:354-412`）。
+2. 藓凋落物全部沿叶凋落物的表层剖面 exp(−surfprof_exp z) 进入湿地斑块的 CWD 库（粗木质残体库，coarse woody debris），按草本凋落物 C:N 46 计氮，并计入 `wetland_n_uptake` 向土壤索取的凋落物氮——已验证（读码 `BgcShim.F90:206、401-410`）。它不进根剖面、不计分泌物，也不进通气组织所用的 agnpp 与 bgnpp，后者仍只取维管同化——已验证（读码 `MOD_Tracer_Reactive_Methane_WetlandVeg.F90:496-531`，父提交）。
+3. 藓碳进入甲烷底物只经分解一条路：CWD 无呼吸地按 0.76 与 0.24 破碎为纤维素与木质素凋落物，二者分解产生的 HR（异养呼吸）按供体为凋落物计入 `lithr` 与 `hr_vr`，再按现有产甲烷与氧化计算——已验证（读码 `mkinidata/MOD_Initialize.F90:635-660`，`MOD_Tracer_Reactive_Methane_BgcLink.F90:443-483`）。
+4. 慢分解不新增库：湿地斑块的 CWD 库在原代码中没有任何输入，基底 `v2_p9n` 的 SASU（湿地库的半解析 spin-up）首次跳跃后即为 0，因此改作藓凋落物专用库——已验证（读码父提交 `BgcShim.F90:305-340`，植物输入只进甲、纤维素、木质素与 soil3；`sp_v2_c104/sites_v2_p9n/_conf/logs/SE-Deg.txt` 的 WETSASU 行 CWD 2356 → 0 g C m⁻²）。键开时其速率设为纤维素凋落物速率的 r/(1 − r)，r 为新键 `wetland_moss_decay_ratio`（缺省 0.3），藓碳作为凋落物的平均停留时间因此为维管结构凋落物的 1/r 倍——已验证（读码 `BgcShim.F90:215-219`，`MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90:121-133` 各库共用同一组温度、水分、深度与缺氧标量）。
+5. 碳氮守恒沿用现有机制：藓凋落物作为 sourcesink 输入，CWD 到凋落物的转移由 `CDecompStateUpdate` 以同一 `decomp_ctransfer_vr` 记借贷，SASU 累加与跳跃、重启文件、`f_totcwdc` 历史量都已包含 CWD 库，无需新增状态——已验证（读码 `MOD_BGC_CNCStateUpdate1.F90:452-512`，`BgcShim.F90` 的 `wetland_bgc_sasu_accumulate` 与 `wetland_bgc_sasu_jump`，`MOD_BGC_CNSummary.F90:249-267`）。
+6. 与 C-89 不重复计碳：C-89 的藓层保底只乘在有林份额 f 的林分输入上，新输入只作用于开阔份额 1 − f 中的藓铺面份额 s_m，两部分面积不相交——已验证（读码 `WetlandVeg.F90:399-419` 与新子程序的份额式 `BgcShim.F90:378-379`）。
+7. 键关时模式逐位不变：FI-Si2、US-Myb 两塔 `v2_mn_off` 与 `sp_v2_c104/sites_v2_p9n` 的 28 个历史文件、7434 个变量逐位比较，不同者 0 个——已验证（`v2/_scratch/mossnpp/cmp_off_vs_p9n.txt`）。
+8. 键开 0.5 时，有诊断的 18 座藓塔在平衡态多呼吸 34–152 g C m⁻² a⁻¹，其中湿苔原 8 座为 34–53，FR-LGt 以外的泥炭 9 座为 44–126，FR-LGt 为 152——已验证（`v2/_scratch/mossnpp/moss_diag_mn_on.tsv` 的 dhr 列）。藓凋落物库为 398–1037 g C m⁻²，基底为 0——已验证（同上 cwd 列）。US-NGC 的两个年度历史文件均不足 12 个月，未作诊断。呼吸增量即藓输入量，与文献藓 NPP 同量级（苔原约 50、北方约 75、SE-Deg 生长季 63–79 g C m⁻²）——推测。理由是 SASU 使 soil3 以外各库接近平衡，而 soil1 与 soil2 分解流向 soil3 的份额只有约 0.4 % 与 3 %（`MOD_Initialize.F90:641-653`）。
+9. 键开 0.5 使上述 18 座藓塔主运行年均甲烷升 30–106 %，远高于文献预期的 3–30 %；两 tag 均计分的 23 座塔 KGE_ln（对数月通量的 Kling-Gupta 效率）1 升 16 降，类中位 bog 0.60 → 0.38、fen 0.23 → 0.11、湿苔原 0.53 → 0.04——已验证（`v2/results/scores77_v2_mn_on.txt`，`v2/_scratch/mossnpp/pair_p9n_mn_on.txt`）。23 座塔的 β 中位由 1.02 升至 1.61，α 中位由 1.31 升至 1.89，r 中位 0.81 不变；唯一改善的 FI-Lom 为 0.23 → 0.57（β 0.54 → 0.71）——已验证（同上）。
+10. 冲高的直接原因是藓碳在模式里的单位产甲烷率不低：甲烷碳增量与呼吸碳增量之比 e 为 0.050–0.097，是各塔基底单位呼吸碳产甲烷率的 0.94–1.60 倍，而文献给出的上限为维管碳的 0.56 倍——已验证（`moss_diag_mn_on.tsv` 的 e 与 y_base 列；文献值见 `lit_moss_productivity_260930.txt` 结论 9）。其机理是藓凋落物铺在表层，而模式中湿地斑块的解冻层接近饱和、产甲烷随深度衰减，表层新鲜基质因此比深层老泥炭更易产甲烷——推测。理由是 y_base 含深层 soil3 的呼吸，其所在层的产甲烷受深度衰减，而藓碳的呼吸集中在表层。
+11. 季节上甲烷振幅变大、未变平：18 座有诊断的藓塔季节振幅（月气候态最大减最小）为基底的 1.2–2.1 倍，峰月不变或后移一个月（FI-Si2、US-Ivo 7 月 → 8 月）——已验证（`moss_diag_mn_on.tsv` 的 amp_ratio、pk 列）。原因是表层藓凋落物库的分解随表层温度起落，夏季贡献集中——推测。理由是 CWD 与凋落物库共用 t_scalar，而表层温度的季节幅度大于深层。
+12. 另一原因在标定口径：基底的维管 LAI 上限已使藓塔模式 GPP 约等于塔上含藓的总 GPP（Q-75 对跑中位 0.99），藓碳再加一份相当于重复供碳——推测。理由是按实测分区的两座塔 SE-Deg、FI-Si2 的 β 由 0.92、0.81 分别升至 1.37、1.39，冲过头的幅度与藓占 GPP 0.49–0.60 相当。
+13. 藓输入加维管上限的补充变体 `v2_mn_onv` 只部分抵消冲高：13 座藓塔的上限按 Q-75 维管目标降为 0.2–0.4、FR-LGt 升为 1.0 后，三 tag 均计分的 18 座藓塔 KGE_ln 中位依次为 0.58（基底）、0.14（键开）、0.34（onv），onv 对基底 3 升 15 降——已验证（`v2/results/scores77_v2_mn_onv.txt`，`v2/_scratch/mossnpp/pair_p9n_mn_onv.txt`，表 C）。升者为 FI-Si2 0.63 → 0.69、FI-Lom 0.23 → 0.57、SE-Deg 0.77 → 0.80——已验证（表 C）。US-Atq 与 US-ICs 在 onv 中总呼吸与基底持平（81.8 对 82.1、103.1 对 103.7 g C m⁻² a⁻¹），甲烷却为基底的 1.27 与 1.20 倍——已验证（`v2/_scratch/mossnpp/moss_diag_mn_onv.tsv`）。同量的碳以表层藓凋落物进入时，模式产出的甲烷多于以维管输入进入时——推测。理由是这两座塔的总呼吸不变而甲烷上升，与文献"藓碳单位产率至多为维管的 0.56 倍"方向相反。
+14. 采用建议：`wetland_moss_npp` 0.5 无论单独开启还是与维管上限同改都不宜采用，键保持缺省关；下一步应先压低藓凋落物的产甲烷效率，例如只让水位以下层的藓凋落物 HR 进产甲烷底物、水位以上按好氧分解只成 CO₂，再与维管上限及单位维管碳产率的重标同做——推测。理由见结论 10–13。
+15. 全球运行未测：格点上 s_m 取 GLWD 22–25 类份额、f 取有林份额，二者之积只近似开阔泥炭（23、25 类）份额，塔上份额为 0 或 1 时才精确——已验证（读码 `WetlandVeg.F90:171-205、252-260`）。
+
+## 2. 读码
+
+本节按数据流列出父提交 `aa43cf07` 中湿地斑块植物碳输入的现状，行号均为父提交。
+
+### 2.1 调用与输入
+
+1. 垫片指 `MOD_Tracer_Reactive_BgcShim` 中替湿地斑块调用 BGC 分解级联的接口层，只对 patchtype 2 调用：`ch4_impl_wetland_decomp` 在 `patchtype(ipatch) /= 2` 时返回，再调 `reactive_bgc_run_wetland_decomp`——已验证（读码 `main/TRACER/MOD_Tracer_Reactive_Methane_Impl.F90:110-123`）。
+2. 垫片每步先把本斑块的 sourcesink、HR 与转移通量清零，再在 `wetland_plant_input` 开时调 `wetland_plant_litter_input`，随后算速率常数、潜在分解、氮竞争与分解——已验证（读码 `BgcShim.F90:167-223`）。
+3. 植物输入为冠层同化 `assim` × 12.011 × `wetland_npp_frac` × 时步，同化非正时整段返回；C-66 开时乘 `wetveg_forest_input_ratio`，塔的维管覆盖度 `wetland_cover_frac_site` ≥ 0 时再乘之——已验证（读码 `BgcShim.F90:275-281`；配置 `v2/config/v2_p8n/ch4_parameter.nml:259-260、382`）。
+4. 分泌物份额 `root_exudate_frac`（`v2_p8n` 为 0.25）沿根剖面记入 `root_exudate_vr`，在池更新之后计入 HR；埋藏份额进 soil3；其余按地下份额 `wetveg_bg_frac` 沿根剖面、按 1 − bg 沿表层剖面 exp(−surfprof_exp z) 进甲、纤维素、木质素三库（0.25、0.50、0.25），C:N 取 `wetland_litter_cn`——已验证（读码 `BgcShim.F90:285-340`；`v2_p8n/ch4_parameter.nml:261、264、372`）。
+5. 该子程序以 `nrate` 返回本步凋落物氮，`wetland_n_uptake` 开时作为向土壤矿质氮索取的需求——已验证（读码 `BgcShim.F90:215-222、299`）。
+
+### 2.2 份额来源与 C-89
+
+1. 有林份额 `wetveg_forest` 取 GLWD 格点有林份额，塔上由 `wetland_forest_share_site` 覆盖——已验证（读码 `WetlandVeg.F90:252、266-267`）。
+2. 藓铺面份额 `wetveg_moss` 只在 `wetland_dim_class` 开时分配，取 GLWD 22–25 类面积占湿地斑块各类面积之比，塔上由 `wetland_share_moss_site` 覆盖——已验证（读码 `WetlandVeg.F90:171-205、237-238、256-260、278-279`）。
+3. C-89 的藓层保底为输入比 (1 − f) r + f max(r, φ s_m)，φ 为 `wetland_moss_input_frac` 0.48，只改有林份额 f 的输入——已验证（读码 `WetlandVeg.F90:399-419`）。
+4. 开阔份额的维管 LAI 由 `wetveg_cap_lai` 按上限缩放，上限取 `wetland_lai_open_peat` 或塔上 `wetland_lai_cap_site`（泥炭与苔原塔为 0.6）——已验证（读码 `WetlandVeg.F90:335-364`；`v2_p8n/SITE_PARAMS.csv` 第 3 列）。
+5. 通气组织所用 agnpp、bgnpp 只由同化计算，与凋落物输入无关——已验证（读码 `WetlandVeg.F90:496-531`）。
+
+### 2.3 分解与底物
+
+1. 凋落物与 CWD 的速率为基速率乘同一组 t_scalar、w_scalar、depth_scalar、o_scalar，纤维素与木质素共用 `tau_l2_l3`，CWD 用 `tau_cwd`——已验证（读码 `main/BGC/MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90:58-63、121-133`）。
+2. 转移链为 CWD → 纤维素 0.76、CWD → 木质素 0.24，呼吸份额均为 0，CWD 为浮动 C:N 库——已验证（读码 `mkinidata/MOD_Initialize.F90:635-653`）。
+3. 湿地斑块在收尾步由 `CDecompStateUpdate` 与 `SoilBiogeochemNDecompStateUpdate` 把 sourcesink 与分解通量记入各库；`wetland_vert_transp` 开时 CWD 库不参与垂向输运，只加 sourcesink——已验证（读码 `BgcLink.F90:101-131`，`MOD_BGC_CNCStateUpdate1.F90:452-512`，`MOD_BGC_Soil_BiogeochemLittVertTransp.F90:139-318`）。
+4. 甲烷一侧按转移的供体把 `decomp_hr_vr` 分为 `somhr` 与 `lithr`，CWD 与凋落物同归 `lithr`；各库碳之和除以 580 得 `cellorg`——已验证（读码 `BgcLink.F90:430-483`）。
+5. SASU 对 soil3 以外各库按一个 spin-up 周期的通量加权速率求平衡，输入取累加的 sourcesink——已验证（读码 `BgcShim.F90:405-456、528-648`）。
+6. 初始化时泥炭碳按数据集比例分入各库，0.3 m 以下的泥炭份额移入 soil3，表层 CWD 因此有初值；`v2_p9n` 的 SE-Deg 首次跳跃把 CWD 由 2356 g C m⁻² 置 0——已验证（读码 `MOD_Initialize.F90:1163-1212`；`sp_v2_c104/sites_v2_p9n/_conf/logs/SE-Deg.txt`）。
+
+## 3. 设计
+
+1. 藓 NPP 为 N_m × s_m ×（1 − f）×（1 − f_sno）× g_wt，N_m 为 `wetland_moss_npp` 除以 86400 s，s_m 与 f 取第 2.2 节的两个份额，f_sno 为积雪覆盖度 `fsno`，只在第一层土温高于冰点时计入。以雪盖份额代替"无雪日"的二值判据，使一个时步内的部分积雪按面积折减。
+2. 水位因子 g_wt 取 LPJ-WHy 的 capmoss：水位浅于 0.15 m 为 1，0.15–0.28 m 线性降至 0.3，更深取 0.3；淹水份额 `methane_finundated` 上取 1，与缺氧标量对淹水份额的处理一致（`BgcShim.F90:114-120`）。
+3. 藓凋落物进 CWD 库而不新增专用库，理由有三：湿地斑块的 CWD 库原本无输入，用作藓库不与其他碳混合；CWD 已在重启、SASU 与历史中，不增加状态与输出；CWD 无呼吸地转为纤维素与木质素，正好构成"先慢后常规"的两段。另一方案"进现有凋落物库并乘速率因子"需要追踪库内藓碳占比，引入新状态，未采用。
+4. CWD 速率设为 k_cel × r/(1 − r)。藓碳先在 CWD 停留 1/k_CWD，再在纤维素或木质素库停留 1/k_cel，合计 (1/r)/k_cel，即平均分解率为维管结构凋落物的 r 倍；r 取 0.3，对应文献藓凋落物为维管叶凋落物的 1/3–1/5 与 HPM 初始速率 0.06–0.13 对 0.32–0.88 a⁻¹。两段式的停留时间分布与单一慢库不同，平均值相同。
+5. 键开时 CWD 速率只在湿地斑块改写，旱地的 CWD 由 `bgc_driver` 计算，不受影响；首个 spin-up 周期内初始化留下的 CWD 也按新速率分解，SASU 跳跃后即只剩藓凋落物。
+6. 不做的事：不加藓层光合与能量水分过程，不改 C-89，不改维管 LAI 上限，不加藓层甲烷氧化，不给藓凋落物单独的 C:N 或化学分配。
+
+## 4. 实现
+
+1. 提交 `9a401b048573da35efd1af602293f57aad2b81e2`，分支 `moss-npp`，父提交 `aa43cf07`（`methane-paper-v2` 当时的 HEAD），只改 `main/TRACER` 两个文件，无宿主改动——已验证（git show --stat）。父提交与 `sp_v2_c104` 的 `e979f598` 在 `v2/` 以外无差异——已验证（git diff --stat e979f598 aa43cf07 输出为空）。
+2. 新键 `wetland_moss_npp`（缺省 0）与 `wetland_moss_decay_ratio`（缺省 0.3）加入 DEF_METHANE 类型、有限值检查与合法性检查；键开时要求 `wetland_plant_input` 与 `wetland_dim_class` 为真、0 < r < 1——已验证（读码 `Const.F90:915-946、1636、2209-2216`）。
+3. 键关时新子程序与 CWD 速率行都不执行，差异只在类型多两个字段与两条不触发的检查——已验证（读码 `BgcShim.F90:206、217`）。
+4. 编译：克隆内 ifx 编译通过（`v2/_scratch/mossnpp/compile_check.log`，RC=0），单点树 `build_20260930_v2.log` 末行 MAKE_EXIT=0——已验证（日志）。树内 `main`、`mkinidata`、`mksrfdata`、`share` 与提交逐字相同，与 `sp_v2_c104` 只差这两个文件——已验证（git archive | tar -d 内容差异为 0；diff -rq）。
+
+代码修改（git show --stat 与 git show -U2 由 `v2/_scratch/mossnpp/build_doc.py` 生成）：
+
+```
+ main/TRACER/MOD_Tracer_Reactive_BgcShim.F90       | 74 ++++++++++++++++++++++-
+ main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90 | 41 +++++++++++++
+ 2 files changed, 113 insertions(+), 2 deletions(-)
+```
+
+```diff
+diff --git a/main/TRACER/MOD_Tracer_Reactive_BgcShim.F90 b/main/TRACER/MOD_Tracer_Reactive_BgcShim.F90
+index 8ca7ba75..0986a345 100644
+--- a/main/TRACER/MOD_Tracer_Reactive_BgcShim.F90
++++ b/main/TRACER/MOD_Tracer_Reactive_BgcShim.F90
+@@ -32,5 +32,5 @@ MODULE MOD_Tracer_Reactive_BgcShim
+       depth_scalar, decomp_k, decomp_cpools_vr, decomp_npools_vr
+    USE MOD_Namelist, only: DEF_BGC_DEBUG_SCALARS, DEF_WETLAND_PEAT_C_PASSIVE
+-   USE MOD_Vars_TimeVariables, only: t_soisno, smp, wliq_soisno, wice_soisno, zwt
++   USE MOD_Vars_TimeVariables, only: t_soisno, smp, wliq_soisno, wice_soisno, zwt, fsno
+    USE MOD_Vars_TimeInvariants, only: porsl, patchclass, patchtype
+    USE MOD_BGC_Vars_TimeInvariants, only: i_met_lit, i_cel_lit, i_lig_lit, i_soil3, tau_s3, &
+@@ -42,5 +42,6 @@ MODULE MOD_Tracer_Reactive_BgcShim
+    USE MOD_Tracer_Reactive_Methane_Const, only: DEF_METHANE
+    USE MOD_BGC_Soil_BiogeochemVerticalProfile, only: surfprof_exp
+-   USE MOD_Tracer_Reactive_Methane_WetlandVeg, only: wetveg_bg_frac, wetland_root_profile, wetveg_forest_input_ratio
++   USE MOD_Tracer_Reactive_Methane_WetlandVeg, only: wetveg_bg_frac, wetland_root_profile, wetveg_forest_input_ratio, &
++      wetveg_moss, wetveg_forest
+    USE MOD_Tracer_Reactive_Methane_State, only: methane_finundated, root_exudate_vr
+ 
+@@ -202,4 +203,6 @@ CONTAINS
+       exu_vr(:) = 0._r8
+       IF (DEF_METHANE%wetland_plant_input) CALL wetland_plant_litter_input (ipatch, deltim, litter_nrate, exu_vr)
++      ! I-33: moss litter of the open moss-carpeted share, held in the CWD pool
++      IF (DEF_METHANE%wetland_moss_npp > 0._r8) CALL wetland_moss_litter_input (ipatch, deltim, litter_nrate)
+ 
+       CALL decomp_rate_constants_bgc (ipatch, nl_soil, z_soi)
+@@ -208,4 +211,11 @@ CONTAINS
+          decomp_k(1:nl_soil,i_soil3,ipatch) = decomp_k(1:nl_soil,i_soil3,ipatch) &
+             * tau_s3 / DEF_METHANE%wetland_tau_s3
++      ! I-33: the CWD pool of the wetland tile holds the moss litter alone and
++      ! fragments at ratio / (1 - ratio) of the cellulose-litter rate, same
++      ! scalars, so moss carbon stays litter 1 / ratio times as long as the
++      ! vascular structural litter.
++      IF (DEF_METHANE%wetland_moss_npp > 0._r8) &
++         decomp_k(1:nl_soil,i_cwd,ipatch) = decomp_k(1:nl_soil,i_cel_lit,ipatch) &
++            * DEF_METHANE%wetland_moss_decay_ratio / (1._r8 - DEF_METHANE%wetland_moss_decay_ratio)
+       CALL SoilBiogeochemPotential   (ipatch, nl_soil, ndecomp_pools, ndecomp_transitions)
+       ! Track B N closure: with wetland_n_uptake the litter N above is taken up
+@@ -342,4 +352,64 @@ CONTAINS
+    END SUBROUTINE wetland_plant_litter_input
+ 
++   SUBROUTINE wetland_moss_litter_input (ipatch, deltim, nrate)
++
++      ! I-33: litter of the moss layer on the open moss-carpeted share of the
++      ! tile, wetland_moss_npp s_m (1 - f) (1 - f_sno) g_wt while the top soil
++      ! layer is thawed (see wetland_moss_npp in MOD_Tracer_Reactive_Methane_Const).
++      ! The whole NPP is litter at once, laid on the surface along the leaf-litter
++      ! profile exp(-surfprof_exp z) into the CWD pool, with the grass litter
++      ! C:N; nothing goes along the roots, to exudates or to the aerenchyma NPP.
++      ! nrate gets the litter N added, which wetland_n_uptake asks the soil for.
++      IMPLICIT NONE
++      integer,  intent(in)    :: ipatch
++      real(r8), intent(in)    :: deltim
++      real(r8), intent(inout) :: nrate      ! litter N added this step [gN m-2 s-1]
++      ! LPJ-WHy capmoss (Wania et al. 2009, eq. 2): 1 with the water table above
++      ! wt_full, linear to g_low at wt_low, g_low below
++      real(r8), parameter :: wt_full = 0.15_r8   ! [m]
++      real(r8), parameter :: wt_low  = 0.28_r8   ! [m]
++      real(r8), parameter :: g_low   = 0.3_r8    ! [-]
++      integer  :: j
++      real(r8) :: share, fs, fsat, gwt, cin, sprof(1:nl_soil)
++
++      IF (.not. allocated(decomp_cpools_sourcesink)) RETURN
++      IF (.not. allocated(wetveg_moss) .or. .not. allocated(wetveg_forest)) RETURN
++      IF (ipatch < 1 .or. ipatch > min(size(wetveg_moss), size(wetveg_forest))) RETURN
++      share = min(max(wetveg_moss(ipatch), 0._r8), 1._r8) &
++            * (1._r8 - min(max(wetveg_forest(ipatch), 0._r8), 1._r8))
++      IF (share <= 0._r8) RETURN
++      IF (.not. (t_soisno(1,ipatch) > tfrz)) RETURN
++
++      fs = 0._r8
++      IF (allocated(fsno)) THEN
++         IF (fsno(ipatch) >= 0._r8 .and. fsno(ipatch) <= 1._r8) fs = fsno(ipatch)
++      ENDIF
++      fsat = 0._r8
++      IF (allocated(methane_finundated)) fsat = min(max(methane_finundated(ipatch), 0._r8), 1._r8)
++      IF (zwt(ipatch) <= wt_full) THEN
++         gwt = 1._r8
++      ELSEIF (zwt(ipatch) >= wt_low) THEN
++         gwt = g_low
++      ELSE
++         gwt = 1._r8 - (1._r8 - g_low) * (zwt(ipatch) - wt_full) / (wt_low - wt_full)
++      ENDIF
++      gwt = fsat + (1._r8 - fsat) * gwt
++
++      cin = DEF_METHANE%wetland_moss_npp / 86400._r8 * share * (1._r8 - fs) * gwt * deltim   ! g C m-2 per step
++      IF (.not. (cin > 0._r8)) RETURN
++
++      sprof(:) = exp(-surfprof_exp * z_soi(1:nl_soil)) * dz_soi(1:nl_soil)
++      sprof(:) = sprof(:) / sum(sprof)
++      DO j = 1, nl_soil
++         decomp_cpools_sourcesink(j,i_cwd,ipatch) = decomp_cpools_sourcesink(j,i_cwd,ipatch) &
++            + cin * sprof(j) / dz_soi(j)
++         IF (allocated(decomp_npools_sourcesink)) &
++            decomp_npools_sourcesink(j,i_cwd,ipatch) = decomp_npools_sourcesink(j,i_cwd,ipatch) &
++               + cin * sprof(j) / dz_soi(j) / DEF_METHANE%wetland_litter_cn
++      ENDDO
++      IF (allocated(decomp_npools_sourcesink)) nrate = nrate + cin / DEF_METHANE%wetland_litter_cn / deltim
++
++   END SUBROUTINE wetland_moss_litter_input
++
+    SUBROUTINE dump_decomp_scalars (ipatch, deltim)
+ 
+diff --git a/main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90 b/main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90
+index cad23359..03735a32 100644
+--- a/main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90
++++ b/main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90
+@@ -913,4 +913,36 @@ MODULE MOD_Tracer_Reactive_Methane_Const
+       !   belowground share.
+       real(r8) :: wetland_moss_input_frac   = 0.48_r8  ! [-]
++      ! wetland_moss_npp (I-33, paper V2): potential NPP of the moss layer of
++      !   the open moss-carpeted share of a wetland tile [g C m-2 d-1]; <= 0
++      !   gives no moss input (default). The tile's input comes from its
++      !   vascular canopy only, while tower GPP over open peat includes the
++      !   moss layer (SE-Deg 0.49-0.54 of the growing-season GPP, Hartmann et
++      !   al. 2026, GCB 32, e70834, Table 2; FI-Si2 0.60, Korrensalo et al.
++      !   2017, BG 14, 257-269). With the key the tile gets moss litter at
++      !     wetland_moss_npp s_m (1 - f) (1 - f_sno) g_wt
++      !   on the steps whose top soil layer is thawed, s_m the moss-carpeted
++      !   share (wetland_dim_class), f the forested share (its moss stays in
++      !   the C-89 floor of the stand input), f_sno the snow cover and g_wt
++      !   the water-table factor of LPJ-WHy (capmoss: 1 above 0.15 m, falling
++      !   linearly to 0.3 at 0.28 m and below; Wania et al. 2009, GBC 23,
++      !   doi:10.1029/2008GB003413, eq. 2), 1 on the inundated share. 0.5 is SE-Deg's moss NPP
++      !   of 63-79 g C m-2 over mid-May to October (Hartmann et al. 2026).
++      !   All of it is litter laid on the surface along the leaf-litter
++      !   profile: no root input, no exudates, no aerenchyma, no moss-layer
++      !   CH4 oxidation. On the wetland tile the moss litter is held in the
++      !   CWD pool, which gets no other input there and fragments without
++      !   respiration into cellulose and lignin litter (0.76/0.24); its rate
++      !   is set from the cellulose-litter rate by wetland_moss_decay_ratio.
++      !   Needs wetland_plant_input and wetland_dim_class.
++      real(r8) :: wetland_moss_npp          = 0._r8    ! [gC m-2 d-1]
++      ! wetland_moss_decay_ratio (I-33): decomposition rate of the moss litter
++      !   over that of the vascular structural litter. The CWD stage runs at
++      !   ratio / (1 - ratio) of the cellulose-litter rate, so the mean time
++      !   the moss carbon spends as litter, CWD and then cellulose or lignin,
++      !   is 1 / ratio of the vascular litter's. Moss litter decays at 1/3 to
++      !   1/5 of vascular leaf litter at the same site (k 0.11 vs 0.56 yr-1,
++      !   Lang et al. 2009, J. Ecol. 97, 886-900), HPM initial rates 0.06-0.13
++      !   against 0.32-0.88 yr-1 (Frolking et al. 2010, ESD 1, 1-21, Table 1).
++      real(r8) :: wetland_moss_decay_ratio  = 0.3_r8   ! [-]
+       ! wetland_anoxia_catotelm (C-18, paper V2): below the water table the
+       !   wetland anoxia scalar falls with depth d under the table from
+@@ -1602,4 +1634,5 @@ CONTAINS
+          DEF_METHANE%redoxlag_rice_paddy, DEF_METHANE%redoxlag_upland_soil, &
+          DEF_METHANE%redoxlag_wetland_dim, DEF_METHANE%wetland_moss_input_frac, &
++         DEF_METHANE%wetland_moss_npp, DEF_METHANE%wetland_moss_decay_ratio, &
+          DEF_METHANE%z0_methane_prod, DEF_METHANE%vmax_methane_oxid, &
+          DEF_METHANE%vmax_oxid_unsat, DEF_METHANE%k_m, DEF_METHANE%k_m_unsat, &
+@@ -2174,4 +2207,12 @@ CONTAINS
+          bad = .true.
+       ENDIF
++      IF (DEF_METHANE%wetland_moss_npp > 0._r8 .and. (.not. (DEF_METHANE%wetland_plant_input .and. &
++          DEF_METHANE%wetland_dim_class) .or. DEF_METHANE%wetland_moss_decay_ratio <= 0._r8 .or. &
++          DEF_METHANE%wetland_moss_decay_ratio >= 1._r8)) THEN
++         IF (p_is_master) write(6,*) '***** ERROR: wetland_moss_npp needs wetland_plant_input, ', &
++            'wetland_dim_class (the moss-carpeted share) and 0 < wetland_moss_decay_ratio < 1: ', &
++            DEF_METHANE%wetland_moss_decay_ratio
++         bad = .true.
++      ENDIF
+       IF (DEF_METHANE%wetland_tau_s3 == 0._r8) THEN
+          IF (p_is_master) write(6,*) '***** ERROR: wetland_tau_s3 must be positive, or negative to keep tau_s3'
+```
+
+## 5. 核验
+
+### 5.1 建树与配置
+
+1. 单点树由 `v2/_scratch/mossnpp/build_site_tree_moss.sh` 建立，它与 `v2/scripts/build_site_tree.sh` 只差源码仓指向本克隆；`snapshot_case_config.sh` 按固定仓 `CoLM202X` 核对提交，本提交不在该仓，因此报 UNVERIFIABLE，改用 git archive 与 tar -d 核对，内容一致——已验证（第 4 节第 4 条）。
+2. 配置 `v2/config/v2_mn_off` 为 `v2_p8n` 加一行 `wetland_moss_npp = 0.`，`v2_mn_on` 加 `wetland_moss_npp = 0.5` 与 `wetland_moss_decay_ratio = 0.3`；namelist 由 `v2/_scratch/mossnpp/prep_tag_moss.sh` 生成（与 `v2/scripts/prep_tag.sh` 只差 V2 目录），spin-up 5 周期，站点参数取 `SITE_PARAMS.csv` 与 `SITE_MAIN.csv`——已验证（生成的 `ch4_param/*.nml` 与 `v2_p9n` 只差新增行，site_nml 只差输出路径）。
+
+### 5.2 关时逐位核验
+
+FI-Si2、US-Myb 在 node110 跑 `v2_mn_off`，与 `sp_v2_c104/sites_v2_p9n` 同塔的全部历史文件逐变量比较（NaN 视为相等）：FI-Si2 10 个文件 2655 个变量、US-Myb 18 个文件 4779 个变量，不同者均为 0——已验证（`v2/_scratch/mossnpp/cmp_off_vs_p9n.txt`，脚本 `cmp_hist.py`）。
+
+### 5.3 键开：泥炭与苔原子集
+
+`v2_mn_on` 在 node112 跑 peat 与 tundra 两组共 25 座塔，25 座均完成；计分用本克隆 `v2/scripts/score77.py`，结果在 `v2/results/scores77_v2_mn_on.txt`；s_m(1 − f) = 0 的 NZ-Kop、DE-Zrk、US-Los、RU-Ch2、US-Uaf、RU-Cok 甲烷与基底相同（甲烷比 1.00）。下表 e/y 为单位藓呼吸碳的甲烷产率与基底单位呼吸碳产率之比，甲烷比为主运行年均甲烷之比。
+
+表 A  泥炭与苔原子集逐塔：v2_p9n → v2_mn_on（藓 NPP 0.5 g C m⁻² d⁻¹）
+塔       类      s_m(1−f)  KGE_ln        β             α             r             甲烷比  ΔHR    藓凋落物库  e/y
+                           基底 → 键开   基底 → 键开   基底 → 键开   基底 → 键开           g C m⁻² a⁻¹  g C m⁻²
+CA-SCB   bog     1.00      0.70 →  0.59    0.88 →  1.13    1.14 →  1.35    0.76 →  0.76    1.30     64     566   0.94
+DE-SfN   bog     1.00     -1.09 → -1.66    5.32 →  8.40    3.22 →  4.64    0.55 →  0.55    1.56    126     748   1.13
+FI-Si2   bog     1.00      0.63 →  0.62    0.81 →  1.39    0.75 →  1.08    0.88 →  0.82    1.73    104     800   1.13
+JP-BBY   bog     1.00      0.75 →  0.39    1.04 →  1.61    1.05 →  1.36    0.76 →  0.77    1.56    105     605   1.24
+NZ-Kop   bog     0.00      0.37 →  0.37    1.67 →  1.67    1.17 →  1.17    0.66 →  0.66    1.00      0       0      —
+US-BZB   bog     1.00      0.57 →  0.18    0.95 →  1.35    1.46 →  2.07    0.80 →  0.78    1.41     68     830   1.21
+US-Uaf   永冻      0.00     -0.10 → -0.10    0.77 →  0.77    2.39 →  2.39    0.37 →  0.37    1.00      0       0      —
+DE-Zrk   fen     0.00      0.09 →  0.09    0.88 →  0.88    0.41 →  0.41    0.89 →  0.89    1.00      0       0      —
+FI-Lom   fen     0.57      0.23 →  0.57    0.54 →  0.71    0.63 →  0.78    0.92 →  0.92    1.31     44     398   1.12
+FI-Sii   fen     1.00      0.85 →  0.43    1.00 →  1.58    0.91 →  1.36    0.88 →  0.88    1.60    107     856   1.17
+FR-LGt   fen     1.00     -2.25 → -2.79   13.19 → 21.89    6.90 →  8.62    0.60 →  0.59    1.61    152     805   1.11
+SE-Deg   fen     1.00      0.77 →  0.39    0.92 →  1.37    1.19 →  1.67    0.87 →  0.89    1.49     84     809   1.11
+US-BZF   fen     1.00      0.58 →  0.11    1.22 →  1.79    1.31 →  1.87    0.75 →  0.76    1.45     75     899   1.22
+US-Los   fen     0.00     -0.16 → -0.16    2.58 →  2.58    1.93 →  1.93    0.88 →  0.88    1.00      0       0      —
+US-A03   湿苔原     1.00      0.64 →  0.25    0.76 →  1.43    1.06 →  1.89    0.78 →  0.81    1.84     53     983   1.43
+US-A10   湿苔原     1.00     -0.10 → -0.99    1.79 →  3.77    2.06 →  4.00    0.40 →  0.49    2.06     39    1036   1.60
+US-Atq   湿苔原     1.00     -0.31 → -1.03    1.91 →  3.20    3.06 →  5.22    0.81 →  0.80    1.66     40     872   1.37
+US-Beo   湿苔原     1.00      0.58 →  0.04    0.83 →  1.41    1.41 →  2.41    0.86 →  0.85    1.68     34     883   1.19
+US-Bes   湿苔原     1.00      0.84 →  0.19    0.86 →  1.65    1.00 →  1.88    0.94 →  0.94    1.92     38     999   1.31
+US-ICs   湿苔原     1.00     -0.72 → -1.35    2.65 →  4.32    4.06 →  6.24    0.81 →  0.81    1.60     48    1037   1.29
+US-Ivo   湿苔原     1.00      0.29 → -0.24    1.02 →  1.61    1.93 →  3.06    0.73 →  0.73    1.59     44     891   1.35
+US-NGB   湿苔原     1.00      0.83 →  0.04    1.02 →  1.95    1.01 →  1.95    0.83 →  0.84    1.89     36     999   1.53
+US-NGC   —       1.00     未计分（观测月不足 8）                                               —      —       —      —
+RU-Ch2   湿苔原     0.00      0.53 →  0.53    1.13 →  1.13    1.55 →  1.55    0.89 →  0.89    1.00      0       0      —
+RU-Cok   —       0.00     未计分（观测月不足 8）                                            1.00      0       0      —
+
+表 B  类中位（两 tag 均计分的塔；KGE_ln / β / α / r）
+类        塔数  基底 v2_p9n                键开 v2_mn_on             升/降
+合计         23  0.53/1.02/1.31/0.81    0.11/1.61/1.89/0.81    1/16
+bog         6  0.60/0.99/1.15/0.76    0.38/1.50/1.35/0.77    0/4
+fen         7  0.23/1.00/1.19/0.88    0.11/1.58/1.67/0.88    1/4
+湿苔原         9  0.53/1.02/1.55/0.81    0.04/1.65/2.41/0.81    0/8
+永冻          1  -0.10/0.77/2.39/0.37    -0.10/0.77/2.39/0.37    0/0
+
+表 C  藓塔三 tag 对比：v2_p9n、v2_mn_on、v2_mn_onv（藓输入加维管上限；KGE_ln、β、α）
+塔       类      上限(onv)  KGE_ln 基底/键开/onv   β 基底/键开/onv     α 基底/键开/onv
+CA-SCB   bog       0.2      0.70/ 0.59/ 0.53    0.88/ 1.13/ 0.71    1.14/ 1.35/ 0.98
+DE-SfN   bog       0.4     -1.09/-1.66/-1.47    5.32/ 8.40/ 7.35    3.22/ 4.64/ 3.92
+FI-Si2   bog       0.4      0.63/ 0.62/ 0.69    0.81/ 1.39/ 1.20    0.75/ 1.08/ 0.88
+JP-BBY   bog       0.6      0.75/ 0.39/ 0.39    1.04/ 1.61/ 1.61    1.05/ 1.36/ 1.36
+US-BZB   bog       0.4      0.57/ 0.18/ 0.35    0.95/ 1.35/ 1.20    1.46/ 2.07/ 1.79
+FI-Lom   fen       0.6      0.23/ 0.57/ 0.57    0.54/ 0.71/ 0.71    0.63/ 0.78/ 0.78
+FI-Sii   fen       0.3      0.85/ 0.43/ 0.72    1.00/ 1.58/ 1.26    0.91/ 1.36/ 1.11
+FR-LGt   fen       1.0     -2.25/-2.79/-3.15   13.19/21.89/28.18    6.90/ 8.62/11.49
+SE-Deg   fen       0.2      0.77/ 0.39/ 0.80    0.92/ 1.37/ 0.87    1.19/ 1.67/ 1.09
+US-BZF   fen       0.6      0.58/ 0.11/ 0.11    1.22/ 1.79/ 1.79    1.31/ 1.87/ 1.87
+US-A03   湿苔原       0.4      0.64/ 0.25/ 0.47    0.76/ 1.43/ 1.19    1.06/ 1.89/ 1.58
+US-A10   湿苔原       0.6     -0.10/-0.99/-0.99    1.79/ 3.77/ 3.77    2.06/ 4.00/ 4.00
+US-Atq   湿苔原       0.3     -0.31/-1.03/-0.63    1.91/ 3.20/ 2.36    3.06/ 5.22/ 3.92
+US-Beo   湿苔原       0.3      0.58/ 0.04/ 0.34    0.83/ 1.41/ 1.06    1.41/ 2.41/ 1.88
+US-Bes   湿苔原       0.3      0.84/ 0.19/ 0.42    0.86/ 1.65/ 1.38    1.00/ 1.88/ 1.62
+US-ICs   湿苔原       0.3     -0.72/-1.35/-1.00    2.65/ 4.32/ 3.18    4.06/ 6.24/ 5.04
+US-Ivo   湿苔原       0.4      0.29/-0.24/-0.14    1.02/ 1.61/ 1.44    1.93/ 3.06/ 2.81
+US-NGB   湿苔原       0.6      0.83/ 0.04/ 0.04    1.02/ 1.95/ 1.95    1.01/ 1.95/ 1.95
+US-NGC   —         0.3     未计分
+
+类中位（三 tag 均计分的藓塔；KGE_ln / β / α / r）
+类        塔数  基底                      键开                      onv                       onv 对基底 升/降
+合计         18  0.58/1.01/1.25/0.81    0.14/1.61/1.92/0.81    0.34/1.41/1.83/0.78    3/15
+bog         5  0.63/0.95/1.14/0.76    0.39/1.39/1.36/0.77    0.39/1.20/1.36/0.77    1/4
+fen         5  0.58/1.00/1.19/0.87    0.39/1.58/1.67/0.88    0.57/1.26/1.11/0.88    2/3
+湿苔原         8  0.43/1.02/1.67/0.81    -0.10/1.80/2.74/0.81    -0.05/1.69/2.38/0.81    0/8
+
+### 5.4 藓碳诊断
+
+1. 藓凋落物库（CWD）在湿苔原为 872–1037 g C m⁻²，其余藓塔为 398–899 g C m⁻²，基底为 0——已验证（`moss_diag_mn_on.tsv`）。以库量除以呼吸增量得 CWD 段停留时间，泥炭 10 座为 5.3–12.1 a，湿苔原 8 座为 18.5–27.4 a，除以 0.7 折合整个凋落物段为 7.5–17.3 a 与 26.4–39.1 a——已验证（`v2/_scratch/mossnpp/residence.txt`）。泥炭塔的整段停留与 HPM 初始速率 0.06–0.13 a⁻¹ 对应的 7.7–16.7 a 相符，苔原因低温更慢——推测。理由是两段式的平均停留按 1/r 倍设定，而实际停留还随各塔温度与缺氧标量变化。
+2. 单位藓呼吸碳的甲烷产率 e 为 0.050–0.097，各藓塔 e/y 为 0.94–1.60，湿苔原普遍高于泥炭——已验证（表 A 末列）。
+
+### 5.5 藓输入加维管上限（补充变体）
+
+1. 配置 `v2/config/v2_mn_onv` 为 `v2_mn_on` 只改 `SITE_PARAMS.csv` 的 `wetland_lai_cap_site`，取 `v2/results/lai_from_gpp_260930.txt` 第 5 节表"新建议 k0.32"列中 s_moss > 0 且需改的 14 座：CA-SCB、SE-Deg 为 0.2，FI-Sii、US-Atq、US-Beo、US-Bes、US-ICs、US-NGC 为 0.3，DE-SfN、FI-Si2、US-BZB、US-A03、US-Ivo 为 0.4，FR-LGt 为 1.0——已验证（`v2/_scratch/mossnpp/mk_cfg_onv.py` 输出 14 行，与 `v2_mn_on` 的 diff 只有这 14 行）。
+2. 该变体在 node111 跑 19 座藓塔，全部完成，计分见 `v2/results/scores77_v2_mn_onv.txt`，逐塔与类中位见第 5.3 节表 C——已验证（`sites_v2_mn_onv/_conf/STATUS.txt` 为 DONE、ok=19）。
+3. 上限降低的塔中，SE-Deg 与 CA-SCB 的总呼吸低于基底（163.4 对 189.2、134.4 对 201.8 g C m⁻² a⁻¹），甲烷为基底的 0.94 与 0.83 倍；其余上限降低且有诊断的 10 座塔甲烷为基底的 1.20–1.59 倍；上限未改的 JP-BBY、US-BZF、US-A10、US-NGB 与键开相同——已验证（`v2/_scratch/mossnpp/moss_diag_mn_onv.tsv`）。
+4. 按类看，onv 使 fen 中位回到 0.57（基底 0.58），bog 停在 0.39（基底 0.63），湿苔原为 −0.05（基底 0.43），湿苔原 8 座全部下降——已验证（表 C 类中位）。

@@ -1,0 +1,62 @@
+n	commit	date	host_files	methane_files_same_commit	subject
+01	6e07a0b0	2026-09-24	main/MOD_SoilSnowHydrology.F90	2	feat(methane): drain the dynamic wetland through peat transmissivity and inundate by microtopography
+02	fa4c8b3d	2026-09-24	mkinidata/MOD_Initialize.F90 share/MOD_Namelist.F90	2	feat(methane): feed the wetland substrate from the tile's productivity and lay old peat out along the soil data
+03	98891b86	2026-09-25	Makefile main/CoLM.F90	5	feat(methane): wetland-tile vegetation from its GLWD make-up instead of the five-zone proxy (C-13)
+04	a3ec57a0	2026-09-25	share/MOD_Namelist.F90	1	feat(methane): site overrides for the C-13 wetland make-up
+05	3fe00e82	2026-09-25	share/MOD_Namelist.F90	2	refactor(methane): carry the C-13 site overrides as DEF_METHANE keys
+06	61c79cdf	2026-09-25	mkinidata/MOD_Initialize.F90 share/MOD_Namelist.F90	0	feat(methane): seed old wetland peat into the passive pool (C-17)
+07	6e50b232	2026-09-25	Makefile	2	feat(methane): deepen the wetland anoxia scalar below the water table (C-18)
+08	8ee7f400	2026-09-25	mkinidata/MOD_Initialize.F90 share/MOD_Namelist.F90	2	feat(methane): acrotelm depth for the passive peat seed (C-17b) and a wetland passive-pool turnover time (C-18b)
+09	b6626424	2026-09-25	main/CoLM.F90	2	feat(methane): scale the wetland LAI by cap over its annual peak instead of clipping it (C-19)
+10	1db4aad3	2026-09-25	Makefile main/BGC/MOD_BGC_Soil_BiogeochemCompetition.F90 main/BGC/MOD_BGC_Soil_BiogeochemLittVertTransp.F90	3	feat(methane): nitrogen closure and burial for the wetland tile (C-20)
+11	d9553115	2026-09-25	main/MOD_AssimStomataConductance.F90 main/MOD_LeafTemperature.F90 share/MOD_Namelist.F90	0	feat(photosynthesis): co-limitation under the WUE model and leaf-only PAR (C-21)
+12	68025cc8	2026-09-25	Makefile main/CoLM.F90	2	feat(methane): semi-analytic spin-up of the wetland decomposition pools (C-22)
+13	9615dcc5	2026-09-25	mkinidata/MOD_Initialize.F90 share/MOD_Namelist.F90	0	feat(bgc): seed the passive pool only on the peatland share of the wetland tile (C-17c)
+14	967e6cb2	2026-09-25	mkinidata/MOD_Initialize.F90	0	fix(bgc): C-17c peat-share reader takes the MPI names from MOD_SPMD_Task
+15	7d1b1a3e	2026-09-26	main/CoLM.F90 main/MOD_SoilSurfaceResistance.F90 main/MOD_Thermal.F90	2	feat(methane): moss and peat surface resistance to wetland ground evaporation (C-26)
+16	fb6de1d6	2026-09-26	main/CoLM.F90	2	feat(methane): own f_methane for the tropical peat share of wetland tiles (C-29)
+17	069b97ba	2026-09-26	Makefile	2	feat(methane): own CH4 production ratio for the forested share of wetland tiles (C-30)
+18	813679ef	2026-09-26	main/MOD_GroundTemperature.F90 share/MOD_Namelist.F90	0	feat(physics): Sturm et al. (1997) snow thermal conductivity as a namelist option (C-31)
+19	e36c86ca	2026-09-27	main/MOD_Irrigation.F90 main/MOD_SoilSnowHydrology.F90 share/MOD_Namelist.F90	2	feat(rice): paddy water from the host: irrigation, bunded rainfed rice, host-flooded CH4 column (C-32)
+20	70db0d46	2026-09-27	main/MOD_Vars_TimeVariables.F90	0	feat(irrigation): start the irrigation state at zero when a restart lacks it (C-32)
+21	574ae546	2026-09-27	main/MOD_Irrigation.F90	0	fix(irrigation): paddies are topped up to saturation plus standing water (C-32b)
+22	4ca7987d	2026-09-27	main/MOD_SoilSnowHydrology.F90	0	feat(rice): plow pan caps percolation of bunded paddies at 3 mm/d (C-32c)
+23	222fe8f7	2026-09-27	main/MOD_Irrigation.F90	0	fix(irrigation): paddies keep only the puddled soil above the plow pan saturated (C-32d)
+24	b1db69fb	2026-09-27	main/MOD_Irrigation.F90 main/MOD_SoilSnowHydrology.F90	0	feat(rice): paddies are drained from the start of grain fill (C-32e)
+25	5a0caa1f	2026-09-27	main/BGC/MOD_BGC_CNCStateUpdate1.F90 main/BGC/MOD_BGC_Vars_1DPFTFluxes.F90 main/BGC/MOD_BGC_Veg_NutrientCompetition.F90 share/MOD_Namelist.F90	0	feat(rice): root exudates of live rice feed the metabolic litter (C-37)
+26	f6f9f757	2026-09-28	main/MOD_SoilSnowHydrology.F90	3	feat(wetland): rain-fed share of a wetland takes no lateral inflow below the floor (C-38)
+27	1eb3704a	2026-09-28	main/HYDRO/MOD_Grid_RiverLakeFlow.F90 share/MOD_Namelist.F90	0	feat(routing): open-water evaporation from the grid routing floodplain (C-44)
+28	86d02661	2026-09-28	mkinidata/MOD_LakeDepthReadin.F90 mksrfdata/Aggregation_LakeDepth.F90 share/MOD_Namelist.F90	0	fix(lake): lake depth from the water pixels that have one; missing depth takes 10 m (Q-39)
+29	2314e693	2026-09-28	main/BGC/MOD_BGC_Vars_PFTimeVariables.F90 main/BGC/MOD_BGC_Veg_CNPhenology.F90 main/MOD_CropReadin.F90 share/MOD_Namelist.F90	0	feat(crop): second rice season for double-cropped irrigated rice (C-45)
+30	3470e55c	2026-09-28	main/BGC/MOD_BGC_Veg_CNPhenology.F90	0	fix(crop): a second-season rice crop is harvested on the first-season sowing date (C-45)
+31	488cf043	2026-09-28	main/CoLMMAIN.F90 share/MOD_Namelist.F90	0	fix(crop): no leaf area on a crop pft between harvest and sowing (Q-33)
+32	2c5ced82	2026-09-28	main/BGC/MOD_BGC_Veg_CNPhenology.F90 main/BGC/MOD_BGC_Veg_NutrientCompetition.F90 share/MOD_Namelist.F90	0	feat(crop): rice grain-fill onset as a namelist value (Q-33)
+33	d01a7ad8	2026-09-28	main/BGC/MOD_BGC_Vars_PFTimeVariables.F90 main/BGC/MOD_BGC_Veg_CNPhenology.F90 main/MOD_Irrigation.F90 main/MOD_SoilSnowHydrology.F90 share/MOD_Namelist.F90	0	feat(rice): drain paddies a set number of days before the projected harvest (C-47)
+34	869657cc	2026-09-28	Makefile main/CoLMMAIN.F90 main/HYDRO/MOD_Grid_RiverLakeFlow.F90 main/MOD_FloodInfiltration.F90 main/MOD_SoilSnowHydrology.F90 share/MOD_Namelist.F90	0	feat(hydrology): floodplain water re-infiltrates into the soil of flooded soil patches (Q-43)
+35	017b6479	2026-09-29	main/BGC/MOD_BGC_Veg_CNPhenology.F90	0	fix(crop): return unemerged seed when a crop is sown right after a harvest (C-45)
+36	2ea1a167	2026-09-29	mkinidata/MOD_Initialize.F90 share/MOD_Namelist.F90	0	feat(soil): peat soil profile for the dynamic wetland tile (Q-45)
+37	f6733a3f	2026-09-29	main/MOD_SoilSnowHydrology.F90 share/MOD_Namelist.F90	0	feat(hydrology): overland outflow of ponded water on dynamic wetland tiles (candidate 13)
+38	44f90c76	2026-09-29	main/BGC/MOD_BGC_Vars_PFTimeVariables.F90 main/CoLMMAIN.F90 main/MOD_Irrigation.F90 main/MOD_SoilSnowHydrology.F90 share/MOD_Namelist.F90	0	feat(rice): flood irrigated paddies a set number of days before sowing (candidate 25)
+39	42703922	2026-09-29	main/MOD_LeafTemperature.F90 main/MOD_LeafTemperaturePC.F90 main/MOD_Thermal.F90 main/MOD_Vars_1DFluxes.F90	0	feat(thermal): keep the ground-to-reference water vapour resistance per patch
+40	b3e66306	2026-09-29	main/MOD_SoilSnowHydrology.F90 main/MOD_Vars_TimeVariables.F90 share/MOD_Namelist.F90	0	feat(hydrology): split the wetland floor refill by area (boreal wetlands)
+41	5ce6e755	2026-09-29	main/CoLMDRIVER.F90 main/MOD_Hist.F90 main/MOD_SoilSnowHydrology.F90 main/MOD_Vars_1DAccFluxes.F90 main/MOD_Vars_1DFluxes.F90 main/MOD_Vars_TimeVariables.F90 share/MOD_Namelist.F90	0	feat(hydrology): finite lateral inflow to dynamic wetlands in place of the floor refill (candidate 17)
+42	ccc8c37c	2026-09-29	main/MOD_SoilSnowHydrology.F90	0	feat(hydrology): open-bog share takes no lateral inflow and keeps its own floor (candidate 32)
+43	373faf8a	2026-09-29	main/HYDRO/MOD_Grid_RiverLakeFlow.F90 main/HYDRO/MOD_Grid_RiverLakeTimeVars.F90 share/MOD_Namelist.F90	0	feat(hydrology): routing takes floodplain re-infiltration where the soil saw the flood (Q-47)
+44	efe04028	2026-09-29	main/MOD_SoilSnowHydrology.F90 main/MOD_Vars_TimeVariables.F90 share/MOD_Namelist.F90	0	feat(hydrology): a flood re-infiltrates at most the pore deficit it found (Q-47)
+45	069a2729	2026-09-29	main/HYDRO/MOD_Grid_RiverLakeFlow.F90 main/HYDRO/MOD_Grid_RiverLakeTimeVars.F90 share/MOD_Namelist.F90	0	feat(hydrology): soil flood beyond lake, wetland and year-round flood (Q-47)
+46	aa396365	2026-09-29	main/BGC/MOD_BGC_Veg_CNPhenology.F90 main/CoLM.F90	0	fix(crop): close the GDD year at a spin-up wrap that missed 1 January (Q-48)
+47	06c6a351	2026-09-29	main/MOD_SoilSnowHydrology.F90 share/MOD_Namelist.F90	0	feat(hydro): managed-wetland ponding target for single-point towers
+48	7034143c	2026-09-29	main/MOD_SoilSnowHydrology.F90 share/MOD_Namelist.F90	0	feat(hydro): site ponding cap for managed-wetland towers
+49	238e3e54	2026-09-29	main/MOD_GroundTemperature.F90 main/MOD_Thermal.F90 share/MOD_Namelist.F90	0	feat(thermal): ponded water heat capacity in the first soil layer
+50	da264464	2026-09-29	main/MOD_GroundTemperature.F90	0	fix(thermal): ponded water adds its whole heat capacity to the surface layer
+51	f00df6f3	2026-09-29	main/MOD_Thermal.F90 share/MOD_Namelist.F90	0	feat(thermal): litter resistance to evaporation of ponded wetland water
+52	4355c071	2026-09-29	main/MOD_Albedo.F90 main/MOD_LAIReadin.F90 main/MOD_Thermal.F90 share/MOD_Namelist.F90	0	feat(sites): tower wetland vegetated fraction DEF_WETLAND_FVEG_SITE
+53	c1da236a	2026-09-29	main/MOD_Thermal.F90	0	feat(thermal): pond litter resistance under the canopy only on a tower wetland
+54	7dd1924d	2026-09-30	main/MOD_Thermal.F90	0	feat(thermal): pond litter resistance on temperate marsh wetlands only
+55	8452054b	2026-09-30	main/MOD_Thermal.F90	0	feat(thermal): pond litter resistance scaled by the emergent marsh share of the wetland tile
+56	95e4985b	2026-09-30	mkinidata/MOD_Initialize.F90 share/MOD_Namelist.F90	0	feat(soil): tropical peat end members of the wetland peat soil (C-91)
+57	fb9279b3	2026-09-30	main/MOD_SoilSurfaceResistance.F90 mkinidata/MOD_Initialize.F90 mkinidata/MOD_SoilParametersReadin.F90 share/MOD_Namelist.F90	0	fix(soil): van Genuchten alpha in 1/mm behind DEF_VG_ALPHA_MM (C-94)
+58	cb9f94d8	2026-09-30	main/BGC/MOD_BGC_Veg_CNPhenology.F90 main/MOD_Irrigation.F90 share/MOD_Namelist.F90	0	feat(crop): sow the second rice season after the first-season harvest (C-95)
+59	6cf2b143	2026-09-30	main/HYDRO/MOD_Grid_RiverLakeFlow.F90 main/HYDRO/MOD_Grid_RiverLakeTimeVars.F90 share/MOD_Namelist.F90	0	feat(hydro): take the lake evaporation deficit out of the routing storage (I-29)
+60	09e80350	2026-09-30	main/MOD_SoilSnowHydrology.F90 share/MOD_Namelist.F90	0	feat(hydrology): perched water table of the dynamic wetland tile above ice (I-25)
+61	2f4ed528	2026-09-30	main/HYDRO/MOD_Grid_RiverLakeFlow.F90 main/MOD_FloodInfiltration.F90	0	feat(hydrology): flood re-infiltration takes an upper bound on the flooded fraction (I-28)

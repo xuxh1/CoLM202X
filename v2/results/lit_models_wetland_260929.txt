@@ -1,0 +1,536 @@
+# lit_models_wetland_260929：主流湿地甲烷模式按过程对比与机理候选
+
+- **日期**：2026.09.29-10:05
+- **读者**：下一会话
+- **来源**：文献线只读调研（中控派活：看别的湿地甲烷模式怎么做、在机理上取长补短，不靠拟合参数）；8 个只读子任务分读 CLM/CTSM/ELM、Walter 与 LPJ 家族、ORCHIDEE/JSBACH/JULES/HIMMELI、GCP 其他成员、站点与泥炭机理模式、模式间比较、实测综述、本模式读码，主会话抽核关键数与行号、自读 Fe(III) 与腐殖质电子受体一手文献，全部 DOI 重查 Crossref；承接 `v2/迭代账本.md` Q-43 至 Q-46、`v2/候选池.tsv` 第 1–16 条、`v2/results/lit_floodplain_260929.txt`、`lit_tundra_260929.txt`、`audit_params_260929.tsv`
+- **状态**：第 0 至 6 节成文；第 6 节 137 个 DOI 于 2026-09-29 逐条查过 Crossref；第 5 节四个候选只到文献依据、改法与预期，未动代码与配置
+
+## 0. 覆盖面
+
+1. 检索词与命中（本地文本抽取 `data/_tmp/分析_260925_模拟年份/txt/{models,reviews,observations}`，pdftotext 按 \f 分页，grep 不分大小写，数为命中行数）：
+   - 模式族（CLM/ELM、LPJ、欧洲系、GCP 其他成员、站点与泥炭模式，共约 100 份）：methan|CH4 在站点与泥炭模式 30 份中 5709 行；ebullit|bubbl 564；electron accept|sulfate|sulphate|Fe(III)|ferric|nitrate|humic 219；Q10|activation energ 276；lag|delay|resaturat 126；freez|frozen|thaw|snow 421；hummock|hollow|microtop 178；exud|GPP|labile 505——已验证（子任务 G4b 覆盖面）。各模式族另按 R0、Tmean、fexu、Rmoist、tiller、Bunsen、CTI、POAET、anoxia、sif、redoxlag、vgc、aereoxid、unsat_aere 等逐篇检索——已验证（子任务 G1、G2、G3、G4a 覆盖面）。
+   - 电子受体：electron acceptor|Fe(III)|ferric|sulfate reduc|iron reduc 在 124 份模式文本中命中 >2 行的 16 份，最多者 van Bodegom 学位论文 243、Zheng 2019 40、Segers 2001 26、van Bodegom 2001 23、Meng 2012 10、Riley 2011 7——已验证（主会话 grep）。
+   - 评估与集合（23 份）：按温度、底物、冷季、面积、传输、热带六组词计数，如 Melton 2013 面积组 245、Riley 2011 传输组 112、Zona 2016 冷季组 62——已验证（子任务 G5a 覆盖面表 11.1）。
+   - 实测与综述（194 份文本）：Q10 90，activation energ 15，hysteres 19，root exud 55，photosynthat 20，catotelm 12，acrotelm 11，ebullition 113，zero curtain 6，freeze 58，sulfate/sulphate 57，salinity 36 份——已验证（子任务 G5b 覆盖面）。
+   - 本模式读码：o_scalar 44、anoxia 53、mino2lim 28、redoxlag / layer_sat_lag / finundated_lag 117/113/93、q10methane 36、vgc_max 11、aereoxid 40、电子受体组合词 16（逐条判定均非电子受体过程）等——已验证（子任务 G6 覆盖面）。
+2. 范围：
+   - 本地 `docs/refs/{models,reviews,observations}` 全部抽取件中与任务书所列模式、集合、机理相关者；CTSM 源码（`/share/home/dq076/mode/Wetland/CTSM`，ctsm5.4.047）与技术手册、CLM 参数文件；本模式工作树 `main/TRACER/`、`main/BGC/`、宿主水文与初始化相关段，配置 `v2/config/v2_oo5`，账本 `v2/迭代账本.md`、候选池 `v2/候选池.tsv`（16 条）、`v2/results/{lit_floodplain,lit_tundra,audit_params}_260929*`。
+   - 网络：Copernicus、AGU/Wiley 摘要页、PMC、OSTI、Crossref、OpenAlex；本地没有而下载读全文的有 PEATBOG、Ringeval 2014、Tang 2015、Chadburn 2020、Comyn-Platt 2018 接受稿、Castro-Morales 2018 补充材料、Lipson 2012、Zheng 2018、Li 2020 补充材料、Liu 2020、Wu 2016、Melton 2020、Willeit and Ganopolski 2016、Ito 2023、Chang 2021、Sjögersten 2014、Girkin 2025。
+3. 读法：
+   - 子任务分读（8 个，笔记在 scratchpad `notes/G1…G6`）：CLM/CTSM/ELM；Walter 与 LPJ 家族；ORCHIDEE、JSBACH/MPI/ICON、JULES、HIMMELI；GCP 其他成员与大尺度模式；机理细的站点与泥炭模式；模式间比较与集合；实测与综述；本模式读码。
+   - 主会话读全文或抽核原句：Riley 2011 p.1929–1931；Meng 2012 p.2796；Walter and Heimann 2000 p.748；Spahni 2011 表 1；Segers and Leffelaar 2001 表 1 与 p.3515；PEATBOG p.1181；van Bodegom 2001 p.148–151；Zheng 2019 p.665–667；Chadburn 2020 p.1、4–6、13、17–19 of 28；Peltola 2018 p.944；Salmon 2022 p.2828–2829；Bridgham 2013 p.1340；Bohn 2015 p.3342；Bohn and Lettenmaier 2010 p.1；Chang 2023 p.4304；Zhang 2025 p.311、p.314；Lipson 2012 p.577–588；Zheng 2018 p.6621–6629；CTSM `ch4Mod.F90:96`、`2545–2547`、`3155`、`SoilBiogeochemDecompCascadeBGCMod.F90:852`；本模式 Phys、Shim、Const 各段（第 4 节开头）——已验证（主会话读）。
+   - 只读摘要：Lipson 2010、2013；Treat 2015、2018；Roy Chowdhury 2015；Keller and Bridgham 2007；Sulman 2024；Qiu 2018；Ma 2021；Girkin 2018、2020；Wilson 2016；Knox 2021；Ueyama 2023（未入正文）。
+   - 转引（原文未读到）：McNorton 2016（经 Gedney 2019、Parker 2022）；Knorr and Blodau 2009（经 PEATBOG）；van Hulzen 1999（经 Segers and Leffelaar 2001）；Rivkina 2004（经账本 Q-27）；Visser 2000（经 lit_floodplain 第 4.2 节，只读摘要）；Herndon 2015（经 lit_tundra）。
+4. 未看：无。读不到全文的都按上面"只读摘要"或"转引"标出，不当全文用：CH4MODwetland 原型 Li et al. 2010（403）；DLEM 的 Tian 2015、2016、2023，TRIPLEX 的 Zhu 2015、2017，ISAM 的 Xu 2021，SDGVM 的 Singarayer 2011、Hopcroft 2011、2020（GCP 版文献）；ELM-SPRUCE、MEND、PEPRMT、IBIS-CH4 附录 C 等补充材料；Ito 2023 补充表 S1、Poulter 2017 补充表 S2；Segers 系列第 2、3 篇；Ma et al. 2017（TECO 甲烷模块原文）。
+5. 检索有结果但为零的：大尺度 GCP 成员中显式替代电子受体过程（只见站点与研究版模式）；热带泥炭厌氧培养 CH₄:CO₂ 产生比的数值；集合论文中各模式通道份额或氧化份额与观测的逐一对比；集合论文中"NPP 型 vs Rh 型"谁更贴合季节与年际的排序——已验证（子任务 G4a、G5a、G5b 检索）。
+6. 不入项（理由）：Wetland 以外的湖泊与河流模式（ALBM、FLaMe、bLake4Me、MeEP、BALTSEM、LAKE 2.0）——湖泊另有调研线（候选池第 12 条）；稻田模式（CH4MOD、DNDC、WHCNS、van Bodegom 学位论文）——稻田另有线（账本 C-32 至 C-47）；旱地汇模式（MeMo、Curry、Ridgwell）——判据不评旱地吸收（`v2/目标与判据.md` 第 1 节）；机器学习升尺度（UpCH4、Li 2026）——不含机理。
+7. 存疑（需实验）：第 5 节四个候选对各类湿地与全球的量级，见各候选"预期"；第 4.8 节洪泛斑块滞后取 30 d 而非 7 d 对洪泛排放的量级影响。
+8. 行号口径：本模式行号对 commit `a01c6451`（与 `dd057d0a` 的 `main/TRACER/` 相同）；CTSM 行号对本地 ctsm5.4.047 工作树。
+
+单位与写法：排放一律 CH₄ 质量或原文单位；出处写"作者 年 页/式/表"，"子任务读"指子任务读全文而主会话未逐句核，"主会话读""主会话抽核"指主会话打开原文核过。完整著录见第 6 节。
+
+## 1. 模式清单（版本、宿主、主文献、读法）
+
+排列按谱系。"全文"指子任务或主会话读了原文并给页码；"只读摘要"与"转引"照第 0 节的约定。GCP 2025 湿地集合 16 个成员与 Saunois et al. (2025) 表 2、Zhang et al. (2025) 补充表 S1 一致：CH4MODwetland、CLASSIC、DLEM、ELM-ECA、ISAM、JSBACH、JULES、LPJ-GUESS、LPJ-MPI、LPJ-WSL、LPX-Bern、ORCHIDEE、SDGVM、TEM-MDM、TRIPLEX-GHG、VISIT；其中 CH4MODwetland、ISAM、SDGVM 为 2025 版新加入——已验证（Saunois 2025 p.1884 表 2、p.1893；Zhang 2025 p.307 与补充表 S1，全文，子任务 G4a 读）。
+
+### 1.1 CLM 与 E3SM 系
+
+1. CLM4Me（CLM4.0-CN；CESM1）：Riley et al. 2011，Biogeosciences 8, 1925–1953——全文（主会话与 G1）。
+2. CLM4Me′（CLM4CN）：Meng et al. 2012，Biogeosciences 9, 2793–2819——全文；Meng et al. 2015，Biogeosciences 12, 4029–4049（换碳模式的结论）——全文。
+3. CLM4.5/CLM5/现行 CTSM（ctsm5.4.047，本地源码 `/share/home/dq076/mode/Wetland/CTSM`）：读码 `src/biogeochem/ch4Mod.F90`、`ch4varcon.F90`、`src/soilbiogeochem/SoilBiogeochemDecompCascadeBGCMod.F90`，技术手册 `doc/source/tech_note/Methane/CLM50_Tech_Note_Methane.rst`；参数值读 `v1/CLM_params/clm5_params.c171117.nc`——已验证（读码与 ncdump，主会话抽核 `ch4Mod.F90:2545–2547`、`3155`，参数 redoxlag 30、redoxlag_vertical 0、f_ch4 0.2、q10ch4 1.33、q10ch4base 295、vgc_max 0.15、mino2lim 0.2）。
+4. CLM4.5bgc 参数优化：Müller et al. 2015，GMD 8, 3285–3310——全文。
+5. CLM_SPRUCE 泥炭微地形水文：Shi et al. 2015，Biogeosciences 12, 6463–6477——全文。
+6. ELM v1 默认与 ELM-Wet 湿地地块：Yazbeck et al. 2025，JAMES 17, e2024MS004396——全文。
+7. ELM-SPRUCE（模块式出自 Xu et al. 2015，JGR-B 120, 1315–1333）：Ricciuto et al. 2021，JGR-B 126, e2019JG005468——全文（补充材料未读）。
+8. ELM-VSFM：Bisht et al. 2018，GMD 11, 4085–4102——全文（纯水文）。
+9. 热力学产甲烷与铁还原框架（CLM-CN 级联 + PHREEQC）：Zheng et al. 2019，Biogeosciences 16, 663–680——全文（主会话读 p.665–667）。
+10. ELM–PFLOTRAN 潮汐湿地氧化还原：Sulman et al. 2024，JAMES 16, e2023MS004002——只读摘要。
+11. MEND 加 CH₄：Huang et al. 2021，GCB 27, 6166–6180——全文（补充材料未读）；MEND-mm6：Zhou et al. 2025，SBB 207, 109838——全文（补充材料未读）。
+
+### 1.2 Walter–Heimann 谱系与 LPJ 家族
+
+1. Walter–Heimann：Walter et al. 1996，GRL 23, 3731–3734；Walter and Heimann 2000，GBC 14, 745–765；Walter et al. 2001，JGR 106, 34189–34206——全文。
+2. LPJ-WHy/LPJ-WHyMe：Wania et al. 2009a、2009b，GBC 23, GB3014、GB3015；Wania et al. 2010，GMD 3, 565–584——全文。
+3. LPX-Bern：Spahni et al. 2011，Biogeosciences 8, 1643–1665；DYPTOP：Stocker et al. 2014，GMD 7, 3089–3110——全文。
+4. LPJ-wsl：Hodson et al. 2011，GRL 38, L08810；Zhang et al. 2016，Biogeosciences 13, 1387–1408；Zhang et al. 2017，PNAS 114, 9647–9652——全文（2017 补充材料未读）。
+5. LPJ-GUESS：Tang et al. 2015，Biogeosciences 12, 2791–2808；Kallingal et al. 2024，GMD 17, 2299–2324；Kallingal et al. 2025，Biogeosciences 22, 4061–4086——全文。
+6. LPJmL6：Schaphoff et al. 2026 预印本（EGUsphere；正式版 GMD 19, 7615–7651）——预印本全文，正式版只读网页摘要核六个参数。
+7. PeatlandVU：van Huissteden et al. 2006；Lippmann et al. 2023（GMD 16, 6773–6804）；Lippmann et al. 2026 预印本——全文。
+
+### 1.3 欧洲其他系
+
+1. ORCHIDEE-WET：Ringeval et al. 2010（GBC 24, GB2003）、2011（Biogeosciences 8, 2137–2157）、2012（GMD 5, 941–962）——全文；LPX 亚马孙洪泛 Ringeval et al. 2014（Biogeosciences 11, 1519–1558）——全文。
+2. ORCHIDEE-PCH4（ORCHIDEE-PEAT r7020）：Salmon et al. 2022，GMD 15, 2813–2838——全文；ORCHIDEE-PEAT（Qiu et al. 2018）只读摘要；ORCHIDEE-MICT（Guimberteau et al. 2018）全文检索，正文无甲烷。
+3. JSBACH-methane：Kaiser et al. 2017，GMD 10, 333–358；Castro-Morales et al. 2018，Biogeosciences 15, 2691–2722——全文。
+4. MPI-ESM 与 ICON-XPP：Kleinen et al. 2012（Biogeosciences 9, 235–248）、2020（Clim. Past 16, 575–595）、2023（Clim. Past 19, 1081–1099）；Wilkenskjeld et al. 2025 预印本——全文。
+5. JULES：Gedney and Cox 2003；Gedney et al. 2004（GRL 31, L20503）、2019（ERL 14, 084027）；Comyn-Platt et al. 2018（作者接受稿）；Parker et al. 2022（Biogeosciences 19, 5779–5805）；Folberth et al. 2022（只读湿地部分）；JULES-microbe：Chadburn et al. 2020，GBC 34, e2020GB006678——全文（主会话读 p.1、4–6、13、17–19 of 28）。McNorton et al. 2016 未读到，只作转引。
+6. HIMMELI：Raivonen et al. 2017，GMD 10, 4665–4691——全文；JULES-HIMMELI：Gao et al. 2022 预印本（Biogeosciences Discuss.，Crossref 记为 2022）、Gao et al. 2025（STOTEN 980, 179526）——全文。
+7. ISBA：Morel et al. 2019，JAMES 11, 293–326——全文。
+
+### 1.4 GCP 集合的其他成员与大尺度模式
+
+1. TEM-MDM：Zhuang et al. 2004，GBC 18, GB3010；Liu et al. 2020，JGR-B 125, e2019JG005428——全文（Liu 2020 方法与讨论）。
+2. CLASSIC/CLASS-CTEM：Arora et al. 2018，Biogeosciences 15, 4683–4709——全文；Melton and Arora 2016（附录 A3.2）、Wu et al. 2016（泥炭节）、Melton et al. 2020（2.2 节）——部分。
+3. VISIT：Ito and Inatomi 2012，Biogeosciences 9, 759–773；Ito 2019，Polar Science 21, 26–36——全文。
+4. DLEM：Tian et al. 2010，Biogeosciences 7, 2673–2694——全文；GCP 版所引 Tian 2015、2016、2023 未读。
+5. TRIPLEX-GHG：Zhu et al. 2014，GMD 7, 981–999——全文；GCP 版所引 Zhu 2015、2017 未读。
+6. ISAM：Shu et al. 2020，GBC 34, e2019GB006251 与补充材料——全文。
+7. CH4MODwetland：Li et al. 2020，GMD 13, 3769–3788 与补充材料——全文；Li et al. 2010 原文未读到（403）。
+8. SDGVM：只读到 WETCHIMP 协议中的模式描述（Wania et al. 2013，GMD 6, 617–641，p.629）。
+9. WETMETH（UVic）：Nzotungicimpaye et al. 2021，GMD 14, 6215–6240——全文。
+10. PALADYN/CLIMBER-X：Willeit and Ganopolski 2016；Willeit et al. 2023，GMD 16, 3501–3534——甲烷段全文。
+11. iMAPLE：Yue et al. 2024，GMD 17, 4621–4642——全文（2.2.3 节）。
+12. IBIS-CH4：Song et al. 2020，JAMES 12, e2019MS001867；全球应用 Xiao et al. 2024——全文（附录 C 未读）。
+13. RegESM-Microbe：Zhang et al. 2025，Earth's Future——方法与 3.3 节。
+14. SatWetCH4：Bernard et al. 2025，GMD 18, 863–883——相关节全文。
+15. GFDL-AM4.1（He et al. 2020）与 WetCHARTs（Bloom et al. 2017）——相关节全文，无过程模型。
+
+### 1.5 机理细的站点与泥炭模式（多数大尺度模式的机理来源）
+
+PEATBOG（Wu and Blodau 2013，GMD 6, 1173–1207）；ecosys（Grant 1998，SBB 30, 883–896）；Arah and Stephen 1998（Atmos. Environ. 32, 3257–3264）；Segers and Leffelaar 2001（JGR 106, 3511–3528）；Kettunen 2003（GBC 17, 2002GB001958）；van Bodegom et al. 2001（Biogeochemistry 55, 145–177）；DAMM（Davidson et al. 2012）与 M3D-DAMM（Sihi et al. 2021）；CH4MOD-wetland 与 WMEM（Cao et al. 1996）、CASA（Potter 1997）、Christensen and Cox 1995；TECO_SPRUCE（Ma et al. 2022，Biogeosciences 19, 2245–2262）；HIMMELI 冒泡对比（Peltola et al. 2018，Biogeosciences 15, 937–951）；PEPRMT（Oikawa et al. 2017，JGR-B 122, 145–167；PEPRMT-Tidal 2024）——全文（子任务 G4b 读，主会话抽核 PEATBOG p.1181、Segers 表 1 与 p.3515、van Bodegom p.148 与 p.151、Peltola p.944）。
+
+## 2. 过程对比矩阵
+
+每个过程先写"多数做法"与"少数做法"两句归纳（推测，按下列条目数出来），再逐模式列做法、关键式或参数、出处。出处写"作者 年 页/式/表"，完整著录见第 6 节；子任务读全文、主会话未抽核的条目在句末写"（子任务读）"。
+
+### 2.1 P1 产甲烷底物
+
+归纳：GCP 16 个成员里产甲烷代理按原文归类，Rh 或 Rh 缩放 8 个（CLASSIC、ELM-ECA、ISAM、LPJ-GUESS、LPJ-MPI、LPJ-wsl、SDGVM、TRIPLEX-GHG），碳底物 4 个（CH4MODwetland、DLEM、ORCHIDEE、LPX-Bern 兼 Rh），NPP 2 个（JULES、VISIT），其余为 YASSO 厌氧呼吸（JSBACH）与多因子饱和带过程（TEM-MDM）——已验证（Zhang 2025 补充表 S1，子任务 G5a、G4a 读）。机理细的站点模式多数把"新鲜碳"（分泌物、GPP、DOC、乙酸）单列——推测。理由：按 2.1 各条数出。
+
+1. CLM4Me：P = R_H·f_CH4·f_T·f_pH·f_pE·S，f_CH4 = 0.2（厌氧矿化碳变 CH₄ 的份额），R_H 为格点土壤加凋落物异养呼吸，50 % 随根、50 % 均分到 0.28 m 以上——已验证（Riley 2011 p.1929 式 2，表 1 p.1930，全文）。作者自述该式等于假定"发酵到产甲烷无时滞、好氧与厌氧分解一致"——已验证（同页）。
+2. 现行 CTSM：底物 = 已乘 o_scalar 的 (somhr + lithr)，按 hr_vr 垂直分配，f_ch4 0.2 乘 q10ch4^((T − 295 K)/10)，上限 0.5——已验证（读码 `ch4Mod.F90:2512`、`2554–2576`、`2618`，子任务读；参数文件，主会话 ncdump）。
+3. LPX-Bern：各源类都是 HR × r：北方泥炭 25 %/20 %（两情景），45° N 以南淹水湿地与稻田 2.40 %/4.15 %，湿润矿质土 0.52 %；后三类的 r 已含氧化与传输，属按全球收支反推的调参数——已验证（Spahni 2011 p.1646 表 1、p.1657 附录 A，主会话抽核表 1）。
+4. LPJ-wsl：E = β·F(x)·R_h·S，β = 0.03，F 在热带 0.175 与北方 0.025 之间按年均温过渡——已验证（Hodson 2011 1–2 of 4，子任务读）。
+5. LPJ-WHyMe：产甲烷潜在碳库 = 根分泌物库（NPP 的 f_exu，表 1 写 0.175、表 4 终值 0.15，周转 1–2 周）加泥炭地分解碳；CH₄/CO₂ 比拟合终值 0.1——已验证（Wania 2009b 3–4 of 15；Wania 2010 p.567–569、表 1、表 4，子任务读）。
+6. LPJ-GUESS：同 Wania 潜在碳库，但 v4.1 不用分泌物库；CH₄/CO₂ 多站后验 0.14——已验证（Kallingal 2024 p.2301–2304；Kallingal 2025 表 C1，子任务读）。
+7. Walter–Heimann：只用"新鲜有机质"，f_in(t) = 1 + f_NPP(t)/NPP_max 给季节形态，绝对量全在逐站调的 R0（高纬 0.3–0.6、巴拿马 2.8 µM h⁻¹）——已验证（Walter and Heimann 2000 p.747–748 式 2–5、p.751 表 2，子任务读）。
+8. TEM-MDM：Mp = MGO·f(SOM)·f(MST)·f(pH)·f(RX)，f(SOM) = [1 + NPP/NPPMAX]·f(CDIS)——已验证（Zhuang 2004 3–5 of 23 式 3、5，子任务读）。
+9. JULES：默认土壤碳 × k × 广义 Q10；另可选 NPP 或土壤呼吸；分层版按各碳库比呼吸速率与 e^(−γz)——已验证（Gedney 2004 式 1；Gedney 2019 文内 p.3 式 2–3；Comyn-Platt 2018 接受稿 L402–419，子任务读）。Gedney 2019：底物选择对未来反馈的影响 5–13 %——已验证（同文 p.7，子任务读）。
+10. ORCHIDEE-WET：活性碳库 C_L × α0，α0 热带约为寒温带 5 倍，作者疑因"not accounting for the exudates pool"——已验证（Ringeval 2010 2–4 of 12，子任务读）。ORCHIDEE-PCH4：三碳库都产，速率为有氧的 1/q_MG（多站优化 9.64），高排放站低估归因于缺根分泌物与 DOC——已验证（Salmon 2022 p.2816 式 3、p.2829–2830，子任务读）。
+11. JSBACH：水位以下分解碳一半变 CH₄（fracCH4Anox 0.5）；MPI-ESM/ICON-XPP：淹水部分分解速率为有氧的 0.35，产物中 CH₄ 份额 0.35（ICON 为 24 %）乘温度——已验证（Kaiser 2017 p.335–336；Kleinen 2020 p.577；Wilkenskjeld 2025 L93–99，子任务读）。
+12. HIMMELI：外部给厌氧呼吸，沿根分布、f_m = 0.5 变 CH₄；站点驱动时厌氧呼吸 = NPP × 0.4 加 catotelm 分解——已验证（Raivonen 2017 p.4670 式 6–7、附录 B，子任务读）。JULES-HIMMELI 单站优化 f_m 0.063–0.257——已验证（Gao 2025 p.7，子任务读）。
+13. CLASSIC：Rh × 0.45 × 0.135（= 0.061）——已验证（Arora 2018 p.4686，子任务读）。TRIPLEX-GHG：Rh × r，19 站标定 0.1–0.7、均值 0.23——已验证（Zhu 2014 p.981、p.984，子任务读）。ISAM：Rh × 0.06（内陆）、0.03（滨海）——已验证（Shu 2020 表 2，子任务读）。PALADYN：湿地 0.07、泥炭 0.2——已验证（Willeit and Ganopolski 2016 表 7，子任务读）。
+14. DLEM：只从 DOC 产，DOC 来自 GPP 分配与凋落物、土壤分解，Michaelis–Menten（V_max 草本 1.45、木本 0.55 g C m⁻³ d⁻¹，K_m 5 g C m⁻³）——已验证（Tian 2010 p.2676 式 3、表 4，子任务读）。
+15. ELM-SPRUCE（CLM-Microbe）：DOC → 乙酸、H₂ → 两类产甲烷菌，最敏感参数为最大乙酸生成速率——已验证（Ricciuto 2021 4 of 18、9 of 18；Xu 2015 式 A1–A18，子任务读）。
+16. Kettunen 2003：显式乙酸库，来源 = f_GPP·GPP（0.10）+ f_ETI·ETI（根凋落），f_GPP ×10 使通量 +361 %——已验证（Kettunen 2003 式 3、表 3–4，20-3 至 20-11，子任务读）。PEPRMT：易分解库每步收 GPP 的 50 %，生长季 72 % 的 CH₄ 来自该库——已验证（Oikawa 2017 p.150–151、p.159，子任务读）。
+17. PEATBOG：不设 CH₄ 底物库，饱和层分解出的 DIC 按电子平衡劈分：CH4pro = (DecDIC − EACO2pro)·(1 − O2status)/2，无替代电子受体时 CO₂:CH₄ = 1:1——已验证（Wu and Blodau 2013 p.1181、式 A114、A121，主会话抽核 p.1181）。
+18. SatWetCH4：NPP 驱动的易分解库 dC/dt = NPP − K(T)·C（Kref 0.5 yr⁻¹），比 SOC 小约一个量级，泥炭高 SOC"do not translate to a proportionally increased production"——已验证（Bernard 2025 p.865–866、p.870，子任务读）。
+
+批评与证据：Ringeval 2014 指 WETCHIMP 多数模式"the mean value of the heterotrophic respiration over the entire grid cell is used"（p.1547）；Chadburn 2020 指 CLM 类方案把有氧呼吸"含水有最适值"的响应直接传给产甲烷，且饱和部分的基线呼吸取自不饱和部分的含水（p.4 of 28）——已验证（Ringeval 2014 子任务读；Chadburn 2020 主会话读 p.4）。
+
+### 2.2 P2 缺氧与氧化还原
+
+归纳：大尺度模式多数以水位（或淹水份额）二值划分缺氧、无替代电子受体；显式电子受体只见于站点与研究版模式——已验证（G5a 按 Bohn 2015 表 3：WETCHIMP-WSL 21 个配置中只有 CLM4Me、DLEM、DLEM2、VIC-TEM-TOPMODEL 有 pH 与氧化还原项，p.3329）。
+
+1. 水位二值：CLM4Me/CTSM、Walter、ORCHIDEE-WET、JSBACH、MPI、TEM（另有 Eh）、TRIPLEX（另有 Eh）、IBIS-CH4、PeatlandVU——已验证（各篇方法节，子任务读）。
+2. 连续 O₂ 抑制：Arah and Stephen 1998 P = V_P/(1 + η[O₂])，η = 400 m³ mol⁻¹（p.3258 式 9）；HIMMELI 同式（Raivonen 2017 p.4670 式 7）；ORCHIDEE-PCH4 e^(−[O₂]/2 g m⁻³)（Salmon 2022 p.2816）；LPJmL6 e^(−C_O₂/10 g m⁻³)（预印本 p.14）；ISBA 以水相 O₂ 2 g m⁻³ 为阈指数抑制（Morel 2019 p.302）；Wania 2010 以 α = 1 − f_air 连续加权（p.569）——已验证（各篇，子任务读）。CTSM 有 `anoxicmicrosites`（÷(1 + oxinhib·O₂)），硬写关——已验证（读码 `ch4varcon.F90:63–64`，子任务读）。
+3. 分解本身的缺氧抑制：CTSM o_scalar = max(非淹水部分 O₂ 胁迫, 0.2)，开甲烷即强制开，季节淹水因子 S 因而恒 1——已验证（读码 `SoilBiogeochemDecompCascadeBGCMod.F90:852`（主会话读）、`controlMod.F90:483–487`、`ch4Mod.F90:2518–2529`（子任务读））；MPI、JSBACH、ICON 淹水部分乘 0.35（Wania 2010 值）；LPX 洪泛区 R_moist 0.5；LPJ-WHyMe 泥炭 R_moist 0.35–0.4；ORCHIDEE-PCH4 1/9.64；ISBA 1/10——已验证（Kleinen 2020 p.577；Castro-Morales 2018 p.2695；Ringeval 2014 p.1526；Wania 2010 表 4；Salmon 2022 表 6；Morel 2019 p.297，子任务读）。
+4. 氧化还原滞后：CLM4Me 只作敏感性（f_pE，30 天 e 折）——已验证（Riley 2011 p.1929，主会话读）；Meng 2012 水平与垂直两式，τ = 30 d，依据稻田 Fe 还原滞后 4–8 周——已验证（Meng 2012 p.2796 式 3–7，主会话读）；CTSM 水平 30 d 默认开、垂直 redoxlag_vertical = 0 默认关——已验证（参数文件 ncdump，主会话读）；TEM 预报 Eh：饱和区 dEHL/du = CR·(AL − 1)，CR = 100 mV d⁻¹，f(RX) 在 −200 mV 以下为 1、−100 mV 以上为 0——已验证（Zhuang 2004 13–14 of 23 式 A3–A5，子任务读）；TRIPLEX-GHG 沿用——已验证（Zhu 2014 p.985）；PEPRMT 水位下降后抑制 20 天——已验证（Oikawa 2017 p.152）；PeatlandVU v3 的 AnaerobeLagFactor"was not found to impact CH4 emissions"——已验证（Lippmann 2026 预印本 PDF 第 38 页，子任务读）。
+5. 显式替代电子受体：
+   - Segers and Leffelaar 2001：NO₃⁻、Fe、Mn、SO₄²⁻ 与有机受体并成一个库（氧化态 c_eo、还原态 c_er），φ_mg = 1/(β + 1)，β ∝ c_eo；c_eo,0 = 5（1–10）mol 电子当量 m⁻³ 土；有氧区一阶再氧化 k_ro = 10⁻⁵（10⁻⁶–10⁻⁴）s⁻¹；受体还原"typically takes several days to several weeks"——已验证（Segers and Leffelaar 2001 表 1 p.3512、p.3515、p.3517，主会话抽核表 1 与 p.3515）。
+   - PEATBOG：沼泽只算 SO₄²⁻、NO₃⁻ 与腐殖质；腐殖质一阶还原与再氧化（r_red 10⁻⁴ d⁻¹、r_ox 0.05 d⁻¹）；上 60 cm 初始电子接受容量约 2000–4000 mmol 电荷 m⁻²，接近 Knorr and Blodau (2009) fen 实验的 2725——已验证（Wu and Blodau 2013 p.1181、表 4 p.1188，主会话抽核 p.1181）。
+   - van Bodegom et al. 2001：产甲烷乘 1/(1 + K_i,Fe·[Fe³⁺])，K_i,Fe = 8.3 m³ mol⁻¹；铁还原菌对乙酸、H₂ 亲和力高一到两个量级；Fe²⁺ 化学氧化 k = 0.344×10⁻³ m³ mol⁻¹ s⁻¹——已验证（p.148 式 2、p.151 式 14–15，主会话读）。
+   - ecosys 只有反硝化一类；作者原句"methanogenesis may be overestimated for soils in which such electron acceptors are plentiful"——已验证（Grant 1998 p.895，子任务读）。
+   - Zheng et al. 2019：热力学 Monod 下 Fe(III) 还原与产甲烷竞争乙酸与 H₂，WHAM 动态 pH——已验证（p.665–666 式 1，主会话读）。
+   - PEPRMT-Tidal：产甲烷乘 NO₃⁻ 与 SO₄²⁻ 抑制项——已验证（Oikawa 2024 式 5 p.7，子任务读）；ELM–PFLOTRAN 含硫酸盐还原与铁——已验证（Sulman 2024，只读摘要）。
+   - HIMMELI 作者：O₂ 以外受体不含，但"could possibly be a way to take into account site differences"——已验证（Raivonen 2017 p.4670–4671，子任务读）。
+
+### 2.3 P3 温度依赖
+
+1. CLM4Me：Q10 = 2（敏感性 1.5–4），基准 22 °C，≤ 0 °C 不产——已验证（Riley 2011 p.1929、表 1，主会话读）。现行 CTSM：分解 Q10 1.5 × q10ch4 1.33、基准 295 K；垂直分辨分解下冰点以下照样按 HR 产甲烷——已验证（读码 `ch4Mod.F90:2545–2547` 注释"If using VERTSOILC, it is OK to use base_decomp as given because liquid water stress will limit decomp"，主会话读）。
+2. 以站点年均温为基准：Walter Q10 = 6（1.7–16），"relative to the annual mean soil temperature T_mean at the site"——已验证（Walter and Heimann 2000 p.748，主会话抽核原句）；ORCHIDEE-WET 全球 Q10 = 3 同此基准——已验证（Ringeval 2011 p.2141–2142，子任务读）；VISIT 的 WH 方案 Q10 改为 3.85（依 Yvon-Durocher 2014）——已验证（Ito 2019 p.27，子任务读）。
+3. 广义或随温度变的 Q10：JULES Q10(T) = Q10(T0)^(T0/T)，Q10(T0) 3.7（土壤碳底物 3.0–4.7，NPP 底物 1.3–2.3）——已验证（Gedney 2004 式 2；Gedney 2019 文内 p.4–5，子任务读）；CLASSIC Q10 = 1.44 + 0.56 tanh[0.075(46 − T)]——已验证（Melton and Arora 2016 式 A32，子任务读）；WETMETH Q10(T) = 1.7 + 2.5 tanh[0.1(308.15 − T)]，最适约 27 °C——已验证（Nzotungicimpaye 2021 p.6219，子任务读）；TRIPLEX 峰形（T_opt 25、T_max 45 °C），标定 Q10 1.6–4.5——已验证（Zhu 2014 p.981、p.984）；SatWetCH4 Q10⁰ = 2.99——已验证（Bernard 2025 p.868）。
+4. 只经分解间接：LPJ 家族（Lloyd–Taylor）、CLASSIC、JSBACH、HIMMELI（产甲烷不带温度函数，全在输入里）——已验证（Wania 2010 式 1；Arora 2018 式 1–2；Raivonen 2017 p.4671，子任务读）。
+5. 产甲烷与底物分设 Q10：Kettunen 产甲烷 4.0、底物生产 2.0，产甲烷 Q10 ×2 通量只 +1 %、底物 Q10 ×10 通量 +97 %——已验证（Kettunen 2003 表 3–4，子任务读）；JULES-microbe 水解 Q₁ 2.8、产甲烷菌 Q₂ 4.3，另有 5 年驯化——已验证（Chadburn 2020 表 A1 p.17 of 28，主会话读）；ELM-SPRUCE 乙酸生成 3.024、产甲烷 2.0、氧化 1.20——已验证（Ricciuto 2021 表 2，子任务读）。
+6. 系统表观活化能远高于单过程：各过程 Ea 同为 50 kJ mol⁻¹ 时，稳态表观 Ea 排放 139、产甲烷 109 kJ mol⁻¹——已验证（Arah and Stephen 1998 表 2 p.3261，子任务读）；电子受体还原与产甲烷的相互作用"could result in high overall Q10 values"——已验证（转引：Segers and Leffelaar 2001 p.3521 引 van Hulzen et al. 1999；van Hulzen 原文未读到）。
+
+### 2.4 P4 pH 与盐度
+
+1. pH：Dunfield 型 10^(−0.2235 pH² + 2.7727 pH − 8.6)，CTSM usephfact 默认关；Meng 2012 全球试验中去掉 pH 因子排放 +41 %（影响最大）——已验证（读码 `ch4Mod.F90:2598–2605`；Meng 2012 表 7，子任务读）。Cao 型抛物线：TEM（5.5/7.5/9.0）、TRIPLEX（4/7/9）、IBIS-CH4（3/6.2/9）、M3D-DAMM（4/7/10）；DLEM 在 pH ≤ 4 或 ≥ 10 为 0——已验证（Zhuang 2004 式 A2；Zhu 2014 式 6；Song 2020 式 C4；Sihi 2021 式 6；Tian 2010 式 11，子任务读）。动态 pH：ELM-SPRUCE 乙酸使 pH 降、产量约 −20 %；Zheng 2019 WHAM，初始 pH 5 → 6 产量 +308 %——已验证（Xu 2015 p.1321；Zheng 2019 p.668，子任务读）。无 pH：LPJ 家族、ORCHIDEE、JSBACH、JULES、HIMMELI、CLASSIC、WETMETH、ISBA、VISIT——已验证（各篇方法节检索，子任务读）。
+2. 盐度与硫酸盐：ISAM 滨海 r 取内陆一半，不加时美国本土湿地排放高 44–49 %——已验证（Shu 2020 表 2、12 of 19）；CH4MODwetland 经验常数 a = −0.025，无盐度的 TEM 在滨海"greatly overestimated"——已验证（Li 2020 p.3781 与补充 S1）；PEPRMT-Tidal 硫酸盐与硝酸盐抑制，但 St. Jones 盐沼"surface-water sulfate concentrations are not sufficient"——已验证（Oikawa 2024 p.7、p.17，子任务读）。
+
+### 2.5 P5 微生物群落
+
+显式产甲烷菌或甲烷氧化菌生物量：Kettunen 2003（μ 0.20/0.24 d⁻¹，死亡 0.01/0.02 d⁻¹）、ecosys、CLM-Microbe/ELM-SPRUCE、IBIS-CH4、MEND、M3D-DAMM、JULES-microbe、Zheng 2019、RegESM-Microbe——已验证（各篇，子任务读）。大尺度 GCP 成员除 ELM 研究版外都没有——已验证（Zhang 2025 补充表 S1 与各主文献，子任务读）。
+
+### 2.6 P6 甲烷氧化
+
+1. 双底物 Michaelis–Menten：CLM4Me R_o,max 1.25×10⁻⁵ mol m⁻³ s⁻¹、K_CH4 5×10⁻³、K_O2 2×10⁻² mol m⁻³、Q10 1.9；高地（水位以上）K 与 R_o,max 取湿地的 1/10——已验证（Riley 2011 p.1931 式 7、表 1，p.1931–1932）；CTSM 同，这四个值硬写在 readParams——已验证（`ch4Mod.F90:2782–2790`、`1406–1449`，子任务读）。Meng 2012：R_o,max 降到 1.25×10⁻⁶ 后两站根际氧化份额吻合更好，全球根际氧化约 15 %——已验证（Meng 2012 p.2802、表 7，子任务读）。
+2. 单底物 MM、只在水位以上：Walter（K_m 5 µM、V_max 20 µM h⁻¹、Q10 2 以 T_mean 为基准）、ORCHIDEE-WET、VISIT(WH)、LPJmL6——已验证（Walter and Heimann 2000 p.748 式 6，主会话抽核；Ringeval 2011 p.2142；Ito 2012 p.762；LPJmL6 p.14，子任务读）。
+3. O₂ 化学计量限制：Wania 2010 f_oxid = 0.5（可用 O₂ 中用于氧化 CH₄ 的份额）——已验证（p.569 式 3、表 4，子任务读）；ORCHIDEE-PCH4 一阶于 O₂（k_MT 默认 5 d⁻¹）——已验证（Salmon 2022 式 5）；ISBA 一阶于 CH₄、Q10 4.2——已验证（Morel 2019 式 26–27）。
+4. 根际氧化固定份额：Walter P_ox = 50 %；TEM 40 %；TRIPLEX 0.5；CH4MODwetland 草本 0.5、高产草本与木本 0.9；ORCHIDEE-PCH4 M_rox 默认 0.5，站点优化"scattered over the range of 0 to 1"，排放 < 150 mg m⁻² d⁻¹ 的站平均 60 %、更高的 22 %——已验证（Walter and Heimann 2000 p.750；Zhuang 2004 4 of 23；Zhu 2014 p.986；Li 2020 补充表 S2；Salmon 2022 p.2828–2829，主会话抽核 Salmon 原句）。由植物送氧预报：CLM4Me（全球约 60 % 通气组织 CH₄ 在根际被氧化）、Wania、HIMMELI（JULES-HIMMELI 算得 40–56 %）、JSBACH——已验证（Riley 2011 p.1938–1939；Gao 2025 p.13；Kaiser 2017 式 8，子任务读）。
+5. 经验衰减或固定扣除：JULES e^(−τz)（γ 0.4 或 τ 6.5 m⁻¹，版本不同）；WETMETH τ_oxid 0.0146 m；SDGVM O = 0.9P——已验证（Comyn-Platt L411–413；Chadburn 2020 表 A1；Nzotungicimpaye 2021 式 3–5；Wania 2013 p.629，子任务读）。
+
+### 2.7 P7 传输
+
+1. 冒泡：
+   - 分压占当地压力比例：CLM4Me/CTSM vgc > 0.15，泄到 0.15 × 0.57，饱和柱直入大气、非饱和柱放到水位上一层——已验证（Riley 2011 p.1930；读码 `ch4Mod.F90:3292–3335`、`3695–3701`，子任务读）。
+   - 浓度阈值：Walter C_thresh = C_min(1 + P_unveg/100)，C_min 500（全植被）到 1000 µM（裸地），水位在地下时加到最低非饱和层；TEM 500、TRIPLEX 750 µmol L⁻¹；Wania 超 Bunsen 溶解度即直入大气——已验证（Walter and Heimann 2000 p.749 式 11–13；Zhuang 2004 16 of 23；Zhu 2014 p.985；Wania 2010 p.571–572，子任务读）。
+   - 全部溶解气体分压之和：HIMMELI（CH₄、CO₂、O₂、N₂）、IBIS-CH4、ecosys——已验证（Raivonen 2017 p.4671 式 11–13；Song 2020 式 32–34；Grant 1998 p.888，子任务读）。
+   - 气泡体积：Peltola 2018 在同一 HIMMELI 中比较三法，对涡度相关通量 R² EBG 0.63、ECT 0.56、EPT 0.35，年排放"largely unaffected"而时间变率差一个量级——已验证（Peltola 2018 p.937、p.944、p.945，主会话抽核 p.944）；Ma 2022 在 SPRUCE 上 EBG RMSE 0.53 优于 ECT 0.61，ECT 不能同时拟合通量与孔隙水浓度——已验证（Ma 2022 p.2245、p.2255，子任务读）。
+2. 植物通道：
+   - 分蘖截面（CLM4Me 式 5–6：年 NPP × 地下份额 × LAI / 0.22 g C × πR²，孔隙 0.3/0.1）；CTSM 把 LAI 换成常数 4——已验证（Riley 2011 p.1931；读码 `ch4Mod.F90:3155`，主会话读）；Wania 按禾草叶生物量——已验证（Wania 2010 p.571）。
+   - 按植被类型的效率 T_veg：Walter（树 1、灌 0、短草 10、长草 15、苔原 10、沼泽 15）、ORCHIDEE-WET、ORCHIDEE-PCH4（k_PMT·T_veg·f_root·LAI）、TEM——已验证（Walter et al. 2001 表 2；Salmon 2022 式 9–10；Zhuang 2004 式 C4–C6，子任务读）。
+   - 根端截面密度 ∝ LAI/SLA：HIMMELI、IBIS-CH4——已验证（Raivonen 2017 式 18–19；Song 2020 式 30–31）。
+   - 实测叶面积体导：ELM-Wet，体导 +50 % 总通量只 +6 %，主要在通道间重分——已验证（Yazbeck 2025 式 2、表 1、表 4，子任务读）。
+   - 水位以下有根即可排：Gedney 2019 f_wev 按水位以下根比例积分，亚马孙 24.6–53.9 Tg yr⁻¹ 与 Pangala 2017 吻合——已验证（Gedney 2019 文内 p.2–5，子任务读）。
+   - 只长在长期淹水区：Meng 2012 f_aere = min(1, f_m/f_i)，去掉该限制全球 −3 %——已验证（Meng 2012 p.2797 式 8–10、表 7，子任务读）。
+3. 扩散与雪：CLM 雪层作串联阻力（Millington–Quirk）；Castro-Morales 2018 雪中 D_eff = D_air·φ·τ（φ 0.64、τ 0.77）；ORCHIDEE-PCH4 冬季把 CH₄ 暂存进雪、春季释放——已验证（Riley 2011 p.1932；Castro-Morales 2018 表 1 与补充 S5–S6；Salmon 2022 p.2822–2823，子任务读）。
+
+### 2.8 P8 水位与淹水份额
+
+1. TOPMODEL 类：JULES（L_min_cr 到 L_max_cr）、LPJ-wsl、ORCHIDEE、JSBACH/MPI/ICON、LPX-Bern DYPTOP、LPJmL6、WETMETH、PALADYN——已验证（Gedney and Cox 2003 式 14；Zhang 2016 式 2–7；Ringeval 2012 式 2–5；Kleinen 2020 式 1–2；Stocker 2014 式 1–7；LPJmL6 式 1–4，子任务读）。
+2. 卫星或反演：CLM4Me 对 Prigent 反演 f_s = P1 exp(−z_w/p2) + p3 Q_r；CTSM 默认 TWS 反演；CLM4Me′、LPX 2011、ISAM、iMAPLE 用卫星或 WAD2M——已验证（Riley 2011 式 11；`ch4FInundatedStreamType.F90:298–315`；Meng 2012 p.2799；Spahni 2011 p.1647；Shu 2020 7 of 19；Yue 2024 p.4627，子任务读）。
+3. 泥炭水文：LPJ-WHyMe（Granberg，立水上限 0.1 m）、ORCHIDEE-PEAT（格内其他土的径流汇入泥炭子格）、LPJ-GUESS（1.5 m 柱，上 0.3 m 为 acrotelm）、TEM 与 TRIPLEX（Granberg 型）——已验证（Wania 2009a 式 20–24；Qiu 2018 摘要；Kallingal 2024 p.2301；Zhuang 2004 5 of 23；Zhu 2014 p.983，子任务读）。
+4. 独立湿地单元与微地形：ELM-Wet 湿地地块（底两层近不透水，只有强制实测水位才复现干旱→飓风序列）；CLM_SPRUCE 丘洼两柱（洼占 25 %、低 0.3 m，侧向交换式 3）；Spahni 把泥炭通量乘 0.75 代表微地形；Kettunen 六个微地形分跑；Cresto Aleina 2015 的 1 m 丘洼网格使暖季累计排放约为单桶的 3 倍（"almost triples"）；Bohn 2013 西西伯利亚非饱和湿地占区域湿地 CH₄ 的 64 %——已验证（Yazbeck 2025 5–6、11–14 of 26；Shi 2015 p.6467–6469 式 1–4；Spahni 2011 p.1646–1647；Kettunen 2003 p.20-6；Cresto Aleina 2015 p.5689、p.5696；Bohn 2013 p.6565，子任务读）。
+5. 冻土下的有效湿地份额按液态水比例：Gedney and Cox 2003 式 15、Ringeval 2012 式 6（上 0.75 m）、Zhang 2016 式 8（上 0.5 m）、Kleinen 2020 f_liq——已验证（子任务读）。
+
+### 2.9 P9 泥炭分层
+
+1. acrotelm/catotelm 两库：LPJ-WHy（0.3 m 与 1.7 m，孔隙 0.9/0.8，周转 33.3/1000 年，acrotelm 碳达 7.5 kg C m⁻² 后以 12 g C m⁻² a⁻¹ 转入）；PALADYN（30/1000 年，5 kg C m⁻² 起转）；Kleinen 2012（k_A 0.067 a⁻¹、水位下乘 0.35、k_C 3.35×10⁻⁵ a⁻¹）；CLASSIC 泥炭（f_anoxic 0.025，0.3 m 处速率陡变，但不算甲烷）；LPJ-GUESS 两层各有孔隙度与 R_moist——已验证（Wania 2009a 表 1、2009b 3 of 15；Willeit and Ganopolski 2016 表 7；Kleinen 2012 式 1–9；Wu 2016 p.2641–2645、p.2659；Kallingal 2024 表 1，子任务读）。
+2. 逐层碳加向下搬运：ORCHIDEE-PCH4（32 层到观测泥炭深）、ISBA（2 mm yr⁻¹ 平流）、PEATBOG（20 层，产物抑制代替随深度的缺氧衰减）——已验证（Salmon 2022 p.2818；Morel 2019 p.297；Wu and Blodau 2013 p.1180–1181，子任务读）。ELM-SPRUCE 不能模拟泥炭累积，spin-up 后把碳剖面重设为观测——已验证（Ricciuto 2021 6 of 18，子任务读）。
+3. 无泥炭分层：CLM4Me/CTSM、JULES、HIMMELI、JSBACH、DLEM、TRIPLEX、ISAM——已验证（各篇，子任务读）。
+
+### 2.10 P10 冻融与冬季
+
+1. 冰点以下不产：CLM4Me 原文、Walter、ORCHIDEE-WET、LPJ-GUESS（F_water < 0.1 即零）、TEM（Liu 2020 版）、TRIPLEX、IBIS-CH4、WETMETH、PeatlandVU v3、iMAPLE；DLEM 截在 −5 °C；ISBA 0–1 °C 线性——已验证（各篇，子任务读）。
+2. 冰点以下照 HR 产：CTSM（垂直分辨分解）、CH4MODwetland、CLASSIC、JSBACH、LPJ-MPI、LPX-Bern——已验证（`ch4Mod.F90:2545–2547` 主会话读；Ito 2023 p.8，子任务读）。JULES 分层版让地表冻结后绝热深层继续产；JULES-microbe 液态含水低于 0.02b 时底物生产乘 0.5——已验证（Comyn-Platt L402–407；Chadburn 2020 p.19 of 28，主会话读后者）。
+3. Ito 2023 按零下行为把 16 个成员分两类：设产甲烷温度阈值的 LPJ-GUESS、TEM-MDM、TRIPLEX-GHG、VISIT；零下仍随异养呼吸产的 CH4MODwetland、CLASSIC、JSBACH、LPJ-MPI、LPX-Bern；DLEM、ELM-ECA、JSBACH 在零下格点仍有可观排放——已验证（Ito 2023 p.8，子任务读）。
+4. 冬季储存与释放：CTSM 冰点下氧化、通气组织、冒泡全停、扩散按液态水缩，冻层下积存——已验证（`ch4Mod.F90:2820`、`3133`、`3303`、`3845–3848`，子任务读）；ch4frzout 孔隙冰排出 CH₄ 在 Riley 2011 试验中只使高纬 +3 %——已验证（Riley 2011 p.1940）；"Frozen trapped CH4"在 Xu 2016 统计的 40 个模式中无一包含——已验证（Xu 2016 表 2 p.3739，子任务读）。
+
+## 3. 评估证据：哪些机理选择与更好的表现相关、哪些被批评
+
+只收原文明说的；集合论文多数明言"不能把表现差异归因到具体机理"，这一点本身列在 3.1。
+
+### 3.1 集合比较能说到哪一步
+
+1. GCP 2000–2012 集合里 Christensen 型半经验与 Walter 型机理两类模式"there was no clustering of model structure in terms of global or regional emission trends"——已验证（Poulter 2017 p.12，子任务读）。
+2. 统一湿地面积与强迫后，模式间范围收窄约三分之一（123 → 80 Tg yr⁻¹），余下来自结构与参数——已验证（Saunois 2016 p.726–727；Poulter 2017 p.12，子任务读）。
+3. 42 个 FLUXNET-CH4 淡水湿地站："the performance of BU models may not be determined by the complexity of the biogeochemical process representations"；自下而上模式在 bog、fen、湿苔原站得分高于反演，在 swamp 站较低——已验证（Chang 2023 p.4303–4305，主会话抽核原句）。
+4. 小波评估（7 个 GCP 模式、23 塔）："no model outperforms others at all time scales and across all wetland types"；复杂结构"does not guarantee superior model performance"；湿地 PFT、通量分量、产甲烷代理对北方与苔原的误差方差显著，对温带与热带"modest and inconsistent"——已验证（Zhang 2023 p.14–17、表 3，子任务读）。
+5. WETCHIMP："for many parameters (e.g. Vmax and Km for oxidation, aerenchyma area, diffusivity, seasonal dynamics), there simply is not enough data to properly constrain them across the globe ... increased model complexity can result in problems associated with equifinality"——已验证（Melton 2013 p.775，子任务读）。
+6. 西西伯利亚 21 个配置：生物地化方案差异影响相对小；"the presence or absence of major features such as sophisticated soil thermal physics"更关键；推荐三项：含冻融的土壤热物理、泥炭土、未淹水泥炭的排放随水位变化——已验证（Bohn 2015 p.3321、p.3339、p.3342，主会话抽核 p.3342 原句）。
+
+### 3.2 与具体机理挂钩的结论
+
+1. 温度：季节尺度生态系统 CH₄ 表观活化能 0.96 eV，与产甲烷菌纯培养 1.10、沉积物 0.93 eV 不可区分；但站内季节依赖"does not apply across sites"，跨站响应一贯更弱——已验证（Yvon-Durocher 2014 p.488–491，子任务读，账本 V-95 另读）。FLUXNET-CH4 约 75–77 % 站年呈正滞回（同温下季末排放更高），单一全球温度依赖"substantially underestimate the range"——已验证（Chang 2021，子任务读 PMC 全文）。ecosys 归因：季末高由乙酸与 H₂ 累积、产甲烷菌生物量升高造成，GPP、分泌物、根凋落物的滞回方向相反，不能解释——已验证（Chang 2020 p.5853–5856，子任务读）。GPP–气温滞回正负各半，"GPP does not directly contribute to the observed seasonal FCH4 hysteresis"——已验证（Chang 2021，子任务读）。在 ESM 方案里加产甲烷菌生长与休眠可同时再现季节动态与年均量，非微生物方案（含 CLM 写法）做不到季节与空间敏感度的差异——已验证（Chadburn 2020 p.1、p.4、p.13 of 28，主会话读）。
+2. 集合温度敏感度：GCP 16 模式 γ = 4.6 Tg yr⁻¹ °C⁻¹（−0.4 至 9.0），略高于 UpCH4 的 3.2–4.1；SON 季表观 Q10 偏低，"likely linked to the limited representation of processes during the freeze–thaw cycle (e.g., zero-curtain period)"——已验证（Zhang 2025 p.311、p.314，主会话抽核两处）。卫星反演约束倾向较低温度敏感度——已验证（Ma 2021，只读摘要）；WetCHARTs 中 Q10 = 1 成员表现更好——已验证（转引：Zhu 2025 p.9）。
+3. 冷季：GCP 16 模式 >60° N 9–5 月占全年 27 ± 9 %，升尺度 45 %；零下月份 5.1 ± 4.7 % 对 27 %；设温度阈值的与零下仍随呼吸产甲烷的两类模式由此分开；建议"explicit soil-layer schemes ... during the zero-curtain periods"——已验证（Ito 2023 p.1、p.4、p.8–9，子任务读）。北坡五塔冷季占年 50 ± 9 %，大部分在零幕期，−16 °C 仍观测到产甲烷，液态水膜至少到 −10 °C——已验证（Zona 2016 p.40、p.42–43，子任务读）。过程模式集合非生长季份额 4–17 %，实测 13–47 %——已验证（Treat 2018，只读摘要）。
+4. 底物：未见集合论文直接排出"NPP 型 vs Rh 型"谁与季节或年际变化更一致——已验证（G5a 检索 WETCHIMP、GCP、Chang 2023、Zhang 2023 全文，子任务读）。同宿主唯一对照：VISIT 由 Cao 型（土壤碳）换 Walter 型（NPP）后与气温的过强相关略降——已验证（Bohn 2015 p.3340、p.3342）。WETCHIMP：五个高通量模式中三个用旱地 PFT 的 NPP，"This could indicate a general tendency to higher CH4 fluxes when upland PFTs instead of wetland PFTs are used"——已验证（Wania 2013 p.634，子任务读）。实测：泛北极站点生长季 CH₄ 只与水位（r² 0.42）、GPP（0.37）、土温（0.05）显著相关，有机层与活动层厚度无关——已验证（Olefeldt 2013 p.593、p.600）；FLUXNET-CH4 中 GPP 与 ER 的年尺度相关在控制土温后不显著——已验证（Knox 2019 p.2617–2618，子任务读）。
+5. 产甲烷份额：理论上发酵加产甲烷的 CO₂:CH₄ 约 1:1，实测"typically much greater than 1 : 1 ... varies by several orders of magnitude"——已验证（Bridgham 2013 p.1334）；厌氧 CO₂:CH₄ 贫营养泥炭 4–882、富营养 0.6–630、稻田 1–594，"cycling of electron acceptors is probably a major process in controlling methane production"——已验证（Segers 1998 表 3 p.32、p.34）；站点 CH₄-C/ER 中位 bog 1.8 %、fen 8.7 %、湿苔原 2.7 %、永久冻土 fen 6.3 %——已验证（Olefeldt 2013 表 1 p.595，子任务读、渲染页图核）。
+6. 电子受体：Barrow 湖盆 Fe 氧化物还原占 ER 40–45 % 与 61–63 %——已验证（Lipson 2013，只读摘要）；同地 CO₂:CH₄ 高出几个数量级，Fe 还原速率低处 28.0–36.4、高处 6.4–27.4 mmol Fe m⁻² d⁻¹——已验证（Lipson 2012 p.586、p.588，主会话读）；多边形苔原培养 Fe 还原可占 CO₂ 的 61–96 %——已验证（Zheng 2018 p.6629，主会话读）；水位下降使还原态受体再氧化，可解释复水后产甲烷长期偏低，根际 ROL 同样再氧化受体——已验证（Bridgham 2013 p.1331、p.1333–1334，子任务读）；单因子培养产甲烷 Q10 高，作者解释为升温加快电子受体耗尽的叠加效应——已验证（Segers 1998 p.28，子任务读）。
+7. 传输：Peltola 2018 与 Ma 2022 都得出"气泡体积"方案优于浓度阈值（R² 0.63 对 0.56；RMSE 0.53 对 0.61），但年总量基本不受影响——已验证（第 2.7 节）。禾草主导样方通量最高，fen 分区通量 = 0.47x + 21.6（x 为禾草主导样方百分比，R² 0.89）——已验证（Turetsky 2014 p.2188、图 4，子任务读）；同一水位下莎草主导站排放显著更高——已验证（Olefeldt 2013 p.595–598）；"many wetlands still emit large amounts of CH4 when the water table is below the surface, especially those wetlands with a high vascular plant component and thus a domination of plant-mediated CH4 transport"——已验证（Bridgham 2013 p.1340，主会话抽核原句）；缓慢扩散穿过好氧层的 CH₄ 近乎全被氧化，通气组织与冒泡受氧化影响小——已验证（转引：Olefeldt 2013 p.590 引 King 1998、Le Mer and Roger 2001）；Carex oligosperma 根深 20–30 cm，水位降到根下时植物通道被切断——已验证（Shannon and White 1994 p.53–54，子任务读）。
+8. 水位：最适水位随类型不同（bog −23.8 ± 2.4 cm，poor fen −0.1，rich fen +9.7，swamp +41.1 cm），淹水加深后通量受限——已验证（Turetsky 2014 表 2 p.2189，子任务读、渲染页图核）；常淹水站点水位与年排放无关（p = 0.50）——已验证（Knox 2019 p.2617）。ELM-Wet：只有强制实测水位才复现干旱→飓风序列，"The main reason behind the high performance of ELM-Wet is that it indirectly accounts for the effect of lateral flow"——已验证（Yazbeck 2025 11–14 of 26，子任务读）。
+9. 热带：GCP 集合低估 Pantanal（1.3 对 2.0–3.6 Tg yr⁻¹）、Sudd（1.1 对 2.5–7.2）、Amazon（24 对多数反演 31–53），归因侧向来水、湿地制图、水位与湿地 PFT、洪泛向河网淋失未计——已验证（Zhang 2025 补充表 S3、p.311、p.314，子任务读）；UpCH4 无热带主导格局，"likely driven by the low wetland CH4 emissions recorded in the few existing tropical wetland eddy covariance measurements"——已验证（Chang 2023 p.4306–4307）；东南亚淹水泥炭林涡度年排放 ID-Pag 0.01 ± 0.1、MY-MLM 9.5 ± 0.6 g C m⁻² yr⁻¹——已验证（Delwiche 2021 p.3620–3622，子任务读）；热带泥炭环剥 14 天后 CH₄ 降 67 ± 14 %，根系分泌物是热带泥炭产甲烷的重要来源——已验证（Girkin 2025，子任务读 PMC 全文）。
+10. 复杂度与表现：McNorton 2016 在 JULES 加显式过程（含短植被通道）"does not improve overall CH4 flux simulation"——已验证（转引：Gedney 2019 文内 p.3；Parker 2022 p.5781）；Tang 2010 四物质模型 S4 线性拟合与 RMSE 最好、最简单的 S1 第二——已验证（Tang 2010 p.3823，子任务读）；MEND"including microbial processes without explicit microbial kinetics (MENDfo6) did not improve"——已验证（Zhou 2025 摘要，子任务读）；ELM-SPRUCE 大围框 R² 0.327 对同站 CLM4Me 0.112——已验证（Ricciuto 2021 8–9 of 18，子任务读）。
+
+### 3.3 被点名批评的做法
+
+1. 用格点平均 HR 作淹水部分底物——已验证（Ringeval 2014 p.1547）；把有氧呼吸"含水有最适值"的响应传给产甲烷、饱和部分沿用不饱和部分含水——已验证（Chadburn 2020 p.4 of 28，主会话读）。
+2. 产甲烷写成 NPP 或 Rh 的固定份额再乘单一静态温度函数"oversimplifies microbial responses"、"mechanistically flawed"——已验证（Chang 2020 第 4 节，子任务读）。
+3. 冻土即无湿地（CLM4Me 冬季湿地面积 <2 Mkm²）；零下硬截断产甲烷（LPJ-GUESS 被 Ito 2023 点名）——已验证（Melton 2013 p.777；Kallingal 2025 p.4075–4076，子任务读）。
+4. 只用卫星地表水定湿地、缩放到全球总量、缺湿地专属 PFT、无侧向来水——已验证（Bohn 2015 p.3335、p.3344；Wania 2013 p.635–637；Zhang 2025 p.311，子任务读）。
+5. 产生即排放、无剖面储存与滞后；"Frozen trapped CH4"在 40 个模式中无一包含——已验证（Xu 2016 表 2 p.3739、p.3742–3743，子任务读）。
+
+## 4. 对照本模式
+
+行号一律对 commit `a01c6451`（其后到 `dd057d0a` 的提交不动 `main/TRACER/`，`git diff --stat a01c6451 dd057d0a -- main/TRACER` 为空——已验证（git，主会话跑））。简写：Phys = `main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90`，Const = `..._Methane_Const.F90`，Shim = `main/TRACER/MOD_Tracer_Reactive_BgcShim.F90`，Veg = `..._Methane_WetlandVeg.F90`，Casc = `main/BGC/MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90`，Hyd = `main/MOD_SoilSnowHydrology.F90`。开关状态按 `v2/config/v2_oo5`。读码由子任务 G6 完成，主会话抽核了 Phys:2198–2333、2455–2535、2615–2635、2798–2812、2822–2915、1565–1572，Shim:110–128，Const:884–892、1490–1503——已验证（git show，主会话读）。
+
+### 4.1 P1 底物
+
+- 本模式：产量 = (somhr + lithr) × hr_vr 剖面 × exp(−z/0.30)·renorm × f 0.2 × 1.33^((T − 295)/10) × fliq × pH 因子 × 盐度因子 × 滞后，上限 0.5，只在水位以下——已验证（读码 Phys:2198、2249–2262、2270、2286、2299–2333，G6 第 12 节 17 项）。湿地斑块另有植物碳输入（光合 × 0.5，C-12）、地下份额 0.35（C-15）与当步呼吸的分泌物 0.15（C-23），都进 hr_vr——已验证（读码 Shim:199、221–229、266–297，G6）。
+- 与多数模式：同属"HR × 份额"一类（第 2.1 节第 1–4、11–13 条），并已按 LPJ-WHyMe、HIMMELI 的思路加了植物源新鲜碳——已验证（对照第 2.1 节）。差别有二：分泌物当步呼吸，没有 Wania 那样 1–2 周周转的库，也没有 Kettunen、JULES-microbe 那样的溶解底物库；HIMMELI 把"NPP 直接当日转厌氧呼吸、无底物库滞后"列为春季上升偏晚、秋季下降偏早的原因——已验证（Raivonen 2017 p.4682–4684，子任务读）。
+- 判断：底物来源与主流一致，不是缺项；季节相位上的问题留给候选 D——推测。理由：依据第 3.2 节第 1 条。
+
+### 4.2 P2 缺氧与氧化还原
+
+- 本模式：湿地斑块宿主分解逐层取 o_scalar = mino2lim 0.2，水位上下、冻结层（C-16 开）都一样；土壤斑块 o_scalar 恒 1——已验证（读码 Shim:113–126（主会话抽核）、Casc:109）。水平与垂直两种氧化还原滞后都开，时间常数按类 7–45 d（redoxlag_vertical 被类值覆盖）——已验证（读码 Phys:584–596、1324–1335、2326–2330，nml:148–155）。无任何替代电子受体过程，只有 C-42 盐度经验因子（6 站给值）——已验证（G6 grep 16 处命中逐条看过；Phys:2321–2323）。
+- 与 CTSM：CTSM 的 o_scalar 来自 O₂ 胁迫，只在缺氧层接近 0.2、有氧层接近 1；本模式对湿地斑块整柱写死 0.2，含水位以上的有氧层——已验证（读码 CTSM `SoilBiogeochemDecompCascadeBGCMod.F90:852` 与本模式 Shim:113–126，主会话读两处）。这影响水位以上的碳周转与 O₂ 需求，对产甲烷本身（只在水位以下）影响间接——推测。CTSM 垂直滞后默认 0 天，本模式按类开 30–45 天——已验证（参数文件；nml）。
+- 与多数模式与证据：大尺度模式多数同样无电子受体（第 2.2 节）；但实测 CO₂:CH₄ 在各类湿地差几个数量级、由受体循环控制（第 3.2 节第 5、6 条），固定 f 加固定滞后无法表示"湿地类型、矿质层、水位涨落史"造成的差异——推测。理由：依据第 3.2 节第 5、6 条。
+- 判断：这是本模式与机理细的模式之间最大的结构差，也是候选 A 的出发点。
+
+### 4.3 P3 温度
+
+- 本模式：宿主分解 Q10 1.5（冰点以下 froz_q10 1.5）× 甲烷侧 1.33，基准 295 K；C-27、C-51、C-53 三个局地基准与驯化键默认关——已验证（读码 Casc:67–74，Phys:2104–2123、2270，G6）。
+- 与多数模式：数值上与 CTSM 等同（有效 Q10 ≈ 2，基准 22 °C）；比 Walter（6）、ORCHIDEE（3）、JULES（3.7）、TEM（3.5–4.5）、VISIT（3.85）低，与 LPJ 家族（只经 Lloyd–Taylor）相近——已验证（第 2.3 节）。实测季节表观活化能 0.96 eV（10–20 °C 约相当 Q10 3.8，G5b 换算），跨站弱——已验证（Yvon-Durocher 2014 p.488–491）。
+- 判断：候选池第 3 条（Q10 2.0、未冻期均温基准、驯化权重）已在测；本调研给出的另一条路是候选 D，用菌群动态而不是按站点均温重设基准来解释"站内强、站间弱"——推测。理由：依据 Chadburn 2020。高温段 Q10 递减（CLASSIC、WETMETH、TRIPLEX 峰形）三模式都有，本模式没有；它对热带量级敏感（WETMETH p.6230 最适温参数 ±10–30 % 使热带排放 ±33–82 %），但东南亚偏高问题（Q-37）不是全热带一致偏高（账本 V-78），故不列为候选——推测。
+
+### 4.4 P4 pH 与盐度
+
+- 本模式：pH 因子与 CTSM 同式，站点 `use_spatial_ph` 关、pH 恒 6.2、因子恒 1——已验证（读码 Phys:2299–2312，Methane_pH.F90:58，G6）。C-29 的依据已记下按 pH 压热带泥炭会同样压北方酸性泥炭 8–20 倍、无选择性——已验证（账本 C-29 行）。盐度：C-42 按 Poffenbarger 2011 回归——已验证（Phys:2321–2323）。
+- 与证据：Wilson 2026 称"盐度 >18 ppt 可忽略"的代用关系预测力低、植物种单独解释 62 %——已验证（Wilson 2026 p.1–2，子任务读）；PEPRMT-Tidal 用表层水硫酸盐仍模拟不出 St. Jones——已验证（Oikawa 2024 p.17）。
+- 判断：不另提候选；候选 A 的电子受体库可以把硫酸盐作为受体之一，将来替代 C-42 的经验式——推测。
+
+### 4.5 P5 微生物
+
+- 本模式：有活性–休眠两态菌量代理模块，但因菌量增减没有碳的来源与去向被校验禁用——已验证（读码 Const:1497–1500、Microbes 头注，主会话读）。
+- 与证据：见第 3.2 节第 1 条与第 3.2 节第 10 条（ELM-SPRUCE、MEND、JULES-microbe 有改善；McNorton 2016 无改善，转引）。
+- 判断：候选 D 取最小写法，只借"活性"变量、不建碳库，绕开当前模块被禁的原因。
+
+### 4.6 P6 氧化
+
+- 本模式：CLM 双 MM，Q10 1.9、基准 12 °C；湿地斑块水位以上也用饱和区（低亲和）参数，CTSM 在水位以上一律用高亲和参数（K 与 V 取 1/10）；植物送氧预报式开；稻田根际氧化 0.3（C-25b）开——已验证（读码 Phys:2455–2535（主会话读）、CTSM `ch4Mod.F90:2782–2790`（子任务读））。
+- 与多数模式：Walter、ORCHIDEE-WET、VISIT、LPJmL6 都只在水位以上氧化，V_max 20 µM h⁻¹（5.6×10⁻⁶ mol m⁻³ s⁻¹，本笔记换算）；本模式 V_max 1.25×10⁻⁵，Meng 2012 降到 1.25×10⁻⁶ 两站吻合更好——已验证（第 2.6 节第 1–2 条）。候选池第 10 条已提 V_max 20 µM h⁻¹。
+- 与证据：氧化参数落在实测区间（K_CH4 1–45 µM、PMO 0.1–100 µmol m⁻³ s⁻¹），偏差更可能来自氧化位置与氧供给——推测。理由：G5b 第 3 节判别要点。本模式泥沼夏季氧化 99 % 在水位以上 0–9 cm（账本 Q-44），而实测"slowly diffusing CH4 through oxic soil is nearly completely oxidized"、植物通道受氧化影响小（第 3.2 节第 7 条）。由此看，CH₄ 走哪条路出去比氧化动力学参数更要紧，这是候选 B 的出发点——推测。
+
+### 4.7 P7 传输
+
+- 本模式：CLM4Me 三通道。冒泡 vgc > 0.15 时当步降到 0.0855，饱和子柱直入大气、非饱和子柱进水位上一层——已验证（读码 Phys:2869–2910（主会话读）、3348–3351、3771–3775）。通气组织 = 年 NPP × 地下份额 × LAI / 0.22 g C × π(2.9 mm)² × 孔隙度，非饱和子柱孔隙度乘 `unsat_aere_ratio`（1/6），雪不挡通气组织——已验证（读码 Phys:2615–2635（主会话读）、2768–2800）。
+- 与多数模式：冒泡阈值属 Peltola 2018 所说最常用的浓度类（67 %）；体积类对日尺度更好、年总量几乎不变——已验证（第 2.7 节第 1 条）。通气组织：CTSM 已把 LAI 换成常数 4，ELM-Wet 用实测叶面积体导，Walter、ORCHIDEE 按植被类型 T_veg，Gedney 2019 按水位以下根比例——已验证（第 2.7 节第 2 条）。`unsat_aere_ratio` 在 CTSM 注释中是"upland vegetation"的比值——已验证（读码 CTSM `ch4Mod.F90:96`，主会话读）；本模式把它用在湿地斑块的非饱和子柱上——已验证（读码 Phys:2621–2631）。
+- 判断：冒泡改体积阈值不改年总量，对月尺度 KGE 帮助有限，不列候选（见 5.5）；湿地斑块非饱和子柱的孔隙比是候选 B。
+
+### 4.8 P8 水位与淹水
+
+- 本模式：动态湿地斑块用宿主水文与自身水位，淹水份额 = 0.5·erfc(−h/(√2·0.11 m))；水位下限按类侧向补水；C-11 泥炭出水；土壤斑块洪泛由汇流（站点由 C-48 卫星序列）与 C-50 回渗——已验证（读码 Phys:870–890、Hyd:1238–1256、Phys:3993–4071、State:2616–2711、Hyd:1065–1089，G6）。另：v2_oo5 里 `use_routing_for_soil = .true.` 在 colm 模式下被 Const:890 复位为关，Drv 的 `is_floodplain_active` 恒假，被淹土壤斑块按 upland 类取 30 d 滞后——已验证（读码 Const:884–892，主会话抽核；Drv:396–406，G6）。
+- 与多数模式：大尺度多用 TOPMODEL 或卫星强迫；把湿地做成独立单元并用自身水文的只有 ELM-Wet、ORCHIDEE-PEAT 泥炭子格与 LPJ 泥炭格点——已验证（第 2.8 节）。Bohn 2015 推荐"未淹水泥炭的排放随水位变化"与泥炭土热物理——已验证（第 3.1 节第 6 条）。候选池第 1、2、13 条（泥炭土壤剖面、水位下限、积水外排）与候选 15（苔原高处份额）已覆盖水文侧。
+- 全球同样受影响：全球 O-4 case 的 `ch4_parameter.nml` 也是 `inundation_mode = 'colm'`、`use_routing_for_soil = .true.`（第 64、164 行），而 namelist 先读、`configure_methane_inundation_mode` 后调（`MOD_Tracer_Reactive_Methane.F90:118–121`），该键被复位为关，于是被淹土壤斑块的氧化还原滞后取 `redoxlag_upland_soil` 30 d 而不是 `redoxlag_tropical_floodplain` 7 d（BgcLink:1332–1335）——已验证（grep `cases/paper_v2/v260928j/g2_o4/bld/run/ch4_parameter.nml`；读码，主会话读）。洪泛区淹水面积与水深不经该键（Phys:893–911 直接取汇流量），受影响的只有滞后时间常数——已验证（读码，G6）。
+- 判断：不另提水文候选；上一条属配置与代码不一致，对洪泛偏低（账本 Q-43）方向不利、量级未估，建议中控核对是否本意——推测。
+
+### 4.9 P9 泥炭分层
+
+- 本模式：只在初值上分层——0.3 m 以下的泥炭份额碳移入 soil3（C-17c），分解动力学、水力与热参数上下层相同（C-52 在测）——已验证（读码 Init:1187–1210、Casc:117–128，G6）。
+- 与多数模式：泥炭模式多用 acrotelm/catotelm 两库与转移率（第 2.9 节第 1 条）；实测表层 20–30 cm 占产甲烷绝大部分、深层 CO₂:CH₄ 更高——已验证（Le Mer and Roger 2001 p.33；Treat 2015 只读摘要；Wilson 2016 只读摘要，子任务读）。
+- 判断：候选池第 1、11 条与 C-17c、C-18（已试）已覆盖；不另提——推测。
+
+### 4.10 P10 冻融与冬季
+
+- 本模式：宿主冻结层分解有 froz_q10 与按冰点降低算的水分因子（约 −1.6 °C 以下为 0.001）；甲烷侧产量、氧化、通气组织再乘 fliq；冰不储 CH₄、冻结时挤出；雪为串联阻力——已验证（读码 Casc:67–100、Phys:2286、2532、2793、2809、4318–4325，G6；Phys:2282–2286 主会话读）。
+- 与 CTSM：CTSM 在垂直分辨分解下冰点以下产量不置 0、也不乘液态水份额，靠分解的液态水胁迫限制——已验证（读码 CTSM `ch4Mod.F90:2545–2547`，主会话读）。本模式多乘一个 fliq，账本 Q-27 ④ 已指出与分解水分因子重复——已验证（账本 Q-27 行）。
+- 与多数模式与证据：零下产甲烷的写法在 GCP 集合里分两派，设阈值一派被点名为冬季低估的原因之一；实测零幕期与 −16 °C 仍产——已验证（第 3.2 节第 3 条）。但 LPJ-wsl、ORCHIDEE、JULES、MPI 都按液态水比例缩有效湿地面积，与乘 fliq 同向——已验证（第 2.8 节第 5 条）。
+- 判断：列为候选 C，证据两边都有，优先级排在 A、B、D 之后。
+
+## 5. 机理候选
+
+四个候选都是"默认关的开关"，不改现行行为。与候选池（`v2/候选池.tsv`，现有 16 条）逐条对过，不重复；与已有条目的关系写在每个候选第 8 条。排序按"证据强度 × 对现有问题的针对性"：B 与 D 针对泥沼振幅（账本 Q-44），A 针对苔原产率（Q-46）并统一氧化还原滞后，C 针对冷季（Q-27）——推测。理由：排序为主会话判断。
+
+| 候选 | 借自 | 针对 | 改哪 | 与候选池 |
+| --- | --- | --- | --- | --- |
+| A 替代电子受体库 | Segers and Leffelaar 2001；PEATBOG；van Bodegom 2001 | Q-46、Q-44（振幅）、垂直与水平滞后 | methane_prod 的滞后分支 | 第 16 条的动态版，兼并第 14 条 |
+| B 湿地非饱和子柱通气组织 | CTSM 参数语义；Walter、Wania、HIMMELI、Gedney 2019 | Q-44 | methane_aere 孔隙度分支 | 与第 4 条正交；不同于审计里的调参 |
+| C 冻结层产甲烷不再乘液态水份额 | CTSM `ch4Mod.F90:2545–2547`；Ito 2023；Zona 2016 | Q-27 | methane_prod 的 fliq 一行 | 无重叠；与第 1 条（C-52）配合 |
+| D 产甲烷菌活性与休眠 | Chadburn 2020 JULES-microbe | Q-44、C-27 系列 | methane_prod 的 f 链 | 第 3 条的替代路线；与第 14 条部分重叠 |
+
+### 5.1 候选 A：替代电子受体库（Fe(III)、腐殖质、可扩到硫酸盐），代替固定的氧化还原滞后
+
+1. 借自：
+   - Segers and Leffelaar 2001 的广义电子受体库：NO₃⁻、Fe、Mn、SO₄²⁻ 与有机受体并成一个库，氧化态 c_eo、还原态 c_er；产甲烷份额 φ_mg = 1/(β + 1)，β 与 c_eo 成正比，受体在时 φ_mg ≪ 1、耗尽后为 1；还原态受体在有氧区按 k_ro 一阶再氧化——已验证（Segers and Leffelaar 2001 式 24–30、表 1 p.3512、p.3515，主会话抽核）。
+   - PEATBOG 的电子平衡劈分：CH4pro = (DecDIC − EACO2pro)·(1 − O2status)/2，先扣掉由受体承接的 CO₂，余下按 1:1 分成 CH₄ 与 CO₂；腐殖质受体一阶还原（r_red 10⁻⁴ d⁻¹）与再氧化（r_ox 0.05 d⁻¹）——已验证（Wu and Blodau 2013 p.1181、式 A114、A121、A133–A136、表 4 p.1188，主会话抽核 p.1181）。
+   - van Bodegom et al. 2001 的铁抑制写法：R_CH4 ∝ 1/(1 + K_i,Fe·[Fe³⁺])，K_i,Fe = 8.3 m³ mol⁻¹；Fe²⁺ 化学氧化 R = k·[Fe²⁺]·[O₂]，k = 0.344×10⁻³ m³ mol⁻¹ s⁻¹——已验证（p.148 式 2、p.151 式 14，主会话读）。
+   - TEM 的 Eh 预报是同一思想的另一种写法（饱和区 Eh 每日下降、非饱和区回升，f(RX) 在 −200 到 −100 mV 之间由 1 降到 0）——已验证（Zhuang 2004 13–14 of 23 式 A3–A5，子任务读）。CLM4Me 只有替身：f_pE 按淹水后 30 天 e 折——已验证（Riley 2011 p.1929）；Meng 2012 改成按饱和层深度的滞后——已验证（Meng 2012 p.2796）。本模式的 `redoxlag`、`layer_sat_lag` 即这条替身（第 4.2 节）。
+2. 物理依据与实测：
+   - Barrow 排干湖盆：孔隙水硝酸盐、硫酸盐低或可忽略，Fe(II)、Fe(III) 数百 µM，加 Fe(III) 与 AQDS 促进呼吸——已验证（Lipson et al. 2010，只读摘要）；CO₂:CH₄ 高出几个数量级、最缺氧处产甲烷仍只占电子流一小部分，Fe 还原速率低处 28.0–36.4、高处 6.4–27.4 mmol Fe m⁻² d⁻¹——已验证（Lipson et al. 2012 p.577、p.586、p.588，主会话读）；Fe 氧化物还原占生态系统呼吸 40–45 %（有机层厚）与 61–63 %（有机层薄）——已验证（Lipson et al. 2013，只读摘要）。
+   - Barrow 多边形苔原培养：Fe 还原可占过渡层与冻土层 CO₂ 的 96 % 与 70 %（−2 °C）、74 % 与 61 %（8 °C）；"Low methanogenesis rates are due to low overall microbial activities ... and the competing iron-reduction process"——已验证（Zheng et al. 2018 p.6621、p.6629，主会话读）。矿质层初始可交换 Fe(II) 高且持续累积——已验证（Roy Chowdhury et al. 2015，只读摘要）。
+   - 泛北极厌氧培养：以单位土壤碳计，有冻土站点产甲烷为无冻土站点的一半，有机土最大产甲烷是矿质土的 5 倍——已验证（Treat et al. 2015，只读摘要）。
+   - 泥炭地并不以铁为主：密歇根 bog 到 rich fen，铁还原与反硝化是小项，产甲烷占厌氧碳矿化 3–70 %，29–85 % 无法由已测过程解释、可能来自腐殖质受体——已验证（Keller and Bridgham 2007，只读摘要）；PEATBOG 上 60 cm 电子接受容量约 2000–4000 mmol 电荷 m⁻²，接近 fen 干湿交替实验的 2725——已验证（Wu and Blodau 2013 p.1181；Knorr and Blodau 2009 为转引）。
+   - 水位下降使还原态受体再氧化，可解释复水后产甲烷长期偏低；根际 ROL 同样再氧化受体——已验证（Bridgham 2013 p.1331、p.1333–1334，子任务读）；PEPRMT 据此把水位下降后 20 天设为抑制期——已验证（Oikawa 2017 p.152，子任务读）；Michigan 干夏次年排放仍低、第三年才回升——已验证（Shannon and White 1994 p.50–52，子任务读）。
+   - 受体耗尽速率随温度加快，与产甲烷的温度依赖叠加，使表观 Q10 偏高——已验证（Segers 1998 p.28，子任务读；Segers and Leffelaar 2001 p.3521 转引 van Hulzen 1999）。
+3. 与本模式问题的关系：苔原塔上夏季 CH₄ 占 Reco/2 为 1–7 %，北方泥沼 8–10 %，而模式两处都约 5–9 %（账本 Q-46）；Lipson 的湖盆研究在巴罗 Biocomplexity 试验区，Zheng 2018 的多边形取自巴罗环境观测站，与两座巴罗塔（US-Bes、US-Beo）同地——已验证（账本 Q-46；Lipson 2012 p.578；Zheng 2018 p.6621，主会话读）。泥沼振幅偏小（Q-44）与第 2 条最后一点相关——推测。
+4. 改法（开关默认关）：
+   - 新键 `DEF_METHANE%ea_pool`（默认 `.false.`）。开时 methane_prod 的两种滞后（Phys:2326–2330）不再乘，改乘 φ_mg。
+   - 状态：两个子柱各一个逐层的氧化态受体浓度 c_eo（mol 电子 m⁻³），进重启文件；子柱面积变化时按现有 CH₄、O₂ 的面积守恒重映射（Phys:1076–1099）同法处理。
+   - 容量 c_cap(j) = `ea_cap_org` × 该层有机质份额 + `ea_cap_min` ×（1 − 有机质份额）；有机质份额与 C-11 同口径（OM_density/130，Phys:4044）。
+   - 水位以下：φ_mg = 1/(1 + c_eo/`ea_k`)；产量 = 现式 × φ_mg；被压下去的 CH₄ 改成 CO₂（co2_decomp_depth 由碳守恒自动接住，Phys:2408–2410），受体消耗 8 mol 电子每 mol 未产的 CH₄（2 CH₂O → CH₄ + CO₂ 改为 2 CO₂ 需交出 8 个电子，与 PEATBOG 式 A121 的电子平衡一致）——推测。理由：按化学计量推。
+   - 再生：在 O₂ 浓度高于阈值的层（水位以上，或水位以下由通气组织送氧的层），dc_eo/dt = `ea_k_ro` ×（c_cap − c_eo），同时向 o2_decomp_depth（Phys:2385–2406）记入每 4 mol 电子 1 mol O₂ 的耗氧，保证 O₂ 守恒——推测。理由：按 Segers 的 f_ae·k_ro·[er] 写法与化学计量推。
+5. 参数与文献值：`ea_k_ro` 10⁻⁵ s⁻¹（10⁻⁶–10⁻⁴）；泥炭容量 `ea_cap_org` 5 mol 电子 m⁻³（1–10，Segers 表 1），与 PEATBOG 上 60 cm 2000–4000 mmol m⁻² 折 3.3–6.7 mol m⁻³ 相符（本文按 0.6 m 除）；`ea_k` 取容量的 1/10 使受体接近耗尽前产甲烷被压到一成以下（Segers 所述 β ≫ 1 的情形）——推测；理由：半饱和值文献未给，属待标定；矿质层容量 `ea_cap_min` 无全球数据，按 Lipson 2012 的季节 Fe 还原速率 6.4–36.4 mmol m⁻² d⁻¹ 与 Lipson 2013 占 ER 40–63 % 在巴罗两塔上标定一次，再用其余苔原塔检验——推测。
+6. 预期：
+   - 湿苔原（尤其矿质层浅的巴罗、阿特卡苏克一带）夏季产量下降，下降量随矿质份额与水位涨落而增；泥沼常年饱和层受体很快耗尽，与现状接近——推测。理由：按第 4 条结构推。
+   - 泥沼水位在夏季下降后回升时，受体再生使回升段产量压低几天到几周，这与现行 30–45 d 垂直滞后作用相近，但时长由分解速率与氧暴露决定，暖季短、冷季长，季节振幅可能增大——推测。理由：依据第 2 条最后一点。
+   - 全球：北极海岸平原与西伯利亚苔原下调；热带洪泛区矿质土若给了矿质容量，淹水初期产量会被进一步压低——推测。
+7. 风险：
+   - 洪泛湿地已偏低一到两个数量级（账本 Q-43），开 A 会继续压低，除非矿质容量只在冻土区给值——推测。
+   - 证据集中在巴罗；Herndon 2015 报告溶解 CH₄/CO₂ 与 Fe(III) 占比正相关，与 Lipson 相反——已验证（转引：v2/results/lit_tundra_260929.txt 第 0 节，Herndon 原文未读到）。
+   - 半饱和值 `ea_k` 与矿质容量无全球数据，需按第 5 条在站点标定——推测。
+8. 与候选池的关系：候选池第 16 条（苔原调研提出，静态打折 φ ×（1 − om））是本候选的静态特例；该调研自列风险"铁库有限，季节内耗尽、冻融与排水时再生，常数份额会高估夏末的抑制"（v2/results/lit_tundra_260929.txt 第 5.4 节），A 正是把这个再生写成方程。第 14 条（新融层滞后 τ 20 d）可由 A 在"冻结期受体被再氧化"时自然给出，开 A 时第 14 条应关——推测。与 C-42 盐度因子：硫酸盐可作为 A 的受体之一接入，届时 C-42 关——推测。
+
+### 5.2 候选 B：湿地斑块非饱和子柱不再套用"高地植被"通气组织孔隙比
+
+1. 借自：CLM 的通气组织式本身（Riley 2011 式 5–6）不变，改的是一个被移植错语义的参数。CTSM 把 `unsat_aere_ratio`（= 0.05/0.3）注释为"Ratio to multiply upland vegetation aerenchyma porosity by compared to inundated systems"——已验证（读码 CTSM `src/biogeochem/ch4Mod.F90:96`、`1466`）。CLM 的非淹水部分就是高地；本模式把一个湿地斑块拆成饱和与非饱和两个子柱（Phys:1569–1572），非饱和子柱仍是同一群湿地植物，却照样乘了这个高地比（Phys:2621–2631，孔隙 0.3 → 0.05）——已验证（读码，行号对 a01c6451）。
+   其他模式的植物通道都按植被量与根在水位以下的比例算，不随"是否积水"再打一个 1/6：Walter and Heimann 2000 按植被类型给 T_veg、按根深线性分布（p.750 式 14–16）；Wania et al. 2010 按禾草叶生物量算分蘖截面（p.571）；HIMMELI 按根端截面密度 ∝ LAI（Raivonen 2017 p.4672 式 18–19）；Gedney et al. 2019 让根伸到水位以下的植被按水位以下根比例排放（文内 p.2–3 式 1）——已验证（各篇，全文，子任务读、主会话抽核 Walter 与 CTSM 两处）。
+2. 物理依据与实测："many wetlands still emit large amounts of CH4 when the water table is below the surface, especially those wetlands with a high vascular plant component and thus a domination of plant-mediated CH4 transport"——已验证（Bridgham 2013 p.1340，主会话抽核原句）；同一水位下莎草主导站排放显著更高——已验证（Olefeldt 2013 p.595–598，子任务读）；Carex oligosperma 根深 20–30 cm，水位未降到根下时植物通道照常，降到根下才被切断——已验证（Shannon and White 1994 p.53–54，子任务读）；非饱和湿地占西西伯利亚湿地 CH₄ 的 64 %——已验证（Bohn 2013 p.6565，子任务读）。湿地单子叶植物的通气组织是组成型的，积水只把孔隙度再抬一截：五种湿地植物滞水中孔隙度由 10–30 % 升到 20–45 %——已验证（Visser et al. 2000，只读摘要，转引 v2/results/lit_floodplain_260929.txt 第 4.2 节第 4 条）。即淹水与不淹水之比约 1.5–2，不是 6——推测。理由：由上一条区间端点相除。
+3. 与本模式问题的关系：泥沼夏季氧化 99 % 发生在水位以上 0–9 cm、产量七成在 9–29 cm，氧化随温度涨得比产量快（账本 Q-44）；北方泥沼夏季淹水份额 0.15–0.2（账本 Q-46），即八成以上面积走非饱和子柱，其中植物通道截面只有饱和子柱的 1/6，产在水位下的 CH₄ 多半只能扩散穿过这层氧化层——已验证（账本 Q-44、Q-46 所记数值；读码 Phys:2621–2631）。
+4. 改法（开关默认关）：新键 `DEF_METHANE%wetland_unsat_aere_ratio`（默认 −1 即沿用 `unsat_aere_ratio`）；`patchtype == 2` 且 `sat == 0` 时孔隙度乘该键而不乘 `unsat_aere_ratio`，下限 `porosmin` 同比缩放的写法保留；稻田、土壤斑块、湖泊不动。O₂ 送入走同一几何（Phys:2798–2812），会一并变大。
+5. 参数与文献值：取 0.5–0.7（Visser 2000 孔隙度 10–30 % 对 20–45 % 的比值区间）；敏感性端点 1.0（Walter、Wania、HIMMELI、Gedney 2019 均不区分）——已验证（出处同上；比值为算术）。
+6. 预期：北方泥沼与泥炭苔原（淹水份额低的湿地斑块）植物通道占比上升、经 0–9 cm 氧化层的扩散份额下降，夏季排放与振幅上升；湿苔原巴罗两塔淹水份额 0.84–0.94，受影响小；热带与沼泽塔淹水份额高或洪泛走土壤斑块，影响小——推测。理由：按淹水份额与子柱权重推。全球：45–70° N 泥沼区上调，量级未估——推测。
+7. 风险：送下去的 O₂ 同比增加（`use_aereoxid_prog` 开），可能在水位下多氧化一部分，与第 6 条方向相反；因此要在候选池第 4 条（C-54，固定份额根际氧化、不送氧）开与不开两种底下各跑一次——推测。非饱和子柱冬季 LAI 与 NPP 不变，冬季植物通道同比放大——推测。
+8. 与候选池的关系：参数审计把 `unsat_aere_ratio` 列为"保留、合理区间 0.1–0.25、并入 scale_factor_aere 一起看"（v2/results/audit_params_260929.tsv 该行）——已验证（读表）。本候选不是在该区间内调参，而是指出该参数的适用对象是高地植被，湿地斑块改用植物学上的比值；与第 4 条（C-54）正交，可叠加；与第 3 条（温度结构）都针对 Q-44，走的是传输而非产量。
+
+### 5.3 候选 C：冻结层产甲烷不再额外乘液态水份额（与 CTSM 一致）
+
+1. 借自：现行 CTSM 在垂直分辨分解下"If using VERTSOILC, it is OK to use base_decomp as given because liquid water stress will limit decomp"，冰点以下只在单层分解或湖泊时置 0，产量不乘液态水份额——已验证（读码 CTSM `ch4Mod.F90:2545–2547`，主会话读）。JULES 分层版让地表冻结后绝热的深层继续产甲烷；JULES-microbe 只在液态含水低于 0.02b 时把底物生产乘 0.5——已验证（Comyn-Platt 2018 接受稿 L402–407，子任务读；Chadburn 2020 p.19 of 28，主会话读）。
+2. 证据：GCP 16 模式 >60° N 9–5 月只占全年 27 ± 9 %（升尺度 45 %），零下月份 5.1 ± 4.7 %（观测 27 %）；设产甲烷温度阈值的一派（LPJ-GUESS、TEM-MDM、TRIPLEX-GHG、VISIT）与零下仍随呼吸产甲烷的一派由此分开；作者建议零幕期要显式分层土壤并按观测调温度敏感性——已验证（Ito 2023 p.1、p.4、p.8–9，子任务读）。北坡五塔冷季占年 50 ± 9 %、多在零幕期，−16 °C 仍观测到产甲烷，液态水膜至少到 −10 °C——已验证（Zona 2016 p.40、p.42–43，子任务读）。冻土产甲烷 5 至 −1.8 °C 只降约 2 倍——已验证（转引：账本 Q-27 所引 Rivkina et al. 2004）。
+   反向：LPJ-wsl、ORCHIDEE、JULES、MPI 都按上层液态水比例缩小有效湿地面积，与乘液态水份额同向——已验证（Zhang 2016 式 8；Ringeval 2012 式 6；Gedney and Cox 2003 式 15；Kleinen 2020 p.577，子任务读）。
+3. 与本模式问题的关系：本模式冻结层先经宿主水分因子（按冰点降低算水势，约 −1.6 °C 以下为 0.001）压一次，甲烷侧再乘 fliq（Phys:2286）；账本 Q-27 ④ 已记为"与分解水分标量重复（CLM5 垂直分解不乘）"——已验证（读码 Casc:86–100、Phys:2282–2286；账本 Q-27）。9 座有冷季实测的塔 11–3 月塔上 4–15、模式 0.4–5.8 mg m⁻² d⁻¹——已验证（账本 Q-27）。
+4. 改法（开关默认关）：新键 `DEF_METHANE%prod_no_fliq`（默认 `.false.`）；开时 Phys:2286 不乘 fliq；氧化、通气组织、冒泡的冻结处理不动（CTSM 同样在冰点下关这三项，冻层下 CH₄ 可积存）。
+5. 参数：无新参数。
+6. 预期：零幕层（−1.6 至 0 °C，fliq 远小于 1）产量上升，10–12 月与融雪前排放升；−1.6 °C 以下仍被宿主水分因子压住，所以只在土温接近 0 °C 的塔起作用；按账本 Q-27 与 Q-45，多数冷站模式土温比塔上冷 2–15 °C，C-52（候选池第 1 条）未通过前，本候选增量有限——推测。
+7. 风险：冻层下产量增加而出口关闭，会把 CH₄ 积在半冻层、春融集中释放；账本 Q-11 记过 FI-Sii 4 月模式 145 对观测 19 mg m⁻² d⁻¹ 就是这一类现象——推测。理由：依据账本 Q-11。故只在 C-52 之后、看 NDJF 求和比与 4–5 月两段一起判。
+8. 与候选池的关系：无重叠；依赖第 1 条（C-52 泥炭土热参数）把冬季土温先做对；与第 14 条（新融层滞后）作用于同一时段、方向相反，二者同开要看春季峰——推测。
+
+### 5.4 候选 D：产甲烷菌活性与休眠（JULES-microbe 写法），代替按站点均温重设温度基准
+
+1. 借自：Chadburn et al. 2020 的 JULES-microbe。水解把有机质送入溶解底物库 S，产甲烷菌生物量 B 消耗 S 并在生长条件差时降到最低活性（休眠）：dS/dt = k₁A₁C^(2/3) − k₂A₂φB·m_act（式 A2），dB/dt = f·k₂A₂φB·m_act − k_d A₂B·m_act − α k₂A₂B（式 A3），m_act 随生长率高于或低于阈值 μ 上调或下调（式 A5），产甲烷 = 底物消耗的一半（式 A7）；另有 5 年时间尺度的温度驯化（式 A6）——已验证（Chadburn 2020 p.18–19 of 28，式 A2–A7，全文，主会话读原文）。
+   参数（表 A1，p.17 of 28）：Q₁ = 2.8（水解，Veeken and Hamelers 1999），Q₂ = 4.3（产甲烷菌，Yvon-Durocher et al. 2014），k₂ = 0.01 h⁻¹（0 °C 最大呼吸，Price and Sowers 2004），α = 0.001，f = 0.03（碳利用效率），μ = 0.00042 h⁻¹（休眠与复苏阈），k_d = 0.0003 h⁻¹，ρ = 47，ev = 5 yr，Q_ev = 0.55 Q₂，frz = 0.5——已验证（同页表 A1）。
+2. 证据：
+   - 作者原句："We show that this addition is sufficient to reproduce the observed seasonal dynamics of methane emissions in fully saturated wetland sites, at the same time as reproducing the annual mean emissions"；"The difference in apparent temperature sensitivity seasonally versus spatially cannot be recreated by the non-microbial schemes tested"——已验证（Chadburn 2020 p.1 of 28 摘要，全文）。所测非微生物方案包括 CLM（Riley 2011、Meng 2012 的写法）——已验证（同文 p.4 of 28 第 2.2.2 节）。
+   - 原 JULES"can simulate the correct magnitude of methane emissions at each site ... but its seasonal cycle is too small"；加微生物后七站中六站年循环 RMSE 下降，Lompolojänkkä 0.92 → 0.76，Abisko 1.14 → 0.94，Chersky 1.55 → 1.25，Twitchell 1.39 → 1.95（加水位影响后 1.28）——已验证（同文 p.13 of 28 与表 2）。
+   - 作者排除了"底物季节性"解释：莎草分泌物在生长季初最高、向秋递减（Ström et al. 2012），只会造成相反的季节型；甲烷氧化菌动态也会抵消而非放大季节循环——已验证（同文 p.13、p.17 of 28）。
+   - 实测：FLUXNET-CH4 约 75–77 % 站年呈正滞回（同温下季末排放更高），GPP–气温滞回正负各半，"GPP does not directly contribute to the observed seasonal FCH4 hysteresis"——已验证（Chang 2021，子任务读 PMC 全文）；ecosys 把季末高归因于乙酸、H₂ 累积与产甲烷菌生物量升高——已验证（Chang 2020 p.5853–5856，子任务读）；产甲烷菌相对生长率低，好氧期受损后需时间恢复——已验证（Segers 1998 p.33，子任务读）。
+   - 同方向的独立证据：Kettunen 2003 显式菌量使干旱 4–6 周成为恢复阈值（p.20-12，表 7）；HIMMELI 无底物库滞后，春季上升偏晚、秋季下降偏早（Raivonen 2017 p.4682–4684）——已验证（子任务 G4b、G3 读全文）。
+   - 反向证据：McNorton et al. 2016 称在 JULES 里加显式过程（含短植被通道）不改善总体通量——已验证（转引：Gedney 2019 文内 p.3、Parker 2022 p.5781），原文未读到。
+3. 与本模式问题的关系：泥沼振幅偏小（bog α 0.64、fen 0.69；FI-Lom 0.40），塔上排放对 13 cm 土温的表观 Q10 中位 2.83、模式 1.93；V-92（Q10 2.0、295 K 基准）拉开振幅却压低冷站量级，V-95（C-27 局地基准）北方泥沼大升而苔原过冲——已验证（账本 Q-44、V-92、V-95、V-96 所记）。Chadburn 的机制正好把"站内季节敏感度高、站间敏感度低"放在同一套动力学里，不需要按站点均温重设基准。
+4. 改法（开关默认关）：本模式已有 `MOD_Tracer_Reactive_Methane_Microbes.F90`（活性与休眠两态菌量代理），但因菌量增减没有碳的来源与去向被校验禁用（Const:1497–1500 报"microbial pools are disabled until biomass growth/loss has donor/sink carbon coupling"）——已验证（读码，行号对 a01c6451）。最小改法是只借 Chadburn 的活性变量 m_act：逐层一个无量纲量 a ∈ [α/f, 1]，按式 A5 以 f·k₂A₂ 的速率在比生长率 f·k₂·A₂·φ 高于阈值 μ 时上调、低于时下调（φ 为底物限制，最小改法里取 1 或按当层厌氧分解速率归一，二者由站点检验选定），产量乘 a（接在 f_methane_adj 链上，Phys:2270–2333 之间）；不建碳库，产量仍取自宿主异养呼吸，碳守恒不受影响；a 进重启文件。完整版（S 与 B 两库、necromass 回 S）需接上缺的碳耦合，属第二步。新键如 `DEF_METHANE%methanogen_activity`（默认关）、`methanogen_mu`（μ）、`methanogen_q2`（Q₂）。
+5. 参数与文献值：见第 1 条表 A1；最小改法只用 k₂、Q₂、f、α、μ 五个，均有出处。Q₂ 只进 a 的升降速率，产量本身的温度依赖仍是宿主分解 Q10 1.5 乘 `q10methane`，两者不重复——推测。理由：按最小改法的结构。
+6. 预期：冬季与春季活性低、夏季上调到 1，泥沼季节振幅上升、峰后移；年均量级在 a 于生长季接近 1 的站变化小，在冷站下降——推测。理由：按式 A5 的定性行为推。冷季排放（Q-27）会进一步变小，方向与冷季偏低相反。全球：北方湿地年总量略降、季节振幅增；热带全年温暖，a 近 1，基本不变——推测。
+7. 风险：休眠阈 μ 与 k₂ 决定春季复苏快慢，Chadburn 敏感性以 f、k₂、Q₂ 最敏感（p.19 of 28）；本模式冬季土温偏冷（Q-45）会把复苏推迟；与 C-51、C-53 同开会重复处理"跨站弱、站内强"——推测。
+8. 与候选池的关系：与第 3 条（Q10 2.0、未冻期均温基准、驯化权重，C-51、C-53）针对同一个问题（Q-44）但机理不同，二者择一比较，不叠加；与第 14 条（新融层滞后）部分重叠：a 的复苏过程本身会产生融后滞后，开 D 时第 14 条应关——推测。
+
+### 5.5 看过但不列为候选的（理由）
+
+1. 冒泡改气泡体积阈值：Peltola 2018 与 Ma 2022 都说体积法对日尺度与孔隙水剖面更好，但年总量"largely unaffected"、三法相差不超过 7 %（第 2.7 节）；本模式判据是月序列 KGE_ln，收益有限——推测。
+2. 高温段 Q10 递减或最适温（CLASSIC、WETMETH、TRIPLEX）：会整体压低热带，而东南亚偏高不是全热带一致偏高（账本 V-78、D-46）——推测。
+3. 按 O₂ 连续抑制产甲烷（HIMMELI、ORCHIDEE-PCH4、ISBA、LPJmL6）：本模式已有 `anoxicmicrosites`，账本 Q-14 记其与 Walter 重新归一化冲突且表层抑制系数约 1/3000，只贴近水位的层有贡献——已验证（账本 Q-14）。
+4. 通气组织只长在长期淹水区（Meng 2012 f_aere）或按叶面积实测体导（ELM-Wet）：前者与洪泛调研候选②（送氧打折）和候选池第 4 条（C-54）针对同一处（被淹旱地植被的送氧），后者的实测体导只有香蒲与慈姑两种——推测。
+5. NPP 驱动的易分解底物库（SatWetCH4、PEPRMT、Wania 分泌物库）：本模式已有湿地植物碳输入与当步分泌物（C-12、C-15、C-23），剩下的是时间滞后，由候选 D 的活性变量承担；Chadburn 2020 并指出底物季节性会给出相反的滞回方向——已验证（Chadburn 2020 p.13 of 28，主会话读）。
+6. 微地形分布水位（Bohn 2013、Cresto Aleina 2015）：本模式已有 σ = 0.11 m 的淹水份额（Phys:870–890）；非饱和子柱仍只用一个宿主水位。Bohn and Lettenmaier 2010 比较的两种简化是"均一水位"与"湿–干"（饱和部分排放、其余不排），σ_zwt 19 cm 时前者偏差 +55 % 到 −40 %、后者 −50 % 到 −60 %——已验证（Bohn and Lettenmaier 2010 p.1、p.4 of 6，主会话抽核定义）；本模式是"饱和子柱加按宿主水位排放的非饱和子柱"，介于两者之间——推测。理由：按 Phys:1569–1572 的面积加权结构。它与候选池第 15 条（苔原高处份额）、第 13 条（积水外排）同属水文侧，由候选池管，本文不另立——推测。
+
+## 6. 文献清单
+
+字段由脚本取自 Crossref（2026-09-29 查询，`/api/works/<doi>`），格式：第一作者，年｜题名｜刊 卷(期): 页或文章号｜DOI。预印本与缺页码的按 Crossref 原样注明。
+
+- Arah and Stephen, 1998｜A model of the processes leading to methane emission from peatland｜Atmospheric Environment 32(19): 3257-3264｜10.1016/S1352-2310(98)00052-1
+- Arora et al., 2018｜An assessment of natural methane fluxes simulated by the CLASS-CTEM model｜Biogeosciences 15(15): 4683-4709｜10.5194/bg-15-4683-2018
+- Bernard et al., 2025｜Satellite-based modeling of wetland methane emissions on a global scale (SatWetCH4 1.0)｜Geoscientific Model Development 18(3): 863-883｜10.5194/gmd-18-863-2025
+- Bisht et al., 2018｜Development and evaluation of a variably saturated flow model in the global E3SM Land Model (ELM) version 1.0｜Geoscientific Model Development 11(10): 4085-4102｜10.5194/gmd-11-4085-2018
+- Bloom et al., 2017｜A global wetland methane emissions and uncertainty dataset for atmospheric chemical transport models (WetCHARTs version 1.0)｜Geoscientific Model Development 10(6): 2141-2156｜10.5194/gmd-10-2141-2017
+- Bohn and Lettenmaier, 2010｜Systematic biases in large‐scale estimates of wetland methane emissions arising from water table formulations｜Geophysical Research Letters 37(22): 2010GL045450｜10.1029/2010GL045450
+- Bohn et al., 2013｜Modeling the large-scale effects of surface moisture heterogeneity on wetland carbon fluxes in the West Siberian Lowland｜Biogeosciences 10(10): 6559-6576｜10.5194/bg-10-6559-2013
+- Bohn et al., 2015｜WETCHIMP-WSL: intercomparison of wetland methane emissions models over West Siberia｜Biogeosciences 12(11): 3321-3349｜10.5194/bg-12-3321-2015
+- Bridgham et al., 2013｜Methane emissions from wetlands: biogeochemical, microbial, and modeling perspectives from local to global scales｜Global Change Biology 19(5): 1325-1346｜10.1111/gcb.12131
+- Castro-Morales et al., 2018｜Year-round simulated methane emissions from a permafrost ecosystem in Northeast Siberia｜Biogeosciences 15(9): 2691-2722｜10.5194/bg-15-2691-2018
+- Chadburn et al., 2020｜Modeled Microbial Dynamics Explain the Apparent Temperature Sensitivity of Wetland Methane Emissions｜Global Biogeochemical Cycles 34(11): e2020GB006678｜10.1029/2020GB006678
+- Chang et al., 2020｜Hysteretic temperature sensitivity of wetland CH4 fluxes explained by substrate availability and microbial activity｜Biogeosciences 17(22): 5849-5860｜10.5194/bg-17-5849-2020
+- Chang et al., 2021｜Substantial hysteresis in emergent temperature sensitivity of global wetland CH4 emissions｜Nature Communications 12(1): 2266｜10.1038/s41467-021-22452-1
+- Chang et al., 2023｜Observational constraints reduce model spread but not uncertainty in global wetland methane emission estimates｜Global Change Biology 29(15): 4298-4312｜10.1111/gcb.16755
+- Comyn-Platt et al., 2018｜Carbon budgets for 1.5 and 2 °C targets lowered by natural wetland and permafrost feedbacks｜Nature Geoscience 11(8): 568-573｜10.1038/s41561-018-0174-9
+- Cresto Aleina et al., 2015｜Modeling micro-topographic controls on boreal peatland hydrology and methane fluxes｜Biogeosciences 12(19): 5689-5704｜10.5194/bg-12-5689-2015
+- Davidson et al., 2012｜The Dual Arrhenius and Michaelis–Menten kinetics model for decomposition of soil organic matter at hourly to seasonal time scales｜Global Change Biology 18(1): 371-384｜10.1111/j.1365-2486.2011.02546.x
+- Delwiche et al., 2021｜FLUXNET-CH4 : a global, multi-ecosystem dataset and analysis of methane seasonality from freshwater wetlands｜Earth System Science Data 13(7): 3607-3689｜10.5194/essd-13-3607-2021
+- Folberth et al., 2022｜Description and Evaluation of an Emission‐Driven and Fully Coupled Methane Cycle in UKESM1｜Journal of Advances in Modeling Earth Systems 14(7): e2021MS002982｜10.1029/2021MS002982
+- Gao et al., 2022｜Multi-site evaluation of modelled methane emissions over northern wetlands by the JULES land surface model coupled with the HIMMELI peatland methane emission model｜预印本（Crossref 无刊名）: Crossref 无页码｜10.5194/bg-2022-229
+- Gao et al., 2025｜Assessing modelled methane emissions over northern wetlands by the JULES-HIMMELI model｜Science of The Total Environment 980: 179526｜10.1016/j.scitotenv.2025.179526
+- Gedney and Cox, 2003｜The Sensitivity of Global Climate Model Simulations to the Representation of Soil Moisture Heterogeneity｜Journal of Hydrometeorology 4(6): 1265-1275｜10.1175/1525-7541(2003)004<1265:TSOGCM>2.0.CO;2
+- Gedney et al., 2004｜Climate feedback from wetland methane emissions｜Geophysical Research Letters 31(20): 2004GL020919｜10.1029/2004GL020919
+- Gedney et al., 2019｜Significant feedbacks of wetland methane release on climate change and the causes of their uncertainty｜Environmental Research Letters 14(8): 084027｜10.1088/1748-9326/ab2726
+- Girkin et al., 2018｜Root exudate analogues accelerate CO2 and CH4 production in tropical peat｜Soil Biology and Biochemistry 117: 48-55｜10.1016/j.soilbio.2017.11.008
+- Girkin et al., 2025｜Plant root carbon inputs drive methane production in tropical peatlands｜Scientific Reports 15(1): 3244｜10.1038/s41598-025-87467-w
+- Grant, 1998｜Simulation of methanogenesis in the mathematical model ecosys｜Soil Biology and Biochemistry 30(7): 883-896｜10.1016/S0038-0717(97)00218-6
+- Guimberteau et al., 2018｜ORCHIDEE-MICT (v8.4.1), a land surface model for the high latitudes: model description and validation｜Geoscientific Model Development 11(1): 121-163｜10.5194/gmd-11-121-2018
+- He et al., 2020｜Investigation of the global methane budget over 1980–2017 using GFDL-AM4.1｜Atmospheric Chemistry and Physics 20(2): 805-827｜10.5194/acp-20-805-2020
+- Herndon et al., 2015｜Geochemical drivers of organic matter decomposition in arctic tundra soils｜Biogeochemistry 126(3): 397-414｜10.1007/s10533-015-0165-5
+- Hodson et al., 2011｜The El Niño-Southern Oscillation and wetland methane interannual variability｜Geophysical Research Letters 38(8): Crossref 页码记为 n/a｜10.1029/2011GL046861
+- Huang et al., 2021｜High carbon losses from oxygen‐limited soils challenge biogeochemical theory and model assumptions｜Global Change Biology 27(23): 6166-6180｜10.1111/gcb.15867
+- Ito and Inatomi, 2012｜Use of a process-based model for assessing the methane budgets of global terrestrial ecosystems and evaluation of uncertainty｜Biogeosciences 9(2): 759-773｜10.5194/bg-9-759-2012
+- Ito, 2019｜Methane emission from pan-Arctic natural wetlands estimated using a process-based model, 1901–2016｜Polar Science 21: 26-36｜10.1016/j.polar.2018.12.001
+- Ito et al., 2023｜Cold‐Season Methane Fluxes Simulated by GCP‐CH4 Models｜Geophysical Research Letters 50(14): e2023GL103037｜10.1029/2023GL103037
+- Kaiser et al., 2017｜Process-based modelling of the methane balance in periglacial landscapes (JSBACH-methane)｜Geoscientific Model Development 10(1): 333-358｜10.5194/gmd-10-333-2017
+- Kallingal et al., 2024｜Optimising CH4 simulations from the LPJ-GUESS model v4.1 using an adaptive Markov chain Monte Carlo algorithm｜Geoscientific Model Development 17(6): 2299-2324｜10.5194/gmd-17-2299-2024
+- Kallingal et al., 2025｜Assimilating multi-site eddy-covariance data to calibrate the wetland CH4 emission module in a terrestrial ecosystem model｜Biogeosciences 22(16): 4061-4086｜10.5194/bg-22-4061-2025
+- Keller and Bridgham, 2007｜Pathways of anaerobic carbon cycling across an ombrotrophic‐minerotrophic peatland gradient｜Limnology and Oceanography 52(1): 96-107｜10.4319/lo.2007.52.1.0096
+- Kettunen, 2003｜Connecting methane fluxes to vegetation cover and water table fluctuations at microsite level: A modeling study｜Global Biogeochemical Cycles 17(2): 2002GB001958｜10.1029/2002GB001958
+- Kleinen et al., 2012｜A dynamic model of wetland extent and peat accumulation: results for the Holocene｜Biogeosciences 9(1): 235-248｜10.5194/bg-9-235-2012
+- Kleinen et al., 2020｜Terrestrial methane emissions from the Last Glacial Maximum to the preindustrial period｜Climate of the Past 16(2): 575-595｜10.5194/cp-16-575-2020
+- Kleinen et al., 2023｜Atmospheric methane since the last glacial maximum was driven by wetland sources｜Climate of the Past 19(5): 1081-1099｜10.5194/cp-19-1081-2023
+- Knorr and Blodau, 2009｜Impact of experimental drought and rewetting on redox transformations and methanogenesis in mesocosms of a northern fen soil｜Soil Biology and Biochemistry 41(6): 1187-1198｜10.1016/j.soilbio.2009.02.030
+- Knox et al., 2019｜FLUXNET-CH4 Synthesis Activity: Objectives, Observations, and Future Directions｜Bulletin of the American Meteorological Society 100(12): 2607-2632｜10.1175/BAMS-D-18-0268.1
+- Le Mer and Roger, 2001｜Production, oxidation, emission and consumption of methane by soils: A review｜European Journal of Soil Biology 37(1): 25-50｜10.1016/S1164-5563(01)01067-6
+- Li et al., 2020｜Evaluation of CH4MODwetland and Terrestrial Ecosystem Model (TEM) used to estimate global CH4 emissions from natural wetlands｜Geoscientific Model Development 13(8): 3769-3788｜10.5194/gmd-13-3769-2020
+- Lippmann et al., 2023｜Peatland-VU-NUCOM (PVN 1.0): using dynamic plant functional types to model peatland vegetation, CH4 , and CO2 emissions｜Geoscientific Model Development 16(22): 6773-6804｜10.5194/gmd-16-6773-2023
+- Lippmann et al., 2026｜Aerobic and anaerobic contributions to carbon dioxide and methane emissions in a 1D peatland model: Peatland-VU v3.0｜预印本（Crossref 无刊名）: Crossref 无页码｜10.5194/egusphere-2026-2450
+- Lipson et al., 2010｜Reduction of iron (III) and humic substances plays a major role in anaerobic respiration in an Arctic peat soil｜Journal of Geophysical Research: Biogeosciences 115(G4): 2009JG001147｜10.1029/2009JG001147
+- Lipson et al., 2012｜Water-table height and microtopography control biogeochemical cycling in an Arctic coastal tundra ecosystem｜Biogeosciences 9(1): 577-591｜10.5194/bg-9-577-2012
+- Lipson et al., 2013｜The contribution of Fe(III) and humic acid reduction to ecosystem respiration in drained thaw lake basins of the Arctic Coastal Plain｜Global Biogeochemical Cycles 27(2): 399-409｜10.1002/gbc.20038
+- Liu et al., 2020｜Uncertainty Quantification of Global Net Methane Emissions From Terrestrial Ecosystems Using a Mechanistically Based Biogeochemistry Model｜Journal of Geophysical Research: Biogeosciences 125(6): e2019JG005428｜10.1029/2019JG005428
+- Ma et al., 2021｜Satellite Constraints on the Latitudinal Distribution and Temperature Sensitivity of Wetland Methane Emissions｜AGU Advances 2(3): e2021AV000408｜10.1029/2021AV000408
+- Ma et al., 2022｜Evaluating alternative ebullition models for predicting peatland methane emission and its pathways via data–model fusion｜Biogeosciences 19(8): 2245-2262｜10.5194/bg-19-2245-2022
+- McNorton et al., 2016｜Role of regional wetland emissions in atmospheric methane variability｜Geophysical Research Letters 43(21): Crossref 无页码｜10.1002/2016GL070649
+- Melton et al., 2013｜Present state of global wetland extent and wetland methane modelling: conclusions from a model inter-comparison project (WETCHIMP)｜Biogeosciences 10(2): 753-788｜10.5194/bg-10-753-2013
+- Melton and Arora, 2016｜Competition between plant functional types in the Canadian Terrestrial Ecosystem Model (CTEM) v. 2.0｜Geoscientific Model Development 9(1): 323-361｜10.5194/gmd-9-323-2016
+- Melton et al., 2020｜CLASSIC v1.0: the open-source community successor to the Canadian Land Surface Scheme (CLASS) and the Canadian Terrestrial Ecosystem Model (CTEM) – Part 1: Model framework and site-level performance｜Geoscientific Model Development 13(6): 2825-2850｜10.5194/gmd-13-2825-2020
+- Meng et al., 2012｜Sensitivity of wetland methane emissions to model assumptions: application and model testing against site observations｜Biogeosciences 9(7): 2793-2819｜10.5194/bg-9-2793-2012
+- Meng et al., 2015｜Seasonal and interannual variability in wetland methane emissions simulated by CLM4Me' and CAM-chem and comparisons to observations of concentrations｜Biogeosciences 12(13): 4029-4049｜10.5194/bg-12-4029-2015
+- Morel et al., 2019｜A New Process‐Based Soil Methane Scheme: Evaluation Over Arctic Field Sites With the ISBA Land Surface Model｜Journal of Advances in Modeling Earth Systems 11(1): 293-326｜10.1029/2018MS001329
+- Müller et al., 2015｜CH4 parameter estimation in CLM4.5bgc using surrogate global optimization｜Geoscientific Model Development 8(10): 3285-3310｜10.5194/gmd-8-3285-2015
+- Nzotungicimpaye et al., 2021｜WETMETH 1.0: a new wetland methane model for implementation in Earth system models｜Geoscientific Model Development 14(10): 6215-6240｜10.5194/gmd-14-6215-2021
+- Oikawa et al., 2017｜Evaluation of a hierarchy of models reveals importance of substrate limitation for predicting carbon dioxide and methane exchange in restored wetlands｜Journal of Geophysical Research: Biogeosciences 122(1): 145-167｜10.1002/2016JG003438
+- Oikawa et al., 2024｜A New Coupled Biogeochemical Modeling Approach Provides Accurate Predictions of Methane and Carbon Dioxide Fluxes Across Diverse Tidal Wetlands｜Journal of Geophysical Research: Biogeosciences 129(10): e2023JG007943｜10.1029/2023JG007943
+- Olefeldt et al., 2013｜Environmental and physical controls on northern terrestrial methane emissions across permafrost zones｜Global Change Biology 19(2): 589-603｜10.1111/gcb.12071
+- Parker et al., 2022｜Evaluation of wetland CH4 in the Joint UK Land Environment Simulator (JULES) land surface model using satellite observations｜Biogeosciences 19(24): 5779-5805｜10.5194/bg-19-5779-2022
+- Peltola et al., 2018｜Technical note: Comparison of methane ebullition modelling approaches used in terrestrial wetland models｜Biogeosciences 15(3): 937-951｜10.5194/bg-15-937-2018
+- Poffenbarger et al., 2011｜Salinity Influence on Methane Emissions from Tidal Marshes｜Wetlands 31(5): 831-842｜10.1007/s13157-011-0197-0
+- Poulter et al., 2017｜Global wetland contribution to 2000–2012 atmospheric methane growth rate dynamics｜Environmental Research Letters 12(9): 094013｜10.1088/1748-9326/aa8391
+- Qiu et al., 2018｜ORCHIDEE-PEAT (revision 4596), a model for northern peatland CO2 , water, and energy fluxes on daily to annual scales｜Geoscientific Model Development 11(2): 497-519｜10.5194/gmd-11-497-2018
+- Raivonen et al., 2017｜HIMMELI v1.0: HelsinkI Model of MEthane buiLd-up and emIssion for peatlands｜Geoscientific Model Development 10(12): 4665-4691｜10.5194/gmd-10-4665-2017
+- Ricciuto et al., 2021｜An Integrative Model for Soil Biogeochemistry and Methane Processes: I. Model Structure and Sensitivity Analysis｜Journal of Geophysical Research: Biogeosciences 126(8): e2019JG005468｜10.1029/2019JG005468
+- Riley et al., 2011｜Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM｜Biogeosciences 8(7): 1925-1953｜10.5194/bg-8-1925-2011
+- Ringeval et al., 2010｜An attempt to quantify the impact of changes in wetland extent on methane emissions on the seasonal and interannual time scales｜Global Biogeochemical Cycles 24(2): 2008GB003354｜10.1029/2008GB003354
+- Ringeval et al., 2011｜Climate-CH4 feedback from wetlands and its interaction with the climate-CO2 feedback｜Biogeosciences 8(8): 2137-2157｜10.5194/bg-8-2137-2011
+- Ringeval et al., 2012｜Modelling sub-grid wetland in the ORCHIDEE global land surface model: evaluation against river discharges and remotely sensed data｜Geoscientific Model Development 5(4): 941-962｜10.5194/gmd-5-941-2012
+- Ringeval et al., 2014｜Methane emissions from floodplains in the Amazon Basin: challenges in developing a process-based model for global applications｜Biogeosciences 11(6): 1519-1558｜10.5194/bg-11-1519-2014
+- Rivkina et al., 2004｜Microbial life in permafrost｜Advances in Space Research 33(8): 1215-1221｜10.1016/j.asr.2003.06.024
+- Roy Chowdhury et al., 2015｜Stoichiometry and temperature sensitivity of methanogenesis and CO2 production from saturated polygonal tundra in Barrow, Alaska｜Global Change Biology 21(2): 722-737｜10.1111/gcb.12762
+- Salmon et al., 2022｜Assessing methane emissions for northern peatlands in ORCHIDEE-PEAT revision 7020｜Geoscientific Model Development 15(7): 2813-2838｜10.5194/gmd-15-2813-2022
+- Saunois et al., 2016｜The global methane budget 2000–2012｜Earth System Science Data 8(2): 697-751｜10.5194/essd-8-697-2016
+- Saunois et al., 2025｜Global Methane Budget 2000–2020｜Earth System Science Data 17(5): 1873-1958｜10.5194/essd-17-1873-2025
+- Schaphoff et al., 2026｜Implementing methane dynamics into the LPJmL6 model｜Geoscientific Model Development 19(16): 7615-7651｜10.5194/gmd-19-7615-2026
+- Schaphoff et al., 2026｜Implementing methane dynamics into the LPJmL6 model｜预印本（Crossref 无刊名）: Crossref 无页码｜10.5194/egusphere-2025-6210
+- Segers, 1998｜Methane production and methane consumption: a review of processes underlying wetland methane fluxes｜Biogeochemistry 41(1): 23-51｜10.1023/A:1005929032764
+- Segers and Leffelaar, 2001｜Modeling methane fluxes in wetlands with gas‐transporting plants: 1. Single‐root scale｜Journal of Geophysical Research: Atmospheres 106(D4): 3511-3528｜10.1029/2000JD900484
+- Shannon and White, 1994｜A three-year study of controls on methane emissions from two Michigan peatlands｜Biogeochemistry 27(1): Crossref 无页码｜10.1007/BF00002570
+- Shi et al., 2015｜Representing northern peatland microtopography and hydrology within the Community Land Model｜Biogeosciences 12(21): 6463-6477｜10.5194/bg-12-6463-2015
+- Shu et al., 2020｜Investigating Wetland and Nonwetland Soil Methane Emissions and Sinks Across the Contiguous United States Using a Land Surface Model｜Global Biogeochemical Cycles 34(7): e2019GB006251｜10.1029/2019GB006251
+- Sihi et al., 2021｜Representing methane emissions from wet tropical forest soils using microbial functional groups constrained by soil diffusivity｜Biogeosciences 18(5): 1769-1786｜10.5194/bg-18-1769-2021
+- Song et al., 2020｜A Microbial Functional Group‐Based CH4 Model Integrated Into a Terrestrial Ecosystem Model: Model Structure, Site‐Level Evaluation, and Sensitivity Analysis｜Journal of Advances in Modeling Earth Systems 12(4): e2019MS001867｜10.1029/2019MS001867
+- Spahni et al., 2011｜Constraining global methane emissions and uptake by ecosystems｜Biogeosciences 8(6): 1643-1665｜10.5194/bg-8-1643-2011
+- Stocker et al., 2014｜DYPTOP: a cost-efficient TOPMODEL implementation to simulate sub-grid spatio-temporal dynamics of global wetlands and peatlands｜Geoscientific Model Development 7(6): 3089-3110｜10.5194/gmd-7-3089-2014
+- Sulman et al., 2024｜Integrating Tide‐Driven Wetland Soil Redox and Biogeochemical Interactions Into a Land Surface Model｜Journal of Advances in Modeling Earth Systems 16(4): e2023MS004002｜10.1029/2023MS004002
+- Tang et al., 2010｜Quantifying wetland methane emissions with process-based models of different complexities｜Biogeosciences 7(11): 3817-3837｜10.5194/bg-7-3817-2010
+- Tang et al., 2015｜Carbon budget estimation of a subarctic catchment using a dynamic ecosystem model at high spatial resolution｜Biogeosciences 12(9): 2791-2808｜10.5194/bg-12-2791-2015
+- Tian et al., 2010｜Spatial and temporal patterns of CH4 and N2 O fluxes in terrestrial ecosystems of North America during 1979–2008: application of a global biogeochemistry model｜Biogeosciences 7(9): 2673-2694｜10.5194/bg-7-2673-2010
+- Treat et al., 2015｜A pan‐Arctic synthesis of CH4 and CO2 production from anoxic soil incubations｜Global Change Biology 21(7): 2787-2803｜10.1111/gcb.12875
+- Treat et al., 2018｜Nongrowing season methane emissions–a significant component of annual emissions across northern ecosystems｜Global Change Biology 24(8): 3331-3343｜10.1111/gcb.14137
+- Turetsky et al., 2014｜A synthesis of methane emissions from 71 northern, temperate, and subtropical wetlands｜Global Change Biology 20(7): 2183-2197｜10.1111/gcb.12580
+- Van Bodegom et al., 2001｜A mechanistic model on methane oxidation in a rice rhizosphere｜Biogeochemistry 55(2): 145-177｜10.1023/A:1010640515283
+- van Huissteden et al., 2006｜Modelling the effect of water-table management on CO2 and CH4 fluxes from peat soils｜Netherlands Journal of Geosciences - Geologie en Mijnbouw 85(1): 3-18｜10.1017/S0016774600021399
+- van Hulzen et al., 1999｜Temperature effects on soil methane production: an explanation for observed variability｜Soil Biology and Biochemistry 31(14): 1919-1929｜10.1016/S0038-0717(99)00109-1
+- Visser et al., 2000｜Changes in growth, porosity, and radial oxygen loss from adventitious roots of selected mono‐ and dicotyledonous wetland species with contrasting types of aerenchyma｜Plant, Cell & Environment 23(11): 1237-1245｜10.1046/j.1365-3040.2000.00628.x
+- Walter et al., 1996｜A process‐based model to derive methane emissions from natural wetlands｜Geophysical Research Letters 23(25): 3731-3734｜10.1029/96GL03577
+- Walter and Heimann, 2000｜A process‐based, climate‐sensitive model to derive methane emissions from natural wetlands: Application to five wetland sites, sensitivity to model parameters, and climate｜Global Biogeochemical Cycles 14(3): 745-765｜10.1029/1999GB001204
+- Walter et al., 2001｜Modeling modern methane emissions from natural wetlands: 1. Model description and results｜Journal of Geophysical Research: Atmospheres 106(D24): 34189-34206｜10.1029/2001JD900165
+- Wania et al., 2009｜Integrating peatlands and permafrost into a dynamic global vegetation model: 1. Evaluation and sensitivity of physical land surface processes｜Global Biogeochemical Cycles 23(3): 2008GB003412｜10.1029/2008GB003412
+- Wania et al., 2009｜Integrating peatlands and permafrost into a dynamic global vegetation model: 2. Evaluation and sensitivity of vegetation and carbon cycle processes｜Global Biogeochemical Cycles 23(3): 2008GB003413｜10.1029/2008GB003413
+- Wania et al., 2010｜Implementation and evaluation of a new methane model within a dynamic global vegetation model: LPJ-WHyMe v1.3.1｜Geoscientific Model Development 3(2): 565-584｜10.5194/gmd-3-565-2010
+- Wania et al., 2013｜Present state of global wetland extent and wetland methane modelling: methodology of a model inter-comparison project (WETCHIMP)｜Geoscientific Model Development 6(3): 617-641｜10.5194/gmd-6-617-2013
+- Wilkenskjeld et al., 2025｜Natural wetland methane emissions simulated by ICON-XPP｜预印本（Crossref 无刊名）: Crossref 无页码｜10.5194/egusphere-2025-3601
+- Willeit and Ganopolski, 2016｜PALADYN v1.0, a comprehensive land surface–vegetation–carbon cycle model of intermediate complexity｜Geoscientific Model Development 9(10): 3817-3857｜10.5194/gmd-9-3817-2016
+- Willeit et al., 2023｜The Earth system model CLIMBER-X v1.0 – Part 2: The global carbon cycle｜Geoscientific Model Development 16(12): 3501-3534｜10.5194/gmd-16-3501-2023
+- Wilson et al., 2026｜Plants are a powerful proxy for global tidal marsh methane fluxes｜Proceedings of the National Academy of Sciences 123(29): e2530848123｜10.1073/pnas.2530848123
+- Wu and Blodau, 2013｜PEATBOG: a biogeochemical model for analyzing coupled carbon and nitrogen dynamics in northern peatlands｜Geoscientific Model Development 6(4): 1173-1207｜10.5194/gmd-6-1173-2013
+- Wu et al., 2016｜Integrating peatlands into the coupled Canadian Land Surface Scheme (CLASS) v3.6 and the Canadian Terrestrial Ecosystem Model (CTEM) v2.0｜Geoscientific Model Development 9(8): 2639-2663｜10.5194/gmd-9-2639-2016
+- Xiao et al., 2024｜Global Wetland Methane Emissions From 2001 to 2020: Magnitude, Dynamics and Controls｜Earth's Future 12(9): e2024EF004794｜10.1029/2024EF004794
+- Xu et al., 2015｜A microbial functional group‐based module for simulating methane production and consumption: Application to an incubated permafrost soil｜Journal of Geophysical Research: Biogeosciences 120(7): 1315-1333｜10.1002/2015JG002935
+- Xu et al., 2016｜Reviews and syntheses: Four decades of modeling methane cycling in terrestrial ecosystems｜Biogeosciences 13(12): 3735-3755｜10.5194/bg-13-3735-2016
+- Yazbeck et al., 2025｜ELM‐Wet: Inclusion of a Wet‐Landunit With Sub‐Grid Representation of Eco‐Hydrological Patches and Hydrological Forcing Improves Methane Emission Estimations in the E3SM Land Model (ELM)｜Journal of Advances in Modeling Earth Systems 17(2): e2024MS004396｜10.1029/2024MS004396
+- Yue et al., 2024｜Development and evaluation of the interactive Model for Air Pollution and Land Ecosystems (iMAPLE) version 1.0｜Geoscientific Model Development 17(11): 4621-4642｜10.5194/gmd-17-4621-2024
+- Yvon-Durocher et al., 2014｜Methane fluxes show consistent temperature dependence across microbial to ecosystem scales｜Nature 507(7493): 488-491｜10.1038/nature13164
+- Zhang et al., 2016｜Modeling spatiotemporal dynamics of global wetlands: comprehensive evaluation of a new sub-grid TOPMODEL parameterization and uncertainties｜Biogeosciences 13(5): 1387-1408｜10.5194/bg-13-1387-2016
+- Zhang et al., 2017｜Emerging role of wetland methane emissions in driving 21st century climate change｜Proceedings of the National Academy of Sciences 114(36): 9647-9652｜10.1073/pnas.1618765114
+- Zhang et al., 2023｜Characterizing Performance of Freshwater Wetland Methane Models Across Time Scales at FLUXNET‐CH4 Sites Using Wavelet Analyses｜Journal of Geophysical Research: Biogeosciences 128(11): e2022JG007259｜10.1029/2022JG007259
+- Zhang et al., 2025｜Ensemble estimates of global wetland methane emissions over 2000–2020｜Biogeosciences 22(1): 305-321｜10.5194/bg-22-305-2025
+- Zhang et al., 2025｜Methane Emissions in Asian Wetlands During 2010–2020: Insights From an Online‐Coupled Microbial Functional‐Group‐Based Model｜Earth's Future 13(9): e2025EF005991｜10.1029/2025EF005991
+- Zheng et al., 2018｜Impacts of temperature and soil characteristics on methane production and oxidation in Arctic tundra｜Biogeosciences 15(21): 6621-6635｜10.5194/bg-15-6621-2018
+- Zheng et al., 2019｜Modeling anaerobic soil organic carbon decomposition in Arctic polygon tundra: insights into soil geochemical influences on carbon mineralization｜Biogeosciences 16(3): 663-680｜10.5194/bg-16-663-2019
+- Zhou et al., 2025｜Enhanced understanding of soil methane processes through modeling microbial kinetics and taxonomy｜Soil Biology and Biochemistry 207: 109838｜10.1016/j.soilbio.2025.109838
+- Zhu et al., 2014｜Modelling methane emissions from natural wetlands by development and application of the TRIPLEX-GHG model｜Geoscientific Model Development 7(3): 981-999｜10.5194/gmd-7-981-2014
+- Zhu et al., 2025｜Advancements and opportunities to improve bottom–up estimates of global wetland methane emissions｜Environmental Research Letters 20(2): 023001｜10.1088/1748-9326/adad02
+- Zhuang et al., 2004｜Methane fluxes between terrestrial ecosystems and the atmosphere at northern high latitudes during the past century: A retrospective analysis with a process‐based biogeochemistry model｜Global Biogeochemical Cycles 18(3): 2004GB002239｜10.1029/2004GB002239
+- Zona et al., 2016｜Cold season emissions dominate the Arctic tundra methane budget｜Proceedings of the National Academy of Sciences 113(1): 40-45｜10.1073/pnas.1516017113

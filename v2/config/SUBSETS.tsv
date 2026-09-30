@@ -1,0 +1,10 @@
+# name<TAB>comma-separated towers (screening subsets of the 77, v2/目标与判据.md section 5)
+peat	CA-SCB,DE-SfN,FI-Si2,JP-BBY,NZ-Kop,US-BZB,US-Uaf,DE-Zrk,FI-Lom,FI-Sii,FR-LGt,SE-Deg,US-BZF,US-Los
+tundra	US-A03,US-A10,US-Atq,US-Beo,US-Bes,US-ICs,US-Ivo,US-NGB,US-NGC,RU-Ch2,RU-Cok
+boreal	CA-SCB,DE-SfN,FI-Si2,JP-BBY,NZ-Kop,US-BZB,US-Uaf,DE-Zrk,FI-Lom,FI-Sii,FR-LGt,SE-Deg,US-BZF,US-Los,US-A03,US-A10,US-Atq,US-Beo,US-Bes,US-ICs,US-Ivo,US-NGB,US-NGC,RU-Ch2,RU-Cok
+marsh	US-DPW,US-LA2,US-Myb,US-ORv,US-OWC,US-Sne,US-Tw1,US-Tw4,US-Tw5,US-WPT
+swamp	BR-Npw,BW-Gum,BW-Nxr,ID-Pag,MY-MLM,US-NC4
+rice	IT-Cas,JP-Mse,KR-CRK,PH-RiF,US-HRA,US-HRC,US-Twt
+warm	US-DPW,US-LA2,US-Myb,US-ORv,US-OWC,US-Sne,US-Tw1,US-Tw4,US-Tw5,US-WPT,BR-Npw,BW-Gum,BW-Nxr,ID-Pag,MY-MLM,US-NC4,IT-Cas,JP-Mse,KR-CRK,PH-RiF,US-HRA,US-HRC,US-Twt
+wet	CA-SCB,DE-SfN,FI-Si2,JP-BBY,NZ-Kop,US-BZB,US-Uaf,DE-Zrk,FI-Lom,FI-Sii,FR-LGt,SE-Deg,US-BZF,US-Los,US-A03,US-A10,US-Atq,US-Beo,US-Bes,US-ICs,US-Ivo,US-NGB,US-NGC,RU-Ch2,RU-Cok,US-DPW,US-LA2,US-Myb,US-ORv,US-OWC,US-Sne,US-Tw1,US-Tw4,US-Tw5,US-WPT,BR-Npw,BW-Gum,BW-Nxr,ID-Pag,MY-MLM,US-NC4
+salt	US-EDN,US-LA1,US-MRM,US-Srr,US-StJ,DE-Hte

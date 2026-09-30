@@ -1,0 +1,57 @@
+From 222fe8f75efabc7f67b64012734f43a9d2165332 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Sun, 27 Sep 2026 22:58:44 +0800
+Subject: [PATCH] fix(irrigation): paddies keep only the puddled soil above the
+ plow pan saturated (C-32d)
+
+---
+ main/MOD_Irrigation.F90 | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/main/MOD_Irrigation.F90 b/main/MOD_Irrigation.F90
+index 7ccd5cbb..889535be 100644
+--- a/main/MOD_Irrigation.F90
++++ b/main/MOD_Irrigation.F90
+@@ -157,6 +157,7 @@ CONTAINS
+       real(r8) :: h2osoi_liq_field_capacity(1:nl_soil)
+       real(r8) :: h2osoi_liq_saturation_capacity(1:nl_soil)
+       real(r8) :: h2osoi_liq_at_threshold
++      real(r8) :: h2osoi_liq_top, h2osoi_liq_saturation_top   ! C-32d: above the plow pan
+ 
+       real(r8) :: smpswc = -1.5e5
+       real(r8) :: smpsfc = -3.3e3
+@@ -168,6 +169,8 @@ CONTAINS
+       h2osoi_liq_wilting_point_tot = 0._r8
+       h2osoi_liq_field_capacity_tot = 0._r8
+       h2osoi_liq_saturation_capacity_tot = 0._r8
++      h2osoi_liq_top = 0._r8
++      h2osoi_liq_saturation_top = 0._r8
+ 
+       !  calculate wilting point and field capacity
+       DO j = 1, nl_soil
+@@ -204,6 +207,10 @@ CONTAINS
+                   h2osoi_liq_wilting_point_tot = h2osoi_liq_wilting_point_tot + h2osoi_liq_wilting_point(j)
+                   h2osoi_liq_field_capacity_tot = h2osoi_liq_field_capacity_tot + h2osoi_liq_field_capacity(j)
+                   h2osoi_liq_saturation_capacity_tot = h2osoi_liq_saturation_capacity_tot + h2osoi_liq_saturation_capacity(j)
++                  IF (z_soi(j) < 0.15_r8) THEN
++                     h2osoi_liq_top = h2osoi_liq_top + wliq_soisno(j,i)
++                     h2osoi_liq_saturation_top = h2osoi_liq_saturation_top + h2osoi_liq_saturation_capacity(j)
++                  ENDIF
+                ENDIF
+             ENDIF
+          ENDDO
+@@ -229,7 +236,10 @@ CONTAINS
+             ! C-32b: a paddy is topped up to a saturated root zone plus its
+             ! standing water. Upstream took the saturation threshold but the
+             ! field-capacity amount, so a soil between the two got nothing.
+-            deficit_irrig(i) = irrig_supply_fraction * (max(h2osoi_liq_saturation_capacity_tot - h2osoi_liq_tot, 0._r8) &
++            ! C-32d: only the puddled soil above the plow pan (centres above
++            ! 0.15 m, MOD_SoilSnowHydrology) is kept saturated; below the pan
++            ! the soil drains and irrigation does not chase it.
++            deficit_irrig(i) = irrig_supply_fraction * (max(h2osoi_liq_saturation_top - h2osoi_liq_top, 0._r8) &
+                + max(paddy_pond_target - wdsrf(i), 0._r8))
+             CYCLE
+          ENDIF
+-- 
+2.53.0
+

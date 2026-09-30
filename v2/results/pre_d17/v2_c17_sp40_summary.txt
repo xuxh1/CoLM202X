@@ -1,0 +1,56 @@
+# v2_c17_sp40 (paper_v2/v260925k/sp_v2_c17); CH4 medians KGE_ln / beta / alpha / r
+20 non-saline: -0.40 / 1.02 / 0.77 / 0.62
+all 23:        -0.50 / 1.04 / 0.78 / 0.63
+  permafrost  n= 1  -1.71 / 7.25 / 5.15 / 0.13
+  bog         n= 5  -0.30 / 0.65 / 0.59 / 0.52
+  fen         n= 6  -0.78 / 0.36 / 0.33 / 0.69
+  marsh       n= 6  0.41 / 1.12 / 0.77 / 0.62
+  salt_marsh  n= 3  -2.13 / 2.37 / 2.03 / 0.63
+  trop_swamp  n= 2  -1.63 / 11.63 / 21.38 / 0.39
+water level (D-2), 20 towers: median |median error| 0.10 m, median r 0.33
+  site   obs  mod  err     r
+BR-Npw  0.24 0.42 0.18  0.58
+CA-SCB  0.11 0.10 0.01  0.44
+DE-SfN  0.07 0.08 0.00  0.62
+DE-Zrk -0.23 0.12 0.35  0.29
+FI-Lom -0.03 0.10 0.13  0.57
+FI-Si2  0.10 0.07 0.03  0.66
+FI-Sii  0.02 0.10 0.08  0.55
+FR-LGt  0.22 0.09 0.13  0.25
+JP-BBY  0.02 0.09 0.08  0.50
+MY-MLM  0.05 0.09 0.04  0.20
+NZ-Kop  0.08 0.10 0.02  0.10
+SE-Deg  0.04 0.12 0.08 -0.00
+US-Los  0.09 0.07 0.02 -0.19
+US-Myb -1.23 0.12 1.35  0.07
+US-Sne -0.15 0.12 0.27 -0.08
+US-Tw1 -0.29 0.11 0.41  0.37
+US-Tw4 -0.18 0.11 0.29  0.04
+US-Tw5 -0.66 0.14 0.81  0.13
+US-Uaf  0.16 0.13 0.03  0.44
+US-WPT -0.40 0.10 0.50  0.58
+
+  site        cls  KGEln  beta  alpha    r
+BR-Npw trop_swamp   0.67  1.04   1.05 0.67
+CA-SCB        bog  -0.30  0.40   0.40 0.79
+DE-Hte salt_marsh  -2.27  0.12   0.08 0.63
+DE-SfN        bog  -0.61  4.03   1.85 0.48
+DE-Zrk        fen  -1.19  0.39   0.15 0.57
+FI-Lom        fen  -0.93  0.25   0.26 0.77
+FI-Si2        bog   0.01  0.56   0.45 0.85
+FI-Sii        fen  -0.63  0.34   0.31 0.64
+FR-LGt        fen  -1.23  4.92   3.29 0.00
+JP-BBY        bog   0.17  0.65   0.59 0.52
+MY-MLM trop_swamp  -3.93 22.21  41.72 0.10
+NZ-Kop        bog  -0.50  2.91   1.95 0.19
+SE-Deg        fen  -0.60  0.31   0.35 0.73
+US-Los        fen   0.48  1.60   1.06 0.78
+US-Myb      marsh   0.52  1.00   0.77 0.60
+US-Sne      marsh   0.36  1.45   0.78 0.54
+US-Srr salt_marsh  -2.13  8.70   8.75 0.35
+US-StJ salt_marsh  -0.12  2.37   2.03 0.86
+US-Tw1      marsh   0.57  1.24   1.13 0.65
+US-Tw4      marsh   0.37  1.50   1.50 0.74
+US-Tw5      marsh   0.45  0.71   0.66 0.88
+US-Uaf permafrost  -1.71  7.25   5.15 0.13
+US-WPT      marsh  -4.54  0.02   0.02 0.55

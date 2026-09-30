@@ -1,0 +1,154 @@
+# diag_soil_uptake_260930：全球旱地土壤甲烷吸收偏小的诊断（I-38）
+
+- **日期**：2026.09.30-09:24
+- **读者**：下一会话
+- **来源**：中控派活 methane-diag-uptake（I-38，只读：未改码、未跑模式、未提交）；全球 case `cases/paper_v2/v260930/g2_sp`（@74e60d4b，含 C-64 宿主地面导度）与 `cases/paper_v2/v260929/g2_bf`（@e651283b，C-64 前），两份 `CODE_COMMIT.txt`，均取 2018 年；取数脚本 `v2/_scratch/uptake/` 下 `uptake_global.py`、`o2demand_ratio.py`、`dry_cells.py`、`clm_params.py`、`list_vars.py`、`list_diag.py`、`pdf_grep.py`，输出 `uptake_g2_sp_2018_w0.01_all.out`、`uptake_g2_sp_2018_w0.01_dry.out`、`uptake_g2_sp_2018_w0.0001_dry.out`、`uptake_g2_bf_2018_w0.01_all.out`、`o2demand_g2_sp_2018.out`、`dry_cells_g2_sp_2018.out`；读码 `CoLM202X-paper-v2` HEAD 79da2639（下文引用的各段与 case 所用 74e60d4b 逻辑相同：`git diff 74e60d4b HEAD` 的各 hunk 不涉及这些段落）；CTSM `~/mode/Wetland/CTSM`；承接 `v2/results/lit_upland_ch4_260930.txt` 第 2、3、5 节
+- **状态**：四问已答；改法只到参数、式子与离线预期，未实跑
+- **失效于**：Walter 归一化修正落地、`k_m_unsat` / `vmax_oxid_unsat` / 大气 CH4 取值改动、或 `global_eval.py` 的 upland 口径改动之后
+
+口径：通量 mg CH4 m-2 d-1，"吸收"取正值；kg CH4 ha-1 yr-1 = mg m-2 d-1 × 3.65。"非淹水月"指当月土壤片淹水比例 f_methane_soil_finundated < 1e-4，此时土壤片全部是非饱和子柱。"干净格"指湿地片与稻田占比都 < 0.01、土壤片 > 0.2 的格（历史文件里 `*_unsat` 分层量是土壤、湿地、稻田各片按面积混合的，见第 3.1 节）。模式层界面 0.018、0.045、0.091、0.166、0.289、0.493、0.829、1.383、2.296、3.433 m（`MOD_Vars_Global.F90:140-153`）。
+
+## 0. 覆盖面
+
+1. 读码（检索词 atm_methane、forc_pmethanem、c_atm、grnd_methane_cond、raw_grnd、diffus、vol_gas、k_h_cc、vmax_oxid_unsat、k_m_unsat、q10_methane_oxid、smp_crit、o2stress、walter_renorm、partition_z、jwt_unsat、surf_flux_soil、prod_tot_soil）：`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90`（646-671、735-750、1421-1431、2342-2353、2539-2552、2656、2684-2695、2723-2748、2913-3038、3773-3831、4009-4011、4142-4143、4149-4175、4196-4207、5047-5076、5078-5178）、`MOD_Tracer_Reactive_Methane_Const.F90`（106-115、292-301、445-448、2302-2323）、`MOD_Tracer_Reactive_Methane_Driver.F90`（1040-1099，土壤、稻田分量的写出）、`MOD_Tracer_Reactive_Methane_Hist.F90`（223-244 历史过滤与面积加权）、`MOD_Tracer_Reactive_Methane_BgcLink.F90:436-440`（cellorg）、宿主 `MOD_LeafTemperature.F90:1050`、`MOD_Thermal.F90:728, 1321-1322`（raw_grnd）。CTSM：`src/biogeochem/ch4Mod.F90`（113、1818-1829、2324-2676、2782-2823、3540-3591、3810、3826-3838、3861-3865）、`src/biogeophys/CanopyFluxesMod.F90:1106`、`BareGroundFluxesMod.F90:414`、技术手册 `CLM50_Tech_Note_Methane.rst` 第 105-117、181-190、258-261 行；参数文件 `~/mode/Wetland/v1/CLM_params/clm_params.c170913.nc`、`clm5_params.c171117.nc`（`clm_params.py`）。
+2. 配置：`v2/config/v2_p8k/ch4_parameter.nml` 与两 case 的 `bld/run/ch4_parameter.nml` 全文对比（diff）；评估脚本 `v2/scripts/global_eval.py` 与 `scripts/figures/budget/ch4_budget_core.py` 的面积口径。
+3. 输出：两 case 2018 年 `*_hist_tracer_2018.nc`、`*_hist_2018.nc` 全部与吸收有关的变量（`list_vars.py`），`landdata/diag/soil_parameters_2005.nc`、`pftfrac_elm_2005.nc`。全球汇总按纬度带与生物群落（主导 PFT 组）；格点选温带森林两格、热带稀树草原一格、北方森林两格、热带森林一格。
+4. 文献：Riley et al. 2011（本地 PDF，读第 1930、1931、1937 页全文）、Curry 2007（本地 PDF，读第 1-5 页全文）、Murguia-Flores et al. 2018（本地 PDF，读第 2009-2016 页全文）、Saunois et al. 2020（取 ESSD PDF，读表 3 与第 3.3.4 节全文）、Dutaur and Verchot 2007、Smith et al. 2000、Bender and Conrad 1992（只读摘要，OpenAlex 重建）；NOAA GML 全球年均 CH4 表。著录全部由 Crossref 取得。Dutaur and Verchot 2007 取不到全文、摘要不含分生态系统速率，派活件所写"森林 3–6、草地 1–4 kg CH4 ha-1 yr-1"未能核对，本文件不用；单位面积对照改用 Smith et al. 2000 摘要与 MeMo 全文。
+5. 未看：无。
+6. 存疑（要跑实验才能定）：
+   - CLM4Me 用同一套参数得 31 Tg yr-1（Riley et al. 2011 第 1937 页），本模式同式离线潜力只有 16 Tg yr-1，差在土壤含水、孔隙、温度状态还是面积口径。实验：把 CLM4Me 同期的土壤状态喂进 `uptake_global.py` 的离线解。
+   - Walter 归一化修正后，深层产出的 CH4 被上方氧化掉多少、洪泛格土壤片排放降多少。实验：修正落地后全球一年，与 `g2_sp` 比土壤片非淹水月净通量与 E_floodplain。
+
+## 1. 结论
+
+1. `global_eval.py` 的"upland soil tile"只统计全年不淹水的格（`global_eval.py:52-54`），这些格的土壤片只有 18.7 Mkm2，占土壤片 123.5 Mkm2 的 15 %，其中荒漠占 60 %、温带草地灌丛 17 %、热带稀树草原与草地 16 %，92 % 的面积全年水位都在 3.43 m 柱底以下；`g2_sp` 的 −2.52、`g2_bf` 的 −0.65 Tg yr-1 都只是这 15 % 的数，其余 85 % 土壤片的吸收被并进了 E_floodplain——已验证（`uptake_g2_sp_2018_w0.01_all.out` 第 1 节、`dry_cells_g2_sp_2018.out`）。所以这一行不能直接对 GCP 土壤汇 30 [11–49] Tg yr-1（Saunois et al. 2020 表 3）——已验证（读 `global_eval.py` 与上述输出对照）。
+2. 按土壤片自身的量算（非淹水月，覆盖非饱和土壤面积-时间的 36 %），全球平均净通量只有 0.032 mg m-2 d-1 的吸收，外推到全部 122.4 Mkm2 非饱和土壤为 1.4 Tg yr-1；荒漠 0.45、温带草地灌丛 0.21、农田 0.26、苔原 0.09 为吸收，温带森林、热带森林、热带稀树草原为净排放 1.18、1.70、0.48——已验证（`uptake_g2_sp_2018_w0.01_dry.out` 第 2 节）。对比要求的全球平均约 0.67 mg m-2 d-1（30 Tg yr-1 摊到 122.4 Mkm2），差一个量级以上，森林与稀树草原的符号是反的——已验证（同上与 Saunois et al. 2020 表 3 换算）。
+3. 吸收的写法与 CTSM 同式同参：大气 CH4 经地面导度与第 1 层半层扩散的串联进入土壤（Physics.F90:4196-4207），非饱和层气体扩散用 Millington-Quirk 与 Moldrup 的有机质加权式（4149-4164），氧化为双 Michaelis-Menten 乘 Q10、水势因子与液态比例（3021-3028），非湿地片水位以上用 vmax_oxid_unsat = 1.25e-6 mol m-3 s-1、k_m_unsat = 5e-4 mol m-3（2970-2977；case nml 189-196），与 CLM4.5、CLM5 参数文件逐值相同——已验证（读码与 `clm_params.py` 输出）。与 CTSM 的差别只有两处：冻结层 CTSM 置 0（ch4Mod.F90:2820）、CoLM 乘液态比例（Physics.F90:3028）；CoLM 多了 Walter 深度衰减与归一化（Physics.F90:2342-2353、2550-2552），CTSM 的产甲烷分层没有这一项（ch4Mod.F90:2324-2676 无 exp(-z/z0)）——已验证（读码）。
+4. 大气 CH4 取常数 1.7e-6 mol mol-1（case nml 286，p8k nml 306，时变开关 `.false.`），经 forc_pmethanem = x·p_bot、c_atm = p/(R·T_air) 换算为约 7.1e-5 mol m-3，单位换算无误；2018 年 NOAA 全球年均为 1857.33 ppb，常数偏低 8.5 %，一阶动力学下吸收同比例偏低约 9 %——已验证（Physics.F90:735-750、Const.F90:2302-2323 读码；NOAA 表）。
+5. C-64 之前（`g2_bf`）植被片的地面导度取缺省 1e-6 m s-1，是吸收的第一限速：同一土壤状态下离线潜力 0.090 对取宿主导度的 0.368 mg m-2 d-1，差 4.1 倍，与 upland 行由 −0.65 到 −2.52 的 3.9 倍一致；C-64 之后导度中位 0.0074 m s-1，边界层上限约 650 mg m-2 d-1，不再限速——已验证（`uptake_g2_bf_2018_w0.01_all.out` 与 `uptake_g2_sp_2018_w0.01_all.out` 第 3、4 节）。
+6. 现在的限速有三层。其一，水位落进 3.43 m 柱内的格（干净格非饱和面积-时间的 47 %）表层 O2 胁迫因子中位 0.156、第 3 层 0.087，吸收潜力只剩无胁迫时的 14 %；水位在柱底以下的格胁迫为 1，模式吸收正好等于离线潜力（比值中位 1.04）——已验证（`uptake_g2_sp_2018_w0.01_all.out` 第 4 节）。其二，同一批格里第 9、10 层（1.38–3.43 m）产出的 CH4 在 O2 为零的上方土层中不被氧化，直接把土壤片变成净源（非淹水月产量：温带森林 1.13、热带森林 1.22、稀树草原 0.55 mg m-2 d-1）——已验证（`uptake_g2_sp_2018_w0.01_dry.out` 第 2 节）。其三，即使去掉前两项，按本模式自身公式与参数的离线潜力只有 0.367 mg m-2 d-1，外推 16.4 Tg yr-1，是 30 Tg yr-1 的 0.55——已验证（同上第 3 节）。
+7. 第三层是"扩散—反应共同限速"：暖月穿透深度 sqrt(D/k) 中位 0.15 m（p10–p90 0.05–0.34 m），整柱按大气浓度氧化的动力学上限是离线潜力的 23 倍、边界层上限是 1800 倍，吸收按 sqrt(D·k) 标度，单独放大 vmax/K 或 D 都只按平方根生效——已验证（同上第 3、4 节；Curry 2007 式 3；Riley et al. 2011 第 1937 页 D×10 使汇由 31 升到 80 Tg yr-1）。
+8. 本模式的一阶氧化常数 vmax·θ·k_H/K 在含水 0.25 时为 1.4e-5（0 °C）、2.4e-5（12 °C）、4.6e-5 s-1（25 °C），Curry 2007 用观测标定的 k0 = 5.0e-5 s-1（0 °C，12 °C 与 25 °C 乘温度因子 2.26、4.05），高 3.6–4.7 倍（本模式的常数随含水线性增大，含水 0.25 为本比较的取值）；MeMo 分群落 k0 为 1.6e-5–5.0e-5 s-1——已验证（按 Physics.F90:3021-3028 与 Henry 式 5047-5076 代入计算；Curry 2007 第 3-4 页；Murguia-Flores et al. 2018 表 3）。新鲜好氧土的高亲和 Km 为 30–51 nM（3.0e-5–5.1e-5 mol m-3），本模式 k_m_unsat 高 10–17 倍——已验证（Bender and Conrad 1992，只读摘要）。
+9. 与 Walter 归一化有关：水位进柱的格里，CH4 模块的分解 CO2 诊断（即 O2 需求的底数）是 SOM 异养呼吸的 2890 倍（p10–p90 1140–4550，1057 格），水位不进柱的格为 1.67 倍（1172 格）；年均表层 O2 胁迫分别为 0.268 与 1.000——已验证（`o2demand_g2_sp_2018.out`）。限制吸收的是这一需求放大造成的 o2stress，表层 O2 的 Michaelis 项本身仍有 0.92——已验证（`uptake_g2_sp_2018_w0.01_all.out` 第 4 节）。upland 行（不淹水格多是深水位荒漠）几乎不受它影响，全局吸收却受：带模式 O2 状态的离线吸收 10.9 Tg yr-1，去掉 O2 胁迫为 16.4 Tg yr-1——已验证（同上第 3 节）。
+10. 建议的顺序：① Walter 归一化修正（在修）；② 评估口径改为全部非饱和土壤片的吸收，需要土壤片自身的非饱和、饱和两分量历史量；③ 大气 CH4 改用 NOAA 时变全球均值；④ 把高亲和甲烷氧化菌的一阶常数提高到文献标定值，首选 k_m_unsat 由 5e-4 降到约 1.5e-4 mol m-3（一阶常数 ×3.3，吸收约 ×1.8）——推测。理由是①把全局潜力由 10.9 抬到 16.4 Tg yr-1，③再乘 1.09，④再乘约 1.8，合计约 32 Tg yr-1，落在 30 [11–49] 中部；④只动低浓度端，产出 CH4 的高浓度氧化几乎不变，湿地片不用这组参数（Physics.F90:2978-2988）。
+11. 对湿地净排放的方向：①④都会让 E_floodplain 下降，因为洪泛格土壤片的非淹水部分吸收增加、且现在被并在 E_floodplain 里；湿地片基本不变；②只改账不改物理，会把现被并入 E_floodplain 的吸收移出，使湿地加洪泛的总数上升数 Tg——推测。理由是 85 % 的土壤片面积在"会淹水"的格里（结论 1），而 k_m_unsat 只作用于土壤与稻田片的水位以上层。
+
+## 2. 问题 1：吸收的写法与现值
+
+### 2.1 大气 CH4 浓度
+
+1. 取值：`methane_offline = .true.` 时 forc_pmethanem = x_CH4 × forc_pbot（Physics.F90:738-739），x_CH4 由 `methane_atm_mixing_ratio` 给出：`use_transient_atm_methane = .false.` 时返回常数 `atm_methane`，打开时读年或年月表（Const.F90:2302-2323；缺省 1.7e-6、`.false.`、`'null'`，Const.F90:445-448）——已验证（读码）。
+2. 现值：`g2_sp` 与 `g2_bf` 的 `bld/run/ch4_parameter.nml` 第 285、286、290 行为 `methane_offline = .true.`、`atm_methane = 1.7e-6`、`use_transient_atm_methane = .false.`；`v2_p8k` 为第 305、306、310 行，同值——已验证（grep 两份 nml）。
+3. 换算：c_atm(1) = forc_pmethanem / rgasm / forc_t（Physics.F90:748），[Pa]/[J mol-1 K-1]/[K] = mol m-3；p_bot 1e5 Pa、T 288 K 时为 7.1e-5 mol m-3——已验证（读码与代入）。
+4. CTSM 相同：`atmch4` 缺省 1.7e-6（ch4Mod.F90:113），缺大气场时 forc_pch4 = atmch4 × forc_pbot（1818），c_atm = forc_pch4/rgasm/forc_t（1829）——已验证（读码）。
+5. 2018 年全球年均 1857.33 ± 0.77 ppb，2017 年 1849.62——已验证（NOAA GML `ch4_annmean_gl.txt`）。1.7 ppm 比 2018 年低 8.5 %——已验证（算术）。
+
+### 2.2 进土：地面导度、扩散系数、气相含量
+
+1. 地面导度基值：缺省 `grnd_methane_cond_default` = 1e-6 m s-1（Const.F90:292；case nml 214、p8k 226）；湖与近裸地取 κ u*/fq（Physics.F90:646-657）；`grnd_methane_cond_host = .true.`（C-64）时植被非湖片取宿主 1/(r_aw + r_d)，限在 1e-5–1 m s-1（Physics.F90:665-671；宿主 raw_grnd = raw + rd，MOD_LeafTemperature.F90:1050、MOD_Thermal.F90:1321-1322）——已验证（读码）。`g2_sp` 与 `v2_p8k` 为 `.true.`（case nml 345、p8k 379），`g2_bf` 未设，取缺省 `.false.`——已验证（diff 两份 nml）。
+2. 雪与积水阻力串联：spec_grnd_cond = 1/(1/g + 雪阻 + 水阻)（Physics.F90:4142-4143）；表层：dm1_zm1 = 1/(1/g + Δz1/(2D1))（4196-4201），与 CTSM ch4Mod.F90:3810、3861-3865 同式；CTSM 的 g 取 1/(raw_above + raw_below)（CanopyFluxesMod.F90:1106），裸地 1/raw（BareGroundFluxesMod.F90:414）——已验证（读码）。
+3. 扩散系数（水位以上）：D = (0.1875 + 0.0013 T_c)·1e-4 × [om·ε^(10/3)/φ^2 + (1 − om)·ε^2·(ε/φ)^(3/b)] × scale_factor_gasdiff，om = min(om_frac_sf·cellorg/organic_max, 1)（Physics.F90:4149-4164；scale_factor_gasdiff 1.0、om_frac_sf 1.0、organic_max 130，case nml 210、83、242）；水位以下用液相扩散 θ^satpow·D_w（4165-4168）——已验证（读码）。CTSM 同式（ch4Mod.F90:3826-3838）——已验证（读码）。
+4. 气相含量：ε = φ − θ_liq − θ_ice（Physics.F90:5136-5141）；输运用的气相浓度 C_g = C_bulk/(ε + k_H·θ)（4009-4011），氧化用的液相浓度 C_w = C_bulk/(θ + ε/k_H)（split_ch4_o2_phases 5078-5178）；k_H 按 1.4e-3 mol L-1 atm-1、1600 K 温度系数（Const.F90:111-115，Physics.F90:5047-5076），12 °C 时无量纲 k_H ≈ 0.042——已验证（读码与代入）。
+
+### 2.3 氧化
+
+1. 式子：O = vmax_eff·θ_liq·C_w/(K_eff + C_w)·O2_w/(K_O2 + O2_w)·Q10^((T − 285.15)/10)·f_smp·f_liq（Physics.F90:3021-3028，t0 = tfrz + 12，2964）；水位以上且非湿地片 K_eff = k_m_unsat、vmax_eff = vmax_oxid_unsat（2970-2977），湿地片水位以上改用湿地值（2978-2988），水位以下用湿地值；f_smp = exp(−ψ/ψ_c) 只作用于水位以上（3015-3019）——已验证（读码）。
+2. 现值（case nml 189-196；p8k 201-207 同值）：vmax_methane_oxid 1.25e-5、vmax_oxid_unsat 1.25e-6 mol m-3(水) s-1；k_m 5e-3、k_m_unsat 5e-4、k_m_o2 2e-2 mol m-3(水)；q10_methane_oxid 1.9；smp_crit −2.4e5 mm——已验证（grep 两份 nml）。
+3. CTSM 同式同值：ch4Mod.F90:2782-2817，参数文件 clm_params.c170913.nc 与 clm5_params.c171117.nc 的 vmax_ch4_oxid 1.25e-5、vmax_oxid_unsat 1.25e-6、k_m 5e-3、k_m_unsat 5e-4、k_m_o2 2e-2、q10_ch4oxid 1.9、smp_crit −2.4e5、atmch4 1.7e-6——已验证（`clm_params.py` 输出）。差别：CTSM 在 T ≤ tfrz 时氧化置 0（ch4Mod.F90:2820），CoLM 乘液态比例 f_liq（Physics.F90:3028）——已验证（读码）。
+4. 温度与水分限制：Q10 以 12 °C 为基（25 °C 时 ×2.30，0 °C 时 ×0.46）；f_smp 在暖月表层中位 0.96，只在干季荒漠与稀树草原压到 0——已验证（代入；`uptake_g2_sp_2018_w0.01_all.out` 第 4 节）。
+5. O2 限制：o2stress = min((O2/Δt + 通气组织补给)/(O2_decomp + O2_oxid), 1)，O2 受限时氧化乘 o2stress（Physics.F90:3773-3831）；O2_decomp 取 carbon_decomp_depth − 2·产量 + 根呼吸 + 硝化（2723-2744），carbon_decomp_depth 用带 exp(−z/z0)·walter_renorm 的 partition_z（2550-2552、2656），walter_renorm 只在 j > jwt 的层上算（2342-2353），z0 = 0.30 m（case nml 109、p8k 119）——已验证（读码）。CTSM 的 O2 需求用 hr_vr 的原始分层（ch4Mod.F90:2560、2630-2653），无深度衰减——已验证（读码）。
+6. 水位以上不产甲烷：`anoxicmicrosites = .false.`（case nml 115、p8k 125；Physics.F90:2689-2695）；水位判定为"含水位的整层算水位以下"（1426-1431）——已验证（读码）。
+7. 氧化层深度：暖月穿透深度 sqrt(D/k) 第 1 层中位 0.17 m、第 3 层中位 0.15 m（p10–p90 0.05–0.34 m），吸收集中在第 1–5 层（0–0.29 m）——已验证（`uptake_g2_sp_2018_w0.01_all.out` 第 4 节与第 5 节分层表）。Curry 2007 称氧化活性集中在 3–15 cm——已验证（Curry 2007 第 1 页，全文）。
+
+## 3. 问题 2：离线定量（2018 年）
+
+### 3.1 取数与方法
+
+1. 历史文件的 `f_methane_surf_flux_soil`、`f_methane_prod_tot_soil`、`f_methane_oxid_tot_soil` 只含土壤分量（Driver.F90:1088-1099），按单位土壤面积换算为 值/a_soil（通量）与 值×(a_soil + a_wet + a_rice)/a_soil（产量、氧化）；非淹水月里土壤片即非饱和子柱——已验证（读码）。`*_unsat` 分层量与通量是土壤、湿地、稻田各片按面积混合的（Driver.F90:1040-1061，Hist.F90:223-244）——已验证（读码）。混合带进来的是湿地片的产量：北方森林 49N 115W 格水位 42–44 m、土壤分量产量为 0，七月混合的分层产量在第 4–7 层仍有 0.38、0.21、0.06、0.01 mg m-2 d-1，而土壤片在 `anoxicmicrosites = .false.` 下水位以上不产甲烷——已验证（`uptake_g2_sp_2018_w0.01_all.out` 第 5 节；Physics.F90:2689-2695）。所以净通量、产量、氧化一律用土壤分量；O2 胁迫、浓度这类强度量在干净格里受混合的影响不超过湿地占比——已验证（读码；干净格与湿地 < 1e-4 格两次对照，`uptake_g2_sp_2018_w0.0001_dry.out`）。
+2. 离线解：每个干净格每月按模式自己的 D、k（第 2 节式子，k 取一阶近似 vmax·θ·k_H/K，因大气平衡下 C_w ≈ 2.6 nM ≪ K）、宿主导度 g 与零通量底界，解稳态反应—扩散，只算大气 CH4、不计产量；水位以下层不参与。变体：POT（模式 g、大气 O2、o2stress = 1）、O2（模式 O2 浓度与 o2stress）、OLD（g = 1e-6）、NOG（g 无穷大）、KIN（整柱按大气浓度的动力学上限）、G（边界层上限 g·C_atm）。月均输入，非线性项近似——已验证（`uptake_global.py` 文件头）。
+3. 离线解的校验：水位在柱底以下的干净格，模式吸收与 POT 之比中位 1.04（`g2_sp`）与 1.00（`g2_bf`）；湿地 < 1e-4 的格非淹水月模式 0.497、POT 0.480、O2 0.470 mg m-2 d-1——已验证（`uptake_g2_sp_2018_w0.01_all.out`、`uptake_g2_bf_2018_w0.01_all.out`、`uptake_g2_sp_2018_w0.0001_dry.out`）。
+
+### 3.2 全球与分带、分群落
+
+1. 土壤片账（`g2_sp`，Tg yr-1，正为排放）：E_soil 77.23；不淹水格 −2.52；会淹水格 79.75；年净为汇的格合计 −6.32（56.0 Mkm2）。`g2_bf`：40.37、−0.65、41.02、−1.55——已验证（两份 `*_all.out` 第 1 节）。
+2. 土壤分量，非淹水月（mg m-2 d-1，正为排放；右列为非淹水月覆盖的非饱和面积-时间比例）——已验证（`uptake_g2_sp_2018_w0.01_dry.out` 第 2 节）：
+
+| 组 | 土壤片 Mkm2 | 覆盖 | 净通量 | 产量 | 氧化 |
+| --- | --- | --- | --- | --- | --- |
+| 90S-30S | 5.0 | 0.32 | −0.364 | 0.085 | 0.429 |
+| 30S-30N | 56.2 | 0.40 | 0.088 | 0.344 | 0.407 |
+| 30N-60N | 40.2 | 0.37 | −0.157 | 0.081 | 0.211 |
+| 60N-90N | 12.3 | 0.45 | −0.086 | 0.031 | 0.095 |
+| 荒漠 | 25.4 | 0.61 | −0.445 | 0.002 | 0.447 |
+| 温带草地灌丛 | 26.1 | 0.37 | −0.206 | 0.079 | 0.269 |
+| 农田 | 3.8 | 0.22 | −0.261 | 0.084 | 0.323 |
+| 苔原灌丛 | 10.0 | 0.50 | −0.090 | 0.035 | 0.099 |
+| 北方森林 | 7.2 | 0.29 | 0.015 | 0.211 | 0.124 |
+| 热带稀树草原 | 29.6 | 0.28 | 0.477 | 0.547 | 0.307 |
+| 温带森林 | 1.4 | 0.22 | 1.176 | 1.130 | 0.035 |
+| 热带森林 | 10.1 | 0.22 | 1.697 | 1.216 | 0.085 |
+| 全部 | 113.8 | 0.39 | −0.032 | 0.207 | 0.303 |
+
+   全部一行的净通量不等于产量减氧化（差约 1 Tg yr-1），差额是储量变化与面积换算的误差——推测。理由是淹水月转非淹水月时储量释放计在非淹水月。
+3. 离线变体（干净格，全部月份按非饱和面积加权，`g2_sp`）：POT 0.367、O2 0.243、NOSMP 0.404、OLD 0.068、NOG 0.368、KIN 8.52、G 650 mg m-2 d-1；外推到 122.4 Mkm2：POT 16.4、O2 10.9、NOSMP 18.1、OLD 3.0、NOG 16.4 Tg yr-1。`g2_bf`：POT 0.090（模式 g 中位 1e-6 m s-1）、NOG 0.368、O2 0.063，外推 4.0、16.4、2.8 Tg yr-1——已验证（两份 `*_all.out` 第 3 节）。
+4. 分群落 POT（mg m-2 d-1）：荒漠 0.430、热带稀树草原 0.389、热带森林 0.333、农田 0.306、温带草地灌丛 0.295、温带森林 0.289、北方森林 0.237、苔原 0.141；同群落 O2 变体为 0.403、0.183、0.059、0.193、0.201、0.053、0.071、0.139——已验证（`uptake_g2_sp_2018_w0.01_all.out` 第 3 节）。
+
+### 3.3 格点拆解（`g2_sp`，年均 mg m-2 d-1，吸收为正；土壤分量）
+
+| 格点 | 水位 m | 模式净 | 产量 | 氧化 | O2 变体 | POT | OLD | KIN | 表层 o2stress（暖月） |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 温带森林 37N 83W | 2.0–2.3 | −1.163 | 2.188 | 0.171 | 0.031 | 0.193 | 0.060 | 4.86 | 0.10–0.16 |
+| 温带森林 49N 7E | 2.6–3.4 | −0.337 | 0.554 | 0.015 | 0.016 | 0.285 | 0.070 | 5.47 | 0.012–0.06 |
+| 热带稀树草原 11S 25E | 1.9–3.4 | −1.174 | 1.522 | 0.153 | 0.053 | 0.294 | 0.064 | 8.10 | 0.005–0.17（湿季） |
+| 北方森林 55N 97E | 2.4–3.4 | 0.016 | 0.149 | 0.024 | 0.013 | 0.183 | 0.049 | 3.29 | 0.03 |
+| 北方森林 49N 115W | 42–44 | 0.231 | 0.000 | 0.231 | 0.213 | 0.214 | 0.060 | 5.24 | 1.00 |
+| 热带森林 7S 59W | 1.7–3.4 | −1.060 | 1.435 | 0.233 | 0.013 | 0.202 | 0.062 | 13.6 | 0.01–0.12 |
+
+——已验证（`uptake_g2_sp_2018_w0.01_dry.out` 与 `*_all.out` 第 5 节）。要点：
+
+1. 边界层不限速：六格边界层上限 G 为 312–563 mg m-2 d-1，NOG 与 POT 相同——已验证（同上）。
+2. 动力学上限 KIN 是 POT 的 18–67 倍，暖月穿透深度 0.02–0.24 m，吸收是扩散—反应共同限速——已验证（同上）。
+3. 水位进柱的五格，O2 变体只有 POT 的 5–18 %，且深层产量把净通量翻成排放；唯一水位在柱外的 49N 115W 格没有产量、o2stress 为 1，模式净吸收 0.231 与 POT 0.214 相符——已验证（同上）。
+4. 分层（温带森林 37N 83W 七月）：第 1–5 层 o2stress 0.109、0.101、0.089、0.058、0.021，O2 体积浓度由 0.954 降到 0.010 mol m-3，第 6 层以下为 0；产量集中在第 9 层（2.95 mg m-2 d-1，节点 1.73 m，水位 2.29 m）——已验证（`uptake_g2_sp_2018_w0.01_all.out` 第 5 节分层表；分层量为该格土壤与少量湿地片混合）。
+
+### 3.4 与文献的倍数
+
+1. 全球：GCP 自下而上土壤汇 30 [11–49] Tg yr-1（2000–2009、2008–2017，Saunois et al. 2020 表 3 与第 3.3.4 节，全文）；Dutaur and Verchot 2007 不分层 36 ± 23、分层 22 ± 12 Tg yr-1（只读摘要）；Curry 2007 为 28（9–47）Tg yr-1（全文）；MeMo 1990–2009 年 33.5 ± 0.6 Tg yr-1（全文）；CLM4Me 基线 31 Tg yr-1（Riley et al. 2011 第 1937 页，全文）；Smith et al. 2000 为 29（7–100）Tg yr-1（只读摘要）——已验证（各文献所注）。
+2. 倍数：upland 行 −2.52 为 30 的 1/12（`g2_bf` −0.65 为 1/46）；土壤分量非淹水月外推 1.4 Tg yr-1 约为 1/20；带模式 O2 状态的离线潜力 10.9 为 0.36；无 O2 胁迫的离线潜力 16.4 为 0.55——已验证（第 3.2 节与本节第 1 条对照）。
+3. 单位面积：30 Tg yr-1 摊到 122.4 Mkm2 为 0.67 mg m-2 d-1（2.4 kg ha-1 yr-1）——已验证（算术）。Smith et al. 2000 的年吸收 0.1–9.1 kg CH4 ha-1 yr-1、对数均值约 1.6（0.44 mg m-2 d-1），只有水位很高的土为源——已验证（只读摘要）。MeMo：热带落叶林 602、疏灌丛 518、苔原 176、混交林 182 mg CH4 m-2 yr-1（1.65、1.42、0.48、0.50 mg m-2 d-1）——已验证（Murguia-Flores et al. 2018 第 2009 页，全文）。Curry 2007 科罗拉多矮草原站实测均值 1.29 mg m-2 d-1——已验证（Curry 2007 第 5 页，全文）。
+4. 格点对照：温带森林 POT 0.19–0.29 对混交林 0.50 低 1.7–2.6 倍，模式净值为排放 0.34–1.16；北方森林 POT 0.18–0.21 对苔原与混交林 0.48–0.50 低 2.2–2.7 倍，深水位格模式 0.23 低 2.2 倍；热带稀树草原 POT 0.29 对疏灌丛 1.42 低 4.8 倍，模式为排放 1.17；热带森林 POT 0.20 对热带落叶林 1.65 低 8 倍，模式为排放 1.06——已验证（第 3.3 节表与本节第 3 条对照）。MeMo 对湿润热带雨林取的 k0 比其他群落低约 3 倍，湿润热带的实际参照值应低于落叶林——已验证（Murguia-Flores et al. 2018 第 2015-2016 页与表 3，全文）。
+
+## 4. 问题 3：与 Walter 归一化的关系
+
+1. 机制：walter_renorm = Σ hr·dz / Σ hr·dz·exp(−z/z0) 只在水位以下层上算（Physics.F90:2342-2353），却乘到所有层的 partition_z（2550-2552），再进 carbon_decomp_depth（2656）与 O2 需求（2723-2744）；水位以下只剩深层时因子上万，表层 O2 需求随之放大——已验证（读码；lit_upland 第 3.3 节第 4 条同结论）。
+2. 全球规模：干净格里水位进柱的 1057 格，分解 CO2 诊断与 SOM 异养呼吸之比中位 2890（p10–p90 1140–4550），水位不进柱的 1172 格为 1.67（0.61–4.58，含根呼吸）；年均表层 o2stress 分别为 0.268（0.075–0.694）与 1.000——已验证（`o2demand_g2_sp_2018.out`）。
+3. 对吸收的作用：暖月水位进柱的格占干净格非饱和面积-时间的 47 %，表层 o2stress 中位 0.156、第 3 层 0.087，O2 变体对 POT 之比中位 0.142；水位不进柱的格三者为 1.000、1.000、0.998——已验证（`uptake_g2_sp_2018_w0.01_all.out` 第 4 节）。表层 O2 的 Michaelis 项中位 0.922，O2 浓度本身不限速，限速的是需求放大后按比例砍氧化的 o2stress（Physics.F90:3809-3823）——已验证（同上与读码）。
+4. 全局量：O2 变体 10.9 对 POT 16.4 Tg yr-1，这一项在全球少了约 5.5 Tg yr-1；它还让 0.3–0.6 m 以下 O2 为 0，深层产出的 CH4 上行不被氧化，是森林与稀树草原土壤片成为净源的一半原因——已验证（第 3.2 节第 3 条、第 3.3 节第 4 条）。另一半是产量本身落在含水位的整层上（lit_upland 第 3.1 节）——已验证（lit_upland 第 3.1 节第 3 条与本文件第 3.3 节第 4 条一致）。
+5. upland 行几乎不受它影响：不淹水格的土壤片 60 % 是荒漠，92 % 的面积全年水位在柱底以下，walter_renorm 为 1——已验证（`dry_cells_g2_sp_2018.out`；Physics.F90:2342-2353）；湿地 < 1e-4 的格里水位进柱者只占权重 3 %，其余格 o2stress 为 1——已验证（`uptake_g2_sp_2018_w0.0001_dry.out` 第 4 节）。所以"吸收偏小多数不受它影响"只对 upland 行成立，对全局土壤汇不成立——已验证（本节第 3、4 条对照）。
+6. `g2_bf` 同样：水位进柱格的表层 o2stress 中位 0.040、O2 变体对 POT 0.079——已验证（`uptake_g2_bf_2018_w0.01_all.out` 第 4 节）。
+
+## 5. 问题 4：改法建议
+
+按顺序做，每条写依据、改动面、对全球吸收与湿地净排放的方向。
+
+1. **Walter 归一化修正（在修，另有实现任务）。** 依据：第 4 节；CTSM 的 O2 需求用未衰减的 hr_vr（ch4Mod.F90:2560、2630-2653）。改动面：深度衰减只乘在水位以下的产量上，carbon_decomp_depth、O2 需求、CO2 诊断用未衰减分层（lit_upland 第 5.3 节第 1 条）。预期：全局吸收潜力由 10.9 升到约 16.4 Tg yr-1，深层产出的 CH4 在上方被氧化，森林与稀树草原土壤片由源转汇；E_floodplain 下降——推测。理由是水位不进柱的格模式与 POT 一致（第 3.1 节第 3 条），修正后水位进柱的格 o2stress 应回到 1 附近；E_floodplain 的降幅见第 0 节存疑。
+2. **评估口径与诊断量。** 依据：结论 1；`*_unsat` 历史量混合各片（第 3.1 节第 1 条）。改动面：在 Driver.F90:1088 附近按 soil%surf_flux 的非饱和、饱和两分量各写一个土壤分量历史量，`global_eval.py` 的 upland 改为"土壤分量非饱和通量 ×(1 − f_inund)× 土壤面积"全格求和，E_floodplain 改为饱和分量 × f_inund。预期：upland 数变成可与 GCP 30 [11–49] 对照的全面积量；E_wetland_total 上升，升幅等于现被并入 E_floodplain 的吸收——推测。理由是 85 % 的土壤片在会淹水的格里，其非淹水部分的吸收现在抵消了洪泛排放。这是记账，不改物理。
+3. **大气 CH4 改时变。** 依据：第 2.1 节第 5 条。改动面：`use_transient_atm_methane = .true.`、`atm_methane_file` 指向 NOAA GML 全球月均或年均表（Const.F90:2302-2323 已支持年或年月表，单位 auto/ppbv）。预期：2018 年吸收 ×1.09（一阶动力学对 C_atm 线性）；湿地与湖泊扩散排放的变化可忽略——推测。理由是湿地孔隙水 CH4 分压比大气高数个量级。
+4. **高亲和甲烷氧化菌的一阶常数。** 依据：结论 8；Riley et al. 2011 把旱地氧化参数设成湿地值（vmax/K 比不变）全球汇变化 < 0.1 Tg yr-1、D×10 使汇由 31 升到 80 Tg yr-1（第 1937 页），说明起作用的是 vmax/K 与 D 的乘积平方根；K 的文献范围 0.8–66.2 µM 指低亲和群落，旱地与湿地的 K、R_o,max 可能不同（第 1931 页）；MeMo 称 k0 变 10 倍、吸收约变 3 倍（第 2015 页）。改动面：只改 `k_m_unsat`，由 5e-4 降到约 1.5e-4 mol m-3（一阶常数 ×3.3，仍在 Bender and Conrad 1992 的 3.0e-5–5.1e-5 之上），`vmax_oxid_unsat` 不动。预期：在第 1 条之后全局潜力由约 16.4 升到约 30 Tg yr-1，加第 3 条约 32；E_floodplain 再降，降幅约为会淹水格里新增的吸收；湿地片不变——推测。理由是吸收按 sqrt(k) 标度（sqrt(3.3) ≈ 1.8）；湿地片水位以上用湿地参数（Physics.F90:2978-2988）；产出 CH4 的高浓度端 C_w ≫ K，氧化受 vmax 控制，降 K 几乎不改变它。若改 `vmax_oxid_unsat` ×3.3，吸收增益相同，但土壤片水位以上层对产出 CH4 的氧化能力也乘 3.3，E_floodplain 降得更多——推测。理由同上。标定：K 取使全局"第 2 条口径下的吸收"落在约 30 Tg yr-1 的值，旱地塔不宜作判据（lit_upland 结论 14）。
+5. **不建议作为首选：改扩散系数形式。** Curry 2007 与 MeMo 用 Φ^(4/3)(ε/Φ)^(1.5+3/b)（Curry 2007 式 5；Murguia-Flores et al. 2018 式 13），在 φ = 0.46、ε = 0.25、b = 5.3 时约为本模式矿质土式 ε^2(ε/φ)^(3/b) 的 2.3 倍——已验证（两式代入计算）。它同时改变全部土层的 O2 供给与湿地非饱和层输运，影响面远大于第 4 条，只作敏感性试验——推测。理由是 D 同时进 O2 方程（Physics.F90:4026 起对 s = 1、2 两种气体共用）。
+6. **次要：冻结期吸收。** CoLM 乘液态比例、CTSM 在 0 °C 以下置 0，Curry 2007 在 −10 至 0 °C 用 (0.1T + 1)^2 保留少量吸收（Curry 2007 式 7）——已验证（读码与第 3 页全文）。高纬冬季少一小部分吸收，量级小于上面各条——推测。理由是苔原与北方森林的年吸收潜力本身只有 0.14–0.24 mg m-2 d-1（第 3.2 节第 4 条），冬季温度因子又小。
+7. **与 lit_upland 建议的关系。** lit_upland 第 5.3 节的 C-14b 与整层判定改法管的是深层产量；本文件第 1、4 条管的是吸收，二者都作用于土壤片非饱和子柱，第 1 条是两边的共同前提——推测。理由是 O2 需求放大同时压住吸收与深层 CH4 的氧化（第 4 节第 4 条）。
+
+## 6. DOI 列表
+
+著录全部取自 Crossref（题名、作者、刊名、卷期、页或文章号、年按注册库返回填写；作者多于三位时列前三位加总数）。
+
+- Bender, M., and Conrad, R.: Kinetics of CH4 oxidation in oxic soils exposed to ambient air or high CH4 mixing ratios, FEMS Microbiology Ecology, 10(4), 261–269, 1992. doi:10.1111/j.1574-6941.1992.tb01663.x
+- Curry, C. L.: Modeling the soil consumption of atmospheric methane at the global scale, Global Biogeochemical Cycles, 21(4), 2006GB002818, 2007. doi:10.1029/2006GB002818
+- Dutaur, L., and Verchot, L. V.: A global inventory of the soil CH4 sink, Global Biogeochemical Cycles, 21(4), 2006GB002734, 2007. doi:10.1029/2006GB002734
+- Murguia-Flores, F., Arndt, S., Ganesan, A. L., et al. (5 authors): Soil Methanotrophy Model (MeMo v1.0): a process-based model to quantify global uptake of atmospheric methane by soil, Geoscientific Model Development, 11(6), 2009–2032, 2018. doi:10.5194/gmd-11-2009-2018
+- Riley, W. J., Subin, Z. M., Lawrence, D. M., et al. (8 authors): Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM, Biogeosciences, 8(7), 1925–1953, 2011. doi:10.5194/bg-8-1925-2011
+- Saunois, M., Stavert, A. R., Poulter, B., et al. (97 authors): The Global Methane Budget 2000–2017, Earth System Science Data, 12(3), 1561–1623, 2020. doi:10.5194/essd-12-1561-2020
+- Smith, K. A., Dobbie, K. E., Ball, B. C., et al. (17 authors): Oxidation of atmospheric methane in Northern European soils, comparison with other ecosystems, and uncertainties in the global terrestrial sink, Global Change Biology, 6(7), 791–803, 2000. doi:10.1046/j.1365-2486.2000.00356.x
+- 无 DOI：NOAA GML 全球年均 CH4 表，https://gml.noaa.gov/webdata/ccgg/trends/ch4/ch4_annmean_gl.txt（文件头未给 DOI）
+- 无 DOI：CTSM 技术手册甲烷章，本地 `~/mode/Wetland/CTSM/doc/source/tech_note/Methane/CLM50_Tech_Note_Methane.rst`

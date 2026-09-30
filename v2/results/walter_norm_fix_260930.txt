@@ -1,0 +1,152 @@
+# walter_norm_fix_260930：Walter 深度衰减归一化因子错乘到全部土层（I-37）
+
+- **日期**：2026.09.30-11:24
+- **读者**：下一会话
+- **来源**：中控派活 methane-walterfix（I-37），承接 `v2/results/lit_upland_ch4_260930.txt` 第 3.3 节；代码在分支 `walter-norm`（worktree `<worktree>`，自 `methane-paper-v2` 的 79da2639 拉出）commit 92ba35ae78c2bd1935496c596f2f05f1b0d2ea31；单点树 `cases/paper_v2/v260930/sp_v2_dev_walter`（`CODE_COMMIT.txt`）；tag `v2_wn_off`、`v2_wn_on`，配置为本 worktree 的 `v2/config/v2_wn_off`、`v2_wn_on`（`v2_p8k` 加一键，`v2/_scratch/walter/mk_cfg.py` 生成）；基线 tag `v2_p9k`（`sp_v2_c96` @bb24bfcf，配置与 `v2_p8k` 逐字同）；取数脚本与输出在本 worktree `v2/_scratch/walter/`（`compare_to_file.py`、`wn_budget.py`、`wn_closure.py`、`wn_storage.py`、`wn_patch_months.py`，输出为同目录 `.out`）；计分 `v2/results/scores77_v2_wn_on.txt`
+- **状态**：修正已提交在 walter-norm 分支（未合并、未 push）；键关两塔与 `v2_p9k` 逐位相同；键开七塔已跑完并计分；全球未跑
+- **失效于**：`walter_norm_fix` 合入 methane-paper-v2 或 `methane_prod` 的分层分配被改写后
+
+行号：未注明分支的指 walter-norm 分支上的文件；"基线"指 79da2639。基线与分支在 Physics.F90 第 2537 行以前逐行相同，其后分支多 4 行；Const.F90 在第 218 行以后分支多 15 行。
+
+## 0. 覆盖面
+
+1. 读码：`MOD_Tracer_Reactive_Methane_Physics.F90` 的 `methane_prod` 全文（2213-2757），两处调用（非饱和子柱 1399-1474，饱和子柱 1601-1637），下游 O2 竞争（3767-3824）与 CO2 汇总（1729-1745）。检索词与命中：`partition_z` 在 main/ 下 13 处（Physics 11、BgcLink 708 注释、Const 202 注释），`z0_methane_prod` 在基线 15 行（Const 10、Physics 5），`walter` 在 Physics 的全部命中（2308-2347 预处理、2539-2549 层循环），`o2_decomp_depth` 在 main/ 下全部命中（Physics、Hist、AccFlux、BGC 的 `to2_decomp_depth_unsat`），`co2_decomp_depth`/`co2_decomp_tot` 全部命中（Physics、State、Hist、AccFlux）。每处都读过，去向见第 2.2 节。
+2. CTSM：`/share/home/dq076/mode/Wetland/CTSM/src/biogeochem/ch4Mod.F90`（7409d321）的 `ch4_prod` 全文（2324-2676）与 `ch4_oxid` 的 O2 竞争（3533-3595）；检索 `exp(-z(c,j)`、`z0` 在该文件 0 处命中。
+3. 核验：键关 2 塔（US-CRT、US-Myb）逐变量比；键开 7 塔（US-CRT、RU-Fy2、US-Pfa、US-Myb、FI-Si2、US-Atq、BR-Npw）收支、剖面、闭合、计分。
+4. 未看：无。
+5. 存疑：第 3.2 节所述另一种写法（O2 需求在饱和子柱也改用未衰减分层）对湿地表层氧化的量级，要另开一键跑湿地塔才能定。
+
+## 1. 结论
+
+1. 错在哪：`methane_prod` 先只在水位以下层（j > jwt）上算归一化因子 walter_renorm = Σ hr_vr·dz ÷ Σ hr_vr·dz·exp(−z/z0)（基线 Physics.F90:2335-2347），再在层循环里对每一层都做 partition_z ← partition_z·exp(−z/z0)·walter_renorm（基线 2543-2545，无 j > jwt 条件）。partition_z 同时决定该层分解碳 `carbon_decomp_depth`（基线 2649），进而决定产量上限、O2 需求（2716-2717）与 CO2 诊断（2739-2741）。水位以下只有第 10 层（节点 2.865 m）时因子为 exp(2.865/0.3) ≈ 1.4 万，水位以上各层的 O2 需求与 CO2 被放大约同倍数——已验证（读码基线 Physics.F90:2335-2347、2539-2545、2649-2741）。
+2. 受影响的路径：只有 1 ≤ jwt ≤ 9 的子柱被放大，即土壤斑块（旱地、洪泛格、稻田）与湿地斑块的非饱和子柱在水位深于第 1 层时；jwt = 10（水位在柱底以下，或湿地 dry-unsat 分支）时因子为 1，各层只乘 exp(−z/z0)，O2 需求与 CO2 反被压低；所有斑块的饱和子柱（jwt_sat = 0）与水位在第 1 层内的非饱和子柱，归一化范围与作用范围一致，不受影响；湖泊不经 partition_z——已验证（读码 Physics.F90:1409-1424、1601、2336、2432-2479、2543）。
+3. CTSM 对照：`ch4_prod` 没有深度衰减，产量与 O2 需求共用同一个 partition_z = hr_vr·dz/(somhr+lithr)（ch4Mod.F90:2559-2563、2630、2658-2667）；CTSM 的 O2 需求取该层全部分解碳（不减 2 倍产量），`co2_decomp_depth` 在 `ch4_prod` 里只关联不赋值（2395、2440、2445）——已验证（读码 CTSM ch4Mod.F90）。
+4. 实现：新键 `DEF_METHANE%walter_norm_fix`（缺省 .false.，Const.F90:219-233）；开时深度衰减只乘在 j > jwt 的层上（Physics.F90:2543-2549），水位以上各层保留宿主 HR 分层，同一分层同时用于该层的产量、O2 需求与 CO2。只改 main/TRACER 两个文件，一个 commit 92ba35ae——已验证（`git show --stat 92ba35ae`）。
+5. 与任务书写法的差别：任务书设想"水位以下层也让 O2 需求与 CO2 用未衰减分层、只让产量用衰减分层"。本实现只在水位以下层保留衰减、且让该层的分解碳与产量同用衰减分层，理由是它与 CTSM"产量与 O2 需求共用一个 partition_z"一致、每层保持 CH4 ≤ 分解碳一半的化学计量、子柱分解碳之和恰等于宿主 HR，并且不改动原本一致的 jwt = 0 子柱——已验证（读码与第 3.2 节推导）。任务书写法在 jwt = 0 子柱也会改变湿地表层 O2 需求，其量级未跑——存疑。实验：另加一键让 jwt > 0 的层的分解碳改用未衰减分层，跑湿地组塔对比。
+6. 键关逐位：`v2_wn_off` 与 `v2_p9k` 在 US-CRT（1062 个变量）、US-Myb（4779 个变量）上 0 个不同——已验证（`v2/_scratch/walter/compare_wn_off_vs_p9k.out`）。两 tag 的 `_conf` 只差输出路径与新增的注释、`walter_norm_fix = .false.` 两行——已验证（`diff -r` 两 tag 的 `_conf`，去掉路径与这两行后 0 行不同）。
+7. 键开，产量不变：七塔柱产量 P 与 `v2_p9k` 到小数点后三位相同，因为改动只动水位以上层，而这些层在 `anoxicmicrosites = .false.` 下不产甲烷——已验证（`wn_budget_p9k_vs_wn_on.out` P 列；ch4_parameter.nml:125）。
+8. 键开，旱地塔（US-CRT、RU-Fy2、US-Pfa）：非饱和子柱 CO2 诊断对宿主 f_hr 之比由 1470–2017 降到 0.29–0.91；生长季表层三层 O2 胁迫因子由 0.013–0.088 升到 1.000；O2 在第 1–9 层（到 2.3 m）都在 0.45 mol m-3 以上（原来约 0.4–0.6 m 以下为 0）；柱氧化 O 由 0.05–0.13 升到 0.26–0.50 mg CH4 m-2 d-1；排放 E 由 +0.02–+0.20 变为 −0.12 至 −0.19，US-CRT 与 RU-Fy2 每个月都是净汇——已验证（`wn_budget_p9k_vs_wn_on.out`）。
+9. 旱地塔计分：量级比 β 由 0.00–0.06 变为 −0.03 至 −0.01，模式均值为负，KGE_ln 不可算（nan）；塔上观测均为源（4.06–10.03）——已验证（`scores77_v2_wn_on.txt` 对 `scores77_v2_p9k.txt`）。修正后旱地土壤成为弱汇，方向与文献中旱地土壤为汇一致，但净吸收 0.12–0.19 仍低于文献单位面积 0.4–1.7 mg CH4 m-2 d-1——已验证（本表数字对 `lit_upland_ch4_260930.txt` 结论 10）。塔上正排放来自足迹湿地、浅水位与粪肥（该文件结论 2、14），不在旱地非饱和子柱物理里，所以这三塔分数变差不说明修正错——推测。理由是修正只消除了 O2 需求的虚高，产量一位不变。
+10. 键开，湿地塔：US-Myb 全部 4779 个变量与 `v2_p9k` 逐位相同（水位一直在地表，jwt = 0）；FI-Si2、US-Atq 排放变化 ≤ 0.1 %，KGE_ln、β、α、r 两位小数不变；BR-Npw 排放 33.81 → 31.83（−5.9 %），非饱和子柱氧化 1.51 → 3.29，KGE_ln −0.17 → −0.20，β 0.45 → 0.43——已验证（`compare_wn_on_vs_p9k.out`、`wn_budget_p9k_vs_wn_on.out`、两份 scores77）。
+11. 闭合：七塔的 balance residual 与 clip credit 都为 0，逐步收支检查（Physics.F90:2003-2016）在七塔日志里 0 次告警；月均量算的 P − O − E − dS 在 RU-Fy2、US-Pfa、BR-Npw 为 −0.02 至 +0.01；US-CRT 为 −0.28，来自最后一个月（2012 年 12 月）第 1 斑块第 10 层积存 CH4 的集中氧化（该月 O = 24.4），月均储量分辨不出——已验证（`wn_closure.out`、`wn_uscrt_p1_months.out`、`grep -c "CH4 column budget closure"` 七塔日志均为 0）。
+12. 旱地塔第 10 层 CH4 两 tag 都还在积累（储量年增 0.16–0.21 mg CH4 m-2 d-1，第 10 层存量 225–670 mg CH4 m-2），5 轮 spin-up 后柱内 CH4 未达平衡——已验证（`wn_storage.out`、`wn_closure.out`）。平衡后深层产量上行进入键开后有氧的第 1–9 层会被氧化，净汇不会因此翻回源——推测。理由是键开后第 9 层生长季 O2 为 0.46–1.65 mol m-3、表层胁迫因子为 1。
+13. 修正后旱地 O2 需求里分解一项只有宿主 HR 的 0.2 倍：C-14（`floodplain_anoxic_decomp`）在所有非湿地、非稻田斑块的非饱和子柱各层都把 base_decomp 乘 mino2lim——已验证（读码 Physics.F90:1073-1074、2508-2524；US-CRT 键开 co2u/hr = 0.29）。这是 `lit_upland_ch4_260930.txt` 建议 ② 的对象，不在本改动内。
+
+## 2. 读码
+
+### 2.1 partition_z 的构造
+
+1. 初值 partition_z = 1（2324）；每层先取宿主 HR 分层 hr_vr(j)·dz(j)/(somhr+lithr)，somhr+lithr ≤ 0 时取 1（2532-2537）——已验证（读码）。
+2. 预处理：z0_methane_prod > 0 且非湖泊时，只在 j > jwt 的层上累加 walter_w_raw = Σ hr_vr·dz 与 walter_w_atten = Σ hr_vr·dz·exp(−z/z0)，walter_renorm = raw/atten，atten = 0（无水位以下层）时保持 1（2335-2347）。注释的意图是"只纳入本分支能产甲烷的层"（2330-2334）——已验证（读码）。
+3. Const.F90:199-217 把它定义为"甲烷生成的深度衰减"（Walter & Heimann 2001，z0 取 0.30 m），ch4_parameter.nml:119 设 0.30——已验证（读码与配置）。所以衰减的对象是产甲烷的分层分配；归一化保证水位以下层的权重和不变。
+4. 基线层循环对每一层都乘 exp(−z/z0)·walter_renorm（基线 2543-2545）。于是 Σ_{j>jwt} partition_z 守恒，但 j ≤ jwt 的层被乘上一个只按水位以下层算出的因子——已验证（读码）。
+
+### 2.2 partition_z 的消费点
+
+| 消费点 | 行 | 作用 |
+| --- | --- | --- |
+| carbon_decomp_depth = base_decomp·partition_z/dz | 2653 | 该层分解碳 |
+| legacy_methane_prod_depth（j > jwt，或 anoxicmicrosites） | 2655-2662 | 微生物覆盖时的产量上限 |
+| microbe_prod_cap = 0.5·carbon_decomp_depth | 2663 | 微生物产量上限 |
+| methane_prod_depth（j > jwt；j ≤ jwt 只在 anoxicmicrosites） | 2681-2693 | 产量 |
+| o2_decomp_depth = max(0, carbon_decomp_depth − 2·prod_full) + 根呼吸 + 硝化 | 2720-2741 | 分解 O2 需求，进 O2 竞争（3767-3824）与 O2 源项（3951） |
+| co2_decomp_depth = max(0, carbon_decomp_depth − prod + 根呼吸) | 2743-2745 | CO2 诊断，只进 `co2_decomp_tot` 等诊断量与历史（1729-1745；State.F90 257、1468） |
+
+——已验证（读码）。另查：BGC 硝化反硝化读 `to2_decomp_depth_unsat`（BiogeochemNitrifDenitrif.F90:108-113），该量只在分配时置 spval 与读写 restart，甲烷模块不写它，所以不是消费点——已验证（`grep` main/ 下该名全部赋值处）。湖泊的 `co2_decomp_depth_sat` 损失项（1886-1915）只在湖泊路径，湖泊不经 partition_z——已验证（读码）。
+
+### 2.3 各路径
+
+1. 饱和子柱：所有斑块 jwt_sat = 0（1601），预处理对全柱归一化，作用范围与归一化范围一致，只把分解与产量往表层挪、不改总量——已验证（读码）。
+2. 非饱和子柱：jwt_unsat 取水位所在层之上一层（1415-1424），全深 10 层；湿地斑块开 `wetland_dry_unsat_branch` 时 jwt_unsat = nl_soil（1409-1413）。`inundation_mode = 'colm'`（ch4_parameter.nml:71）把该分支关掉（Const.F90:1475-1488），湿地非饱和子柱同样按水位算——已验证（读码与配置）。
+3. 土壤斑块（旱地、洪泛格的两个子柱、稻田）都走同一个 `methane_prod`，稻田只在淹水份额与 C-14 豁免上不同（1066-1125、1073-1074）——已验证（读码）。
+4. 湖泊：预处理与层循环的衰减都排除 patchtype 4（2336、2543），湖泊分支在 2478 `cycle` 前算完，不用 partition_z——已验证（读码）。
+5. 因此放大只发生在 1 ≤ jwt ≤ 9 的非饱和子柱，倍数约 exp(z_{jwt+1}/z0) 量级：jwt = 9 时约 1.4 万，jwt = 8 时约 620（lit_upland 结论 7 的两档）；jwt = 10 时因子为 1，各层只剩 exp(−z/z0)，O2 需求与 CO2 被压低——已验证（读码；US-Myb 键开逐位不变印证 jwt = 0 路径不受影响）。
+
+### 2.4 CTSM 对照
+
+1. partition_z：VERTSOILC 时取 hr_vr·dz/(somhr+lithr)，否则按根分布（ch4Mod.F90:2552-2563）；没有深度衰减——已验证（读码；`exp(-z(c,j)`、`z0` 0 处命中）。
+2. O2 需求：o2_decomp_depth = base_decomp·partition_z/dz，anoxia 时除以 o_scalar，再加根呼吸与硝化（2630-2656），即该层全部分解碳，水位以下也算（注释 2627-2628：用以耗尽水位以下的 O2）——已验证（读码）。
+3. 产量：j > jwt 时 f_ch4_adj·base_decomp·partition_z/dz，水位以上只有 anoxicmicrosites（2658-2667）——已验证（读码）。
+4. 所以 CTSM 每层只有一个 partition_z，产量与 O2 需求用同一个；CoLM 的差别有两处：加了只作用于产甲烷的 Walter 衰减（错乘到全部层即本问题），以及 O2 需求减去 2 倍产量（2720-2721，不在本改动内）——已验证（两份代码对照）。
+
+## 3. 实现
+
+### 3.1 改法与键
+
+1. 键：`DEF_METHANE%walter_norm_fix`，logical，缺省 .false.，随 DEF_METHANE 整体经 namelist `nl_colm_methane_parameter` 读入（各进程各自读，Const.F90 `read_methane_namelist`），无需另加广播——已验证（读码 Const.F90 read_methane_namelist）。
+2. 代码（Physics.F90:2543-2549）：`if (.not. DEF_METHANE%walter_norm_fix .or. j > jwt)` 时才乘 exp(−z/z0)·walter_renorm。关时与基线同一表达式、同一运算顺序，所以逐位不变——已验证（第 4.2 节）。
+3. 开时的性质：水位以下层的 partition_z 之和等于这些层的宿主 HR 份额之和（由归一化保证），水位以上层就是宿主 HR 份额，所以子柱分解碳之和等于 base_decomp，即宿主 HR（乘上 C-14、SIF 等已有因子）；每层产量 = f_adj·分解碳，f_adj ≤ 0.5（2646），所以 O2 需求 = 分解碳·(1 − 2 f_adj) ≥ 0、不会被截断——已验证（读码推导）。
+4. commit：92ba35ae `fix(methane): Walter depth attenuation only below the water table (I-37)`，改 Const.F90 +15 行、Physics.F90 +5/−1 行——已验证（`git show --stat 92ba35ae`）。
+
+### 3.2 为什么不照任务书的写法
+
+1. 任务书写法（记作写法 A）：所有层的分解碳、O2 需求、CO2 都用未衰减的 HR 分层，只让产量用衰减分层。本实现（写法 B）：衰减只在水位以下层，且该层分解碳与产量同用衰减分层。
+2. 在 jwt ≥ 1 的非饱和子柱，A 与 B 只在水位以下层内部不同；只有第 10 层在水位以下时两者完全相同（w_10 = raw_10）——已验证（读码推导）。
+3. 在 jwt = 0 的子柱（所有饱和子柱，即湿地与淹水部分的主体），A 会改变现状，B 不改。A 下表层某层产量 = f_adj·exp(−z/z0)·renorm·raw，可超过该层未衰减分解碳的一半：renorm 在全柱归一化时大于 1，表层 exp(−z/z0) 近 1，f_adj 最大 0.5，于是 O2 需求 max(0, raw − 2P) 被截到 0，CO2 max(0, raw − P + rr) 也可能被截，截断处子柱碳不再闭合——已验证（读码 2663、2720、2743 的 max 截断与 2646 的上限）。
+4. B 的依据：CTSM 每层一个 partition_z 同时给产量与 O2 需求（第 2.4 节）；Walter 衰减的物理含义是新鲜底物集中在上部，底物集中处分解也集中，CH4 与 CO2 应出自同一份分解碳（2CH2O → CH4 + CO2，2647-2651 注释）。A 在饱和子柱表层把深层碳"搬上来"产甲烷却不计它的分解，属于新的建模选择，不是修错——推测。理由是任务书与 lit_upland 第 3.3 节第 6 条都把 jwt = 0 的表层需求上移列为"量级未算"的另一问题。
+5. 若中控要 A，可在 B 之上再加一个只作用于 jwt = 0 子柱的键，另跑湿地组——存疑（量级未知，要跑湿地塔才能定）。
+
+### 3.3 未做
+
+1. 未合入 methane-paper-v2、未 push、未改 `v2/迭代账本.md`；未跑 Methane 仓的 CODE 层同步链（`docs/_tools/extract_params.py`、`build_ledger.py`），分支合入时再跑。
+2. 未跑全球；未跑其余 70 塔。
+3. 配置、脚本、结果文件（`v2/config/v2_wn_off`、`v2_wn_on`，`v2/_scratch/walter/`，本文件，`v2/results/scores77_v2_wn_on.*`）只在本 worktree，未提交。
+
+## 4. 核验
+
+### 4.1 树与配置
+
+1. 树：`build_site_tree.sh 92ba35ae v260930/sp_v2_dev_walter`，MAKE_EXIT=0，`run/colm.x` 生成——已验证（`build_20260930_v2.log` 末行、`CODE_COMMIT.txt`）。`CODE_COMMIT.txt` 的 branch 字段由脚本写死为 methane-paper-v2，note 注明 walter-norm 分支。
+2. 配置：`v2_wn_off`、`v2_wn_on` 与 `v2_p8k` 只差 ch4_parameter.nml 末尾两行（注释与 `DEF_METHANE%walter_norm_fix = .false./.true.`），其余文件逐字节同——已验证（`mk_cfg.py` 输出的 diff 与逐文件比较）。`v2_p8k` 与 `v2_p9k/_conf` 的五个文件逐字同——已验证（`diff` 五个文件 rc=0）。
+3. 生成与投递：`prep_tag.sh`（spin 5，SITE_PARAMS、SITE_MAIN 同 p9k），node112（开跑前 1 分钟负载 9.8），`run_sites_direct.sh`；两 tag 都 DONE，键关 2/2、键开 7/7 完成——已验证（两 tag `_conf/STATUS.txt`）。
+
+### 4.2 键关逐位
+
+`compare_hist.py`（每塔每个历史文件的每个变量，`np.array_equal`，NaN 视为相等）：
+
+- US-CRT：1062 个变量，0 个不同
+- US-Myb：4779 个变量，0 个不同
+- 结论 IDENTICAL
+
+——已验证（`v2/_scratch/walter/compare_wn_off_vs_p9k.out`）。
+
+### 4.3 键开七塔：收支与剖面
+
+全部输出月均值，mg CH4 m-2 d-1；co2u/hr 为非饱和子柱 CO2 诊断（碳）对宿主 f_hr 之比；st 为生长季（f_hr 不低于该塔中位数的月份）第 1–3 层 O2 胁迫因子的平均；O2 为同样月份非饱和子柱第 1、5、7、9 层（节点约 0.007、0.21、0.62、1.73 m）。前值为 `v2_p9k`，后值为 `v2_wn_on`。
+
+| 塔 | 类 | P | O | E | co2u/hr | st（层 1–3 平均） | O2 层 1 / 5 / 7 / 9（mol m-3） |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| US-CRT | upland | 0.299 = | 0.070 → 0.495 | 0.071 → −0.127 | 2017 → 0.29 | 0.017 → 1.000 | 0.82/0.02/0/0 → 1.00/1.24/0.78/0.46 |
+| RU-Fy2 | upland | 0.250 = | 0.048 → 0.263 | 0.021 → −0.192 | 2012 → 0.91 | 0.018 → 1.000 | 1.58/0.07/0/0 → 1.83/1.74/1.15/1.01 |
+| US-Pfa | upland | 0.514 = | 0.129 → 0.471 | 0.200 → −0.116 | 1470 → 0.59 | 0.080 → 1.000 | 1.49/0.05/0.00/0.00 → 1.74/1.52/1.11/1.65 |
+| BR-Npw | swamp | 57.51 = | 23.52 → 25.57 | 33.81 → 31.83 | 581 → 1.02 | 0.676 → 1.000 | 1.41/0.35/0/0 → 1.57/1.29/0.59/0.46 |
+| US-Atq | wet tundra | 27.24 = | 11.91 → 11.92 | 15.94 → 15.92 | 1.35 → 1.16 | 0.440 → 0.460 | 1.77/0/0/0 → 1.78/0/0/0 |
+| FI-Si2 | bog | 56.50 = | 24.31 → 24.33 | 32.28 → 32.27 | 1.41 → 1.16 | 0.794 → 0.794 | 5.22/0/0/0.18 → 5.22/0/0/0.18 |
+| US-Myb | marsh | 270.51 = | 108.76 = | 162.00 = | 1.25 = | 0.032 = | 逐位同 |
+
+——已验证（`v2/_scratch/walter/wn_budget_p9k_vs_wn_on.out`；US-Myb 另见 `compare_wn_on_vs_p9k.out` 0 个不同）。要点：
+
+1. 旱地三塔每一行都在水位以上层改变：CO2/HR 回到 1 以下，表层胁迫解除，O2 深入到第 9 层，氧化升 3.6–7 倍，排放由弱源变弱汇；第 10 层（饱和）O2 仍为 0——已验证（同上）。
+2. BR-Npw 的变化全在非饱和子柱（淹水份额 0.146）：非饱和子柱氧化 1.51 → 3.29，排放 −5.9 %——已验证（同上 Ou 列）。
+3. US-Atq、FI-Si2 的非饱和子柱 CO2/HR 由 1.35、1.41 降到 1.16，说明这两塔水位在第 1 层以下的月份也有 16–22 % 的放大；对排放的影响 ≤ 0.1 %——已验证（同上）。
+4. f_hr 在六塔略有不同（`compare_wn_on_vs_p9k.out` 列出），来自 f_net_methane 回馈 BGC；P 到三位小数不变——已验证（同上两文件）。
+
+### 4.4 计分（score77.py 算法，计分月）
+
+| 塔 | 类 | n | KGE_ln | β | α | r | 观测 | 模式 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| FI-Si2 | bog | 28 | 0.39 → 0.39 | 0.74 → 0.74 | 0.60 → 0.60 | 0.86 → 0.86 | 68.45 | 50.44 → 50.42 |
+| US-Myb | marsh | 99 | 0.24 → 0.24 | 0.93 → 0.93 | 0.49 → 0.49 | 0.78 → 0.78 | 174.65 | 162.75 → 162.75 |
+| BR-Npw | swamp | 29 | −0.17 → −0.20 | 0.45 → 0.43 | 0.44 → 0.45 | 0.74 → 0.73 | 90.58 | 40.69 → 38.72 |
+| US-Atq | wet tundra | 26 | −0.29 → −0.29 | 1.92 → 1.92 | 2.98 → 2.98 | 0.80 → 0.80 | 9.21 | 17.66 → 17.64 |
+| RU-Fy2 | upland | 44 | −8.04 → nan | 0.00 → −0.02 | 0.00 → 0.01 | −0.21 → 0.60 | 10.03 | 0.02 → −0.20 |
+| US-CRT | upland | 13 | −5.99 → nan | 0.01 → −0.01 | 0.01 → 0.01 | −0.24 → −0.09 | 9.41 | 0.07 → −0.13 |
+| US-Pfa | upland | 92 | −2.86 → nan | 0.06 → −0.03 | 0.09 → 0.02 | 0.28 → 0.06 | 4.06 | 0.23 → −0.11 |
+
+——已验证（`v2/results/scores77_v2_wn_on.txt` 对 `/share/home/dq076/mode/Methane/CoLM202X-paper-v2/v2/results/scores77_v2_p9k.txt`）。旱地塔 KGE_ln 为 nan 是因为模式月均为负，对数不可取；score77 对 upland 另报"模式减观测中位数与符号正确率"，这三塔符号正确率由 1.00 变为 0——已验证（`scores77_v2_wn_on.txt` 末行 right sign 0.00；p9k 三塔模式均值为正）。
+
+### 4.5 闭合与储量
+
+1. 七塔 balance residual 与 clip credit 均为 0，逐步收支检查（Physics.F90:2003-2016，阈值 1e-7 mol m-2 每步）在七塔日志里 0 次告警——已验证（`wn_closure.out`；`grep -c` 七塔 `_conf/logs/*.txt`）。所以氧化上升不是负浓度截断造成的。
+2. 月均量闭合 P − O − E − dS（dS 取年均储量差）：RU-Fy2 −0.020、US-Pfa −0.003、BR-Npw +0.006、US-Myb −0.024（键开）；US-CRT −0.277——已验证（`wn_closure.out`）。US-CRT 的缺口来自第 1 斑块最后一个月：该月 O = 24.4，月均储量 807 → 756，是第 10 层积存 CH4 在月末被集中氧化，月均储量分辨不出；该斑块第 0–21 个月逐月闭合在 ±0.23 以内——已验证（`wn_uscrt_p1_months.out`、`wn_closure_uscrt_on.out`）。
+3. 旱地三塔第 10 层非饱和子柱存量（末年）US-CRT 659 → 643、RU-Fy2 226 → 225、US-Pfa 774 → 667 mg CH4 m-2，第 1–9 层合计由 0.7–5.5 降到 0.02–0.07；储量年增在两 tag 都是 0.16–0.22 mg CH4 m-2 d-1——已验证（`wn_storage.out`、`wn_closure.out`）。

@@ -1,0 +1,219 @@
+# lit_fresh_carbon_260930：湿地与稻田甲烷底物中新鲜碳的份额（文献 L-16）
+
+- **日期**：2026.09.30-06:45
+- **读者**：下一会话
+- **来源**：只读文献子任务 methane-lit-freshc（中控派 L-16；未改码、未改配置、未投作业）；承接 `v2/results/diag_marsh_ch4_per_gpp_260930.txt` 第 1 节第 9 条与第 5 节第 3 条、账本 C-37、C-69、Q-64、V-176、`v2/results/lit_models_wetland_260929.txt` 第 2.1 节；离线估算脚本 `v2/_scratch/freshc/exu_offline.py`（读 `v2/_scratch/marsh_q64/q64_budget.out`），输出 `v2/_scratch/freshc/exu_offline.out`；网上取得的 PDF 抽成 `v2/_scratch/freshc/dorodnikov2011.txt`、`pausch2018.txt`；读码对工作树 HEAD `379a4b8f`；著录全部重打 Crossref，请求不带任何个人信息
+- **状态**：四问已答；实测数值多数只读到摘要（表中逐条标出），全文读到的是 Dorodnikov 2011、Pausch & Kuzyakov 2018、McNicol 2020 接受稿与本地模式文献；季节与年量效应只到离线线性估算，V-176 尚未出分
+- **失效于**：V-176（`v2_p9ex`，`root_exudate_frac` 0.30）计分出来，或 `root_exudate_frac` 的记账方式（当步呼吸、湿地按当步 GPP、土壤按 lag_npp）改动后
+
+口径：
+- 时间尺度分三档。A 档：小时到两周，13C/14C 脉冲标记追踪"当天同化的碳"。B 档：当季，FACE 贫 13C 自然示踪、13C 秸秆与土壤差减，量的是"本季植物碳"，含当季死根与脱落物。C 档：数年到数十年，14C 自然丰度的"现代碳"，即 1950 年代以后固定的一切碳。
+- 模式里三档的对应：A 档对 `root_exudate_frac` 的当步分泌物；B 档对分泌物加当季进入、当季分解掉的凋落物；C 档对除 soil3 与种入泥炭以外的全部分解。
+- 模式键 f：NPP 中当步作为分泌物、沿根剖面呼吸掉的份额。湿地斑块 NPP 取当步 assim × 12.011 × `wetland_npp_frac`（0.5）× 盖度（`main/TRACER/MOD_Tracer_Reactive_BgcShim.F90:275-282`），分泌物在 294–297 行当步记入 HR；土壤斑块取宿主 lag_npp，e 折 10 d（`MOD_Tracer_Reactive_Methane_Const.F90:947-949`，`mkinidata/MOD_Initialize.F90:680`）；稻田走自己的 C-37，`DEF_RICE_ROOT_EXUDATE` 取"可用碳扣生长呼吸"的份额进易分解凋落物、不当步呼吸（`share/MOD_Namelist.F90:575-578`，`main/BGC/MOD_BGC_Veg_NutrientCompetition.F90:368-377`），现配置 0.15。
+- 文献里三种量不要混：φ = 同化的标记碳最终以 CH4 排出的份额；s = 甲烷中新鲜碳的份额；r = 根际沉积（分泌物、脱落细胞、黏液等）占总同化碳（约等于 GPP）的份额。
+
+## 0. 覆盖面
+
+1. 本地模式文本（`data/_tmp/分析_260925_模拟年份/txt/models`，124 份）：grep `exud` 命中 45 份；逐篇读了与新鲜碳有关的节：Wania 2009b、2010，Walter & Heimann 2000，Zhuang 2004，Riley 2011，Gedney 2019，Ringeval 2010，Salmon 2022，Khvorostyanov 2008b，Kettunen 2003，Raivonen 2017，Oikawa 2017，Huang 1998，Cao 1995，Li 2020，Kallingal 2024，Chang 2020，Bernard 2025。其余命中篇的相关条目已在 `lit_models_wetland_260929.txt` 第 2.1 节成表，本文只转引其中 DLEM 一条。
+2. 本地综述与站点文献：`txt/reviews/2013_Bridgham` grep `photosynthat|label|radiocarbon`（命中第 299–302 行一段，读第 285–330 行）；McNicol 2020 接受稿本地文本（`data/_tmp/分析_260925_站点测量高度/text/US-Myb/2019_McNicol.txt`）grep `recent|half|two.thirds|photosynth|modern|priming|Table 2|Table 3`，读第 99–112、885–960、1015–1135、1319–1380 行。
+3. 读码：CTSM `src/biogeochem/ch4Mod.F90` grep `exud|rr_vr|root resp`（命中 13 行，读 2500–2560、2636–2650 行）与技术手册 `CLM50_Tech_Note_Methane.rst` grep `exud|labile|root resp`（2 行）；本模式 BgcShim、Const、NutrientCompetition、Namelist、Initialize 上列各行。
+4. 网络（WebSearch 约 20 次；OpenAlex 与 Semantic Scholar 取摘要约 30 篇；Crossref 7 次请求共 45 个 DOI）：全文取得 Dorodnikov 2011（Copernicus PDF）、Pausch & Kuzyakov 2018（作者主页 PDF）；网页取得 Yuan 2012（PLOS）、Gao 2015（PMC）；本地已有 Girkin 2025 全文副本（`lit_tropical_mech_260929.txt` 第 57 行所记目录）。
+5. 读不到而不入表（Wiley、ScienceDirect、Springer、Nature 返回 403 或登录跳转，OpenAlex 与 Semantic Scholar 无摘要）：Saarnio 2004（Eriophorum 分泌率）、Ström 2005、Ström 2012、Crow & Wieder 2005、Kelker & Chanton 1997、Nguyen 2003、Dacey 1994、Cooper 2017。只有检索页转述、摘要与原文都没读到的 Dannenberg & Conrad 1999 入表但标存疑。
+6. 未看：无。
+7. 存疑（要跑才能定）：f 对季节与年量的实际效应（V-176 在排队）；新鲜碳相对其余底物的产甲烷效率比 k（第 3.1 节），要标记实验或模式分库输出才能定；模式 B 档份额（分泌物加当季凋落物当季分解）要输出 metabolic 凋落物逐月 HR 才能与稻田 40–85 % 对比。
+
+## 1. 结论
+
+1. 新鲜碳份额随时间尺度差一个量级。A 档（两周内）在野外只占小头：阿拉斯加湿莎草苔原不到 1 % 的同化标记碳两周内成为 CH4、"对盛季排放贡献相对低"，芬兰贫营养 fen 中型宇宙 18 d 内 0.03–0.13 %；稻田按 13CO2 吸收法全生育期 22–29 %、单日 3.8–110 %——已验证（King 2002 SBB、Minoda 1994、1996 只读摘要；Dorodnikov 2011 第 2365 页摘要与 4.2 节第 2372 页）。B 档（当季）稻田 37–85 %——已验证（Tokida 2011、Watanabe 1999 只读摘要；Yuan 2012 PLOS 网页）。C 档（现代碳）泥炭地 CH4 112–128 % modern，Mayberry 植被区 0.70 ± 0.09、开阔水 0.49 ± 0.06——已验证（Bellisario 1999 只读摘要；McNicol 2020 接受稿表 2）。
+2. McNicol 2020 的"一半到三分之二"是 C 档：修复后固定的一切现代碳，作者自己写的是"根状茎分泌、腐烂凋落物与开阔水碎屑的组合"，且植被区逐月 0.57–0.81、季节差不显著——已验证（McNicol 接受稿表 2，第 397–401、483–488 行）。它约束的是模式里老泥炭的分解份额（约三分之一），不约束当步分泌物份额 f，所以不能作为 V-176 把 f 从 0.15 提到 0.30 的依据——推测（依据口径第 1、2 条的时间尺度对应）。
+3. 换算到模式键：f = r_g / CUE。总根际沉积 r_g 占 GPP：草地 11 %（121/1097 g C m-2 yr-1）、作物约 7 %；CUE 0.4–0.61，得 f ≈ 0.11–0.28，中值约 0.18——已验证（Pausch & Kuzyakov 2018 第 10 页图 9 算例；CUE 0.5 读码 `BgcShim.F90:277`，0.61 为 Rocha & Goulden 2009）；作物 7 % 按其 21 % 地下分配反算 GPP、CUE 下限 0.4——推测。模式把分泌物当步全部矿化，而实测总根际沉积两周内只矿化 55–60 % 以上（同文第 6、10 页），只算快矿化部分则 f ≈ 0.07–0.17——推测（算术）。
+4. 模式标定值与这一区间一致：CH4MOD 水稻 80 天根际释放 = 全株碳 9 %（Huang 1998 第 256 页），Khvorostyanov 2008b 苔原分泌物 15 g C 对 NPP 75 g C 即 0.20（第 267 页），LPJ-WHyMe 终值 0.15 且是其调参网格 0.05/0.10/0.15 的上端（Wania 2010 表 4、表 7）——已验证（读原文）。模式等效区间取 0.10–0.25，0.15 居中；0.30 高于按碳分配说得通的上端——推测（依据第 3、4 条）。
+5. 其他模式（第 4 节）：CLM4Me 与现行 CTSM 没有分泌物通道，底物只有 somhr + lithr，根呼吸只进 O2 需求——已验证（读码 `ch4Mod.F90:2511-2512`、`2644-2646`）；LPJ-WHyMe fexu 0.175/0.15、JULES-NPP K_NPP 4.1–8.0e-3、TEM 与 Walter–Heimann 用 1 + NPP/NPPmax、Kettunen fGPP 0.10、PEPRMT 取 GPP 50 % 进易分解库、HIMMELI 取维管 NPP 0.4、ORCHIDEE 默认不设分泌物——已验证（各文出处见第 4 节）。
+6. 离线线性估算（`v2_p9f` 逐月气候态，把当步分泌物与凋落物按 f 重分，其余不变）f 0.15 → 0.30：US-Myb 7 月/1 月 3.3 → 4.5（塔上 9.1），月气候态标准差比 0.35 → 0.47；US-WPT 0.48 → 0.59；US-Sne 0.22 → 0.23；US-Tw1 0.98 → 1.34、US-Tw4 1.17 → 1.72 越过 1；相关系数降 0.00–0.02；年量有埋碳的塔升 5–20 %，US-Sne 降 3 %——已验证（exu_offline.out）；估算假定凋落物部分逐月形状与各月 P/D、O/P 不变——推测。即使 f = 0.60（分泌物占分解 74 %），US-Myb 7/1 月比也只有 7.9——已验证（同上）。
+7. 季节太平主要不在 f，更可能在"非分泌物底物的季节性太弱"：Mayberry 塔上老碳甲烷对土温也有 exp(0.15T)（表观 Q10 约 4.5），新鲜碳 exp(0.20T)（约 7.4），培养本征 Q10 2.3；模式分解 HR 的表观 Q10 只有 1.60–2.17——已验证（McNicol 接受稿表 3；`diag_marsh_ch4_per_gpp_260930.txt` 第 2.2 节）；由此推断厌氧分解的温度响应或冬季底物量是更大的杠杆——推测。
+8. 时相：模式分泌物跟当步 GPP 走，会把排放峰前移；而塔上新鲜碳与老碳甲烷都滞后 GPP 峰、对 GPP 有滞回，ecosys 里分泌物与根凋落物输入的滞回方向与 CH4 相反，HIMMELI 直接用 NPP 当底物时"春季升得太晚、秋季降得太早"，遮光 60 % 数周内 CH4 无显著变化——已验证（McNicol 接受稿第 404–416 行；Chang 2020 第 5855–5856 页；Raivonen 2017 第 4682 页；Joabsson 1999 只读摘要）。若要加新鲜碳，宜给 1–4 周的周转库而非当步呼吸——推测（依据 Wania 2009b 第 3 页 1–2 周、PEPRMT 与 SatWetCH4 的库式做法）。
+9. 按类型：莎草主导的 fen、苔原与挺水沼泽的新鲜碳份额高于泥炭藓 bog（莎草 fen 甲烷 14C 与 DOC 相同，bog 介于泥炭与 DOC 之间；维管植物只占 flark GPP 的 13 %、干微地形 64 %）——已验证（Chanton 2008 只读摘要；Kettunen 2003 第 20-3 页）。键按 NPP 计，bog 若 NPP 含泥炭藓宜乘维管份额；其余三类同一值；稻田保持 C-37 独立，文献支持 0.09–0.15——推测。
+10. 建议：`root_exudate_frac` 维持 0.15（区间 0.10–0.25），0.30 只作上界敏感性；V-176 若显示 Mayberry、WPT 振幅改善，要同时看 Twitchell 两塔振幅越界与相关系数下降；治季节太平优先查厌氧分解温度响应与冬季底物——推测（依据第 3–8 条）。
+
+## 2. 问一：各类型甲烷中新鲜碳份额的实测
+
+"尺度"列用口径中的 A、B、C 三档。"读到"列：全文 = 读了原文对应节；只读摘要 = 只读到摘要（OpenAlex、Semantic Scholar 或出版方摘要页）；转引 = 经另一篇全文转述。
+
+| 类型 | 地点、植物 | 方法 | 尺度 | 量与数值 | 出处与读到 |
+| --- | --- | --- | --- | --- | --- |
+| bog、fen | 明尼苏达北部泥炭地 | 14C 自然丰度（排放与孔隙水 CH4） | C | bog 排放 CH4 的 14C 与当代大气 CO2 相同；淹水 fen 的 CH4 排放与 CO2 交换线性相关；深数米孔隙水为现代与较老底物的混合，底物多为近年凋落物、根与根分泌物分解出的溶解有机物 | Chanton 1995，只读摘要 |
+| bog、fen | 马尼托巴 Thompson 五个泥炭地点 | 14C 自然丰度 | C | CH4 为 112–128 % modern；CH4 通量与 NEE 强相关 | Bellisario 1999，只读摘要 |
+| fen 对 bog | 明尼苏达至阿拉斯加泥炭地 | 14C（DOC、DIC、CH4） | C | 莎草 fen：CH4、DIC 的 14C 与 DOC 基本相同（DOC 全剖面较现代）；泥炭藓—木本 bog：介于固相泥炭与 DOC 之间 | Chanton 2008，只读摘要 |
+| bog | SPRUCE 泥炭藓 bog（明尼苏达），深层加热 | 14C 与培养 | C | CH4、CO2 主要来自表层现代光合产物的分解，不来自深层泥炭 | Wilson 2016，只读摘要 |
+| fen | 芬兰东部贫营养 fen，Eriophorum vaginatum（丘、草坪）、Scheuchzeria palustris（洼地） | 14C 脉冲，中型宇宙，控制条件 | A（18 d） | 同化标记碳成为 CH4：0.03 %、0.06 %、0.13 %；种内随生物量增加，种间不随；首次标记 CO2 在 4 h 后检出 | Dorodnikov 2011，摘要第 2365 页、3.2 节与 4.2 节第 2370–2372 页，全文 |
+| fen | Eriophorum angustifolium | 14C 标记 | A–B（4 个月） | 同化 14C 的 0.5 % 以 CH4 排出 | Christensen 等 2003，转引 Dorodnikov 2011 第 2366 页 |
+| 北方泥炭 | 瑞典南部泥炭 monolith，E. angustifolium | 遮光 60 % PAR | A–B（数周） | NEP 与总呼吸显著降，CH4 无显著变化；约 4 周后遮光组转低，作者推断光合变化到排放变化的滞后为数周 | Joabsson 1999，只读摘要 |
+| 泥炭地（温带） | Carex rostrata | 剪除地上部，4 年 | 季到年 | 剪除后 CH4 立即下降并持续 4 年，差异秋季最大；CH4 与绿叶面积正相关（摘要未给幅度） | Noyce 2014，只读摘要 |
+| 苔原 | 阿拉斯加湿莎草苔原，Carex aquatilis、E. angustifolium | 14C 脉冲，野外 | A（2 周） | 24 h 内出现 14CH4；同化标记碳不到 1 % 以 CH4 排出；"近期光合产物对盛季排放的贡献相对低"；中型宇宙平均 CH4 0.45 g C m-2 d-1 | King 2002 SBB，只读摘要 |
+| 苔原 | 湿莎草与湿润丛生苔原 | 14C 脉冲，实验室中型宇宙 | A | 2 h 内出现 14CH4；盛季固定的碳约 2 %（湿莎草）、约 3 %（丛生）最终以 CH4 排出 | King 等 2002 GBC，只读摘要 |
+| 苔原 | 同上 | 14C 脉冲（土壤各组分） | 1–68 d | 各次采样土壤中 14C 约为植物吸收量的 6 % | Loya 2002，只读摘要 |
+| 苔原 | 格陵兰东北湿苔原，E. scheuchzeri 对 Dupontia psilosantha | 野外乙酸生成率、遮光、14C 乙酸注入 | A | E. scheuchzeri 旁乙酸生成率显著高；遮光降低净光合后乙酸生成率显著降；潜在产甲烷与乙酸浓度正相关；注入 14C 乙酸 4 h 后见 14CH4 | Ström 2003，只读摘要 |
+| 挺水沼泽 | 萨克拉门托三角洲复湿泥炭上的 Mayberry（香蒲、藨草） | 14C 与 13C 混合模型 | C | 现代碳份额 fMatm 年均：植被区气泡 0.70 ± 0.09、植物茎内 0.71 ± 0.11、开阔水 0.49 ± 0.06；植被区逐月 0.57–0.81，季节差不显著；约三分之一来自老泥炭 | McNicol 2020 接受稿表 2、第 397–401、458–459 行，全文 |
+| 挺水沼泽 | 同上 | 塔上通量按来源拆分，另做培养 | 季节 | 甲烷对 8 cm 土温：总 exp(0.18T)，新鲜碳 exp(0.20T)，老碳 exp(0.15T)；植被区培养产甲烷本征 Q10 2.3；两种来源的甲烷都滞后 GPP 峰，对 GPP 有滞回（后期更高） | 同上表 3、第 404–416 行，全文 |
+| 挺水沼泽 | Orontium aquaticum 微宇宙 | 14C 脉冲 | A（17 d） | 首个 14CH4 在标记后不到 12 h；14CH4 通量 5 d 内线性升到平台 | Megonigal 1999，只读摘要 |
+| 挺水沼泽 | Typha | 盆栽 | 无 | 香蒲根状茎分泌未显著刺激产甲烷 | Sutton-Grier & Megonigal 2011，转引 McNicol 接受稿第 485–487 行 |
+| 多类湿地 | 亚北极到亚热带 | 通量对比 | 日 | 日 NEP 约 3 % 以 CH4 返回大气 | Whiting & Chanton 1993，只读摘要（OSTI 摘要页） |
+| 稻田 | 盆栽（日本，1993） | 13CO2 吸收三次 | A | 光合碳占排放 CH4：8 月 8 日前后 72–110 %，8 月 30 日 29–36 %，9 月 18 日 13–17 %；秸秆碳占 50.4 % | Minoda & Kimura 1994，只读摘要 |
+| 稻田 | 盆栽（1994） | 13CO2 吸收四次 | A | 施秸秆：6 月 30 日 3.8 %、7 月 25 日 31 %、8 月 19 日 30 %、9 月 13 日 14 %；全生育期施秸秆 22 %、不施 29 %；秸秆碳占 44 % | Minoda 等 1996，只读摘要（摘要文本残缺，不施秸秆的单日值对不上日期，不引） |
+| 稻田 | 盆栽 | 13C 标记土壤有机质与秸秆，植株碳按差减 | B | 施秸秆 6 t ha-1：秸秆 42 %、土壤 18–21 %、植株 37–40 %；不施：土壤 15–20 %、植株 80–85 %；乳熟期植株碳 65–70 % | Watanabe 1999，只读摘要 |
+| 稻田 | 日本 FACE 稻田 | 贫 13C CO2 自然示踪 | B | 当季光合碳占整季 CH4 生成 40–60 %；占土壤溶解 CO2 分蘖期约 20 %、穗分化后约 50 %；增温下有更高的倾向 | Tokida 2011，只读摘要 |
+| 稻田 | 微宇宙 | 13C 秸秆，根源有机碳（含分泌物与脱落死根）差减 | B | 根源碳占 CH4 生成：分蘖 41 %，孕穗起约 60 %（全期 41–63 %，图 6A）；秸秆 12–24 %，土壤 23–35 % | Yuan 2012，摘要与图 6A（PLOS 网页） |
+| 稻田 | 分蘖期水稻 | 14C 脉冲 | A（16 d） | 同化 14C 的 3–6 % 在 16 d 内以 CH4 排出 | Dannenberg & Conrad 1999，检索页转述，摘要与原文均未读到——存疑 |
+| 稻田 | 微宇宙 | 13C 脉冲追踪 | 季 | 净同化的 1–5 % 进入土壤；整季植株净碳输入约 200 kg C ha-1，另有根残体 865 kg C ha-1 | Lu 2002，只读摘要（摘要文本部分残缺） |
+| 热带泥炭沼泽林 | 巴拿马，阔叶常绿树 | 环剥 | 两周 | 环剥后 1 d 无差异，14 d 起树旁 CH4 通量显著降，最多降 67 % | Girkin 2025 摘要与结果节，全文（本地副本） |
+
+读法：
+1. A 档野外与实验室差 20–100 倍（King 2002 SBB 野外不到 1 % 对 King 等 2002 GBC 实验室 2–3 %；Dorodnikov 0.03–0.13 %），φ 本身不宜直接反推 f——推测（依据上表同类实验的离散）。
+2. 稻田三种方法同向：季初秸秆与土壤为主，孕穗到乳熟植株碳升到 60–70 %——已验证（Minoda 1996、Watanabe 1999、Yuan 2012 摘要）。稻田 B 档高主要来自当季根的周转，而不只是分泌物——推测（依据 Tokida 2011 摘要"增温加快根腐解"的解释与 Yuan 2012 根源碳含脱落死根的定义）。
+3. 挺水沼泽没有找到 A 档脉冲标记的份额数，只有 C 档（McNicol）与定性证据——已验证（第 0 节第 4、5 条检索）。
+
+## 3. 问二：与模式口径的换算
+
+### 3.1 记账关系
+
+- 模式湿地斑块：输入 I = 0.5 × 当步 GPP × 盖度，分泌物 X = f·I 当步呼吸，埋藏 B = b(1 − f)I，平衡态分解 D ≈ I − B；分泌物占分解 s_D = f / (1 − b(1 − f))，反解 f = s_D(1 − b)/(1 − s_D·b)——推测（按 `BgcShim.F90:275-315` 记账推导）。检验：US-Myb f 0.15、b 0.47 得 s_D 0.25，与 diag 第 2.2 节 25 % 相符——已验证（算术对 diag）。
+- 模式对分泌物与凋落物用同一条产甲烷链（同一 f_methane、温度、pH、氧化还原），即效率比 k = 1——已验证（读码 `Const.F90:941-945`）。若新鲜碳变 CH4 的效率是其余底物的 k 倍，甲烷中份额 s_CH4 = k·s_D/(k·s_D + 1 − s_D)——推测。k > 1 的迹象：当季光合碳占 CH4 生成 40–60 %，高于占土壤 CO2 的 20–50 %——已验证（Tokida 2011 只读摘要）。
+- 分泌物的去向：模式当步全部矿化；实测玉米总根际沉积 16 d 内 60 % 以上变 CO2，草地与作物算例 55 % 以上，其余留土——已验证（Pausch & Kuzyakov 2018 第 6 页与第 10 页）。淹水下根际碳矿化更慢：若尔盖莎草湿地淹水显著降土壤呼吸——已验证（Gao 2015 只读摘要）。
+
+### 3.2 路线一：根际沉积占 GPP 除以 CUE（最直接）
+
+- 同化碳的去向（13C/14C 标记 281 组，占总同化）：作物/草地上保留 45/34 %，地下 21/33 %；根 10/16 %（中位 9/14 %），净根际沉积 3/5 %（中位 3/4 %），根源 CO2 8/12 %（中位 7/11 %）；10 h 后约 21 % 已到地下——已验证（Pausch & Kuzyakov 2018 第 1 页摘要、第 5 页图 4、第 6 页）。
+- 总根际沉积 = 净根际沉积 + 根源 CO2 中根际微生物那一半：草地算例 121 g C m-2 yr-1 对 GPP 1097 即 11 %；作物算例 77，地下分配 231 按 21 % 反算 GPP 约 1100，即约 7 %——已验证（同文第 10 页图 9）；作物 GPP 反算——推测。
+- 旱作的地下分配：谷物 20–30 %，其中约一半在根、约三分之一以根呼吸与根源物质微生物利用的 CO2 返回；牧草 30–50 %——已验证（Kuzyakov & Domanski 2000 只读摘要）。
+- 湿地植物：若尔盖莎草湿地原位 13CO2 脉冲 28 d，超过 50 % 经地上呼吸，地上 19 %，地下 26 %，土壤有机碳约 7 %——已验证（Gao 2015 只读摘要）；苔原土壤中 14C 约为吸收量 6 %——已验证（Loya 2002 只读摘要）。湿地净留土的根际碳（6–7 %）不低于旱地（3–5 %），与淹水下矿化慢一致——推测。
+- CUE：模式湿地 0.5（`wetland_npp_frac`，`BgcShim.F90:277`）；香蒲沼泽 8 年实测 0.61——已验证（读码；Rocha & Goulden 2009，经 `diag_marsh_ch4_per_gpp_260930.txt` 口径第 3 条）；下限 0.4——推测。
+- 换算：f = r_g / CUE = 0.07/0.61 ≈ 0.11 到 0.11/0.4 ≈ 0.28，中值 0.09/0.5 ≈ 0.18；只算两周内被矿化的部分（约 0.6）得 0.07–0.17，其余 40 % 在模式里本就走凋落物——推测（算术）。
+
+### 3.3 路线二：其他模式的标定值（都已换成"占 NPP"口径）
+
+- CH4MOD：水稻根际碳 CR = β0·W^β1（W 为地上生物量），标定后 80 天根际释放相当于根碳 101 %、地上 10 %、全株 9 %；全株碳约等于季 NPP，即 f ≈ 0.09——已验证（Huang 1998 第 250 页式 1、第 256 页）；"全株碳约等于 NPP"——推测。
+- Cao 1995 稻田模型：根际沉积 = 转入根的碳的 45 %（文献 35–60 %）——已验证（第 187 页式 3）；按水稻根分配占 NPP 20–30 % 折 f ≈ 0.09–0.14——推测（根分配为假定）。
+- Khvorostyanov 2008b：苔原 NPP 的 10–20 % 变为根分泌物（引 Loya 2002），在 NPP 75 g C m-2 yr-1 之外另加 15，即 0.20——已验证（第 267 页）。
+- LPJ-WHyMe：0.175（表 1）、终值 0.15（表 4，网格 0.05/0.10/0.15 顶格；表 7 七站六站取 0.15）——已验证（Wania 2010 第 568、573、578 页）。其依据"光合碳平均 15–20 % 被根分泌"（Wania 2009b 第 3 页 2.6 节）指的是占光合碳，按 CUE 0.5 换成占 NPP 应为 0.30–0.40——推测；早期文献的"分泌"常含根呼吸与根际呼吸，与 Pausch 的总根际沉积不同口径——推测（依据 Pausch & Kuzyakov 2018 第 2–3 页图 1 对 C input、C assimilated、C recovered 三种分母的区分）。
+
+### 3.4 路线三：由甲烷来源份额反推
+
+- A 档稻田：全生育期 22–29 %（Minoda 1996）；按无埋碳 s_D ≈ s_CH4，k = 1 得 f ≈ 0.22–0.29，k = 2 得 0.12–0.17——推测（算术）。
+- A 档苔原野外：不到 1 % 的同化标记两周内成为 CH4，中型宇宙 CH4 0.45 g C m-2 d-1（King 2002 SBB 摘要）；若盛季 GPP 取 3–6 g C m-2 d-1，两周内的新鲜碳至多占 CH4 的 7–13 %，对应 f 约 0.1 以下——推测（GPP 为假定）。
+- B 档稻田 37–85 % 不能直接对 f：模式的当季份额 = 分泌物 + 当季凋落物当季分解部分，要跑出 metabolic 凋落物逐月 HR 才能比——存疑（需实验，见第 0 节第 7 条）。
+- C 档（McNicol 0.70）对应模式非老泥炭分解份额，不约束 f——推测（口径第 2 条）。
+
+### 3.5 小结
+
+- 三条路线交集：f 的模式等效区间 0.10–0.25，中值 0.15–0.18；0.28 是上端，需要 CUE 低到 0.4 且把总根际沉积全部当步矿化；0.30 在区间之外——推测（依据第 3.2–3.4 节）。
+- 稻田 C-37 的 0.15 进易分解凋落物、不当步呼吸，文献支持 0.09–0.15——推测（依据 Huang 1998、Cao 1995 与第 3.2 节）。
+
+## 4. 问三：其他模式的新鲜碳做法
+
+| 模式 | 新鲜碳做法 | 参数 | 出处（读到） |
+| --- | --- | --- | --- |
+| LPJ-WHy / LPJ-WHyMe | 每步（月）把 NPP 的 fexu 放进分泌物库，库按温度与含水衰减；泥炭地里分泌物、凋落物与土壤的分解都进"产甲烷潜在碳库"，再按 CH4/CO2 比劈分 | fexu 0.175（表 1）、终值 0.15（表 4，网格上端）；k_exu 10 °C 13 a-1（表 1），Wania 2009b 写 1–2 周；CH4/CO2 终值 0.1；fexu 对排放影响"双向且小"，因为分泌物从 NPP 扣掉会减少叶生物量 | Wania 2010 第 567–568 页 2.2.1 节与表 1、第 573 页表 4、第 576 页 4.2.3 节；Wania 2009b 第 3 页 2.6 节，全文 |
+| LPJ-GUESS v4.1 | 沿用 Wania 潜在碳库，但不用分泌物的两个参数 | 无 | Kallingal 2024 第 2304 页，全文 |
+| CLM4Me / CTSM 5.4 | 无分泌物通道；底物 = somhr + lithr（经 sif 季节淹水折减）；根呼吸 rr 只加到 O2 需求 | f_ch4 0.2，q10ch4 1.33（参数值转引 `lit_models_wetland_260929.txt` 第 40 行） | 读码 `ch4Mod.F90:2511-2512`、`2644-2646`；技术手册第 33、78 行；Riley 2011 第 1945 页 4.6 节把"根分泌与土壤碳的垂直分辨"列为待改进 |
+| JULES | 两种底物二选一：土壤碳（默认）或 NPP；F = fwe·K_NPP·NPP·Q10(T)^((T − T0)/10)，NPP 型的依据是乙酸来自根分泌、标记后 12 h 内出现 CH4 | K_NPP 4.1–8.0e-3（按全球总量调） | Gedney 2019 第 3 页式 2–3，全文 |
+| Walter–Heimann | 只认新鲜有机质；f_in(t) = 1 + f_NPP(t)/NPP_max，只给季节形状，绝对量在逐站调的 R0 | NPP 峰值时新鲜部分与基底相等，冬季为 0 | Walter & Heimann 2000 第 747 页式 2、第 748 页式 5，全文 |
+| TEM（MDM） | f(SOM) = [1 + NPP(mon)/NPPMAX]·f(CDIS)；死细根底物全年有，NPP 项代表生长季根分泌 | NPPMAX 100–250 g C m-2 month-1 | Zhuang 2004 第 3 页表 1、第 5 页式 5，全文 |
+| ORCHIDEE-WET | 活性碳库 × α0，不设分泌物库；作者疑热带与寒温带 α0 差 5 倍与缺分泌物库有关 | 无 | Ringeval 2010 第 4 页，全文 |
+| ORCHIDEE-PCH4 | 三碳库都产甲烷，不设分泌物；作者对 US-Wpt 的偏差写明根分泌物与孔隙水 DOC 对产甲烷的贡献未被显式考虑 | 无 | Salmon 2022 第 2830 页，全文 |
+| ORCHIDEE 永冻版 | 在 NPP 之外另加根分泌物进活性碳库 | 15 g C m-2 yr-1（NPP 75 的 0.20） | Khvorostyanov 2008b 第 267 页，全文 |
+| Kettunen 2003 | 易分解碳 = fGPP·GPP（根分泌）+ fETI·ETI（根腐解），沿根分布 | fGPP 0.10（文献 0.01–0.60）；fGPP ×2 排放 +39 %，×10 +361 % | Kettunen 2003 第 20-3 页式 3、第 20-5 页表 3、第 20-11 页表 4，全文 |
+| PEPRMT | 当季易分解库每步收 GPP 的 50 %（含自养呼吸），年末余量转 SOC | 生长季 72 % 的 CH4 来自该库，冬季全来自 SOC | Oikawa 2017 第 150 页、第 159 页，全文 |
+| HIMMELI | 外部给厌氧呼吸：维管 NPP × fs 沿根分布、当步无滞后，加泥炭分解 | fs 0.4，f_m 0.5；作者指出无滞后使春季升得太晚、秋季降得太早 | Raivonen 2017 第 4682 页、第 4685 页附录 B，全文 |
+| ecosys | 显式模拟根分泌、根凋落物与微生物群；站点结果中分泌物输入与 CH4 的滞回方向相反，CH4 滞回归因于产甲烷菌生物量与乙酸、H2 积累 | 无单一份额参数 | Chang 2020 第 5851、5855–5856 页，全文 |
+| SatWetCH4 | NPP 驱动的底物库 dC/dt = NPP − K(T)·C | Kref 0.5 yr-1，Q10 2，TKref 303.15 K | Bernard 2025 第 865–866 页式 2，全文 |
+| DLEM | 只从 DOC 产甲烷，DOC 来自 GPP 分配与凋落物、土壤分解 | V_max 草本 1.45、木本 0.55 g C m-3 d-1 | 转引 `lit_models_wetland_260929.txt` 第 113 行（Tian 2010） |
+| CH4MOD（稻田） | 根际碳 CR = β0·W^β1，按地上生物量，β0 随品种与质地 | 标定后 80 天 = 全株碳 9 % | Huang 1998 第 250 页式 1、第 256 页，全文 |
+| Cao 1995（稻田） | 根际沉积 RCDR = 0.45 × 转入根的碳，视为即刻可用的简单底物 | 0.45（文献 35–60 %） | Cao 1995 第 187 页式 3，全文 |
+| CH4MODwetland | 按植被指数 VI 给根分泌物能力，逐类标定 | VI 在补充材料，未读 | Li 2020 第 3771 页，全文正文 |
+
+- 共性：大尺度模式要么没有新鲜碳通道（CLM4Me、ORCHIDEE 默认、多数 Rh 型 GCP 成员），要么让它只管季节形状、绝对量交给调参（Walter–Heimann、TEM、JULES-NPP）；给出明确份额的是 LPJ-WHyMe 0.15 与 ORCHIDEE 永冻版 0.20 之 NPP、Kettunen 0.10 之 GPP，折成 NPP 都在 0.15–0.20——已验证（本表各行）；"折成 NPP"按 CUE 0.5——推测。
+
+## 5. 问四：建议
+
+### 5.1 取值
+
+- `root_exudate_frac` 维持 0.15，区间 0.10–0.25。0.30 只作上界敏感性：它相当于 CUE 0.4 时把全部总根际沉积（GPP 的 11 %）都当步矿化——推测（依据第 3.5 节）。
+- 稻田 C-37 保持 0.15（文献 0.09–0.15），不与湿地键捆绑——推测（依据第 3.3 节）。
+
+### 5.2 是否按类型
+
+- 依据：莎草 fen 的甲烷与 DOC 同为现代碳、bog 介于泥炭与 DOC 之间（Chanton 2008）；维管植物占 GPP 的份额在 flark 13 %、干微地形 64 %（Kettunen 2003 第 20-3 页）；E. vaginatum 与 S. palustris 两种之间标记碳入 CH4 差 2–4 倍（Dorodnikov 2011）；挺水沼泽里香蒲根状茎分泌未显著刺激产甲烷（转引 Sutton-Grier & Megonigal 2011）——已验证（出处同第 2 节表）。
+- 做法：键按 NPP 计，只有 bog 有明确的下调理由（泥炭藓无根），若模式 bog 的 NPP 含泥炭藓，f 乘维管份额（约 0.3–0.6，得 0.05–0.10）；fen、苔原、挺水沼泽用同一值；证据不足以给出各类不同的数值——推测。
+
+### 5.3 预期方向（离线线性估算，`exu_offline.out`）
+
+```text
+塔      埋碳b  塔上7/1月比 | f=0.15: 分泌/D 7/1月比 std比  r     | f=0.30: 分泌/D 7/1月比 std比  r     年量
+US-Sne  0.00   14.7        |         0.12    2.75    0.22   0.978 |         0.25    3.14    0.23   0.957 0.97
+US-Myb  0.47    9.1        |         0.25    3.29    0.35   0.987 |         0.44    4.49    0.47   0.976 1.13
+US-WPT  0.21   41.4        |         0.17    8.91    0.48   0.986 |         0.33   12.51    0.59   0.986 1.05
+US-Tw1  0.45    3.9        |         0.24    3.32    0.98   0.909 |         0.43    4.57    1.34   0.895 1.12
+US-Tw4  0.53    3.8        |         0.31    3.66    1.17   0.985 |         0.52    5.29    1.72   0.989 1.20
+```
+
+- 上表——已验证（exu_offline.out；std 比为线性月气候态的模式/塔上标准差比，不是计分口径的 α）。做法：X = f × 0.5 × 盖度 × 模式月 GPP，其余分解 L 按 (1 − f)/(1 − 0.15) 缩放、逐月形状不变，E 按 D 同比例变——推测（假定）。
+- 振幅：Mayberry、WPT 改善但远不够，Sne 几乎不动（模式 GPP 仍是牧场物候，4 月峰）；Twitchell 两塔越过 1——推测（依据上表）。
+- 时相：r 小降，分泌物跟当步 GPP 把排放前移——推测（依据上表与第 1 节第 8 条）。
+- 年量：有埋碳的塔升 5–20 %（分泌物不进埋藏），无埋碳的 Sne 降 3 %（分泌物移到 P/D 较低的 4 月）——推测（依据上表与第 3.1 节记账）。全球上改的是一切湿地与淹水土壤，方向同上，须过全球筛选——推测。
+
+### 5.4 更大的杠杆
+
+- Mayberry 老碳甲烷的表观 Q10 也有约 4.5，新鲜碳约 7.4，培养本征 2.3；模式 HR 表观 Q10 1.60–2.17，模式 1 月排放在三塔持平或偏高（1.17–2.45 倍）——已验证（McNicol 接受稿表 3；diag 第 2.2 节）。季节太平主要在非分泌物底物的季节性（厌氧分解的温度响应、冬季底物量），应作为 Q-64 季节形状的下一候选——推测。
+- 若仍要加新鲜碳，改成 1–4 周周转的库比当步呼吸更贴近滞后与滞回的观测——推测（依据第 1 节第 8 条）；属于改码，须另行商定。
+
+### 5.5 V-176 的读法
+
+- 看 Mayberry、WPT 的振幅与 r 时，同时看 Twitchell 两塔振幅是否越过 1、Sne 是否不动；年量按上表应升 5–20 %，若 β 升幅明显大于此，说明非线性项（氧化、滞后）起作用——推测。
+
+## 6. 著录（Crossref 逐条核对，请求不带任何个人信息）
+
+1. Bellisario, L. M., Bubier, J. L., Moore, T. R., Chanton, J. P. (1999) Controls on CH4 emissions from a northern peatland. Global Biogeochemical Cycles 13(1), 81–91. doi:10.1029/1998GB900021。Crossref 已核
+2. Bernard, J., Salmon, E., Saunois, M., Peng, S., Serrano-Ortiz, P., Berchet, A., 等 10 人 (2025) Satellite-based modeling of wetland methane emissions on a global scale (SatWetCH4 1.0). Geoscientific Model Development 18(3), 863–883. doi:10.5194/gmd-18-863-2025。Crossref 已核
+3. Cao, M., Dent, J. B., Heal, O. W. (1995) Modeling methane emissions from rice paddies. Global Biogeochemical Cycles 9(2), 183–195. doi:10.1029/94GB03231。Crossref 已核
+4. Chang, K.-Y., Riley, W. J., Crill, P. M., Grant, R. F., Saleska, S. R. (2020) Hysteretic temperature sensitivity of wetland CH4 fluxes explained by substrate availability and microbial activity. Biogeosciences 17(22), 5849–5860. doi:10.5194/bg-17-5849-2020。Crossref 已核
+5. Chanton, J. P., Bauer, J. E., Glaser, P. A., Siegel, D. I., Kelley, C. A., Tyler, S. C., 等 8 人 (1995) Radiocarbon evidence for the substrates supporting methane formation within northern Minnesota peatlands. Geochimica et Cosmochimica Acta 59(17), 3663–3668. doi:10.1016/0016-7037(95)00240-Z。Crossref 已核
+6. Chanton, J. P., Glaser, P. H., Chasar, L. S., Burdige, D. J., Hines, M. E., Siegel, D. I., 等 8 人 (2008) Radiocarbon evidence for the importance of surface vegetation on fermentation and methanogenesis in contrasting types of boreal peatlands. Global Biogeochemical Cycles 22(4). doi:10.1029/2008GB003274。Crossref 已核
+7. Dannenberg, S., Conrad, R. (1999) Effect of rice plants on methane production and rhizospheric metabolism in paddy soil. Biogeochemistry 45(1), 53–71. doi:10.1023/A:1006085605184。Crossref 已核（数值为检索转述，存疑）
+8. Dorodnikov, M., Knorr, K.-H., Kuzyakov, Y., Wilmking, M. (2011) Plant-mediated CH4 transport and contribution of photosynthates to methanogenesis at a boreal mire: a 14C pulse-labeling study. Biogeosciences 8(8), 2365–2375. doi:10.5194/bg-8-2365-2011。Crossref 已核
+9. Gao, J. Q., Gao, J. J., Zhang, X. W., Xu, X. L., Deng, Z. H., Yu, F. H. (2015) Effects of waterlogging on carbon assimilate partitioning in the Zoigê alpine wetlands revealed by 13CO2 pulse labeling. Scientific Reports 5(1), 9411. doi:10.1038/srep09411。Crossref 已核
+10. Gedney, N., Huntingford, C., Comyn-Platt, E., Wiltshire, A. (2019) Significant feedbacks of wetland methane release on climate change and the causes of their uncertainty. Environmental Research Letters 14(8), 084027. doi:10.1088/1748-9326/ab2726。Crossref 已核
+11. Girkin, N. T., Siegenthaler, A., Lopez, O., Stott, A., Ostle, N., Gauci, V., Sjögersten, S. (2025) Plant root carbon inputs drive methane production in tropical peatlands. Scientific Reports 15(1), 3244. doi:10.1038/s41598-025-87467-w。Crossref 已核
+12. Huang, Y., Sass, R. L., Fisher Jr., F. M. (1998) A semi-empirical model of methane emission from flooded rice paddy soils. Global Change Biology 4(3), 247–268. doi:10.1046/j.1365-2486.1998.00129.x。Crossref 已核
+13. Joabsson, A., Røjle Christensen, T., Wallén, B. (1999) Influence of vascular plant photosynthetic rate on CH4 emission from peat monoliths from southern boreal Sweden. Polar Research 18(2), 215–220. doi:10.3402/polar.v18i2.6577。Crossref 已核
+14. Kallingal, J. T., Lindström, J., Miller, P. A., Rinne, J., Raivonen, M., Scholze, M. (2024) Optimising CH4 simulations from the LPJ-GUESS model v4.1 using an adaptive Markov chain Monte Carlo algorithm. Geoscientific Model Development 17(6), 2299–2324. doi:10.5194/gmd-17-2299-2024。Crossref 已核
+15. Kettunen, A. (2003) Connecting methane fluxes to vegetation cover and water table fluctuations at microsite level: A modeling study. Global Biogeochemical Cycles 17(2). doi:10.1029/2002GB001958。Crossref 已核
+16. Khvorostyanov, D. V., Ciais, P., Krinner, G., Zimov, S. A., Corradi, Ch., Guggenberger, G. (2008) Vulnerability of permafrost carbon to global warming. Part II: sensitivity of permafrost carbon stock to global warming. Tellus B: Chemical and Physical Meteorology 60(2), 265. doi:10.1111/j.1600-0889.2007.00336.x。Crossref 已核
+17. King, J. (2002) A pulse-labeling experiment to determine the contribution of recent plant photosynthates to net methane emission in arctic wet sedge tundra. Soil Biology and Biochemistry 34(2), 173–180. doi:10.1016/S0038-0717(01)00164-X。Crossref 已核（Crossref 作者字段只列一人，Dorodnikov 2011 引作 King and Reeburgh 2002）
+18. King, J. Y., Reeburgh, W. S., Thieler, K. K., Kling, G. W., Loya, W. M., Johnson, L. C., Nadelhoffer, K. J. (2002) Pulse-labeling studies of carbon cycling in Arctic tundra ecosystems: The contribution of photosynthates to methane emission. Global Biogeochemical Cycles 16(4). doi:10.1029/2001GB001456。Crossref 已核
+19. Kuzyakov, Y., Domanski, G. (2000) Carbon input by plants into the soil. Review. Journal of Plant Nutrition and Soil Science 163(4), 421–431. doi:10.1002/1522-2624(200008)163:4<421::AID-JPLN421>3.0.CO;2-R。Crossref 已核
+20. Li, T., Lu, Y., Yu, L., Sun, W., Zhang, Q., Zhang, W., 等 11 人 (2020) Evaluation of CH4MODwetland and Terrestrial Ecosystem Model (TEM) used to estimate global CH4 emissions from natural wetlands. Geoscientific Model Development 13(8), 3769–3788. doi:10.5194/gmd-13-3769-2020。Crossref 已核
+21. Loya, W. M., Johnson, L. C., Kling, G. W., King, J. Y., Reeburgh, W. S., Nadelhoffer, K. J. (2002) Pulse-labeling studies of carbon cycling in arctic tundra ecosystems: Contribution of photosynthates to soil organic matter. Global Biogeochemical Cycles 16(4). doi:10.1029/2001GB001464。Crossref 已核
+22. Lu, Y., Watanabe, A., Kimura, M. (2002) Input and distribution of photosynthesized carbon in a flooded rice soil. Global Biogeochemical Cycles 16(4). doi:10.1029/2002GB001864。Crossref 已核
+23. McNicol, G., Knox, S. H., Guilderson, T. P., Baldocchi, D. D., Silver, W. L. (2020) Where old meets new: An ecosystem study of methanogenesis in a reflooded agricultural peatland. Global Change Biology 26(2), 772–785. doi:10.1111/gcb.14916。Crossref 已核（issued 2019，卷期 2020；本文数值读的是接受稿 LLNL-JRNL-789121）
+24. Megonigal, J. P., Whalen, S. C., Tissue, D. T., Bovard, B. D., Allen, A. S., Albert, D. B. (1999) A plant-soil-atmosphere microcosm for tracing radiocarbon from photosynthesis through methanogenesis. Soil Science Society of America Journal 63(3), 665–671. doi:10.2136/sssaj1999.03615995006300030033x。Crossref 已核
+25. Minoda, T., Kimura, M. (1994) Contribution of photosynthesized carbon to the methane emitted from paddy fields. Geophysical Research Letters 21(18), 2007–2010. doi:10.1029/94GL01595。Crossref 已核
+26. Minoda, T., Kimura, M., Wada, E. (1996) Photosynthates as dominant source of CH4 and CO2 in soil water and CH4 emitted to the atmosphere from paddy fields. Journal of Geophysical Research: Atmospheres 101(D15), 21091–21097. doi:10.1029/96JD01710。Crossref 已核
+27. Noyce, G. L., Varner, R. K., Bubier, J. L., Frolking, S. (2014) Effect of Carex rostrata on seasonal and interannual variability in peatland methane emissions. Journal of Geophysical Research: Biogeosciences 119(1), 24–34. doi:10.1002/2013JG002474。Crossref 已核
+28. Oikawa, P. Y., Jenerette, G. D., Knox, S. H., Sturtevant, C., Verfaillie, J., Dronova, I., 等 10 人 (2017) Evaluation of a hierarchy of models reveals importance of substrate limitation for predicting carbon dioxide and methane exchange in restored wetlands. Journal of Geophysical Research: Biogeosciences 122(1), 145–167. doi:10.1002/2016JG003438。Crossref 已核
+29. Pausch, J., Kuzyakov, Y. (2018) Carbon input by roots into the soil: Quantification of rhizodeposition from root to ecosystem scale. Global Change Biology 24(1), 1–12. doi:10.1111/gcb.13850。Crossref 已核（issued 2017）
+30. Raivonen, M., Smolander, S., Backman, L., Susiluoto, J., Aalto, T., Markkanen, T., 等 20 人 (2017) HIMMELI v1.0: HelsinkI Model of MEthane buiLd-up and emIssion for peatlands. Geoscientific Model Development 10(12), 4665–4691. doi:10.5194/gmd-10-4665-2017。Crossref 已核
+31. Riley, W. J., Subin, Z. M., Lawrence, D. M., Swenson, S. C., Torn, M. S., Meng, L., 等 8 人 (2011) Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM. Biogeosciences 8(7), 1925–1953. doi:10.5194/bg-8-1925-2011。Crossref 已核
+32. Ringeval, B., de Noblet-Ducoudré, N., Ciais, P., Bousquet, P., Prigent, C., Papa, F., 等 8 人 (2010) An attempt to quantify the impact of changes in wetland extent on methane emissions on the seasonal and interannual time scales. Global Biogeochemical Cycles 24(2). doi:10.1029/2008GB003354。Crossref 已核
+33. Rocha, A. V., Goulden, M. L. (2009) Why is marsh productivity so high? New insights from eddy covariance and biomass measurements in a Typha marsh. Agricultural and Forest Meteorology 149(1), 159–168. doi:10.1016/j.agrformet.2008.07.010。Crossref 已核
+34. Salmon, E., Jégou, F., Guenet, B., Jourdain, L., Qiu, C., Bastrikov, V., 等 31 人 (2022) Assessing methane emissions for northern peatlands in ORCHIDEE-PEAT revision 7020. Geoscientific Model Development 15(7), 2813–2838. doi:10.5194/gmd-15-2813-2022。Crossref 已核
+35. Ström, L., Ekberg, A., Mastepanov, M., Røjle Christensen, T. (2003) The effect of vascular plants on carbon turnover and methane emissions from a tundra wetland. Global Change Biology 9(8), 1185–1192. doi:10.1046/j.1365-2486.2003.00655.x。Crossref 已核
+36. Sutton-Grier, A. E., Megonigal, J. P. (2011) Plant species traits regulate methane production in freshwater wetland soils. Soil Biology and Biochemistry 43(2), 413–420. doi:10.1016/j.soilbio.2010.11.009。Crossref 已核（本文只转引）
+37. Tokida, T., Adachi, M., Cheng, W., Nakajima, Y., Fumoto, T., Matsushima, M., 等 10 人 (2011) Methane and soil CO2 production from current-season photosynthates in a rice paddy exposed to elevated CO2 concentration and soil temperature. Global Change Biology 17(11), 3327–3337. doi:10.1111/j.1365-2486.2011.02475.x。Crossref 已核
+38. Walter, B. P., Heimann, M. (2000) A process-based, climate-sensitive model to derive methane emissions from natural wetlands: Application to five wetland sites, sensitivity to model parameters, and climate. Global Biogeochemical Cycles 14(3), 745–765. doi:10.1029/1999GB001204。Crossref 已核
+39. Wania, R., Ross, I., Prentice, I. C. (2009) Integrating peatlands and permafrost into a dynamic global vegetation model: 2. Evaluation and sensitivity of vegetation and carbon cycle processes. Global Biogeochemical Cycles 23(3). doi:10.1029/2008GB003413。Crossref 已核
+40. Wania, R., Ross, I., Prentice, I. C. (2010) Implementation and evaluation of a new methane model within a dynamic global vegetation model: LPJ-WHyMe v1.3.1. Geoscientific Model Development 3(2), 565–584. doi:10.5194/gmd-3-565-2010。Crossref 已核
+41. Watanabe, A., Takeda, T., Kimura, M. (1999) Evaluation of origins of CH4 carbon emitted from rice paddies. Journal of Geophysical Research: Atmospheres 104(D19), 23623–23629. doi:10.1029/1999JD900467。Crossref 已核
+42. Whiting, G. J., Chanton, J. P. (1993) Primary production control of methane emission from wetlands. Nature 364(6440), 794–795. doi:10.1038/364794a0。Crossref 已核
+43. Wilson, R. M., Hopple, A. M., Tfaily, M. M., Sebestyen, S. D., Schadt, C. W., Pfeifer-Meister, L., 等 18 人 (2016) Stability of peatland carbon to rising temperatures. Nature Communications 7(1), 13723. doi:10.1038/ncomms13723。Crossref 已核
+44. Yuan, Q., Pump, J., Conrad, R. (2012) Partitioning of CH4 and CO2 production originating from rice straw, soil and root organic carbon in rice microcosms. PLoS ONE 7(11), e49073. doi:10.1371/journal.pone.0049073。Crossref 已核
+45. Zhuang, Q., Melillo, J. M., Kicklighter, D. W., Prinn, R. G., McGuire, A. D., Steudler, P. A., 等 8 人 (2004) Methane fluxes between terrestrial ecosystems and the atmosphere at northern high latitudes during the past century: A retrospective analysis with a process-based biogeochemistry model. Global Biogeochemical Cycles 18(3). doi:10.1029/2004GB002239。Crossref 已核

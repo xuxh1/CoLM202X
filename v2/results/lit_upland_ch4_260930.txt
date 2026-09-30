@@ -1,0 +1,238 @@
+# lit_upland_ch4_260930：旱地塔甲烷净通量的来源与模式表示（L-21）
+
+- **日期**：2026.09.30-08:44
+- **读者**：下一会话
+- **来源**：中控派活 methane-lit-upland（L-21，只读文献与离线分析，未改码、未跑模式、未提交）；站点 tag `v2_p9f`（`cases/paper_v2/v260930/sp_v2_c91` @04842b9e，C-14、C-41 关）与 `v2_p9i`（`sp_v2_c96` @bb24bfcf，C-14、C-41 开），两份 `CODE_COMMIT.txt`；计分 `v2/results/scores77_v2_p9f.txt`、`scores77_v2_p9i.txt`；账本 `v2/迭代账本.md` 的 C-14、C-14b、C-41、V-7、V-8、V-174、Q-30、Q-72 行；取数脚本 `v2/_scratch/upland/` 下 `upland_budget.py`、`uptake_profile.py`、`o2_months.py`、`o2_demand_terms.py`、`rr_check.py`、`scenarios.py`、`obs_wtd.py`，输出为同名 `.out`；塔文献 `docs/refs/sites/<塔>/`（两路只读子任务读 PDF，结论经本文件逐条收录）；文献子任务（Crossref、OpenAlex）；CTSM 源码 `~/mode/Wetland/CTSM`
+- **状态**：四问已答，另查出 Walter 深度衰减归一化放大旱地 O2 需求（第 3.3 节）；改法只到机制、式子与离线预期，未实跑
+- **失效于**：C-14、C-14b、C-41 的实现改动，或旱地塔配置（`USE_SITE_WTD`、足迹湿地份额）改动后
+
+口径：通量 mg CH4 m-2 d-1，正值为排放；"计分月"按 `score_series_v2.py` 的观测门槛（一月至少 10 个有效日）且两次运行都有输出的月；量级比、KGE_ln、r 取自两份 scores77 表。模式层界面（`MOD_Vars_Global.F90:140-153`）：0.018、0.045、0.091、0.166、0.289、0.493、0.829、1.383、2.296、3.433 m，第 10 层节点 2.86 m、厚 1.14 m。
+
+## 0. 覆盖面
+
+1. 站点与观测：11 座 upland 塔全部（AT-Neu、CA-SCC、CH-Cha、CH-Dav、CN-Hgu、RU-Fy2、US-BZS、US-CRT、US-EML、US-Ho1、US-Pfa，两份 scores77 表 upland 类 11 行）。塔上月气候态取 `data/FLUXNET-CH4/Observation/*_Flux.nc` 的 FCH4_f；水位取同文件 WTD_f 与 `Sitedata/*_site.nc` 的 WTD_daily（`obs_wtd.out`）。
+2. 塔文献：`docs/refs/sites/<塔>/` 下 11 个目录共 46 份 PDF（Delwiche 2021 以硬链接出现在多个目录）全部检索（检索词 methane、CH4、manure、slurry、graz、cattle、drain、tile、water table、groundwater、wet、stream、ditch、footprint、anox、flood、peat、uptake、sink、oxid、thaw），命中段按页精读；另读 `site_facts.csv` 11 塔全部行、`site_papers.csv` 11 塔行。盘上 CH-Cha 的 2018_Hortnagl 为会议幻灯，不是 GCB 正文。
+3. 模式输出：两个 tag 下 11 塔全部 `history/*_hist_*.nc` 与 `*_hist_tracer_*.nc`（`upland_budget.out`）；O2 与氧化逐层逐月（`uptake_profile.out`、`o2_months.out`、`o2_demand_terms.out`、`rr_check.out`）；离线情景（`scenarios.out`）。全球对照读 `v2/results/global_eval_g2_v2c_2001.log`、`global_eval_g2_v2e_2001.log`、`model_per_area_g2_v2c_2001.log`、`model_per_area_g2_v2e_2001.log`、`global_eval_g2_fp_2017-2018.log`，以及 `v2/results/` 下 37 份 global_eval 日志中含 upland 行的 34 份。
+4. 读码：`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90` 的 C-14 开关（1071-1074）、jwt 判定（1409-1424）、`methane_prod` 全段（2213-2753，含 Walter 深度衰减的归一化 2328-2346 与施加 2539-2545，含 C-41 与 C-14 2502-2524、分解碳 2649、产量 2677-2690、O2 与 CO2 需求 2716-2741）、`methane_oxid`（2906-3031）、O2 与 CH4 竞争（3753-3824）；`MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90:104-109`（土壤斑块 o_scalar 恒 1）；`MOD_Tracer_Reactive_Methane_BgcLink.F90:120-275、366-420、515-535`（HR、根呼吸、根系分泌物输入）；`MOD_Tracer_Reactive_Methane_Driver.F90:305-390`；两 tag 的 `_conf/ch4_parameter.nml` 与 `site_nml/AT-Neu.nml` 的 diff。CTSM：`src/biogeochem/ch4Mod.F90:2500-2668`、`src/soilbiogeochem/SoilBiogeochemDecompCascadeBGCMod.F90:764-860`、`src/main/controlMod.F90:483-487`、`src/main/clm_varctl.F90:211`、技术手册 `doc/source/tech_note/Methane/CLM50_Tech_Note_Methane.rst` 第 45-80、333-345 行。Riley et al. 2011 读全文（本地 `docs/refs/models/2011_Riley_CLM4Me_barriers.pdf`）第 1929-1930、1937、1939-1940、1947-1948 页。
+5. 文献（第 4 节）：WebSearch 17 次（缺氧与有氧矿化比、Keiluweit 2017、Lacroix 2023、von Fischer 与 Hedin、Schädel 2016、Frolking 与 HPM、Angel、Knox 2019、草地涡度 CH4 与牲畜、Dutaur 与 Verchot、Hörtnagl 2018、Shoemaker 2014、Lohila 2016、上坡林地涡度、TEM、JULES）；读全文的有 Riley et al. 2011、Keiluweit et al. 2017、Angle et al. 2017、Frolking et al. 2010、Saunois et al. 2020 与 2025、Knox et al. 2019、Delwiche et al. 2021、Melton et al. 2013、Spahni et al. 2011；其余只读摘要（逐条在第 4 节注明）。Wiley、Nature 部分页面 403，Teh 2005、Dutaur 2007、von Fischer 2002 与 2007、Hörtnagl 2018、Lohila 2016、Shoemaker 2014、Zhuang 2004、Dengel 2011 只取得 OpenAlex 摘要；TEM 产甲烷方程、ELM、Arah and Stephen 1998 原文未读，未用于结论。第 6 节全部 DOI 由本文件重打 Crossref 核对。
+6. 未看：无。
+7. 存疑（读码读文献定不了）：
+   - CN-Hgu 的符号：站点论文报强汇、FLUXNET-CH4 数据为源，要向数据提供方核对处理流程。
+   - 修正第 3.3 节 O2 需求放大后旱地塔与全球洪泛格非饱和子柱的排放各降多少。实验：改法落地后 77 塔一轮加全球一年，与 `v2_p9k`、`g2_fp` 比。
+
+## 1. 结论
+
+1. 11 座 upland 塔里只有 US-Ho1 是净汇（计分月均值 −0.48，正值月 13 %），其余 10 座为弱到中等的源（1.2–40.6）——已验证（`upland_budget.out` 各塔 obs 行）。
+2. 塔上正排放几乎都不来自旱地土壤本身：CA-SCC、US-Pfa 来自足迹里的湿地（足迹湿地 52 %、17 %）；US-EML 的水位只在地下 4–17 cm；US-CRT 的正值出现在雨后与秋冬下层饱和时；AT-Neu 作者归于夜间足迹采到的小溪与湿斑；CH-Cha 作者只说是土壤交换，塔东有排水渠、每次刈割后施液态粪肥；CH-Dav 林地箱式测量是持续的汇，塔上正值未解释；RU-Fy2、US-BZS 文中未归因——已验证（第 2 节表内逐塔页码）。
+3. `v2_p9f` 里旱地塔的全部产量都在第 9、10 层（1.38–3.43 m），产量加权深度 2.3–2.9 m；这些层在全部计分月都被算作水位以下（s10 = 1.00），但真正饱和的只有第 10 层的 15–87 %——已验证（`upland_budget.out`、`scenarios.out`；判定规则 Physics.F90:1417-1423 把含水位的整层算作水位以下）。
+4. 这部分深层产量在上方 2–3 m 非饱和土里几乎不被氧化（被氧化份额 x 约 0），因为 0.3–0.6 m 以下 O2 为 0；它成了 `v2_p9f` 旱地塔 0.08–5.1 的排放——已验证（`upland_budget.out` 的 split 行与逐层 O2）。
+5. C-14 把这部分产量整整乘 0.2（两 tag 产量比 0.200），氧化与吸收几乎不变，排放于是降到 −0.05–1.00，六塔量级比到 0.00–0.19——已验证（`upland_budget.out`；代码 Physics.F90:2502-2524）。饱和子柱在这些塔上权重为 0（淹水份额 0），所以 C-41 对旱地塔不起作用——已验证（同上 fin 列）。
+6. 模式对大气甲烷的吸收只有 0.01–0.40（有产量的 9 塔），CA-SCC、US-BZS 这类整柱在水位以上的塔为 0.20–0.37；V-8 以后的全球运行里非洪泛格土壤斑块合计 −0.5 到 −0.8 Tg yr-1（`g2_sp` 为 −2.5），CLM4Me 基线为 31 Tg yr-1——已验证（`upland_budget.out`；`global_eval_*.log` upland 行；Riley et al. 2011 第 1937 页）。
+7. 有产量的塔上氧化与吸收弱，是因为 CH4 模块的分解 O2 需求被放大了 85 到 2300 倍：Walter 深度衰减的归一化因子只在水位以下层上算（Physics.F90:2335-2346），却乘到全部层的 `partition_z` 上（2544），再进 `carbon_decomp_depth`（2649）、分解 O2 需求（2716）与 CO2 诊断（2739）；只有第 10 层在水位以下时该因子约为 exp(2.865/0.3) ≈ 1.4 万，上层 O2 需求随之放大——已验证（读码）。后果：O2 胁迫因子在生长季表层 0.006–0.04，0.3–0.6 m 以下 O2 为 0，实际氧化只有同浓度下离线潜在值的 1/40 到 1/650；CA-SCC、US-BZS 没有水位以下层，因子为 1，不受影响——已验证（`o2_months.out`、`rr_check.out`、`uptake_profile.out`）。这一项就是 CO2 诊断比宿主 HR 大的全部来源——推测。理由是比值随水位以下层数跳变的幅度与该因子一致：只第 10 层时比值稳定在约 2100，第 9 层也进水位以下的月份降到 85–98，比为 0.04–0.05；设第 9、10 层 HR 相当，两种情况的因子约 620 与 1.4 万，比为 0.044。
+8. 按 C-14 自己援引的依据（Riley et al. 2011 附录 B），常年饱和的层碳库会积累、分解回到输入速率，不该打折；只在部分时间饱和的层才按 β 打折——已验证（Riley et al. 2011 第 1929、1947-1948 页）。旱地塔的产甲烷层常年算在水位以下，所以 C-14 对它们不成立——已验证（结论 3 与 Riley 附录 B 对照）。CLM5 把 0.2 放进 BGC 的分解、碳库随之积累，季节淹水因子只用于淹水柱且默认不启用；LPJ-Bern 在湿矿质土按 0.52 % 的 HR 产甲烷、不加缺氧因子；查到的模式都没有"碳库不响应、底物平乘 0.2"这种做法——已验证（读码 CTSM；Spahni et al. 2011 式 7–9，子任务读全文）。
+9. 作为速率比，β = 0.2 有据：培养实验里缺氧矿化比有氧低 3.4–10 倍（β 约 0.1–0.3），CLM5 取 0.2 为缺氧速率下限——已验证（Lee et al. 2011、Schädel et al. 2016 只读摘要；Keiluweit et al. 2017 子任务读全文；CLM50_Tech_Note_Decomposition.rst 第 194 行）。问题不在 0.2 本身，而在把它当成常年饱和层的通量比。
+10. 排水良好的土壤也有总产甲烷（干燥有氧土平均 0.15 mg CH4-C m-2 d-1），但通常被同位点总氧化抵消，产甲烷超过碳矿化的 0.04 % 才转为净源；旱地土壤整体是汇，全球 30 [11–49]、32 [18–40] Tg yr-1，单位面积约 0.4–1.7 mg CH4 m-2 d-1——已验证（von Fischer and Hedin 2002、2007 只读摘要；Saunois et al. 2020、2025 第 3.3.4 节子任务读全文；Murguia-Flores et al. 2018 只读摘要）。
+11. FLUXNET-CH4 的非农业旱地站除 US-Ho1 外都是弱净源；文献把涡度与箱式之差指向足迹里的湿斑、树干、牲畜与湿年事件，没有查到把旱地涡度净排放归于深层饱和土的文献——已验证（Delwiche et al. 2021 第 10 页；Knox et al. 2019 子任务读全文；Felber et al. 2015、Dengel et al. 2011、Lohila et al. 2016 只读摘要）。
+12. 但把 C-14 从旱地拿掉也不对：`v2_p9f` 的旱地排放本身是假的，来自整层判定、Walter 归一化放大 O2 需求造成的深层无氧、与偏深的模式水位（RU-Fy2、US-CRT、US-Ho1 模式水位 2.8–3.1 m，塔上 0.45–1.20 m；US-EML 模式 3.3 m，井测 0.04–0.17 m）——已验证（`upland_budget.out`、`obs_wtd.out`、第 2 节、结论 7）。C-14 在旱地上是在替这三处错误做补偿——推测。理由是三处任一修好，深层产量都会大幅下降或被氧化掉，C-14b 的 0.2 就失去了作用对象。
+13. 改法建议，按顺序：① 先修 Walter 归一化——深度衰减只乘在产量上，分解 O2 需求与 CO2 诊断用未衰减的 HR 分层；② C-14 只保留在洪泛淹水子柱（由 C-41 管），非饱和子柱的 C-14b 改为含水位层只按饱和份额产甲烷，必要时再加按层的季节饱和因子；③ 旱地塔走站点侧表示。离线看，② 使 9 座有产量塔的产量为 `v2_p9f` 的 0.17–0.51、为现行 C-14b 的 0.9–2.5 倍——已验证（`scenarios.out` C、D 列）；① 修好后其中大部分会在上方土层被氧化——推测。理由见第 3.3 节第 5 条。全球方向：C-14b 当初在同年砍掉的 48.6 Tg yr-1 有 91 % 在 30° S–30° N——已验证（`global_eval_g2_v2c_2001.log` 对 `g2_v2e_2001.log`）；单去 C-14b 会让热带洪泛格回升、北非与南美洪泛上升，先修 ① 则同一部分会被氧化压下，净方向取决于两者相抵——推测。理由是 Walter 归一化同样作用于洪泛格水位偏深的非饱和子柱，而 C-14b 当初要压的正是这部分排放。
+14. 旱地塔不宜拿来标定 C-14 的去留：正排放的真实来源（足迹湿地、浅层或季节水位、粪肥与排水渠）不在土壤斑块的非饱和子柱物理里。要对上它们，应走站点侧表示——CA-SCC、US-Pfa 按足迹湿地份额（同 US-ORv 的 `FOOTPRINT_WETLAND.tsv`），US-EML、US-CRT、US-Ho1、RU-Fy2 开 `USE_SITE_WTD`——推测。理由是结论 2 与结论 12 的逐塔事实。
+
+## 2. 站点事实（问题 1）
+
+表中"塔上"为计分月 FCH4_f（mg CH4 m-2 d-1）：均值、中位、正值月比例、气候态峰谷；"模式水位"为 `v2_p9f` 计分月 f_zwt 均值（范围）。文献页码为 PDF 页序。
+
+| 塔 | 用地 | 土壤、排水与水位 | 塔上 | 文献对正排放的解释 |
+| --- | --- | --- | --- | --- |
+| AT-Neu | 谷底集约割草草地，年三刈，10 月施厩肥（Hörtnagl and Wohlfahrt 2014 第 2-3 页） | Fluvisol 约 1 m，砂壤；无水位记录（Delwiche et al. 2021 第 23 页）；模式 3.12（2.74–3.41） | 1.19，中位 0.75，87 %；6–10 月 2.1–2.8，1–2 月 −0.2 到 −0.3 | 夜间静稳下的间歇交换；夜间足迹较大，可能采到小溪与相邻湿斑（第 12 页）；施厩肥当天 CH4 几乎不变（第 8 页）；白天弱吸收归于甲烷氧化菌（第 11 页） |
+| CA-SCC | Scotty Creek 景观塔：冻土台地黑云杉林与融塌沼、水道沼镶嵌，生长季足迹林 46 %、湿地 52 %（Helbig et al. 2017 第 7 页） | 塔位无水位；湿地中心 −0.11 ± 0.06 m，台地秋季深于 0.4 m；模式 5.16（柱底以下） | 40.6，100 %；7–8 月 62–63（只 4–10 月有数） | 排放来自足迹内无冻土湿地，林地贡献与 0 无显著差异（第 1、6 页） |
+| CH-Cha | 集约永久草地，每次刈割后施液态粪肥、一年最多 7 次，早春或秋季短期放羊和牛，2012 年翻耕重播（Merbold et al. 2021 第 1、3 页）；塔东有带芦苇的小排水渠（Zeeman et al. 2010 第 5 页） | Cambisol 或 Gleysol–Cambisol；无水位记录；模式 2.43（2.14–2.97） | 11.3，中位 9.8，96 %；2 月 16.0、5–6 月 16.5–17.7，9 月 6.0 | 作者认定 EC 测到的是土壤交换，低放牧压下无放牧峰（第 12-13 页）；粪肥与排水渠对 CH4 的作用文中未见 |
+| CH-Dav | 亚高山挪威云杉林（Krebs et al. 2024 第 3 页） | Cambisol 与 Podzol，砂质，pH 3.5–4.5；无水位记录；模式 2.50（2.13–3.11） | 4.26，中位 3.2，84 %；3–5 月 8–9，6、8 月转负 | 林地箱式为持续汇 −0.71 g CH4 m-2 yr-1，积雪深时通量偏正（第 6-8 页）；塔上为正的原因文中未见 |
+| CN-Hgu | 红原高寒草甸（Chen et al. 2019 第 3 页） | 冷冻雏形土 0.3–0.5 m；无水位；土壤供水介于草地与湿地之间，2018、2020 年受淹（Wang et al. 2022 第 6、8 页）；模式 2.69（2.29–3.12） | 4.27，中位 3.5，87 %；11–1 月 8–9，7 月约 0 | 站点论文报强汇（月最强 −927.5 µmol m-2 d-1），只解释吸收（第 6、9 页）；与 FLUXNET-CH4 数据符号相反——存疑 |
+| RU-Fy2 | 排水良好坡地上的干云杉林，距湿云杉林约 2 km（Kurbatova et al. 2008 第 2-3 页） | 文中"通常 1.5 m"；塔上 WTD_daily 均值 0.51 m（p05 0.02、p95 1.36）；模式 3.10（2.32–3.43） | 10.0，中位 −2.4，45 %；11–1 月 21–64，4–9 月 −2 到 −6 | 三篇均不测 CH4，文中未见 |
+| US-BZS | 冻土泥炭台地上的黑云杉林，高出周边约 1.3 m，距融塌沼约 500 m（Euskirchen et al. 2024 第 4 页） | 无水位；活动层 57–73 cm（第 9 页）；模式 13.3 | 7.29，100 %；7 月 12.0，9–10 月 10.4–10.6（只 4–10 月） | 只说"low"，未归因（第 12 页） |
+| US-CRT | 瓦管排水的大豆–冬小麦农田，原 Great Black Swamp（Chu et al. 2014 第 2-3 页） | silty clay；瓦管 0.5–1.0 m；塔上 WTD 均值 1.20 m（0.26–2.50）；2011 年暖冬 0.2–0.8 m（第 7 页）；模式 2.98（2.50–3.38） | 9.41，100 %；5 月 18.0，12 月 14.7，8 月 2.4 | 冬季升高原因"not clear"，多在强降雨后 1–2 天；2011 年秋冬下层常饱和、水位高，可能使通量略高；已接近仪器检出限（第 9、16 页） |
+| US-EML | 上坡丛生薹草苔原，热喀斯特发育（Taylor et al. 2018 第 2 页） | 表层"relatively well drained"，无大范围淹水；足迹内 9 口井水位 4–17 cm，活动层 66–69 cm（第 3、5-6 页）；模式 3.27（2.64–3.42） | 3.18，96 %；8 月 5.8，1 月 5.6，12 月 −1.9 | 融深、缺氧微区与薹草通气组织；冬季脉冲与春融释放储存 CH4（第 1、9-11 页） |
+| US-Ho1 | 红云杉–铁杉林，从排水良好到持续淹水的洼地都有（Richardson et al. 2019 第 2、5-6 页） | 塔上 WTD 均值 0.45 m（0.17–0.96）；模式 2.78（2.29–3.41） | −0.48，13 %；7 月 0.37，10 月 −1.06 | 夏末水分收支使年通量在源汇间翻转，土壤水分高时缺氧孔隙产甲烷（Shoemaker et al. 2014 第 1、5 页） |
+| US-Pfa | 447 m 高塔（CH4 取 122 m），经营混交林与 fen、bog 镶嵌，2011 年足迹气候态湿地 17 %（Desai et al. 2015 第 1、5 页） | 上地排水良好；无站点水位；模式 2.81（2.29–3.39） | 4.06，100 %；7 月 11.4，8 月 9.2，冬季约 1 | 排放来自足迹内湿地；箱式林地土壤 −1.8、湿地 5.08 nmol m-2 s-1（第 6、11 页） |
+
+各行"塔上"与"模式水位"——已验证（`upland_budget.out`、`obs_wtd.out`）；各行文献内容——已验证（子任务逐页读 PDF，页码见表；本文件只收录其中带页码的条目）。FLUXNET-CH4 数据文的总述：非农业 upland 站除 US-Ho1 外都是弱的净源，农业 upland 站缺季节型、通量低且时有负值——已验证（Delwiche et al. 2021 第 10 页）。
+
+## 3. 模式侧：C-14 为什么让旱地塔归零（问题 2）
+
+### 3.1 产量在哪
+
+计分月均值（mg CH4 m-2 d-1）；x 为产出 CH4 被氧化的份额、Oatm 为大气 CH4 的吸收，由两次运行线性拆分 O = Oatm + x·P 得到（假定两次 Oatm 相同）。
+
+| 塔 | 塔上 | E_f | E_i | P_f | P_i | O_f | O_i | x | Oatm | 模式水位 | 第 10 层产量份额 | P/HR（碳，%） |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| AT-Neu | 1.19 | 2.53 | 0.23 | 3.20 | 0.64 | 0.01 | 0.01 | 0.00 | 0.01 | 3.12 | 1.00 | 0.112 |
+| CH-Cha | 11.32 | 5.14 | 1.00 | 5.01 | 1.00 | 0.01 | 0.03 | −0.01 | 0.04 | 2.43 | 0.59 | 0.135 |
+| CH-Dav | 4.26 | 1.25 | −0.05 | 1.20 | 0.24 | 0.39 | 0.38 | 0.01 | 0.38 | 2.50 | 0.50 | 0.083 |
+| CN-Hgu | 4.27 | 3.19 | 0.13 | 2.84 | 0.57 | 0.02 | 0.32 | −0.13 | 0.40 | 2.69 | 0.78 | 0.108 |
+| RU-Fy2 | 10.03 | 0.85 | 0.02 | 1.29 | 0.26 | 0.01 | 0.04 | −0.03 | 0.04 | 3.10 | 1.00 | 0.061 |
+| US-CRT | 9.41 | 1.03 | 0.07 | 1.45 | 0.29 | 0.01 | 0.01 | 0.00 | 0.01 | 2.98 | 1.00 | 0.093 |
+| US-EML | 3.18 | 0.08 | −0.01 | 0.71 | 0.14 | 0.03 | 0.03 | 0.01 | 0.03 | 3.27 | 1.00 | 0.089 |
+| US-Ho1 | −0.48 | 1.28 | 0.15 | 1.38 | 0.28 | 0.03 | 0.03 | 0.00 | 0.03 | 2.78 | 0.92 | 0.050 |
+| US-Pfa | 4.06 | 2.45 | 0.23 | 2.63 | 0.53 | 0.13 | 0.14 | 0.00 | 0.14 | 2.81 | 0.76 | 0.105 |
+| CA-SCC | 40.58 | −0.36 | −0.36 | 0 | 0 | 0.37 | 0.37 | — | 0.37 | 5.16 | — | 0 |
+| US-BZS | 7.29 | −0.20 | −0.20 | 0 | 0 | 0.20 | 0.20 | — | 0.20 | 13.32 | — | 0 |
+
+——已验证（`upland_budget.out`）。要点：
+
+1. 11 塔的淹水份额在全部计分月为 0，产量全在非饱和子柱——已验证（`upland_budget.out` fin 列）。
+2. 非饱和子柱在第 1–8 层产量为 0（`anoxicmicrosites = .false.`，ch4_parameter.nml:125），只有第 9、10 层（1.38–3.43 m）在水位以下时产甲烷；产量只占该塔异养呼吸碳的 0.05–0.14 %——已验证（同上逐层表与 P/HR 列）。
+3. 第 10 层在 9 塔的全部计分月都算作水位以下（s10 = 1.00），因为判定规则是"水位不深于某层底界即整层算水位以下"（Physics.F90:1417-1423）；按月均水位算，第 10 层真正饱和的只有 27 %（AT-Neu）、87 %（CH-Cha）、80 %（CH-Dav）、66 %（CN-Hgu）、29 %（RU-Fy2）、40 %（US-CRT）、15 %（US-EML）、58 %（US-Ho1）、55 %（US-Pfa）——已验证（`scenarios.out` s10、sat10 列）。CTSM 产量同样按 j > jwt 整层判定（ch4Mod.F90:2658-2661）——已验证（读码）；它的层是否更薄未在本任务核对。
+4. CA-SCC、US-BZS 的模式水位在柱底（3.43 m）以下，没有任何层在水位以下，两 tag 完全相同，只剩吸收——已验证（同上）。
+5. AT-Neu、CN-Hgu、RU-Fy2、US-CRT、US-EML 的 E_f 低于 P_f（如 AT-Neu 2.53 对 3.20），差额是深层 CH4 储量在增（dS 0.4–0.8），不是氧化——已验证（`upland_budget.out` dS 列）；AT-Neu 10–11 月、CN-Hgu 与 CH-Dav 2 月的排放尖峰是水位上下移动时第 10 层储量的释放——推测。理由是尖峰月 P 不升，而 E 为同月 P 的 3–17 倍。
+
+### 3.2 C-14 的作用路径
+
+1. 开关：`anoxic_decomp_patch = floodplain_anoxic_decomp .and. patchtype /= 2 .and. .not. is_rice_paddy`，即所有非湿地、非稻田斑块都算，不看是否洪泛——已验证（读码 Physics.F90:1071-1074）。
+2. 作用：在 `methane_prod` 的层循环里，饱和子柱且开 C-41 时乘季节淹水因子，否则 `base_decomp` 一律乘 `mino2lim`（0.2）——已验证（读码 Physics.F90:2508-2524）。这段在层循环内，没有 j > jwt 的条件，所以水位以上各层的分解 O2 需求与 CO2 诊断也被乘 0.2——已验证（读码 Physics.F90:2649、2716、2739 都用同一个 `base_decomp`）。
+3. 两 tag 对旱地塔的配置差只有 C-14、C-41 两键；另三键（`wetland_max_wtd_bog_share`、`wetland_moss_rss`、`DEF_WETLAND_INFLOW_AREA_SPLIT`）只作用于湿地斑块——已验证（diff `_conf/ch4_parameter.nml` 与 `site_nml/AT-Neu.nml`）。
+4. 结果：9 座有产量的塔产量比正好 0.200，氧化份额 x 约 0，E_f − E_i 与 0.8·P_f 相当（AT-Neu 2.31 对 2.56，CH-Cha 4.15 对 4.01，US-Ho1 1.13 对 1.11，US-Pfa 2.23 对 2.10）——已验证（`upland_budget.out` split 行）。所以"归零"不是被吸收抵消，而是 80 % 的产量被直接拿掉、剩下 20 % 与微弱的吸收（0.01–0.40）相当。
+5. C-14 让上层 O2 略升（如 US-Pfa 第 8 层 0.020 → 0.100 mol m-3，US-EML 第 7 层 0.166 → 0.308），CH-Dav、CN-Hgu、US-Pfa 的 O_i 因此略高于 O_f——已验证（`upland_budget.out` 逐层 O2 列）。
+
+### 3.3 氧化与吸收为什么这么弱
+
+1. 有产量的塔上，非饱和子柱 0.3–0.6 m 以下 O2 为 0（第 7–10 层），CH4 从 2–3 m 上行时没有甲烷氧化菌可用——已验证（`upland_budget.out` 逐层 O2）。
+2. 表层 O2 胁迫因子（O2 可用量比需求，Physics.F90:3769）在 AT-Neu 3–10 月为 0.006–0.037，1–2、11–12 月 0.37–0.77；每步用掉的 O2 等于该层 O2 存量除以步长，即每步耗尽——已验证（`o2_months.out`）。
+3. 需求的大小：`f_co2_decomp_tot_unsat`（分解 CO2 加根呼吸，O2 竞争前）在 AT-Neu 2011 年为 954–6582 µmol C m-2 s-1，而宿主 f_hr 为 0.49–3.24、f_ar 为 0.29–3.50，逐月比 f_hr 高 1600–2200 倍；CH-Cha 2015 年 365–5815 对 f_hr 1.8–3.8（98–2100 倍）；US-Ho1 2017 年、US-Pfa 2017 年分别为 f_hr 的 870–2200 倍与 85–2300 倍；CA-SCC、US-BZS 为 0.0–0.9，低于 f_hr——已验证（`rr_check.out`）。AT-Neu 6 月各层 O2 需求与该 CO2 项之比为 0.9–1.0，O2 需求就是这一项——已验证（`o2_demand_terms.out`）。
+4. 需求的出处：`methane_prod` 先在水位以下层（j > jwt）上算 Walter 归一化因子 walter_renorm = Σ hr_vr·dz ÷ Σ hr_vr·dz·exp(−z/z0)（Physics.F90:2328-2346，z0 = `z0_methane_prod` 0.30 m，ch4_parameter.nml:119），再在层循环里对每一层都做 partition_z ← partition_z·exp(−z/z0)·walter_renorm（2539-2545，无 j > jwt 条件）；`carbon_decomp_depth` 用这个 partition_z（2649），分解 O2 需求取它减 2 倍产量（2716）、CO2 诊断取它减产量加根呼吸（2739-2741）——已验证（读码）。水位以下只有第 10 层（节点 2.865 m）时，该因子为 exp(2.865/0.3) ≈ 1.4 万，表层 exp(−z/0.3) 约为 1，于是表层分解 O2 需求放大上万倍；柱内无水位以下层时因子保持 1，只剩衰减，O2 需求反而变小（CA-SCC、US-BZS 的 CO2 诊断低于 f_hr）——已验证（读码与 `rr_check.out` 对照）。根系分泌物（取 `lag_npp` 的 0.15 倍，gC m-2 s-1，CNSummary.F90:902-907）与硝化项量级正常，不是出处——已验证（读码 BgcLink.F90:212-258、Physics.F90:2733-2741）。
+5. 后果：同一浓度下的离线潜在氧化（不计竞争，v2_p9i 参数）AT-Neu 1.47、US-Ho1 12.7、CH-Dav 15.8，实际只有 0.009、0.031、0.38——已验证（`uptake_profile.out`；离线式与参数见该文件头）。深度衰减只该作用于产量，修正后表层 O2 胁迫解除，上方土层会氧化掉深层 CH4 并提高大气吸收——推测。理由是 CA-SCC、US-BZS 胁迫因子为 1 时实际氧化只比离线潜在值低 1.2–7 倍（0.20 对 0.24、0.37 对 2.65；离线值按孔隙度下限取，偏高），而 AT-Neu 低 160 倍。
+6. 湿地斑块水位在地表时（jwt = 0）归一化在全柱上算，只把分解 O2 需求往表层挪、不放大总量——已验证（读码 2335-2346）；对湿地表层氧化的影响量级未算——推测。理由是 exp(−z/0.3) 在 0.3 m 内从 1 降到 0.37，表层需求会高出原值数倍。
+
+### 3.4 模式水位对塔上水位
+
+有塔上水位的四塔，模式都深得多：RU-Fy2 3.10 对 0.51 m，US-CRT 2.98 对 1.20 m，US-Ho1 2.78 对 0.45 m，US-EML 3.27 对 0.04–0.17 m（井测，Taylor et al. 2018 第 5-6 页）——已验证（`upland_budget.out`、`obs_wtd.out`）。这四塔 `USE_SITE_WTD = .false.`——已验证（`site_nml/AT-Neu.nml` 第 14 行同式；四塔未在 `SITE_MAIN.csv` 出现）。所以模式产量落在 2.3–3.4 m 的深层（碳少、上方无氧化），而真实的饱和层在 0.04–1.2 m——已验证（本节与第 3.1 节对照）。
+
+## 4. 文献（问题 3）
+
+"全文"指子任务或本文件读了全文；"只读摘要"指只取得摘要（OpenAlex 重建或落地页）。
+
+### 4.1 缺氧分解速率与稳态
+
+1. Riley et al. 2011 的季节淹水因子 S = [β(f − f̄) + f̄]/f（S ≤ 1），f 为瞬时淹水面积比例，f̄ 为上一年按异养呼吸加权的年均淹水比例；表 1 写 β = 0.2 "used to calculate S only"——已验证（Riley et al. 2011 第 1930 页式 3 与表 1，全文）。
+2. 同文：常年淹水时缺氧抑制分解、SOM 库变大，若分解对库线性、缺氧速率为有氧的固定倍数且处于平衡，补偿完全、呼吸速率不变——已验证（Riley et al. 2011 第 1929 页，全文）。
+3. 附录 B：一年中被淹时间份额为 φ 的部分，平衡碳库 C̄ = Iτ/[φβ + (1 − φ)]（B3），产量只来自瞬时淹水部分（B4、B5）；式 3 对"几乎全年淹 A、短期淹 A + ε"的格点精确，全球按产量加权的 S 均值 0.95——已验证（Riley et al. 2011 第 1947-1948 页，全文）。由 B3–B4 可得单层精确形式 S = β/(φβ + 1 − φ)，线性形式 S = φ + β(1 − φ)；φ = 1 时两者都为 1——已验证（按 B3–B4 代数推导）。
+4. 同文把氧化还原滞后 f_pE 限于"horizontal changes in inundated area but not to vertical changes in the water table depth in the upland fraction"，附录 B 未讨论非淹水部分水位以下的层——已验证（Riley et al. 2011 第 1929、1947-1948 页，全文；CLM50_Tech_Note_Methane.rst 第 67 行同句）。
+5. 缺氧与有氧速率比的实测：体积意义上缺氧呼吸比有氧低约 10 倍，缺氧域扩大 5 % 使总矿化降 37 %；常年缺氧环境矿化常降 60–95 %——已验证（Keiluweit et al. 2017 Results 与 Introduction，子任务读全文）。多年冻土土样 15 °C 培养 500 天有氧释放碳为缺氧的 3.9–10.0 倍——已验证（Lee et al. 2011，只读摘要）；25 项研究汇总为 3.4 倍——已验证（Schädel et al. 2016，只读摘要）。
+6. HPM 泥炭模型：饱和时分解乘子 0.3，水位以下随深度降到 0.001（"full & persistent anoxia"）——已验证（Frolking et al. 2010 式 8–9 与表 2，子任务读全文）。CLM5 的 r_oxygen 下限 0.2，介于 Frolking et al. 2001 的 0.025–0.1 与 Wania et al. 2009 的 0.35 之间——已验证（CLM50_Tech_Note_Decomposition.rst 第 194 行）。
+
+### 4.2 旱地土壤的产甲烷与缺氧微区
+
+1. 一处淡水湿地的有氧表层土产甲烷，占通量最多 80 %（另一处 40–90 %）；作者指出现有模式因 O2 浓度压低表层产甲烷，可能大大低估排放。这是湿地，不是旱地——已验证（Angle et al. 2017 Abstract，子任务读全文）。
+2. 17 个样地 130 个土柱：总产量 0.04–930 mg CH4-C m-2 d-1，总消耗 0.1–9.2；干燥有氧土中也普遍有总产量，均值 0.15 mg CH4-C m-2 d-1——已验证（von Fischer and Hedin 2002，只读摘要）。碳矿化中超过 0.04 % 走产甲烷即成净源，消耗只在干土中占优，细尺度氧化还原异质性是关键——已验证（von Fischer and Hedin 2007，只读摘要）。
+3. 热带森林土在含 O2 9–19 % 的土中仍有高 CH4，低氧样地排放 22–101 nmol m-2 s-1，48–78 % 的产量在出土前被氧化——已验证（Teh et al. 2005，只读摘要）。玉米地原位同位素稀释：净通量 −0.03 ± 0.02 mg C m-2 d-1，产甲烷占碳矿化 0–0.27 %，总产量最高 5.4 mg C m-2 d-1，与总氧化正相关——已验证（Yang and Silver 2016，只读摘要）。旱地原状土柱在 10–95 % WFPS 都有产甲烷，大于 75 % 时最高，有机肥处理最高——已验证（Brewer et al. 2018，只读摘要）。各类旱地土都有 Methanosarcina 与 Methanocella，淹水缺氧几周即产甲烷——已验证（Angel et al. 2011，只读摘要）。
+4. 缺氧微区是块体有氧土中氧化还原异质性的主要特征——已验证（Lacroix et al. 2023，只读摘要）。CLM4Me 打开微区产甲烷（φ = 1/(1 + ηC_O2)，η = 400）后全球产量近乎翻倍但多数在出土前被氧化，净排放 +21 %，土壤汇由 31 降到 15 Tg yr-1——已验证（Riley et al. 2011 第 1930、1937、1939-1940 页，全文）。
+5. 小结：排水良好土中总产甲烷普遍存在，但通常不超过同位点总氧化，净值接近零或为汇——推测。理由是第 2–4 条的研究都报告总氧化与总产量同量级或更大，只有高含水、高有机质时转为净源。
+
+### 4.3 大气甲烷吸收
+
+1. 全球自下而上土壤吸收：30 [11–49] Tg yr-1（2000–2009、2008–2017）——已验证（Saunois et al. 2020 第 3.3.4 节，子任务读全文）；31 [17–39]（2000–2009）、32 [18–40]（2010–2019），列出的估算含 Dutaur 36 ± 23 与分层后 22 ± 12、Curry 28（9–47）、MeMo 37.5、Riley 31（15–38）——已验证（Saunois et al. 2025 第 3.3.4 节，子任务读全文）。
+2. Dutaur and Verchot 2007：318 个年估算，不分层 36 ± 23、分层 22 ± 12 Tg yr-1，粗质地温带林吸收最大——已验证（只读摘要）。Curry 2007：28（9–47）Tg yr-1，湿度比温度重要，亚热带与干热带占一半以上——已验证（只读摘要）。MeMo：1990–2009 年 33.5 ± 0.6 Tg yr-1，单位面积苔原 176、混交林 182、疏灌丛 518、热带落叶林 602 mg CH4 m-2 yr-1（约 0.48–1.65 mg m-2 d-1）——已验证（Murguia-Flores et al. 2018，只读摘要）。
+3. Smith et al. 2000：只有水位很高的土是源，其余都是汇；年速率 0.1–9.1 kg CH4 ha-1 yr-1（约 0.03–2.5 mg m-2 d-1）；自然土改农田使氧化降约三分之二，N 输入降低氧化——已验证（只读摘要）。N 添加少量促进、大量抑制，转折约 100 kg N ha-1 yr-1——已验证（Aronson and Helliker 2010，只读摘要）。
+4. 与模式比：有产量的 9 塔 Oatm 0.01–0.40、全球非洪泛格 −0.5 到 −0.8 Tg yr-1，低于上两条的单位面积范围与全球量级一个到两个数量级——已验证（第 3.1 节、`global_eval_*.log` 与本节对照）。
+
+### 4.4 旱地涡度相关站的 CH4
+
+1. FLUXNET-CH4 共 15 个旱地站；非农业旱地站除 US-Ho1（−0.1 ± 0.1 g C m-2 yr-1）外都是弱净源；农田站 1.3 ± 0.8、非农田站 1.6 ± 1.2 g C m-2 yr-1；农田站无季节型、日均值时有负——已验证（Delwiche et al. 2021 第 3.1.1、3.1.3 节，全文）。
+2. 旱地年通量中位 1.3 ± 0.7 g C m-2 yr-1，最低为一处上坡林 −0.2；年和接近零的站相对误差超过 200 %；足迹异质性、树干排放、旱地与湿地比例对解读很重要——已验证（Knox et al. 2019，子任务读全文）。
+3. 牛在足迹内时通量比无牛时高约两个数量级——已验证（Felber et al. 2015，只读摘要）；羊草场涡度约比土壤通量大两个数量级——已验证（Dengel et al. 2011，只读摘要）；中欧 14 块管理草地 CH4 或汇或源——已验证（Hörtnagl et al. 2018，只读摘要）。
+4. 北方上坡林湿秋时由汇转为数月的大源——已验证（Lohila et al. 2016，只读摘要）；温带上坡林涡度 2011 年 6–10 月净吸收 −2.7 ± 0.13 nmol m-2 s-1，随土壤变干而增强——已验证（Wang et al. 2013，只读摘要）。
+5. 专门把旱地涡度净排放归于排水沟或粪肥的综述未查到——已验证（子任务检索记录）。
+
+### 4.5 其他模式的做法
+
+1. CLM4.5/CLM5（CTSM）：开甲烷模块即 `anoxia = .true.`（controlMod.F90:483-487；clm_varctl.F90:211 默认 `.true.`），BGC 分层分解乘 `o_scalar = max(o2stress_unsat, mino2lim)`（SoilBiogeochemDecompCascadeBGCMod.F90:847-853），碳库随之积累；季节淹水因子只在 `sat == 1` 且 `.not. anoxia` 时乘（ch4Mod.F90:2516-2528），所以默认配置不用 S；水位以下产量 = f_CH4 × 该层 HR（ch4Mod.F90:2658-2661），O2 需求除以 o_scalar 还原成潜在需求（ch4Mod.F90:2629-2642），非饱和柱水位以下另有垂向氧化还原滞后 `layer_sat_lag`（ch4Mod.F90:2613-2614）——已验证（读码）。
+2. 手册写产量用的是"upland (default) heterotrophic respiration ... after first dividing off the O2 limitation"（CLM50_Tech_Note_Methane.rst 第 49 行），代码只对 O2 需求除 o_scalar，产量未除——已验证（读手册与读码对照）。
+3. LPJ-wsl 与 ORCHIDEE 只在湿地面积内产甲烷——已验证（Melton et al. 2013 表 1，子任务读全文）；LPJ-Bern 设"wet mineral soils"，含水超过持水量 85 % 或 95 % 时 e = r·HR·(WFP − WFP_th)，r = 0.52 %，理由是部分有氧土氧化更强，HR 不加缺氧因子——已验证（Spahni et al. 2011 式 7–9，子任务读全文）；JULES 只有湿地排放的比例因子——已验证（JULES namelist 文档页，子任务读全文）。TEM 的产甲烷方程、ELM 未查。
+4. 小结：查到的模式没有一家在碳库不响应的前提下给旱地水位以下层的底物乘统一缺氧因子——已验证（本节第 1–3 条）。
+
+## 5. 建议（问题 4）
+
+### 5.1 C-14 对旱地饱和层是否成立
+
+1. 不成立。C-14 的依据是 Riley et al. 2011 附录 B 的季节淹水因子取 f̄ = 0，即"这里从不常年缺氧"。附录 B 的推导是：某部分时间份额 φ 处于缺氧时，稳态碳库为 I·τ/(φβ + 1 − φ)，缺氧时产量为 I·β·f_CH4/(φβ + 1 − φ)，常年缺氧（φ = 1）时回到 I·f_CH4，即不打折——已验证（Riley et al. 2011 第 1929、1947-1948 页）。旱地塔的产甲烷层在全部计分月都算在水位以下（φ ≈ 1），按这一逻辑因子应接近 1，而 C-14b 取 0.2——已验证（结论 3 与本条对照）。
+2. CLM4Me/CTSM 的做法：开甲烷模块时 `anoxia = .true.`（controlMod.F90:483-487），BGC 的分解乘 `o_scalar = max(o2stress_unsat, mino2lim)`（SoilBiogeochemDecompCascadeBGCMod.F90:847-853），碳库随之积累；这时季节淹水因子不用（ch4Mod.F90:2516-2528 只在 `.not. anoxia` 时乘 S）；非饱和子柱水位以下按 f_CH4 × HR 产甲烷，不另乘 β（ch4Mod.F90:2658-2661）——已验证（读码）。技术手册的 S 以淹水份额 f 与其呼吸加权年均定义（CLM50_Tech_Note_Methane.rst 第 338-345 行），代码只在饱和子柱乘它（ch4Mod.F90:2516-2528）——已验证（读手册与读码）。CoLM 的土壤斑块 BGC 没有 o_scalar（DecompCascadeBGC.F90:109 恒 1），C-14b 是在 CH4 模块里对"没打折的 HR"补一个平乘，等价于 CTSM 在 BGC 打折却不让碳库积累——已验证（读码对照）。
+3. 但 C-14b 在旱地上压住的是一个假源（第 3.1、3.3、3.4 节）。它的"正确"只在结果上：US-Ho1 由 1.28 变 0.15，更接近塔上的 −0.48——已验证（`upland_budget.out`）。
+
+### 5.2 候选改法与离线预期（旱地塔）
+
+以 `v2_p9f` 逐层产量为底，离线换算产量（mg CH4 m-2 d-1，未计储量变化与氧化变化；E_D = D − Oatm，偏高）：
+
+| 塔 | P_f | A 现行 C-14b（×0.2） | B 按层季节因子 | C 含水位层按饱和份额 | D = B + C | E_D | 塔上 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AT-Neu | 3.20 | 0.64 | 3.20 | 0.86 | 0.86 | 0.85 | 1.19 |
+| CH-Cha | 5.01 | 1.00 | 3.67 | 2.10 | 2.06 | 2.02 | 11.32 |
+| CH-Dav | 1.20 | 0.24 | 0.80 | 0.27 | 0.25 | −0.13 | 4.26 |
+| CN-Hgu | 2.84 | 0.57 | 2.39 | 1.22 | 1.22 | 0.82 | 4.27 |
+| RU-Fy2 | 1.29 | 0.26 | 1.28 | 0.37 | 0.37 | 0.33 | 10.03 |
+| US-CRT | 1.45 | 0.29 | 1.45 | 0.42 | 0.42 | 0.41 | 9.41 |
+| US-EML | 0.71 | 0.14 | 0.71 | 0.12 | 0.12 | 0.09 | 3.18 |
+| US-Ho1 | 1.38 | 0.28 | 1.27 | 0.71 | 0.71 | 0.68 | −0.48 |
+| US-Pfa | 2.63 | 0.53 | 1.96 | 0.74 | 0.74 | 0.60 | 4.06 |
+
+——已验证（`scenarios.out`）。B 的式子：S_j = s_j + β(1 − s_j)，s_j 为第 j 层在水位以下的时间份额（Riley 式 3 的逐层线性形式，即 C-41 的逐层版；附录 B 的精确形式 β/(s_jβ + 1 − s_j) 在 s_j 接近 1 时与之相同；模式里 s_j 可取按呼吸加权的逐层年均饱和份额）；C 的式子：含水位层产量乘 min(1, (z_i,j − z_wt)/Δz_j)。
+
+1. 只做 B（C-14b 换成逐层季节因子）：常年饱和的第 10 层回到全速，旱地塔回到 `v2_p9f` 的水平，US-Ho1 仍错号——已验证（上表 B 列）。
+2. 只做 C（去掉 C-14b、含水位层按饱和份额）：产量为 `v2_p9f` 的 0.17–0.51，是现行 C-14b 的 0.9–2.5 倍——已验证（上表 C 列对 P_f 与 A 列）。
+3. B + C：与 C 几乎相同（这些塔 s_j 接近 1）——已验证（上表 D 列）。
+4. 三种都救不了塔上正排放的量级（CH-Cha、RU-Fy2、US-CRT 差 5–30 倍），也救不了 US-Ho1 的符号；那要靠 Walter 归一化修正（深层 CH4 被上方氧化、吸收回升）与站点侧水位、足迹湿地表示——推测。理由是第 2 节各塔的真实来源都不在 2–3 m 深层。
+
+### 5.3 建议的顺序与全球方向
+
+1. 先修 Walter 归一化（第 3.3 节第 4 条）：`carbon_decomp_depth` 与由它派生的分解 O2 需求、CO2 诊断改用未衰减的 hr_vr 分层，exp(−z/z0)·walter_renorm 只乘在水位以下的产量上。修好后：旱地塔深层 CH4 在上方被氧化、吸收回升，旱地塔与 US-Ho1 向弱汇走；洪泛格中水位偏深的非饱和子柱排放下降——推测。理由同第 3.3 节第 5 条。全球非洪泛格的弱吸收（−0.6 Tg yr-1）不在此列：那里多数格柱内无水位以下层、因子为 1，要另查——推测。理由是 CA-SCC、US-BZS 这类格子不受放大影响而吸收仍只有 0.2–0.37。
+2. C-14 限于洪泛淹水子柱（由 C-41 管，这是 CLM4Me 原式），非饱和子柱的 C-14b 换成 C（含水位层饱和份额），再视 1 的结果决定是否加 B。旱地塔预期：产量为现行的 0.9–2.5 倍，但 1 修好后大部分会被上方氧化——推测。
+3. 全球方向：C-14b 当初在同年把土壤斑块排放从 85.8 降到 37.2 Tg yr-1（−48.6），其中 30° S–30° N 洪泛 78.4 → 34.1（−44.3），30–60° N 4.6 → 2.2——已验证（`global_eval_g2_v2c_2001.log` 对 `g2_v2e_2001.log`、`model_per_area_*_2001.log`）。所以在 1 未修时单去 C-14b，热带洪泛格会回升数十 Tg，湿地加洪泛（现 163.1）超出 GCP 上限 203 的风险高，北非（现 11.8，已在反演上限 7.2 之上）与南美洪泛同向上升——推测。理由是 C-14b 的削减 91 % 在热带，而北非、南美是热带洪泛的主体。先修 1 再换 C，同一部分排放会被上方土层氧化压下，净方向取决于两者相抵；改法 C 在水位浅于 1.4 m 的格（层薄）削减小，在深水位格削减大——推测。理由是 Walter 放大与整层判定都只在水位偏深、落在厚层里时才大。
+4. 站点侧：旱地塔不作 C-14 去留的判据。CA-SCC 与 US-Pfa 按足迹湿地份额计分（0.52、0.17，同 US-ORv 的 `FOOTPRINT_WETLAND.tsv` 做法）；US-EML、US-CRT、US-Ho1、RU-Fy2 开 `USE_SITE_WTD`（塔上或井测水位 0.04–1.2 m）——推测。理由是第 2 节逐塔事实；开站点水位后产甲烷层上移到碳多的浅层，排放会比现在高，须在 O2 需求修好后再看。
+5. 需要的实验：V-181（`v2_p9kna`，77 塔无 C-14/C-41）已在排队，可直接给出 B 的上界；Walter 归一化修正后跑 77 塔（对 `v2_p9k`）与全球一年（对 `g2_fp`），量出 1 单独的作用，再决定 2。
+
+## 6. DOI 列表
+
+著录全部经 Crossref 核对（题名、首作者、刊名、卷期、页或文章号、年按注册库返回填写；作者多于三位时列前三位加总数）。
+
+- Angel, R., Claus, P., and Conrad, R.: Methanogenic archaea are globally ubiquitous in aerated soils and become active under wet anoxic conditions, The ISME Journal, 6(4), 847–862, 2011. doi:10.1038/ismej.2011.141
+- Angle, J. C., Morin, T. H., Solden, L. M., et al. (14 authors): Methanogenesis in oxygenated soils is a substantial fraction of wetland methane emissions, Nature Communications, 8(1), 1567, 2017. doi:10.1038/s41467-017-01753-4
+- Aronson, E. L., and Helliker, B. R.: Methane flux in non-wetland soils in response to nitrogen addition: a meta-analysis, Ecology, 91(11), 3242–3251, 2010. doi:10.1890/09-2185.1
+- Brewer, P. E., Calderón, F., Vigil, M., et al. (4 authors): Impacts of moisture, soil respiration, and agricultural practices on methanogenesis in upland soils as measured with stable isotope pool dilution, Soil Biology and Biochemistry, 127, 239–251, 2018. doi:10.1016/j.soilbio.2018.09.014
+- Chen, W., Zhang, F., Wang, B., et al. (9 authors): Diel and seasonal dynamics of ecosystem-scale methane flux and their determinants in an alpine meadow, Journal of Geophysical Research: Biogeosciences, 124(6), 1731–1745, 2019. doi:10.1029/2019JG005011
+- Chu, H., Chen, J., Gottgens, J. F., et al. (7 authors): Net ecosystem methane and carbon dioxide exchanges in a Lake Erie coastal marsh and a nearby cropland, Journal of Geophysical Research: Biogeosciences, 119(5), 722–740, 2014. doi:10.1002/2013JG002520
+- Curry, C. L.: Modeling the soil consumption of atmospheric methane at the global scale, Global Biogeochemical Cycles, 21(4), 2006GB002818, 2007. doi:10.1029/2006GB002818
+- Delwiche, K. B., Knox, S. H., Malhotra, A., et al.: FLUXNET-CH4: a global, multi-ecosystem dataset and analysis of methane seasonality from freshwater wetlands, Earth System Science Data, 13(7), 3607–3689, 2021. doi:10.5194/essd-13-3607-2021
+- Desai, A. R., Xu, K., Tian, H., et al. (10 authors): Landscape-level terrestrial methane flux observed from a very tall tower, Agricultural and Forest Meteorology, 201, 61–75, 2015. doi:10.1016/j.agrformet.2014.10.017
+- Dengel, S., Levy, P. E., Grace, J., et al. (5 authors): Methane emissions from sheep pasture, measured with an open-path eddy covariance system, Global Change Biology, 17(12), 3524–3533, 2011. doi:10.1111/j.1365-2486.2011.02466.x
+- Dutaur, L., and Verchot, L. V.: A global inventory of the soil CH4 sink, Global Biogeochemical Cycles, 21(4), 2006GB002734, 2007. doi:10.1029/2006GB002734
+- Euskirchen, E. S., Edgar, C. W., Kane, E. S., et al. (10 authors): Persistent net release of carbon dioxide and methane from an Alaskan lowland boreal peatland complex, Global Change Biology, 30(1), e17139, 2024. doi:10.1111/gcb.17139
+- Felber, R., Münger, A., Neftel, A., et al. (4 authors): Eddy covariance methane flux measurements over a grazed pasture: effect of cows as moving point sources, Biogeosciences, 12(12), 3925–3940, 2015. doi:10.5194/bg-12-3925-2015
+- Frolking, S., Roulet, N. T., Tuittila, E., et al. (7 authors): A new model of Holocene peatland net primary production, decomposition, water balance, and peat accumulation, Earth System Dynamics, 1(1), 1–21, 2010. doi:10.5194/esd-1-1-2010
+- Helbig, M., Chasmer, L. E., Kljun, N., et al. (6 authors): The positive net radiative greenhouse gas forcing of increasing methane emissions from a thawing boreal forest-wetland landscape, Global Change Biology, 23(6), 2413–2427, 2017. doi:10.1111/gcb.13520
+- Hörtnagl, L., and Wohlfahrt, G.: Methane and nitrous oxide exchange over a managed hay meadow, Biogeosciences, 11(24), 7219–7236, 2014. doi:10.5194/bg-11-7219-2014
+- Hörtnagl, L., Barthel, M., Buchmann, N., et al. (15 authors): Greenhouse gas fluxes over managed grasslands in Central Europe, Global Change Biology, 24(5), 1843–1872, 2018. doi:10.1111/gcb.14079
+- Keiluweit, M., Wanzek, T., Kleber, M., et al. (5 authors): Anaerobic microsites have an unaccounted role in soil carbon stabilization, Nature Communications, 8(1), 1771, 2017. doi:10.1038/s41467-017-01406-6
+- Knox, S. H., Jackson, R. B., Poulter, B., et al. (70 authors): FLUXNET-CH4 Synthesis Activity: Objectives, Observations, and Future Directions, Bulletin of the American Meteorological Society, 100(12), 2607–2632, 2019. doi:10.1175/BAMS-D-18-0268.1
+- Krebs, L., Burri, S., Feigenwinter, I., et al. (6 authors): Forest-floor respiration, N2O fluxes, and CH4 fluxes in a subalpine spruce forest: drivers and annual budgets, Biogeosciences, 21(8), 2005–2028, 2024. doi:10.5194/bg-21-2005-2024
+- Kurbatova, J., Li, C., Varlagin, A., et al. (5 authors): Modeling carbon dynamics in two adjacent spruce forests with different soil conditions in Russia, Biogeosciences, 5(4), 969–980, 2008. doi:10.5194/bg-5-969-2008
+- Lacroix, E. M., Aeppli, M., Boye, K., et al. (10 authors): Consider the anoxic microsite: acknowledging and appreciating spatiotemporal redox heterogeneity in soils and sediments, ACS Earth and Space Chemistry, 7(9), 1592–1609, 2023. doi:10.1021/acsearthspacechem.3c00032
+- Lee, H., Schuur, E. A. G., Inglett, K. S., et al. (5 authors): The rate of permafrost carbon release under aerobic and anaerobic conditions and its potential effects on climate, Global Change Biology, 18(2), 515–527, 2011. doi:10.1111/j.1365-2486.2011.02519.x
+- Lohila, A., Aalto, T., Aurela, M., et al. (12 authors): Large contribution of boreal upland forest soils to a catchment-scale CH4 balance in a wet year, Geophysical Research Letters, 43(6), 2946–2953, 2016. doi:10.1002/2016GL067718
+- Melton, J. R., Wania, R., Hodson, E. L., et al. (24 authors): Present state of global wetland extent and wetland methane modelling: conclusions from a model inter-comparison project (WETCHIMP), Biogeosciences, 10(2), 753–788, 2013. doi:10.5194/bg-10-753-2013
+- Merbold, L., Decock, C., Eugster, W., et al. (7 authors): Are there memory effects on greenhouse gas emissions (CO2, N2O and CH4) following grassland restoration?, Biogeosciences, 18(4), 1481–1498, 2021. doi:10.5194/bg-18-1481-2021
+- Murguia-Flores, F., Arndt, S., Ganesan, A. L., et al. (5 authors): Soil Methanotrophy Model (MeMo v1.0): a process-based model to quantify global uptake of atmospheric methane by soil, Geoscientific Model Development, 11(6), 2009–2032, 2018. doi:10.5194/gmd-11-2009-2018
+- Richardson, A. D., Hollinger, D. Y., Shoemaker, J. K., et al. (6 authors): Six years of ecosystem-atmosphere greenhouse gas fluxes measured in a sub-boreal forest, Scientific Data, 6(1), 117, 2019. doi:10.1038/s41597-019-0119-1
+- Riley, W. J., Subin, Z. M., Lawrence, D. M., et al. (8 authors): Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM, Biogeosciences, 8(7), 1925–1953, 2011. doi:10.5194/bg-8-1925-2011
+- Saunois, M., Stavert, A. R., Poulter, B., et al. (101 authors): The Global Methane Budget 2000–2017, Earth System Science Data, 12(3), 1561–1623, 2020. doi:10.5194/essd-12-1561-2020
+- Saunois, M., Martinez, A., Poulter, B., et al. (76 authors): Global Methane Budget 2000–2020, Earth System Science Data, 17(5), 1873–1958, 2025. doi:10.5194/essd-17-1873-2025
+- Schädel, C., Bader, M. K.-F., Schuur, E. A. G., et al. (25 authors): Potential carbon emissions dominated by carbon dioxide from thawed permafrost soils, Nature Climate Change, 6(10), 950–953, 2016. doi:10.1038/nclimate3054
+- Shoemaker, J. K., Keenan, T. F., Hollinger, D. Y., et al. (4 authors): Forest ecosystem changes from annual methane source to sink depending on late summer water balance, Geophysical Research Letters, 41(2), 673–679, 2014. doi:10.1002/2013GL058691
+- Smith, K. A., Dobbie, K. E., Ball, B. C., et al. (17 authors): Oxidation of atmospheric methane in Northern European soils, comparison with other ecosystems, and uncertainties in the global terrestrial sink, Global Change Biology, 6(7), 791–803, 2000. doi:10.1046/j.1365-2486.2000.00356.x
+- Spahni, R., Wania, R., Neef, L., et al. (11 authors): Constraining global methane emissions and uptake by ecosystems, Biogeosciences, 8(6), 1643–1665, 2011. doi:10.5194/bg-8-1643-2011
+- Taylor, M. A., Celis, G., Ledman, J. D., et al. (5 authors): Methane efflux measured by eddy covariance in Alaskan upland tundra undergoing permafrost degradation, Journal of Geophysical Research: Biogeosciences, 123(9), 2695–2710, 2018. doi:10.1029/2018JG004444
+- Teh, Y. A., Silver, W. L., and Conrad, M. E.: Oxygen effects on methane production and oxidation in humid tropical forest soils, Global Change Biology, 11(8), 1283–1297, 2005. doi:10.1111/j.1365-2486.2005.00983.x
+- von Fischer, J. C., and Hedin, L. O.: Separating methane production and consumption with a field-based isotope pool dilution technique, Global Biogeochemical Cycles, 16(3), 2002（Crossref 无页码）. doi:10.1029/2001GB001448
+- von Fischer, J. C., and Hedin, L. O.: Controls on soil methane fluxes: tests of biophysical mechanisms using stable isotope tracers, Global Biogeochemical Cycles, 21(2), 2006GB002687, 2007. doi:10.1029/2006GB002687
+- Wang, J. M., Murphy, J. G., Geddes, J. A., et al. (6 authors): Methane fluxes measured by eddy covariance and static chamber techniques at a temperate forest in central Ontario, Canada, Biogeosciences, 10(6), 4371–4382, 2013. doi:10.5194/bg-10-4371-2013
+- Wang, S., Chen, W., Fu, Z., et al. (7 authors): Seasonal and inter-annual variations of carbon dioxide fluxes and their determinants in an alpine meadow, Frontiers in Plant Science, 13, 894398, 2022. doi:10.3389/fpls.2022.894398
+- Yang, W. H., and Silver, W. L.: Net soil–atmosphere fluxes mask patterns in gross production and consumption of nitrous oxide and methane in a managed ecosystem, Biogeosciences, 13(5), 1705–1715, 2016. doi:10.5194/bg-13-1705-2016
+- Zeeman, M. J., Hiller, R., Gilgen, A. K., et al. (7 authors): Management and climate impacts on net CO2 fluxes and carbon budgets of three grasslands along an elevational gradient in Switzerland, Agricultural and Forest Meteorology, 150(4), 519–530, 2010. doi:10.1016/j.agrformet.2010.01.011
+- 无 DOI：CTSM 技术手册甲烷章，本地 `~/mode/Wetland/CTSM/doc/source/tech_note/Methane/CLM50_Tech_Note_Methane.rst`

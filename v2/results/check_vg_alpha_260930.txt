@@ -1,0 +1,217 @@
+# check_vg_alpha_260930：van Genuchten α 的单位核实
+
+- **日期**：2026.09.30-03:32
+- **读者**：下一会话
+- **来源**：只读核查子任务 methane-alpha，承接 `v2/results/diag_tropical_peat_wt_260930.txt` 第 2.4 节；读码 `CoLM202X-paper-v2`（分支 methane-paper-v2，commit 21c1a052，与其后的 36d38348 在所引文件上无差异）；数据取 O-6（`cases/paper_v2/v260929/g2_o6`）的 landdata 与 const 重启、单点 `cases/paper_v2/v260930/sp_v2_c91/sites_v2_p9f` 的 const 重启；脚本 `v2/_scratch/vgalpha/a1_site_params.py`、`a2_offline.py`、`a3_global.py`、`a4_psis_alpha.py`（node110、node111 直跑，只打印）
+- **状态**：定为真错（CoLM202X 上游自 2022 年起的宿主通病）；改法与影响量级已列；未改码、未跑单柱对照
+- **失效于**：宿主 α 的读入或 `MOD_Hydro_SoilFunction.F90` 的持水式被改之后
+
+口径："现行"指 α 按 landdata 原值代入 (−α·ψ)^n、ψ 以 mm 计（模式现状）；"一致"指 α/10（1/cm 换成 1/mm）。ψs = −10 mm。给水度 Sy 取"静水平衡下水位从 z1 降到 z2 排出的水 ÷ (z2 − z1)"的割线值，与承接件同义。含水量单位 m3/m3，吸力 mm（负值）。
+
+## 0. 覆盖面
+
+1. 读码（行号按 commit 21c1a052）：
+   - 土壤数据制作：`mksrfdata/Aggregation_SoilParameters.F90:154–161`（拟合吸力点 xdat）、`201–206`（水体填充值）、`606–615`（vG 读入注释）、`693–735`（vG 聚合与拟合）、`880–990`（Campbell 读入、拟合与界限）、`817–827`（写 landdata）；`mksrfdata/MOD_SingleSrfdata.F90:773、1069–1080`（单点从原始数据取 α）。
+   - 读入：`mkinidata/MOD_SoilParametersReadin.F90:150–164、200–240、304–378、430–486`；派生量 `mkinidata/MOD_Initialize.F90:410–423`；初值 `MOD_Initialize.F90:1480–1492`、`mkinidata/MOD_IniTimeVariable.F90:420、604–605`；泥炭混合 `MOD_Initialize.F90:1844–1935`；重启 `main/MOD_Vars_TimeInvariants.F90:221–230、507–516、722–732、1020–1030`。
+   - 持水与导水式：`main/HYDRO/MOD_Hydro_SoilFunction.F90:23、34–170`。
+   - VSF 求解器：`main/HYDRO/MOD_Hydro_SoilWater.F90:89–159`（平衡态）、`162–260`（接口单位）、`507–649`、`980、1074`、`3388–3455`（`get_zwt_from_wa`）；调用 `main/MOD_SoilSnowHydrology.F90:784、816–826、943–947、1188–1197、1423–1427`；`main/CoLMMAIN.F90:874、1215–1249`（VSF 与 2014 方案的分支）。
+   - 其余用到 α 或 ψ 的路径：`main/MOD_Eroot.F90:86–132`；`main/MOD_SoilSurfaceResistance.F90:24–35、130–290`；`main/MOD_Thermal.F90:595–614`；`main/MOD_PhaseChange.F90:146–165`；`main/MOD_Irrigation.F90:166–196`；`main/MOD_PlantHydraulic.F90:186–189、365、616`；`main/BGC/MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90:85–100`；`main/BGC/MOD_BGC_Veg_CNPhenology.F90:741`；`main/BGC/MOD_BGC_Soil_BiogeochemNitrifDenitrif.F90:82–99`；`main/BGC/MOD_BGC_Veg_CNFireLi2016.F90:108–118`；`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90:2991–2992`、`MOD_Tracer_Reactive_Methane_Const.F90:431`；`main/MOD_Runoff.F90:364–437`；`main/HYDRO/MOD_Catch_SubsurfaceFlow.F90:660–720`；`main/MOD_Const_Physical.F90:16–26`。
+2. 检索词（Fortran，全仓）：`alpha_vgm` 152 行、24 个文件，带算术的行全读；`soil_vliq_from_psi|soil_psi_from_vliq|soil_hk_from_psi` 命中 11 个文件，调用处全读；`339.9|3399` 带 α 或 ψ 的 7 行全读；BGC 与 TRACER 里 `smp(` 与 `soilpsi` 的非注释命中 9 行全读；`DEF_RSS_SCHEME|DEF_RSTFAC|PLANTHYDRAULICS|SUPERCOOL|SOILPAR_UPS|VariablySaturatedFlow` 在 `ID-Pag.nml` 与 `input_g2_o6.nml` 中只命中 `DEF_USE_VariablySaturatedFlow = .true.`，其余取默认值（`share/MOD_Namelist.F90:163、389、398、568、575`）。
+3. 命中但不在本配置运行路径上的（均已读）：`MOD_Catch_SubsurfaceFlow.F90`（`CatchLateralFlow` 只在 `CATCHMENT` 下，g2_o6 的 `define.h:45–50` 关掉）；`MOD_Runoff.F90:364`（`SubsurfaceRunoff_SimpleVIC` 在 `MOD_SoilSnowHydrology.F90:1035` 已注释）；Urban 三文件与 `MOD_Lulcc_MassEnergyConserve.F90`（`URBAN_MODEL`、LULCC 未开）；`MOD_SoilSurfaceResistance.F90:225–227` 的 TR13 分支（`DEF_RSS_SCHEME` 默认 1）。
+4. 数据：原始 `CoLMrawdata/soil/VGM_alpha.nc`、`psi_s.nc`、`VGM_n.nc`、`k_s.nc`、`theta_s.nc` 的全部属性与 4 个陆地点抽样；O-6 landdata 全部 38516 个斑块的 `alpha_vgm_l1/l5`、`psi_s_l1/l5`；O-6 const 重启 38516 个斑块；sites_v2_p9f 30 座塔的 const 重启。
+5. 上游与版本：本机 5 棵 CoLM 树（`Methane/CoLM202X`、`Methane/CoLM202X-lean`、`Wetland/CoLM202X-methane`、`-rollback`、`-noTracer`）同一段读入；`teacher/master`（2026-07-29）；CoLM-SYSU GitHub master（raw 文件）；`git log --all -S` 查 `alpha_vgm`、`339.9`、`-10.      ! mm` 的引入史。
+6. 文档与文献：`Wetland/CoLM-doc` 的 `积雪土壤水分.tex:40–63、586–600`；CoLM-UsersGuide 的土壤参数表；Dai et al. 2019 JAMES 与 Dai et al. 2019 WRR 的 Crossref 著录（第 7 节）。
+7. 未看：无。
+8. 存疑：两篇 Dai 2019 的全文里 α 写的是什么单位——Wiley 与北师大数据站从本机均取不到（403 与连接断开），要在能访问的网络上读原文才能定；它不影响本件结论，因为单位已由代码与数据本身定死（第 2.1、2.2 节）。单柱对照未跑：纠正 α 必须改码或改数据，本任务禁改（第 4.6 节）。
+
+## 1. 结论
+
+1. 是真错。土壤数据集的 α 以 1/cm 拟合和存储，读入时原样赋值，而 VSF 求解器及所有持水、导水、吸力的调用处都把 ψ 当 mm 代入 (−α·ψ)^n，因此模式里每一种土壤的 α 实际大了 10 倍——已验证（读码与数据，第 2 节）。
+2. 同一套 PTF 在同一吸力网格上拟合出的 Campbell 进气吸力 |ψs|（cm，读入时乘 10 变 mm）与 vG 的 α 相乘，按 1/cm 读中位数为 0.48，95% 的斑块小于 1；按 1/mm 读中位数为 4.8，没有一个斑块小于 1，即同一条曲线的两种拟合在 Campbell 进气点上 vG 已排到饱和度 0.61，自相矛盾——已验证（a4_psis_alpha.py；饱和度按 n = 1.3 算）。
+3. 这是 CoLM202X 上游的写法，本机 5 棵树、teacher/master、CoLM-SYSU master 相同，自 2022-03 导入 v0.2 起未改过——已验证（grep、git grep、WebFetch raw 文件，第 3 节）。
+4. 量级（全球 O-6 矿质土斑块，第 1 层，中位数）：求解器里的田间持水（ψ = −3399 mm）现行 0.197，一致为 0.294；植物可用水（−3399 到 −1.5e5 mm）0.070 对 0.131；0.3–1.0 m 水位带的给水度 0.200 对 0.074——已验证（a3_global.py）。泥炭影响小：湿地斑块给水度中位比为 0.92，纤维质 0–0.1 m 带 0.404 对 0.327——已验证（a2_offline.py、a3_global.py）。
+5. 建议改法：在读入处把 α 除以 10，同时把三处 `α·339.9` 改为 `α·3399`、泥炭混合的 `10/psuc` 改为 `1/psuc`、并修正不活动的 TR13 分支；需要重跑 CoLMINI 冷启动，不需要重跑 mksrf——推测（改法依据见第 5 节，未实现）。
+
+## 2. 单位证据链（问题 1）
+
+### 2.1 mksrfdata：α 以 1/cm 拟合
+
+- 拟合吸力点 `xdat = 1, 5, 10, …, 345, 690, 1020, 5100, 15300, 20000, 1e5, 1e6`，vG 曲线直接算 `(1 + (alpha_vgm_one·xdat)^n)^(1/n−1)`（`Aggregation_SoilParameters.F90:156–157、708`）——已验证（读码）。
+- 同一个 `xdat` 也用于 Campbell 拟合，式为 `(−xdat/psi_s_one)^(−λ)`（`:962–963`），`psi_s` 的注释单位为 cm（`:886`），拟合界限 `−300 ≤ ψs < 0`（`:978`）；所以 `xdat` 是 cm，vG 拟合出的 α 是 1/cm——已验证（读码）。
+- 水体与冰川填充值 `alpha_vgm_fill_water = 0.01`、`psi_s_fill_water = −35.446`（`:201、206`），二者乘积 0.35，与 cm 口径一致——已验证（读码）。
+- 写 landdata 的变量是 `alpha_vgm_l<n>_patches`（`:817–827`），文件里没有单位属性——已验证（python 读 `g2_o6/landdata/soil/2005/alpha_vgm_l1_patches_e000_n10.nc` 属性）。
+
+### 2.2 原始数据与 landdata 的数值
+
+- 原始 `VGM_alpha.nc`、`psi_s.nc` 等无任何单位属性——已验证（python 读 ncattrs）。
+- 4 个陆地点第 1 层 α 中位数：德国 0.0115、撒哈拉 0.0239、亚马孙 0.0915、爱荷华 0.0073；同点 ψs 中位数 −32、−33、−8.3、−58（cm）——已验证（python 抽样）。按 1/cm 读，1/α 为 87、42、11、137 cm，与各自 |ψs| 同量级且大于它；按 1/mm 读，1/α 只有 |ψs| 的 0.13–0.24 倍——已验证（同一抽样手算）。
+- O-6 landdata 38516 个斑块：第 1 层 α 分位 p5/p50/p95 为 0.0115/0.0258/0.0637，ψs 为 −35.5/−21.1/−2.9 cm；|ψs|·α 按 1/cm 读中位 0.48（95% 小于 1），按 1/mm 读中位 4.8（0% 小于 1）；第 5 层同型（0.54，93.5%）——已验证（a4_psis_alpha.py）。
+
+### 2.3 mkinidata 读入：α 不换算，其余都换
+
+- 同一段赋值里 Campbell 的 `psi0 = soil_psi_s_l·10 ! cm -> mm`（`MOD_SoilParametersReadin.F90:351`）、`hksati = soil_k_s_l·10/86400 ! cm/day -> mm/s`（`:366`），而 vG 的 `psi0 = −10. ! mm`（`:356`）、`alpha_vgm = soil_alpha_vgm_l(ipatch)`（`:358`）原样赋值——已验证（读码）。
+- 田间持水 `wfc` 在同处按 `(α·339.9)`（`:361–362`）、Campbell 按 `−339.9/psi_s`（`:353`）算，二者都是 cm 口径——已验证（读码）。
+- 单点走同一处赋值：`USE_SITE_soilparameters = .false.` 时从原始 `VGM_alpha.nc` 取点值（`MOD_SingleSrfdata.F90:1074–1080`），再经 `MOD_SoilParametersReadin.F90:154 → 358`——已验证（读码与 `ID-Pag.nml` 第 13 行）。
+- 重启里 `alpha_vgm` 的检查标签写作 `[-]`（`MOD_Vars_TimeInvariants.F90:1025`），`psi0` 写作 `[mm]`（`:1021`）——已验证（读码）。
+
+### 2.4 派生量 sc_vgm、fc_vgm
+
+- `sc_vgm = (1 + (−α·ψs)^n)^(−m)`，`fc_vgm = 1 − (1 − sc^(1/m))^m`（`MOD_Hydro_SoilFunction.F90:48–49`），只在 CoLMINI 里算一次（`MOD_Initialize.F90:417`，全仓唯一调用），存进 const 重启（`MOD_Vars_TimeInvariants.F90:731–732`）——已验证（读码与 grep）。
+- ψs = −10 mm 与 1/cm 的 α 相乘，所以现行 sc_vgm 实际对应 10 cm 的进气吸力，而不是注释写的 10 mm。矿质土的 sc 现行 0.86–0.99、一致 0.99–1.00；泥炭端元现行 0.426、一致 0.834——已验证（a1_site_params.py 读重启、a2_offline.py 复算一致）。
+- `fc_vgm` 是 Mualem 导水式的归一化因子，不是田间持水；田间持水是 `wfc`——已验证（`MOD_Vars_TimeInvariants.F90:230` 注释与 `MOD_Hydro_SoilFunction.F90:84–85` 用法）。
+
+### 2.5 VSF 求解器：ψ 全程以 mm 计
+
+- 接口声明 `psi_s`、`smp` 为 mm，`sp_zc`、`sp_zi`、`zwt` 为 mm（`MOD_Hydro_SoilWater.F90:94–108、189–215`）；平衡态 `smp = psi_zwt − (zwtmm − sp_zc)`（`:129`），即吸力与深度同一 mm 单位——已验证（读码）。
+- 调用处把 m 换成 mm：`sp_zc = z_soisno·1000`、`zwtmm = zwt·1000`（`MOD_SoilSnowHydrology.F90:943–945、1188–1190`），`prms(1) = alpha_vgm`（`:825`）原样传入——已验证（读码）。
+- 持水 `soil_vliq_from_psi` 算 `(psi·(−prms(1)))^n`（`MOD_Hydro_SoilFunction.F90:166`），反函数 `soil_psi_from_vliq`（`:126`），导水 `soil_hk_from_psi`（`:83`）；三者都不换算——已验证（读码）。
+- 水位与含水层交换 `get_zwt_from_wa` 用 `psi = psi_s − (zwt − zmin)·0.5`（`:3413–3436`），含水层给水度也走同一持水式——已验证（读码）。
+- 本配置走 VSF：`DEF_USE_VariablySaturatedFlow = .true.`（`ID-Pag.nml` 第 103 行、`input_g2_o6.nml` 第 92 行），`CoLMMAIN.F90:1215–1249` 据此调用 `WATER_VSF`——已验证（读码与 grep）。
+
+### 2.6 其他用到 α 或 ψ 的路径（逐条）
+
+| 路径 | 文件:行号 | ψ 的单位 | α 怎么用 | 本配置是否运行 |
+| --- | --- | --- | --- | --- |
+| 根系阻力（DEF_RSTFAC = 1）与凋萎点 | `MOD_Eroot.F90:86–87、99–111、130–132` | mm（`smpmax = −1.5e5`、`smpsfc = −3.3e3`） | 经 `soil_psi_from_vliq`、`soil_vliq_from_psi` | 运行（默认 1） |
+| 植物水力 | `MOD_PlantHydraulic.F90:186–189、365、616` | mm（与 `vegwp`、`psi50` 同单位） | 经求解器输出的 `smp`、`hk` | 运行（默认开） |
+| 土壤蒸发阻抗 SL14 + 3POE | `MOD_SoilSurfaceResistance.F90:151–163、204–205` | mm（`aird` 取 −1e7 mm，`eps100` 取 −1000 mm） | 经持水式 | 运行（`DEF_RSS_SCHEME` 默认 1，第 30–33 行按 vG 选 3POE） |
+| 同文件 TR13 的 `S`、`dw` | `MOD_SoilSurfaceResistance.F90:157、225–227` | m（第 157 行已除 1000） | 直接 `α·smp_node`、`/α` | 不运行（仅 `DEF_RSS_SCHEME = 3`） |
+| 同文件 LP92 的 `wfc` | `MOD_SoilSurfaceResistance.F90:276` | cm（339.9） | `α·339.9` | 不运行（仅 4） |
+| 地表相对湿度 hr | `MOD_Thermal.F90:606–613` | mm（`roverg` 以 mm/K 计，`MOD_Const_Physical.F90:24`） | 经 `soil_psi_from_vliq` | 运行 |
+| 过冷水 | `MOD_PhaseChange.F90:150–160` | mm（冰点降低式乘 1000） | 经 `soil_vliq_from_psi`，ψs 硬写 −10.0 | 运行（默认开） |
+| 灌溉的凋萎点与田间持水 | `MOD_Irrigation.F90:166–196` | mm | 经 `soil_vliq_from_psi` | 运行（`DEF_USE_IRRIGATION = .true.`） |
+| 火模块 btran | `MOD_BGC_Veg_CNFireLi2016.F90:108–118` | mm | 经 `eroot` | 运行（BGC） |
+| 分解水分因子 | `MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90:91–97` | mm（`smpmin_hr = −2e5`、`smpmax_hr = −200`，读自 const 重启） | 用 `smp` | 运行 |
+| 物候干旱开关 | `MOD_BGC_Veg_CNPhenology.F90:741` | mm 乘 1e-5 转 MPa | 用 `smp` | 运行 |
+| 硝化反硝化 | `MOD_BGC_Soil_BiogeochemNitrifDenitrif.F90:82–83、99` | `wfc`（cm 口径）与 `smp`（mm） | 两种口径同式并用 | 运行 |
+| 甲烷氧化水分因子 | `MOD_Tracer_Reactive_Methane_Physics.F90:2991–2992` | mm（`smp_crit = −2.4e5`，`Const.F90:431`） | 用 `smp` | 运行 |
+| 初值平衡态 | `MOD_Initialize.F90:1480–1492`、`MOD_IniTimeVariable.F90:420、604–605` | mm | 经持水式 | 冷启动时运行 |
+
+以上各行——已验证（读码与 grep，默认值见第 0 节第 2 条）。
+
+### 2.7 用 cm 或 m 的 ψ 的地方
+
+- 用 cm 的：`MOD_SoilParametersReadin.F90:353、361–362`、`MOD_SoilSurfaceResistance.F90:276`、`MOD_Initialize.F90:1916`（都是 `wfc`，α·339.9 或 −339.9/ψs），以及泥炭混合 `alpha_vgm = … + w·10/psuc ! [1/cm]`（`MOD_Initialize.F90:1912`，psuc 以 mm 给）；这些都与数据集的 1/cm 一致，而与求解器不一致——已验证（读码）。
+- 用 m 的：`MOD_SoilSurfaceResistance.F90:225–226`，在不运行的 TR13 分支里——已验证（读码）。
+- 因此存进重启的 `wfc` 等于"一致"口径下的田间持水：矿质土 AT-Neu 第 1 层 `wfc` = 0.293，而求解器在 −3399 mm 实际持水 0.191——已验证（a1 读重启、a2 复算）。
+- 承接件第 2.4 节"全仓 grep alpha_vgm 的算术式只有上述两处 339.9"不全：另有 `MOD_SoilSurfaceResistance.F90:225–226、276` 与 `MOD_Initialize.F90:1912、1916`——已验证（grep）。
+
+## 3. 上游、历史与文献（问题 2）
+
+- 本机 5 棵树的 `MOD_SoilParametersReadin.F90:353、356、358、362` 逐字相同——已验证（grep）。
+- `teacher/master`（2026-07-29）同段相同，`MOD_Hydro_SoilFunction.F90:48、83` 同式——已验证（git show teacher/master）。
+- CoLM-SYSU GitHub master 的 `MOD_SoilParametersReadin.F90` 仍是 `psi0 = −10. ! mm`、`alpha_vgm = soil_alpha_vgm_l(ipatch)`、`α·339.9`，无换算——已验证（WebFetch raw.githubusercontent.com）。
+- α 原样赋值自 2022-03-03 导入 ZhangSP v0.2（`18a0b871`，`mkinidata/soil_parameters_readin.F90:162`）起就如此，当时 ψs 对两种土壤模型都取 `psi_s·10`（同文件 `:156`）；`psi0 = −10 mm` 在 2022-03-10 的 `5c114114 from v0.2 to v0.4` 引入；`git log --all -S` 查 `alpha_vgm` 与 `339.9` 的所有提交说明里没有单位修订——已验证（git grep 18a0b871、git show 5c114114、git log -S）。
+- CoLM 中文文档的 vG 式 `Θ = [1/(1+(αh)^n)]^(1−1/n)` 只写"h 为土壤吸力势"，不给单位（`Wetland/CoLM-doc/CoLM-Latex/植被冠层、积雪和土壤水分计算方案/积雪土壤水分.tex:56–63`）；CoLM 用户手册的土壤参数表对 `VGM_alpha`、`psi_s` 也不给单位——已验证（读 tex；WebFetch 用户手册 tex）。
+- VSF 求解器头部引用的是 Dai, Zhang, Yuan, Wei (2019) WRR，不是 Lu et al.（`MOD_Hydro_SoilWater.F90:9–12`）——已验证（读码，著录已核 Crossref）。两篇 Dai 2019 全文对 α 单位的原话未读到——存疑（见第 0 节第 8 条）。
+
+## 4. 影响量级（问题 3）
+
+### 4.1 持水曲线（按 `MOD_Hydro_SoilFunction.F90` 的改进 vG 式，参数取 const 重启）
+
+参数（θs、θr、α 存储值、n）：砂质 DE-Dgw 第 1 层 0.464、0.040、0.0766、1.421；壤土 AT-Neu 第 1 层 0.467、0.082、0.0197、1.306；黏壤 CH-Cha 第 1 层 0.485、0.106、0.0153、1.295；细质填充值 JP-SwL 0.532、0.116、0.0098、1.352；纤维质泥炭 ID-Pag 第 1 层 0.93、0、0.971、1.370；腐殖质泥炭 ID-Pag 第 6 层 0.83、0、0.990、1.083；C-91 的 T4 热带值 0.88、0、1.0、1.083——已验证（a1_site_params.py；T4 取承接件第 3 节）。L 均为 0.5——已验证（a2 读重启）。
+
+| 土壤 | 口径 | −10 | −100 | −1000 | −3399 | −33000 | −150000 mm | sc_vgm |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 砂质 | 现行 | 0.464 | 0.247 | 0.120 | 0.088 | 0.058 | 0.050 | 0.857 |
+| 砂质 | 一致 | 0.464 | 0.406 | 0.219 | 0.148 | 0.082 | 0.062 | 0.992 |
+| 壤土 | 现行 | 0.466 | 0.378 | 0.240 | 0.191 | 0.136 | 0.116 | 0.974 |
+| 壤土 | 一致 | 0.466 | 0.457 | 0.371 | 0.293 | 0.189 | 0.149 | 0.999 |
+| 黏壤 | 现行 | 0.485 | 0.413 | 0.278 | 0.226 | 0.168 | 0.145 | 0.981 |
+| 黏壤 | 一致 | 0.485 | 0.478 | 0.408 | 0.333 | 0.225 | 0.182 | 0.999 |
+| 细质 | 现行 | 0.532 | 0.469 | 0.303 | 0.239 | 0.171 | 0.148 | 0.989 |
+| 细质 | 一致 | 0.532 | 0.528 | 0.465 | 0.377 | 0.239 | 0.188 | 1.000 |
+| 纤维质泥炭 | 现行 | 0.930 | 0.401 | 0.171 | 0.109 | 0.047 | 0.027 | 0.426 |
+| 纤维质泥炭 | 一致 | 0.930 | 0.475 | 0.205 | 0.130 | 0.056 | 0.032 | 0.834 |
+| 腐殖质泥炭 | 现行 | 0.830 | 0.689 | 0.569 | 0.514 | 0.425 | 0.375 | 0.821 |
+| 腐殖质泥炭 | 一致 | 0.830 | 0.718 | 0.596 | 0.539 | 0.446 | 0.393 | 0.948 |
+| T4 热带 | 现行 | 0.880 | 0.731 | 0.604 | 0.546 | 0.452 | 0.399 | 0.821 |
+| T4 热带 | 一致 | 0.880 | 0.762 | 0.633 | 0.572 | 0.474 | 0.418 | 0.948 |
+
+表中各值——已验证（a2_offline.py）。
+
+- 田间持水：求解器在 −3399 mm 的含水量，矿质土现行比一致低 0.06–0.14（砂质 0.088 对 0.148，壤土 0.191 对 0.293，黏壤 0.226 对 0.333，细质 0.239 对 0.377）；存进重启的 `wfc` 恰好等于一致值（0.147、0.293、0.333、0.377）；泥炭差 0.02–0.03——已验证（a2_offline.py）。
+- 植物可用水（−3399 到 −1.5e5 mm）：砂质 0.038 对 0.086，壤土 0.075 对 0.144，黏壤 0.081 对 0.151，细质 0.090 对 0.189，即矿质土现行约为一致的一半；泥炭 0.082 对 0.098、0.139 对 0.146——已验证（a2_offline.py）。
+- 过冷水：−0.1 °C（ψ = −1.25e4 mm）壤土 0.155 对 0.226、黏壤 0.188 对 0.264；−1 °C（ψ = −1.25e5 mm）壤土 0.118 对 0.153、黏壤 0.148 对 0.187；泥炭差不到 0.02——已验证（python 按 `MOD_PhaseChange.F90:151–158` 的式计算）。
+
+### 4.2 导水 K/Ks
+
+| 土壤 | 现行 −100 / −1000 / −3399 mm | 一致 −100 / −1000 / −3399 mm |
+| --- | --- | --- |
+| 砂质 | 3.2e-3 / 3.1e-6 / 7.4e-8 | 1.2e-1 / 3.7e-4 / 9.4e-6 |
+| 壤土 | 3.2e-2 / 8.6e-5 / 3.0e-6 | 3.4e-1 / 1.1e-2 / 5.3e-4 |
+| 黏壤 | 4.6e-2 / 1.5e-4 / 5.5e-6 | 3.8e-1 / 1.7e-2 / 9.7e-4 |
+| 细质 | 8.2e-2 / 2.8e-4 / 8.8e-6 | 4.9e-1 / 4.0e-2 / 2.6e-3 |
+| 纤维质泥炭 | 1.3e-3 / 1.5e-6 / 4.2e-8 | 3.2e-3 / 4.0e-6 / 1.1e-7 |
+| 腐殖质泥炭 | 6.7e-3 / 4.2e-5 / 2.8e-6 | 1.3e-2 / 8.6e-5 / 5.8e-6 |
+
+表中各值——已验证（a2_offline.py）。同一吸力下矿质土的非饱和导水现行低 10–300 倍；同一含水量下 K 几乎不变（矿质土 sc ≈ 1，Mualem 式只经 esat 依赖含水量），变的是同一含水量对应的吸力——推测（由式推得：K 对 esat 的依赖不含 α，α 只经 sc 进入）。
+
+### 4.3 给水度与水位降深
+
+静水平衡、单层参数的均质柱：
+
+| 土壤 | 现行 Sy：0–0.1 / 0.1–0.3 / 0.3–1.0 / 1.0–2.0 m | 一致 Sy | 现行：失水 50 / 100 / 200 mm 后水位 (m) | 一致水位 (m) |
+| --- | --- | --- | --- | --- |
+| 砂质 | 0.155 / 0.268 / 0.326 / 0.356 | 0.032 / 0.112 / 0.209 / 0.271 | 0.23 / 0.40 / 0.71 | 0.45 / 0.69 / 1.11 |
+| 壤土 | 0.054 / 0.135 / 0.202 / 0.244 | 0.005 / 0.023 / 0.069 / 0.121 | 0.40 / 0.66 / 1.11 | 0.96 / 1.43 / 2.18 |
+| 黏壤 | 0.043 / 0.115 / 0.182 / 0.226 | 0.004 / 0.017 / 0.054 / 0.101 | 0.45 / 0.73 / 1.21 | 1.10 / 1.62 / 2.46 |
+| 细质 | 0.036 / 0.113 / 0.198 / 0.253 | 0.002 / 0.012 / 0.044 / 0.093 | 0.45 / 0.71 / 1.15 | 1.22 / 1.76 / 2.58 |
+| 纤维质泥炭 | 0.404 / 0.619 / 0.725 / 0.782 | 0.327 / 0.559 / 0.685 / 0.752 | 0.12 / 0.20 / 0.35 | 0.14 / 0.23 / 0.39 |
+| 腐殖质泥炭 | 0.102 / 0.180 / 0.238 / 0.279 | 0.076 / 0.150 / 0.210 / 0.253 | 0.32 / 0.55 / 0.95 | 0.37 / 0.62 / 1.07 |
+| T4 热带 | 0.107 / 0.190 / 0.252 / 0.295 | 0.081 / 0.159 / 0.222 / 0.267 | 0.31 / 0.52 / 0.91 | 0.35 / 0.60 / 1.02 |
+
+表中各值——已验证（a2_offline.py）。矿质土近地表 0–0.1 m 带的 Sy 现行大 5–18 倍，0.3–1.0 m 带大 1.6–4.5 倍；泥炭各带只大 4–34%——已验证（同表相除）。
+
+### 4.4 同一含水量下的吸力与各消费量
+
+相对饱和度 se = (θ − θr)/(θs − θr)，两个口径下同一 θ 的吸力比：壤土、黏壤、细质 9.0–9.7 倍，砂质 6.3–7.0 倍，纤维质泥炭 1.5–1.6 倍、腐殖质泥炭 1.8 倍（sc 的变化抵掉一部分）——已验证（a2_offline.py 输出相除）。取壤土：
+
+| se | ψ 现行 / 一致 (mm) | 根系阻力因子 rresis | 分解水分因子 w_scalar | 甲烷氧化 smp_fact | 地表 hr (293 K) |
+| --- | --- | --- | --- | --- | --- |
+| 0.3 | −2822 / −25990 | 0.981 / 0.827 | 0.617 / 0.295 | 0.988 / 0.897 | 0.9998 / 0.9981 |
+| 0.5 | −515 / −4721 | 0.997 / 0.969 | 0.863 / 0.542 | 0.998 / 0.981 | 1.0000 / 0.9997 |
+| 0.7 | −151 / −1358 | 0.999 / 0.991 | 1.000 / 0.723 | 0.999 / 0.994 | 1.0000 / 0.9999 |
+
+表中各值——已验证（a2_offline.py，式取第 2.6 节各行）。土壤蒸发阻抗 SL14 + 3POE 在 θ = 0.1、0.2、0.3 时两口径只差 1–9%——已验证（a2_offline.py）。
+
+### 4.5 全球 O-6 斑块分布（未加面积权）
+
+| 斑块 | N | α p5/p50/p95 | θ(−3399) 现行 → 一致（中位） | 可用水 现行 → 一致 | Sy 0.3–1.0 m 现行 → 一致 | 一致/现行 p5/p50/p95 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 土壤 type 0，第 1 层 | 22400 | 0.0125 / 0.0241 / 0.0667 | 0.197 → 0.294 | 0.070 → 0.131 | 0.200 → 0.074 | 0.27 / 0.38 / 0.59 |
+| 土壤 type 0，第 5 层 | 22400 | 0.0124 / 0.0225 / 0.0638 | 0.197 → 0.288 | 0.066 → 0.122 | 0.182 → 0.066 | 0.26 / 0.37 / 0.58 |
+| 湿地 type 2，第 1 层 | 5011 | 0.020 / 0.75 / 0.97 | 0.122 → 0.149 | 0.078 → 0.098 | 0.613 → 0.567 | 0.35 / 0.92 / 0.94 |
+| 湖泊 type 4，第 1 层 | 5023 | 0.0100 / 0.0214 / 0.0468 | 0.243 → 0.366 | 0.074 → 0.132 | 0.177 → 0.050 | 0.23 / 0.36 / 0.52 |
+
+表中各值——已验证（a3_global.py）。矿质土田间持水差 p5–p95 为 +0.050 到 +0.118——已验证（同脚本）。湿地斑块 α 中位 0.75 是泥炭份额混入的结果，下四分位 0.18、p5 0.020 的是矿质湿地，这一部分给水度比与矿质土同量级——已验证（同脚本）。
+
+### 4.6 单柱对照（未做）
+
+- 纠正 α 要改 `MOD_SoilParametersReadin.F90` 或改土壤数据，本任务禁改码、禁改配置与数据，所以只做离线——已验证（任务约束；读码确认无 α 的 namelist 键，`share/MOD_Namelist.F90` 中无 `vgm`/`alpha` 键）。
+- 对泥炭份额为 1 的塔，另有一个只改配置的仿真办法：主线已有的 C-91 键 `DEF_WETLAND_PEAT_TROP_LAT = 90` 加 `DEF_WETLAND_PEAT_TROP_ACRO = 0.93, 2.7, 103, 0.28`、`DEF_WETLAND_PEAT_TROP_CATO = 0.83, 12.0, 101, 1e-4`，使 `α = 10/psuc` 恰为原值的 1/10，其余三项与 CLM4.5 端元相同（`MOD_Initialize.F90:1887–1912`、`share/MOD_Namelist.F90:254–256`）——已验证（读码）。但 `sp_v2_c91`（commit 04842b9e）里没有这三个键，要用须从含 C-91 的 methane-paper-v2 另建树——已验证（grep 该树为 0 行、读 `CODE_COMMIT.txt`）。矿质土无法用配置仿真——已验证（读码）。
+
+## 5. 改法与会动到的量（问题 4）
+
+1. 推荐在读入处换算：`MOD_SoilParametersReadin.F90:358` 改为 `alpha_vgm = soil_alpha_vgm_l(ipatch) * 0.1 ! 1/cm -> 1/mm`，与同段 `psi0`、`hksati` 的换算写法一致；单点也走这一行，自动覆盖——推测（理由：单点改动、与现有换算同风格；未实现）。
+2. 同时要改的 cm 口径式，否则 `wfc` 会变成错的：`MOD_SoilParametersReadin.F90:361–362` 用换算后的 α 乘 3399；`MOD_SoilSurfaceResistance.F90:276` 的 339.9 改 3399；`MOD_Initialize.F90:1912` 的 `10/psuc` 改 `1/psuc`（注释改 `[1/mm]`），`:1916` 的 339.9 改 3399——已验证（这些行按 1/cm 写，读码第 2.7 节）。
+3. 顺带修不活动的 TR13 分支：`MOD_SoilSurfaceResistance.F90:225–226` 在 `smp_node` 除 1000 之后用 α，应换成 α·1000（1/m）或把 `S` 移到第 157 行之前算——已验证（读码）。重启标签 `MOD_Vars_TimeInvariants.F90:1025` 的 `[-]` 改 `[1/mm]`——已验证（读码）。
+4. 不采用"把 ψ 统一成 cm"：`smp` 以 mm 被植物水力、分解、物候、甲烷氧化、地表 hr、过冷水、灌溉、根系阻力共 10 余处消费（第 2.6 节表），全换代价大且易漏——已验证（读码计数）。在 `MOD_Hydro_SoilFunction.F90` 四个式内部乘 0.1 也能改对，但单位藏在函数里、`wfc` 各处仍是 cm，维护上不如第 1 条——推测。
+5. 会动到的量：所有非海洋斑块各层 `alpha_vgm`；由它派生、只在 CoLMINI 算一次的 `sc_vgm`、`fc_vgm`（`MOD_Initialize.F90:417`）；冷启动的平衡态 `smp`、`hk`、`wliq`、`wa`（`MOD_Initialize.F90:1485` 经 `iniTimeVar`）；此后全部水文状态与通量。`wfc` 在按第 2 条改后数值不变——已验证（读码；`wfc` 公式换算后与原式等价）。
+6. 必须冷启动（重跑 CoLMINI 生成新 const 重启并重新 spin-up），不必重跑 mksrf（landdata 仍存 1/cm）——已验证（`sc_vgm`、`fc_vgm`、`alpha_vgm` 都从 const 重启读，`MOD_Vars_TimeInvariants.F90:512–516`；换算不在 mksrfdata）。
+7. 受牵连的已定参数：C-91 的热带泥炭建议值（b 12、吸力 10 mm）是在现行口径下凑的等效值，承接件第 198 行已写明 α 修好后应回到 Apers 原值（0.88、24 mm、7.4）；其余在现行口径下标定的站点与全球参数也要重看——已验证（读承接件 `diag_tropical_peat_wt_260930.txt` 第 198 行）。
+
+## 6. 预期方向（问题 4，未跑模式）
+
+- 土壤湿度：矿质土非饱和带变湿，田间持水附近高约 0.09（全球中位），深层排水与基流减少——推测（依据第 4.1、4.5 节的持水差；实际增量要跑）。
+- 蒸散：矿质土植物可用水约翻倍，干季受旱推迟，蒸腾在水分受限区增加；同一含水量下吸力大 6–10 倍又会使旱象按含水量计来得更早，两者相抵后预计净增——推测（依据第 4.1、4.4 节；净效应要跑）。土壤蒸发：同含水量下阻抗只变 1–9%，但毛管上供更强，表层更湿，预计增加——推测。
+- 水位：矿质土给水度小 1.6–18 倍（越近地表差越大），同样的降雨或蒸散亏缺使水位起落大约 2–3 倍（第 4.3 节壤土失水 100 mm 后 0.66 m 对 1.43 m）；湿季回升更快、淹水出现更早，干季降得更深——推测（依据静水平衡计算，动力过程与侧向补给未计）。
+- 泥炭湿地：给水度只小 4–34%，同样失水 50–200 mm 时水位多降 10–16%，方向与承接件"热带泥炭旱季落不下去"的偏差一致但量小——已验证（第 4.3 节表）。对泥炭湿地甲烷的影响小——推测。
+- 矿质湿地与季节性淹水：水位对降雨反应更灵敏、淹水面积的季节振幅变大；非饱和带更湿使氧气扩散减慢、氧化减少，而干季水位更深又减少产甲烷层厚度，净方向不定——存疑（要做矿质湿地塔的单柱对照，见第 4.6 节）。
+- 旱地甲烷吸收：矿质土变湿使气体扩散系数下降，吸收减少；`smp_fact` 同含水量下略降（壤土 se 0.3 时 0.988 对 0.897）同向——推测。
+- 冻土：过冷液态水增加（壤土 −0.1 °C 时 0.155 对 0.226），冬季分解与甲烷产生的液态水窗口变宽——推测（依据第 4.1 节）。
+
+## 7. 著录
+
+- Dai, Y., Xin, Q., Wei, N., Zhang, Y., Shangguan, W., Yuan, H., Zhang, S., Liu, S., and Lu, X. (2019) A Global High-Resolution Data Set of Soil Hydraulic and Thermal Properties for Land Surface Modeling. Journal of Advances in Modeling Earth Systems 11(9), 2996–3023. 10.1029/2019MS001784（Crossref 已核；全文未读）
+- Dai, Y., Zhang, S., Yuan, H., and Wei, N. (2019) Modeling Variably Saturated Flow in Stratified Soils With Explicit Tracking of Wetting Front and Water Table Locations. Water Resources Research 55(10), 7939–7963. 10.1029/2019WR025368（Crossref 已核；全文未读）

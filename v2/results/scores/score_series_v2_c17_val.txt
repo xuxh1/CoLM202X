@@ -1,0 +1,26 @@
+site cls  n   KGE  KGEln  beta alpha    r    NSE   RMSE  nRMSE    MAE   bias  legacy
+BW-Gum    0  10  -0.32  -2.02   0.08  0.20  0.48 -10.07  340.0   0.96  326.7 -326.7  MAG+AMP+PHASE
+BW-Nxr    0  12  -1.04  -2.63   0.11  0.09 -0.59  -2.57  191.8   1.08  162.6 -158.9  MAG+AMP+PHASE
+ID-Pag    0  UNSCORED (0 common months)
+NL-Hor    0  UNSCORED (5 obs climatology months)
+RU-Ch2    0  26  -0.07  -0.97   0.21  0.31  0.80  -0.54   34.7   1.01   27.2  -27.2  MAG+AMP
+RU-Che    0  33   0.33   0.09   0.44  0.77  0.72  -0.08   11.7   0.76    9.1   -8.7  MAG
+RU-Cok    0  UNSCORED (7 obs climatology months)
+US-A03    0  25  -1.15    nan  -0.00  0.00 -0.62  -2.51   44.5   1.18   38.5  -37.7  MAG+AMP+PHASE
+US-A10    0  17  -1.04    nan  -0.00  0.01 -0.47  -2.32   13.7   1.20   11.4  -11.4  MAG+AMP+PHASE
+US-Atq    0  26  -0.44 -14.00   0.00  0.00  0.74  -1.69   11.6   1.26    9.2   -9.2  MAG+AMP
+US-BZB    0  20  -0.25  -1.36   0.15  0.27  0.44  -3.03   57.0   0.95   50.7  -50.7  MAG+AMP
+US-BZF    0  19  -0.29  -1.74   0.12  0.19  0.51  -2.08   68.8   1.03   58.7  -58.7  MAG+AMP
+US-Beo    0  16  -0.60  -4.71   0.01  0.02  0.21  -1.27   14.7   1.31   11.0  -11.0  MAG+AMP+PHASE
+US-Bes    0  27  -0.63  -4.60   0.02  0.02  0.14  -0.94   21.6   1.41   15.1  -15.1  MAG+AMP+PHASE
+US-DPW    0  40   0.62   0.63   1.24  0.94  0.71   0.34  118.5   0.58  101.0   48.7  OVERLAP
+US-ICs    0  16  -0.41  -3.31   0.04  0.07  0.57  -2.77   15.3   1.11   13.3  -13.3  MAG+AMP
+US-Ivo    0  41  -0.18  -1.37   0.14  0.29  0.61  -1.33   21.6   1.04   17.9  -17.9  MAG+AMP
+US-LA2    0  12   0.65   0.67   0.85  1.25  0.82   0.42   82.0   0.48   62.5  -26.5  OVERLAP
+US-NC4    0  60   0.41   0.41   1.37  0.69  0.67   0.34  103.1   0.93   84.2   41.2  OVERLAP
+US-NGB    0  33  -0.47  -4.18   0.02  0.03  0.48  -1.61   23.1   1.24   18.3  -18.3  MAG+AMP
+US-NGC    0  UNSCORED (5 obs climatology months)
+US-ORv    0  50  -0.52  -4.29   0.01  0.05  0.33  -2.14   35.6   1.19   29.6  -29.6  MAG+AMP
+US-OWC    0  UNSCORED (7 obs climatology months)
+
+scored 18; median KGEln -1.88; KGEln>0.3: 3; legacy OVERLAP: 3

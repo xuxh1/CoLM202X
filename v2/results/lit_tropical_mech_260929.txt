@@ -1,0 +1,290 @@
+热带泥炭 CH4 机理与实测调研
+
+结论先行
+1. 只看观测，分不出东南亚木质泥炭与新热带、刚果泥炭。能分开两者的只有单位面积通量，以及 CH4 占呼吸的份额，前者比后者更明显：
+   - 秘鲁 Quistococha 的 Mauritia 棕榈泥炭：箱法 22.6 g C m-2 yr-1，占土壤异养呼吸 Rh 的 3.6%；涡度 22 g C，占 Reco 约 0.8%。
+   - 东南亚林：涡度 0.01 至 9.5 g C，占 Reco 0.002% 至 0.25%。
+   - 刚果：离体培养的厌氧份额 0.9%，与巴拿马、马来西亚的 0.2% 至 0.3% 同量级。
+   - 离体（泥炭取回实验室培养）比值在各地都只有 0.2% 到 0.9%，差别远小于原位差别。所以原位差别主要不在"泥炭本身的产甲烷潜力"，而在水位、根系供氧与新鲜根源碳、植物通道——推测。
+2. 底物质量（木质素、酚类、酶锁）这条线，定量证据最弱，甚至有反例：
+   - 刚果的棕榈泥炭与硬木泥炭，木质素:碳水化合物比为 0.56 对 0.66，但两者的 CH4 产率无显著差异（p = 0.549）。
+   - 巴拿马的表层高产甲烷反而与木质素正相关。
+   - 酶锁的 70 篇研究元分析（Birch 2026）结论是"弱到可忽略"。
+   - 没找到任何热带泥炭"酚类特异抑制产甲烷菌"的定量研究。
+3. 区分东南亚与秘鲁，最硬的单个量是水位：秘鲁站点尺度水位 +0.2 至 +7 cm，东南亚未排水林平均 -18 ± 6 cm（Hergoualc'h 2020 转引 Hergoualc'h & Verchot 2014）；Quistococha 涡度塔两年平均水位都是 +0.034 m。
+4. pH 不能单独解释：
+   - 秘鲁的雨养泥炭 pH 只有 2.5 至 2.9，但 pole forest（矮林泥炭）扩散通量仍有 11.5 g C m-2 yr-1。
+   - 东南亚 MY-MLM 与 ID-Pag 的 pH 为 3.4，刚果为 3.4 至 4，Changuinola 为 3.95 至 4.16。
+5. 两条新的强机理证据，都来自巴拿马 Changuinola：
+   - 根系供氧：挡住根系后 CH4 通量比有根时高 85% 至 92%（Girkin 2020 ERL）。
+   - 新鲜根源碳：环剥树皮后 CH4 通量降 67 ± 14%（Girkin 2025）。
+6. 刚果中部泥炭：没有找到任何原位 CH4 通量实测。唯一的现场值是 Tathy 1992 的刚果河淹水林（未区分泥炭），折合 12.6 至 25.1 g C m-2 yr-1。Byrne 2026 原话："Wetland GHG flux measurements for the Congo Basin are scarce"。
+
+---
+
+## 0. 覆盖面
+
+- 检索词："enzymic latch" tropical peat；phenol oxidase tropical peat；Congo / Cuvette Centrale peat methane in situ；Girkin girdling；root exudate analogues；tropical peat sulfate / iron / humic electron acceptor；Miyajima 1997；Ye 2012 pH efficiency；Tathy 1992。
+- 渠道：OpenAlex、Crossref、Semantic Scholar、WebSearch、WebFetch、出版社与机构仓储直链。
+- 本地：docs/refs/ 下没有这批热带文献；721 个 txt 里 grep 到 Changuinola / Pastaza / Quistococha / Mauritia / Raphia 的只有 9 个，都与本题无关；notes.txt 已读，内容不重复。
+- 读到全文（10 篇）：
+  - Hergoualc'h 2020 GCB
+  - Hergoualc'h 2023 Biogeochemistry
+  - Griffis 2020，OSTI 接受稿
+  - Girkin 2026 Phil Trans B（刚果）
+  - Girkin 2025 Sci Rep
+  - Girkin 2019 Biogeochemistry
+  - Teh 2017 BG
+  - Girkin 2020 ERL，HTML 经 WebFetch 摘取，单位存疑
+  - Finn 2020 Front Microbiol，PMC 经 WebFetch 摘取
+  - Byrne 2026 GCB，PMC 经 WebFetch 摘取
+- 只读摘要：
+  - Holmes 2015、Wright 2011、Wright 2013、Lupascu 2020、Birch 2026（Crossref 摘要）
+  - Hoyos-Santillan 2016、Girkin 2018 SBB 117（Semantic Scholar 摘要）
+  - Sjögersten 2018（Edge Hill 仓储页摘要）
+  - Tathy 1992（OSTI ETDEWEB 摘要）
+- 读不到全文，已试路径：
+  - Ye 2012：Bohannan 实验室 PDF 404，Wayback 不可达，无摘要。
+  - Miyajima 1997：付费，只有检索页的摘要转述。
+  - Freeman 2001：付费，无摘要。
+  - Hoyos-Santillan 2016：Nottingham 仓储被 Cloudflare 拦。
+  - Sjögersten 2018：接受稿 docx 返回 403。
+  - Holmes 2015：Wiley 403。
+  - Girkin 2018 SBB 117：ScienceDirect 接受稿 403。
+  - Lupascu 2020：闭源。
+  - Girkin 2020 ERL PDF：机器人验证页。
+- 未读：Hergoualc'h & Verchot 2014 原文、Swails 2017、Hatano 2016、Winton 2017 PLOS One、Jauhiainen 2005、Pangala 2017。
+- 本地临时文件：<scratch>/mine/（herg2020.txt、herg2023.txt、griffis2020.txt、congo2026.txt、girkin2025.txt、girkin2019bg.txt、teh2017.txt、crossref_abs.txt）。
+
+## 1. 机理证据
+
+### 1a 底物质量、酶锁、木质与棕榈的化学差异
+
+- Girkin et al. 2026，刚果，Phil Trans B 381:20240482：
+  - 做法：6 个样区的表层泥炭，含 Raphia laurentii 棕榈泥炭与 Carapa、Prioria 等硬木泥炭；分 flooded anoxic、flooded aerobic、mesic 三种处理，25 °C 培养。
+  - 化学差异：棕榈与硬木的 FTIR 木质素:碳水化合物比为 0.56 对 0.66，差异显著；原位氧化还原电位 500 对 370 mV；Mn 40.0 对 10.7 μg g-1。
+  - CH4 结果："There was no significant difference in CH4 production/consumption potential between vegetation types (p = 0.549)"。
+  - CO2 结果：棕榈高于硬木，3269.1 对 2421.0 ng CO2 g-1 h-1。
+  - 作者解释：原位两种植被的差别会因凋落物、根周转、根系输氧而放大。
+  - 读法：全文 p.5 Results、p.8 Discussion (b)——已验证（congo2026.txt 第 293–313、515–528 行）
+- Hoyos-Santillan et al. 2016，巴拿马全剖面：
+  - 表层泥炭占累计 CH4 产量的 92 ± 1.7%、CO2 的 54 ± 2.9%。
+  - 表层的高 CH4、CO2 产率"strongly related to greater concentrations of lignin, but also long chain fatty acids and polysaccharides"，与"木质素压产甲烷"方向相反。
+  - 读法：只读摘要——已验证（Semantic Scholar 摘要）
+- Wright et al. 2011，巴拿马：
+  - 碳水化合物量解释 CH4 产率方差的 63%、CO2 的 30%。
+  - CH4 在剖面上有次表层峰，净排放受表层氧化限制。
+  - 读法：只读摘要——已验证（Crossref 摘要）
+- Miyajima et al. 1997，泰国 Narathiwat：
+  - 厌氧 50 天，本地植物叶矿化了 5% 至 63%（按碳计）。
+  - 矿化速率与木质素或纤维含量强负相关，与 C/N 不相关。
+  - 底物越难分解，CH4 的 δ13C 越负，即更偏向 H2 途径。
+  - 45 °C 时不产甲烷，分解最适约 35 °C。
+  - 读法：转引（经 WebSearch 检索页的摘要转述，未见原文）——推测
+- Hergoualc'h et al. 2020 的作者解释：秘鲁 CH4 高于东南亚，可能因为有机质质量更高、木质素更低（引 Swails 2017、Hatano 2016），也可能因为水位更高。
+  - 读法：全文 p.7212——已验证（herg2020.txt 第 1000–1010 行）
+  - 被引的 Swails 2017、Hatano 2016 未读。
+- Hodgkins 2018 的东南亚高芳香族结论：见已有 notes.txt 第 7.4 节，不重复。
+- 酶锁：
+  - Birch et al. 2026 GCB 32:e70937，系统综述 70 项泥炭地研究、6 个元分析（各 2250 至 11,700 个数据点）："show weak to negligible effects and therefore do not support the Enzyme-latch hypothesis as a dominant driver"。读法：只读摘要——已验证（Crossref 摘要）
+  - 摘要里没有热带分项，全文未读，不知道有没有热带样本。
+  - Freeman 2001 原文未读。
+  - 没找到在东南亚、秘鲁、刚果泥炭上直接检验酶锁的研究。检索词见第 0 节，命中的只有 Hall & Silver 2014 Ecology 的热带矿质森林土，不是泥炭，未读——存疑。
+- 酚类对产甲烷菌有特异抑制（不只是压总分解）：本次检索没找到热带泥炭的直接证据——存疑。
+  - 要定这件事，需要对同一泥炭做"加或去酚"的厌氧培养，同时测 CO2 与 CH4 产率。
+- Girkin 2018 SBB 117:48–55：
+  - 加入根系分泌物类似物后，多数处理下 CO2 与 CH4 产率都升高，幅度取决于成分，与加碳量和泥炭植物来源无关。
+  - 含有机酸的处理抬高了 pH，但不影响胞外水解酶活性。
+  - 读法：只读摘要——已验证（Semantic Scholar 摘要）
+
+### 1b 电子受体
+
+- Finn et al. 2020，秘鲁 PMFB 7 个泥炭地：
+  - 孔隙水硫酸盐：矿养型的 Charo 为 16.4 ± 9.3 mg L-1，其余站 0.1 至 1.67 mg L-1。
+  - Charo 的 Fe 为 356 ± 90 g kg-1、Mn 为 411 ± 73.8 mg kg-1，作者把 Charo 的低 CH4 归因于替代受体。
+  - pH：雨养型 Miraflores、San Jorge 为 2.5 至 2.9；混合型 Quistococha 等为 3.2 至 3.8；矿养型为 5.6 至 5.9。
+  - 读法：全文经 WebFetch 摘取，未逐字对原文——推测
+  - 含义：雨养穹顶泥炭的硫酸盐只有 0.1 至 1.7 mg L-1，不足以成为主要电子汇——推测。
+- Girkin 2026 刚果：Cu、Al、Ni、Fe、Mo、Mn 都与 CH4 产率相关；作者称 Fe(III) 还原是受体途径之一，但没给受体消耗的碳量。
+  - 读法：全文 p.12——已验证（congo2026.txt 第 585–593 行）
+- Holmes et al. 2015，Changuinola：孔隙水 CO2 是 CH4 的 7 至 100 倍，部分来自"production of CO2 from pathways other than methanogenesis"。
+  - 读法：只读摘要——已验证（Crossref 摘要）
+- Miyajima 1997：泥炭与受硫酸盐污染的土一起培养时，矿化更快、CH4 同位素分馏更小。
+  - 读法：转引检索页的摘要——推测
+- 腐殖质作电子受体：本次没找到热带泥炭的定量数据——存疑。北方泥炭的数据见 notes.txt 第 7.2 节 Keller & Bridgham 2007。
+- 小结：热带泥炭中硫酸盐、Fe(III)、腐殖质各自消耗多少碳，没有一篇给出按电子当量的收支——存疑。
+  - 要定，需要对同一泥炭测 CO2、CH4 产率，同时测 SO4、Fe(II)/Fe(III) 与腐殖质还原容量。
+
+### 1c 途径、pH 与产甲烷效率
+
+- Holmes 2015：
+  - 原文："hydrogenotrophic methanogenesis was the dominant CH4 production pathway, with up to 100% of the CH4 produced via this route"。
+  - CH4 的 δ13C：孔隙水 -94‰，培养产物 -107‰。
+  - 58 个湿地的综合：途径与 pH、植被、营养、纬度相关，但热带泥炭的相关方式与北方不同。
+  - 读法：只读摘要——已验证（Crossref 摘要）
+- Finn 2020：Methanobacteriaceae（氢营养型）在矿养土中占优，在雨养土中几乎检不出；营养贫乏处乙酸营养型相对更多。
+  - 读法：WebFetch 摘取——推测
+  - 这与 Holmes 的"氢营养为主"方向不一致，说明站点之间差异大——推测。
+- Buessecker 2021 的 α 值与 SJO 深层低于检出：见 notes.txt，不重复。
+- Ye et al. 2012：全文与摘要都读不到。无法给出产甲烷效率随 pH 的函数或数据点——存疑。
+  - Girkin 2026 引它只作一句："Very low pH values have previously been linked to low CH4 and CO2 production [56]"，并称产甲烷最适 pH 为 6 至 7。读法：全文 p.12——已验证（congo2026.txt 第 594–598 行）
+- 现有能拼出的"CH4 占厌氧矿化碳"数据点（均为计算，注明来源）：
+  - 刚果 flooded anoxic，25 °C，pH 3.4 至 4：
+    - CH4 3.08 ng CH4 g-1 h-1，折 2.31 ng C。
+    - CO2 941.9 ng CO2 g-1 h-1，折 256.9 ng C。
+    - CH4/(CH4+CO2) = 0.89%（计算）。
+    - 注意：瓶子充 N2 后培养一个月，数值是所有站与植被类型的均值。
+    - 读法：全文 p.5——已验证（congo2026.txt 第 293–300 行）
+  - 巴拿马与马来西亚 0.2% 至 0.3%（Girkin 2020 Biogeochemistry），见 notes.txt 第 7.1 节。
+  - 泰国、秘鲁的 SJO 等没有配对的 CO2 数据。
+
+### 1d 根系新鲜碳、根系供氧、同位素年龄
+
+- Girkin et al. 2025 Sci Rep 15:3244，巴拿马 San San Pond Sak：
+  - 环剥：原文 "Mean CH4 fluxes were 67 ± 14% lower from girdled trees, suggesting a substantial contribution of root inputs to peat surface CH4 fluxes"，第 14 天出现，第 1 天无差异。
+  - 天然丰度 13C 茎注射后，CH4 显著富集 13C。
+  - 作者引同址前作：根系贡献约三分之二的 CO2 通量。
+  - 读法：全文 p.5–6 Results、Discussion——已验证（girkin2025.txt 第 347–374、442–446 行）
+- Girkin et al. 2020 ERL 15:064013，Changuinola 原位中型实验装置（mesocosm），比较挡根与留根：
+  - 原文："CH4 fluxes increased in the closed mesocosm compared to the root-accessible mesocosm by 92 ± 4% under C. panamensis, and 85 ± 6% under R. taedigera"。
+  - 作者称这是热带泥炭首个 CH4 氧化估计，根系供氧可去掉最多 92% 的 CH4。
+  - WebFetch 给的绝对值是留根 92.3 与 87.8、挡根 517.8 与 613.8 "mg CH4 m-2 h-1"。这个量级与其它 Changuinola 实测（约 1 mg m-2 h-1）差三个数量级，单位很可能是 μg——存疑。
+  - 读法：全文 HTML 经 WebFetch 摘取，Sect. 3.2——推测
+- Lupascu et al. 2020 GCB，文莱：
+  - 原文："a modern signature for both CO2 and CH4 fluxes implying a microbial preference for the more labile C fraction"（放射性碳年龄为现代）。
+  - 读法：只读摘要——已验证（Crossref 摘要）
+- Hoyos-Santillan 2016：表层占累计 CH4 的 92 ± 1.7%（见 1a）。
+- Girkin 2026 刚果：下层到 1.5 m 的样品显示"surface layers dominate peat GHG production"。读法：全文 abstract——已验证（congo2026.txt 摘要段）
+- 能给出的份额：
+  - 根源新鲜碳至少占表面 CH4 通量的约三分之二（环剥降 67%）。
+  - 文莱 CH4 的碳为现代碳。
+  - 表层泥炭占潜在产量的约 92%。
+
+### 1e 水位、温度、季节
+
+- 温度，Sjögersten et al. 2018：
+  - 原文："The greatest temperature response was found for anaerobic CH4 production (Q10 = 6.8), and CH4 consumption (mesic conditions, Q10 = 2.7), while CO2 production showed a weaker temperature response (Q10 < 2)"。
+  - 棕榈林从 20 °C 升到 35 °C，CH4 由 42 ± 25 升到 2166 ± 842 ng CH4 g-1 h-1。
+  - 读法：只读摘要——已验证（Edge Hill 仓储摘要，WebFetch）
+- 水位，Hergoualc'h 2020，秘鲁：
+  - 月 CH4 随水位上升呈指数增加。
+  - 年排放 79.2 ± 5.5 至 319.4 ± 77.5 kg C ha-1 yr-1；第 1 年（El Niño）是第 3 年的 1.5 至 4 倍。
+  - 读法：全文 p.7209–7210、Table 5–6——已验证（herg2020.txt 第 742–763 行）
+- 水位对比：秘鲁站点尺度 0.2 至 7 cm，东南亚未排水林 -18 ± 6 cm。
+  - 读法：全文 p.7212，转引 Hergoualc'h & Verchot 2014——已验证（herg2020.txt 第 1008–1010 行）
+- Griffis 2020 Quistococha：年均水位 2018、2019 都是 +0.034 m。读法：全文接受稿第 289 行——已验证（griffis2020.txt）
+- Teh 2017 PMFB：部分植被类型旱季扩散通量高于湿季，例如 47.2 ± 5.4 与 85.5 ± 26.4 对 6.8 ± 1.0 与 5.2 ± 2.7 mg CH4-C m-2 d-1。
+  - 读法：全文 p.3669 摘要——已验证（teh2017.txt 第 24–27 行）
+  - 与"旱季好氧耗尽"方向相反——推测。
+
+## 2. 实测对比清单（g CH4-C m-2 yr-1，注明方法与折算）
+
+### 东南亚
+
+- MY-MLM Maludam 涡度：9.5 ± 0.6；CH4/Reco 约 0.25%。见 notes.txt 第 1.1、7.0 节——已验证（前轮）
+- Kampar 涡度：约 6.8（9.1 g CH4）。见 notes.txt——已验证（前轮）
+- ID-Pag 涡度：0.01 至 0.17；CH4/Reco 不到 0.005%。见 notes.txt——已验证（前轮）
+- Sebangau 积水洼地箱法：约 0.22，只测土壤；树干占生态系统 62% 至 87%。见 notes.txt——已验证（前轮）
+- 东加里曼丹 Muara Siran 箱法：1.61；CH4:CO2 为 0.54%。见 notes.txt——已验证（前轮）
+- 文莱（Lupascu 2020）箱法：
+  - 未过火林 4.0 ± 2.0 mg CH4 m-2 h-1，折 26.3 g C m-2 yr-1（按全年连续外推，计算——推测）。
+  - Reco 359 ± 76 mg CO2 m-2 h-1，CH4-C/Reco-C = 3.1%（计算）。
+  - 过火林 7.8 ± 2.2 mg CH4 与 432 ± 83 mg CO2，比值 5.0%（计算）。
+  - 读法：只读摘要——已验证（Crossref 摘要）
+  - 这是东南亚里的高值反例，测点与水位未知——存疑。
+- 东南亚未排水林箱法元分析（Hergoualc'h & Verchot 2014）：29 kg C ha-1 yr-1，即 2.9。读法：转引 Hergoualc'h 2020 p.7212——已验证（herg2020.txt 第 1001–1002 行）
+- 著录冲突：Griffis 2020 第 511–513 行与 Table 2 把同一元分析写成"28.6 ± 9.7 g CH4-C m-2 y-1"，与 Hergoualc'h 2020 的 2.9 差 10 倍。Hergoualc'h 是原作者，Griffis 很可能单位换算错——存疑。
+  - 要定，需读 Hergoualc'h & Verchot 2014，DOI 10.1007/s11027-013-9511-x。
+
+### 新热带
+
+- 秘鲁 Quistococha 涡度（Griffis 2020）：
+  - 2019 年 22（20 至 24）；ANN 法为 17（12 至 23）；月值 1.0 至 2.7 g C。
+  - 读法：全文接受稿 p.21 第 497–502 行——已验证（griffis2020.txt）
+  - 年 Reco 没有给年总量。用夜间 RE 均值 6.9（2018）与 6.5（2019）μmol m-2 s-1（接受稿第 422–423 行）外推，全年约 2460 至 2610 g C，CH4/Reco 约 0.8% 至 0.9%（计算——推测）。
+  - 白天 RE 比夜间高，所以这个比值偏上限。
+- 秘鲁 Quistococha 箱法（Hergoualc'h 2020）：
+  - 未退化林 225.6 ± 50.7 kg C ha-1 yr-1，即 22.6。
+  - 中度退化、重度退化分别为 16.1、16.9。
+  - 读法：全文 p.7198 Abstract、Table 6——已验证（herg2020.txt）
+  - 同址 Rh 与 CH4（Hergoualc'h 2023 Table 1，第 2 年）：Rh 5.9 ± 0.3、CH4 0.21 ± 0.01 Mg C ha-1 yr-1，CH4/Rh = 3.6%（计算）。
+  - Table 1 读法：全文 p.338——已验证（herg2023.txt 第 606–621 行）
+- 秘鲁 PMFB 箱法（Teh 2017）：
+  - 全部数据的扩散通量 36.05 ± 3.09 mg CH4-C m-2 d-1，折 13.2；Mauritia 棕榈沼泽 36.7 ± 3.9，折 13.4；pole forest 31.6 ± 6.6，折 11.5；混合棕榈沼泽 52.0 ± 16.0，折 19.0（均为计算）。
+  - 另有冒泡：发生时平均 973.3 ± 161.4 mg CH4-C m-2 d-1，无法按年外推。
+  - 读法：全文 p.3669 Abstract——已验证（teh2017.txt 第 42–52 行）
+- 秘鲁 PMFB 7 站（Finn 2020）：0.3 至 2.5 mg CH4-C m-2 h-1（原文写作"m2"），按连续外推折 2.6 至 21.9（计算）。读法：WebFetch 摘取——推测
+- 巴拿马 Changuinola：
+  - Wright 2013：CH4 为 -1.0 至 12.6 mg m-2 h-1（2007 年范围）；CO2 旱季 300 至 400、湿季 60 至 132 mg m-2 h-1。读法：只读摘要——已验证（Crossref 摘要）
+  - 同一研究经 Hergoualc'h 2020 转引为 384 至 3,024 g C ha-1 d-1，折 14.0 至 110。读法：全文 p.7212——已验证（herg2020.txt 第 997–998 行）
+  - Girkin 2019：1 个月的均值 0.56 至 1.2 mg m-2 h-1，按 CH4 计折 3.7 至 7.9（外推，计算——推测）；pH 3.95 至 4.16。读法：全文 abstract p.231——已验证（girkin2019bg.txt 摘要）
+  - CH4:CO2 用 Wright 2013 两端量级粗算：湿季 CH4 约 1 mg、CO2 约 100 mg 时，CH4-C/CO2-C 约 3%——推测，不是配对数据。
+
+### 刚果
+
+- Cuvette Centrale 泥炭原位 CH4：没有找到——存疑。
+  - Byrne et al. 2026 GCB 原文："Wetland GHG flux measurements for the Congo Basin are scarce (Barthel et al. 2022)"，只能改用全球热带湿地排放因子。读法：PMC 全文经 WebFetch 摘取，Methods 4.3——推测
+- Tathy et al. 1992，刚果河淹水林（不限泥炭）箱法加廓线：
+  - 年均 2 至 4 × 10^12 molecules cm-2 s-1，折 33 至 66 nmol m-2 s-1，即 12.6 至 25.1 g C m-2 yr-1（计算）。
+  - 读法：只读摘要——已验证（OSTI ETDEWEB 摘要）
+- 离体：见 1c，CH4/(CH4+CO2) = 0.89%。
+
+## 3. 最关键的原句（供抽核）
+
+- K1. Hergoualc'h 2020 GCB 26:7198 Abstract："Site-scale average annual CH4 emissions were similar along the degradation gradient (225.6 ± 50.7, 160.5 ± 65.9 and 169.4 ± 20.7 kg C ha−1 year−1 at the Intact, mDeg and hDeg sites, respectively)."
+- K2. Hergoualc'h 2020 p.7212, Sect. 4.2 末段："Mean annual site-scale emissions (161–226 kg C ha−1 year−1, Table 6) are about seven times higher than the average reported for intact peat swamp forests in Southeast Asia (29 kg C ha−1 year−1; Hergoualc'h & Verchot, 2014) ... higher WT at our sites (0.2–7 cm at the site scale) than on average in undrained peat swamp forests of Southeast Asia (−18 ± 6 cm; Hergoualc'h & Verchot, 2014)."
+- K3. Hergoualc'h 2023 Biogeochemistry 167:338 Table 1（Intact）："Rh 5.9a ± 0.3"；"Soil CH4 emission 0.21c ± 0.01"（Mg C ha−1 year−1）。
+- K4. Griffis 2020 接受稿 p.21 第 497–498 行："The annual CH4 NEE budget for 2019 was estimated to be a source of 22 (20 to 24) g CH4-C m-2 y-1"；第 289 行水位"+0.034 m"。
+- K5. Teh 2017 BG 14:3669 Abstract："[emis]sions averaged 36.05 ± 3.09 mg CH4–C m−2 day−1 across the entire dataset"；Mauritia 棕榈沼泽"36.7 ± 3.9"。
+- K6. Girkin 2026 Phil Trans B 381:20240482 p.5："the highest production under flooded anoxic conditions (3.08 ng CH4 g−1 h−1)"；同页 CO2"flooded anoxic conditions (941.9 ng CO2 g−1 h−1)"；"There was no significant difference in CH4 production/consumption potential between vegetation types (p = 0.549)"。
+- K7. Girkin 2025 Sci Rep 15:3244 p.6："Mean CH4 fluxes were 67 ± 14% lower from girdled trees, suggesting a substantial contribution of root inputs to peat surface CH4 fluxes."
+- K8. Girkin 2020 ERL 15:064013 Sect. 3.2（WebFetch 摘取）："CH4 fluxes increased in the closed mesocosm compared to the root-accessible mesocosm by 92 ± 4% under C. panamensis, and 85 ± 6% under R. taedigera"。
+- K9. Sjögersten 2018 Geoderma 324:47 Abstract："anaerobic CH4 production (Q10 = 6.8) ... CO2 production showed a weaker temperature response (Q10 < 2) ... fluxes increased from 42 ± 25 to 2166 ± 842 ng CH4 g-1 h-1 as temperatures were raised from 20 to 35 C."
+- K10. Lupascu 2020 GCB 26:5125 Abstract："Methane effluxes were higher in fire-affected areas (7.8 ± 2.2 mg CH4 m−2 hr−1) compared to the intact PSF (4.0 ± 2.0 mg CH4 m−2 hr−1) ... Reco ... intact PSF (359 ± 76 mg CO2 m−2 hr−1) ... a modern signature for both CO2 and CH4 fluxes"。
+- K11. Holmes 2015 GBC 29:1 Abstract："hydrogenotrophic methanogenesis was the dominant CH4 production pathway, with up to 100% of the CH4 produced via this route. Far more CO2 than CH4 (7 to 100X) was measured in pore water"。
+- K12. Birch 2026 GCB 32:e70937 Abstract："Six meta-analyses ... show weak to negligible effects and therefore do not support the Enzyme-latch hypothesis as a dominant driver"。
+
+## 4. 对模式的含义（均为推测，供主会话判断）
+
+1. 只按"泥炭植物来源或木质素"单独压 f 缺乏定量依据：刚果棕榈与硬木的产甲烷潜力无差异，巴拿马表层高产与木质素正相关，酶锁元分析效应弱。
+2. 区分度最大的是水位位置：东南亚 -18 cm 对秘鲁 +0.2 至 +7 cm。其次是 CH4/Rh：秘鲁 3.6%（箱法）或约 0.8%（涡度），MY-MLM 约 0.25%（涡度）。先核对模式在 MY-MLM 与 ID-Pag 的水位是否偏高，比改 f 优先。
+3. 木本根系供氧氧化（最多 85% 至 92%）与"CH4 主要来自新鲜根源碳"（环剥降 67%）两者合起来说明：原位 CH4 更像"NPP 与根系分泌物"乘以"根际氧化"的结果，而不是异养呼吸 HR 乘固定份额。CLM4Me 系"HR × f"的结构在热带木本泥炭上天然偏高。
+4. 离体厌氧份额在各地是 0.2% 至 0.9%，比模式的 f = 0.2 低两个量级以上，而且对热带泥炭普遍成立，不只东南亚。见 notes.txt 第 7.7 节的 f 约 0.005 至 0.01。
+5. 秘鲁、巴拿马原位值（13 至 23 g C）之所以远高于东南亚，主要来自高水位、棕榈呼吸根（pneumatophore）通道与更高的 Rh，而不是更高的 f。
+
+## 5. DOI 清单（本轮全部已打 Crossref 核对：题名、第一作者、刊名、卷、页或文章号、年一致）
+
+- 10.1111/gcb.15354 Hergoualc'h 2020 GCB 26:7198–7216
+- 10.1007/s10533-023-01057-4 Hergoualc'h 2023，Biogeochemistry 167:327–345，印刷年 2024
+- 10.1016/j.agrformet.2020.108167 Griffis 2020 AFM 295:108167
+- 10.1098/rstb.2024.0482 Girkin 2026 Phil Trans B 381:20240482
+- 10.1007/s10533-018-0531-1 Girkin 2018 在线，Biogeochemistry 142:231–245（2019）
+- 10.1038/s41598-025-87467-w Girkin 2025 Sci Rep 15:3244
+- 10.5194/bg-14-3669-2017 Teh 2017 BG 14:3669–3683
+- 10.1088/1748-9326/ab8495 Girkin 2020 ERL 15:064013
+- 10.1111/gcb.15195 Lupascu 2020 GCB 26:5125–5145
+- 10.1111/gcb.12330 Wright 2013 GCB 19:3775–3789
+- 10.1111/j.1365-2486.2011.02448.x Wright 2011 GCB 17:2867–2881
+- 10.1111/gcb.70937 Birch 2026 GCB 32:e70937
+- 10.1111/gcb.70746 Byrne 2026 GCB 32:e70746
+- 10.1029/90JD02555 Tathy 1992 JGR 97:6159–6168
+- 10.3389/fmicb.2020.00746 Finn 2020 Front Microbiol 11:746
+- 10.1016/j.soilbio.2017.11.008 Girkin 2018 SBB 117:48–55
+- 10.1016/j.soilbio.2016.08.017 Hoyos-Santillan 2016 SBB 103:86–96
+- 10.1016/j.geoderma.2018.02.029 Sjögersten 2018 Geoderma 324:47–55
+- 10.1002/2014GB004951 Holmes 2015 GBC 29:1–18
+- 10.1016/j.soilbio.2012.05.015 Ye 2012 SBB 54:36–47（未读）
+- 10.1016/S0016-7037(97)00189-0 Miyajima 1997 GCA 61:3739–3751（未读原文）
+- 10.1023/A:1003409812416 Miyajima 1998 Hydrobiologia 382:113–118（未读）
+- 10.1038/35051650 Freeman 2001 Nature 409:149（未读）
+- 前轮已核、本轮引用：10.1038/s41467-018-06050-2 Hodgkins 2018；10.1007/s10533-019-00632-y Girkin 2020 Biogeochemistry；10.1007/s11027-013-9511-x Hergoualc'h & Verchot 2014（未读）
+
+## 6. 未读与存疑（附定案所需）
+
+- Ye 2012 的 pH 与产甲烷效率函数：需拿到原文，找图表中效率随 pH 的点。
+- 酚类对产甲烷菌是否特异抑制：没有热带研究。需同一泥炭加酚与去酚的厌氧培养，并配对测 CO2 与 CH4。
+- 热带泥炭各电子受体的收支：需要同时测 SO4、Fe、腐殖质的还原量。
+- Girkin 2020 ERL 通量的单位：需读 PDF 原文。
+- 东南亚元分析是 2.9 还是 28.6 g C：需读 Hergoualc'h & Verchot 2014。
+- Lupascu 2020 的测点水位与年外推：需读全文。
+- Sjögersten 2018 的 CO2 绝对产率：需读全文。

@@ -1,0 +1,94 @@
+From f6733a3f467f1a42e7847fe4b61d79470b9aa0cf Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 09:19:37 +0800
+Subject: [PATCH] feat(hydrology): overland outflow of ponded water on dynamic
+ wetland tiles (candidate 13)
+
+DEF_WETLAND_POND_OUTFLOW (default off): ponded water on an unfrozen
+dynamic wetland tile leaves over the surface at the lateral outflow of a
+water table at the surface (the PEAT-CLSM function of C-11), instead of
+staying until the 200 mm wetland water store overflows.
+
+---
+ main/MOD_SoilSnowHydrology.F90 | 18 +++++++++++++++++-
+ share/MOD_Namelist.F90         |  7 +++++++
+ 2 files changed, 24 insertions(+), 1 deletion(-)
+
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index 36f67e3e..40483a14 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -9,7 +9,8 @@ MODULE MOD_SoilSnowHydrology
+                            DEF_SPLIT_SOILSNOW,      DEF_Runoff_SCHEME,     &
+                            DEF_DA_TWS_GRACE,        DEF_Optimize_Baseflow, &
+                            DEF_USE_Dynamic_Wetland, USE_SITE_WTD,          &
+-                           DEF_PADDY_RICE_BUND,     DEF_FLOODPLAIN_INFILTRATION
++                           DEF_PADDY_RICE_BUND,     DEF_FLOODPLAIN_INFILTRATION, &
++                           DEF_WETLAND_POND_OUTFLOW
+ #if (defined CaMa_Flood)
+    USE YOS_CMF_INPUT,      only: LWINFILT
+ #endif
+@@ -767,6 +768,7 @@ ENDIF
+ 
+    real(r8) :: zwtmm
+    real(r8) :: zwt_floor, wsupply, ztop, zbot   ! wetland water-table floor (mm)
++   real(r8) :: qpond                            ! overland outflow of wetland ponding (mm s-1)
+    real(r8) :: sp_zc(1:nl_soil), sp_zi(0:nl_soil), sp_dz(1:nl_soil) ! in mm
+    logical  :: is_permeable(1:nl_soil)
+    real(r8) :: dzsum, dz
+@@ -1379,6 +1381,20 @@ ENDIF
+                rsur_se = (wdsrf - wetwatmax) / deltim
+                wdsrf = wetwatmax
+             ENDIF
++#if defined(TRACER)
++            ! Candidate 13 (paper V2): ponded water on an unfrozen dynamic
++            ! wetland tile leaves over the surface at the lateral outflow of a
++            ! water table at the surface (PEAT-CLSM semisurficial runoff,
++            ! Bechtold et al. 2019); the subsurface outflow above cannot reach
++            ! it over frozen or impermeable layers
++            IF (DEF_WETLAND_POND_OUTFLOW .and. DEF_USE_Dynamic_Wetland .and. (wdsrf > 0.) &
++                .and. (t_soisno(1) > tfrz)) THEN
++               qpond = min(wdsrf / deltim, wetland_peat_outflow(nl_soil, zi_soisno(0:nl_soil), &
++                  hksati(1:nl_soil), OM_density(1:nl_soil,ipatch), 0._r8))
++               rsur_se = rsur_se + qpond
++               wdsrf = wdsrf - qpond * deltim
++            ENDIF
++#endif
+ 
+             rsur = rsur_se
+             ! total runoff (mm/s); a negative rsubst is the lateral inflow
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index d8c767ce..f65404bb 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -244,6 +244,11 @@ MODULE MOD_Namelist
+    ! 2 an acrotelm above DEF_WETLAND_PEAT_C_PASSIVE_ZTOP (0.3 m when unset)
+    ! over a catotelm.
+    integer  :: DEF_WETLAND_PEAT_SOIL = 0
++   ! Ponded water on an unfrozen dynamic wetland tile leaves over the surface
++   ! at the lateral outflow of a water table at the surface (paper V2
++   ! candidate 13; PEAT-CLSM semisurficial runoff, Bechtold et al. 2019)
++   ! instead of staying until the wetland water store overflows. Default off.
++   logical  :: DEF_WETLAND_POND_OUTFLOW = .false.
+ 
+    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
+    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
+@@ -1349,6 +1354,7 @@ CONTAINS
+       DEF_WETLAND_PEAT_SHARE_FILE,            &
+       DEF_WETLAND_PEAT_SHARE_SITE,            &
+       DEF_WETLAND_PEAT_SOIL,                  &
++      DEF_WETLAND_POND_OUTFLOW,               &
+       DEF_BGC_DEBUG_SCALARS,                  &
+ 
+       DEF_USE_WaterTableInit,                 &
+@@ -1979,6 +1985,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_WETLAND_PEAT_SHARE_FILE            ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_SHARE_SITE            ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_SOIL                  ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_POND_OUTFLOW               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

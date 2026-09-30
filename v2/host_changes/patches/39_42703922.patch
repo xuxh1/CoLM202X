@@ -1,0 +1,247 @@
+From 427039225383e04ee1b5542722bb43069756a2bb Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 11:18:02 +0800
+Subject: [PATCH] feat(thermal): keep the ground-to-reference water vapour
+ resistance per patch
+
+raw_grnd (MOD_Vars_1DFluxes, run time only, no restart) holds the water
+vapour aerodynamic resistance from the ground to the reference height of
+the current step: rd + raw of the last leaf-temperature iteration under a
+canopy (LeafTemperature, and LeafTemperaturePC through its layers), raw of
+GroundFluxes on bare ground, and for a PFT patch the fraction-weighted
+parallel conductance of its PFTs. Soil surface resistance is not included.
+This is CLM's 1/grnd_ch4_cond (CanopyFluxesMod, BareGroundFluxesMod). No
+existing value changes.
+
+---
+ main/MOD_LeafTemperature.F90   | 14 +++++++++++++-
+ main/MOD_LeafTemperaturePC.F90 | 19 ++++++++++++++++++-
+ main/MOD_Thermal.F90           | 23 +++++++++++++++++++++++
+ main/MOD_Vars_1DFluxes.F90     |  3 +++
+ 4 files changed, 57 insertions(+), 2 deletions(-)
+
+diff --git a/main/MOD_LeafTemperature.F90 b/main/MOD_LeafTemperature.F90
+index 00e3a744..89ea178f 100644
+--- a/main/MOD_LeafTemperature.F90
++++ b/main/MOD_LeafTemperature.F90
+@@ -56,7 +56,7 @@ CONTAINS
+ !End WUE stomata model parameter
+               hpbl       ,&
+               qintr_rain ,qintr_snow ,t_precip   ,hprl       ,dheatl     ,smp        ,&
+-              hk         ,hksati     ,rootflux                                        &
++              hk         ,hksati     ,rootflux   ,raw_grnd_out                        &
+ #ifdef TRACER
+              ,canopy_smelt_mass_out, canopy_frzc_mass_out                            &
+ #endif
+@@ -269,6 +269,10 @@ CONTAINS
+         gssha,      &! stomata conductance of shaded leaf
+         rootflux(1:nl_soil)  ! root water uptake from different layers
+ 
++   ! water vapour aerodynamic resistance from the ground to the reference
++   ! height, rd + raw of the last iteration [s/m]
++   real(r8), intent(out), optional :: raw_grnd_out
++
+ #ifdef TRACER
+    real(r8), intent(out), optional :: canopy_smelt_mass_out ! canopy snow->rain mass [mm]
+    real(r8), intent(out), optional :: canopy_frzc_mass_out  ! canopy rain->snow mass [mm]
+@@ -1037,6 +1041,14 @@ ENDIF
+ !     END stability iteration
+ ! ======================================================================
+ 
++      ! Ground-to-reference-height water vapour resistance: the ground to
++      ! canopy air resistance rd in series with the canopy air to reference
++      ! height resistance raw, both from the last iteration (the values the
++      ! fluxes above were solved with). The soil surface resistance rss is not
++      ! included. Same quantity as CLM's 1/grnd_ch4_cond
++      ! (CanopyFluxesMod.F90: raw(p,above_canopy)+raw(p,below_canopy)).
++      IF (present(raw_grnd_out)) raw_grnd_out = raw + rd
++
+       z0m = z0mv
+       zol = zeta
+       rib = min(5.,zol*ustar**2/(vonkar**2/fh*um**2))
+diff --git a/main/MOD_LeafTemperaturePC.F90 b/main/MOD_LeafTemperaturePC.F90
+index e7fe3792..b15ce189 100644
+--- a/main/MOD_LeafTemperaturePC.F90
++++ b/main/MOD_LeafTemperaturePC.F90
+@@ -66,7 +66,7 @@ CONTAINS
+                hpbl, &
+                qintr_rain ,qintr_snow ,t_precip   ,hprl       ,&
+                dheatl     ,smp        ,hk         ,hksati     ,&
+-               rootflux                                            &
++               rootflux   ,raw_grnd_out                            &
+ #ifdef TRACER
+               ,canopy_smelt_mass_p_out, canopy_frzc_mass_p_out    &
+ #endif
+@@ -260,6 +260,11 @@ CONTAINS
+         qref,          &! 2 m height air specific humidity
+         rootflux(nl_soil,ps:pe)    ! root water uptake from different layers
+ 
++   ! water vapour aerodynamic resistance from the ground to the reference
++   ! height through the canopy layers, of the last iteration [s/m];
++   ! 0 when no layer is vegetated
++   real(r8), intent(out), optional :: raw_grnd_out
++
+ #ifdef TRACER
+    real(r8), dimension(ps:pe), intent(out), optional :: canopy_smelt_mass_p_out ! snow->rain mass [mm]
+    real(r8), dimension(ps:pe), intent(out), optional :: canopy_frzc_mass_p_out  ! rain->snow mass [mm]
+@@ -531,6 +536,7 @@ CONTAINS
+       IF (present(canopy_smelt_mass_p_out)) canopy_smelt_mass_p_out(:) = 0._r8
+       IF (present(canopy_frzc_mass_p_out))  canopy_frzc_mass_p_out(:)  = 0._r8
+ #endif
++      IF (present(raw_grnd_out)) raw_grnd_out = 0._r8
+ 
+       lsai(:) = lai(:) + sai(:)
+       is_vegetated_patch = .false.
+@@ -1754,6 +1760,17 @@ ENDIF
+ !     END stability iteration
+ ! ======================================================================
+ 
++      ! Ground-to-reference-height water vapour resistance: the resistance
++      ! rd(i) below each vegetated layer i (to the next vegetated layer or
++      ! the ground) in series with raw above the top layer, from the last
++      ! iteration. The soil surface resistance rss is not included.
++      IF (present(raw_grnd_out)) THEN
++         raw_grnd_out = raw
++         DO i = 1, nlay
++            IF (fcover_lay(i)>0 .and. lsai_lay(i)>0) raw_grnd_out = raw_grnd_out + rd(i)
++         ENDDO
++      ENDIF
++
+       IF(DEF_USE_OZONESTRESS)THEN
+          DO i = ps, pe
+             p = pftclass(i)
+diff --git a/main/MOD_Thermal.F90 b/main/MOD_Thermal.F90
+index 93951b2b..13d41e0a 100644
+--- a/main/MOD_Thermal.F90
++++ b/main/MOD_Thermal.F90
+@@ -135,6 +135,7 @@ CONTAINS
+    USE MOD_Hydro_SoilFunction, only: soil_psi_from_vliq
+ #endif
+    USE MOD_SPMD_Task
++   USE MOD_Vars_1DFluxes, only: raw_grnd
+    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_RSS_SCHEME, DEF_SPLIT_SOILSNOW, &
+                            DEF_USE_LCT,DEF_USE_PFT,DEF_USE_PC,DEF_PC_CROP_SPLIT
+ #ifdef TRACER
+@@ -490,6 +491,9 @@ CONTAINS
+    real(r8), allocatable :: assimsha_p    (:)
+    real(r8), allocatable :: etrsha_p      (:)
+    real(r8), allocatable :: dheatl_p      (:)
++   real(r8), allocatable :: raw_grnd_p    (:)
++   real(r8) :: raw_grnd_pc  ! ground to reference height resistance of the PC canopy [s/m]
++   real(r8) :: cond_grnd    ! fraction-weighted ground to reference height conductance [m/s]
+    real(r8) :: rss_min  ! floor of the snow-free soil surface resistance [s/m]
+ #ifdef TRACER
+    real(r8) :: canopy_smelt_mass_local, canopy_frzc_mass_local
+@@ -677,6 +681,11 @@ ENDIF
+ 
+       obu_g = forc_hgt_u / zol_g
+ 
++      ! Water vapour aerodynamic resistance from the ground to the reference
++      ! height, bare-ground value (raw of GroundFluxes); replaced below where a
++      ! canopy is solved. Soil surface resistance rss is not included.
++      raw_grnd(ipatch) = 1./(vonkar/fq_g*ustar_g)
++
+ 
+ !=======================================================================
+ ! [4] Canopy temperature, fluxes from the canopy
+@@ -744,6 +753,7 @@ IF ( patchtype==0.and.DEF_USE_LCT .or. patchtype>0 ) THEN
+                  forc_hpbl   ,&
+                  qintr_rain  ,qintr_snow  ,t_precip    ,hprl        ,dheatl      ,&
+                  smp         ,hk(1:)      ,hksati(1:)  ,rootflux(1:)              &
++                ,raw_grnd_out=raw_grnd(ipatch)                                   &
+ #ifdef TRACER
+                 ,canopy_smelt_mass_out=canopy_smelt_mass_local, &
+                  canopy_frzc_mass_out =canopy_frzc_mass_local  &
+@@ -815,6 +825,9 @@ IF (patchtype == 0) THEN
+       allocate ( assimsha_p       (ps:pe) )
+       allocate ( etrsha_p         (ps:pe) )
+       allocate ( dheatl_p         (ps:pe) )
++      allocate ( raw_grnd_p       (ps:pe) )
++      ! bare-ground value until a canopy is solved for the PFT
++      raw_grnd_p(:) = raw_grnd(ipatch)
+ #ifdef TRACER
+       allocate ( canopy_smelt_mass_p_local(ps:pe) )
+       allocate ( canopy_frzc_mass_p_local (ps:pe) )
+@@ -962,6 +975,7 @@ IF (patchtype == 0) THEN
+                  forc_hpbl                                                                         ,&
+                  qintr_rain_p(i) ,qintr_snow_p(i) ,t_precip        ,hprl_p(i)       ,dheatl_p(i)   ,&
+                  smp             ,hk(1:)          ,hksati(1:)      ,rootflux_p(1:,i)                &
++                ,raw_grnd_out=raw_grnd_p(i)                                                         &
+ #ifdef TRACER
+                 ,canopy_smelt_mass_out=canopy_smelt_mass_p_local(i), &
+                  canopy_frzc_mass_out =canopy_frzc_mass_p_local (i) &
+@@ -979,6 +993,7 @@ IF (patchtype == 0) THEN
+                                z0m_p(i),z0h_g,zol_p(i),rib_p(i),ustar_p(i),&
+                                qstar_p(i),tstar_p(i),fm_p(i),fh_p(i),fq_p(i))
+ 
++            raw_grnd_p   (i) = 1./(vonkar/fq_p(i)*ustar_p(i))
+             tleaf_p      (i) = forc_t
+             gssun_p      (i) = 0.
+             gssha_p      (i) = 0.
+@@ -1076,6 +1091,7 @@ IF ( DEF_USE_PC .and. pn.ge.ps ) THEN
+          qintr_rain_p(ps:pe)  ,qintr_snow_p(ps:pe)  ,t_precip             ,hprl_p(:)            ,&
+          dheatl_p(ps:pe)      ,smp                  ,hk(1:)               ,hksati(1:)           ,&
+          rootflux_p(:,:)                                                                  &
++        ,raw_grnd_out=raw_grnd_pc                                                         &
+ #ifdef TRACER
+         ,canopy_smelt_mass_p_out=canopy_smelt_mass_p_local(ps:pe),&
+          canopy_frzc_mass_p_out =canopy_frzc_mass_p_local (ps:pe)&
+@@ -1106,6 +1122,7 @@ IF ( DEF_USE_PC .and. pn.ge.ps ) THEN
+       fm_p         (ps:pe) = fm
+       fh_p         (ps:pe) = fh
+       fq_p         (ps:pe) = fq
++      IF (raw_grnd_pc > 0.) raw_grnd_p(ps:pe) = raw_grnd_pc
+ ENDIF
+ 
+       pe = patch_pft_e(ipatch)
+@@ -1151,6 +1168,11 @@ ENDIF
+       fh            = sum( fh_p        (ps:pe)*pftfrac(ps:pe) )
+       fq            = sum( fq_p        (ps:pe)*pftfrac(ps:pe) )
+ 
++      ! PFT conductances in parallel, weighted by fraction (as CLM's p2c of
++      ! grnd_ch4_cond); an empty PFT slice keeps the bare-ground value
++      cond_grnd     = sum( pftfrac(ps:pe)/raw_grnd_p(ps:pe) )
++      IF (cond_grnd > 0.) raw_grnd(ipatch) = 1./cond_grnd
++
+       rstfacsun_out = sum( rstfacsun_p (ps:pe)*pftfrac(ps:pe) )
+       rstfacsha_out = sum( rstfacsha_p (ps:pe)*pftfrac(ps:pe) )
+       gssun_out     = sum( gssun_p     (ps:pe)*pftfrac(ps:pe) )
+@@ -1223,6 +1245,7 @@ END IF
+       deallocate ( assimsha_p  )
+       deallocate ( etrsha_p    )
+       deallocate ( dheatl_p    )
++      deallocate ( raw_grnd_p  )
+ #ifdef TRACER
+       deallocate ( canopy_smelt_mass_p_local )
+       deallocate ( canopy_frzc_mass_p_local  )
+diff --git a/main/MOD_Vars_1DFluxes.F90 b/main/MOD_Vars_1DFluxes.F90
+index 9238a341..6e95bee0 100644
+--- a/main/MOD_Vars_1DFluxes.F90
++++ b/main/MOD_Vars_1DFluxes.F90
+@@ -79,6 +79,7 @@ MODULE MOD_Vars_1DFluxes
+    real(r8), allocatable :: qdrip  (:) !throughfall (mm h2o/s)
+    real(r8), allocatable :: assim  (:) !canopy assimilation rate (mol m-2 s-1)
+    real(r8), allocatable :: respc  (:) !canopy respiration (mol m-2 s-1)
++   real(r8), allocatable :: raw_grnd(:) !water vapour aerodynamic resistance, ground to reference height [s/m]
+ 
+    real(r8), allocatable :: qcharge(:) !groundwater recharge [mm/s]
+ 
+@@ -169,6 +170,7 @@ CONTAINS
+             allocate ( qdrip  (numpatch) )  ; qdrip  (:) = spval ! throughfall (mm h2o/s)
+             allocate ( assim  (numpatch) )  ; assim  (:) = spval ! canopy assimilation rate (mol m-2 s-1)
+             allocate ( respc  (numpatch) )  ; respc  (:) = spval ! canopy respiration (mol m-2 s-1)
++            allocate ( raw_grnd(numpatch) ) ; raw_grnd(:) = spval ! water vapour aerodynamic resistance, ground to reference height [s/m]
+ 
+             allocate ( qcharge(numpatch) )  ; qcharge(:) = spval ! groundwater recharge [mm/s]
+ 
+@@ -267,6 +269,7 @@ CONTAINS
+             deallocate ( qdrip   )  ! throughfall (mm h2o/s)
+             deallocate ( assim   )  ! canopy assimilation rate (mol m-2 s-1)
+             deallocate ( respc   )  ! canopy respiration (mol m-2 s-1)
++            deallocate ( raw_grnd)  ! water vapour aerodynamic resistance, ground to reference height [s/m]
+ 
+             deallocate ( qcharge )  ! groundwater recharge [mm/s]
+             deallocate ( qlayer  )  ! water flux between soil layer [mm h2o/s]
+-- 
+2.53.0
+

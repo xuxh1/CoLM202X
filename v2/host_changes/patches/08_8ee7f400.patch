@@ -1,0 +1,70 @@
+From 8ee7f400272b7ab4a8022dac7b6895127a246c81 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Fri, 25 Sep 2026 14:03:35 +0800
+Subject: [PATCH] feat(methane): acrotelm depth for the passive peat seed
+ (C-17b) and a wetland passive-pool turnover time (C-18b)
+
+C-17b, DEF_WETLAND_PEAT_C_PASSIVE_ZTOP (0 = every layer, the C-17
+behaviour): only layers whose node lies at or below this depth move to the
+passive pool. Catotelm peat is humified residue, but the acrotelm above
+(10-50 cm, Clymo 1984) turns over in decades and keeps the dataset split.
+
+C-18b, DEF_METHANE%wetland_tau_s3 (negative = CENTURY's tau_s3): base
+turnover time of the wetland passive pool at the same reference as
+CENTURY (t_scalar = 1 near 30 C). ORCHIDEE-PEAT v2 uses a passive rate of
+0.0006 per year at 30 C (1667 yr, Qiu et al. 2019, Table 1) with its own
+moisture factor; LPJ-WHy a slow pool of 1000 yr at 10 C times 0.35. It is
+an alternative to C-18's anoxia profile for slowing the deep peat.
+
+---
+ mkinidata/MOD_Initialize.F90 | 2 ++
+ share/MOD_Namelist.F90       | 6 ++++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/mkinidata/MOD_Initialize.F90 b/mkinidata/MOD_Initialize.F90
+index 7f1dfba0..8037e9d0 100644
+--- a/mkinidata/MOD_Initialize.F90
++++ b/mkinidata/MOD_Initialize.F90
+@@ -1175,6 +1175,8 @@ ENDIF
+                         ! C-17). The fresh pools then fill from the plant input.
+                         IF (DEF_WETLAND_PEAT_C_PASSIVE) THEN
+                            DO nsl = 1, nl_soil
++                              ! C-17b: the acrotelm above ZTOP keeps the dataset's split.
++                              IF (z_soi(nsl) < DEF_WETLAND_PEAT_C_PASSIVE_ZTOP) CYCLE
+                               wetland_layer_c = sum(max(decomp_cpools_vr(nsl, :, i), 0._r8), &
+                                  mask = decomp_cpools_vr(nsl, :, i) < 1.e30_r8)
+                               decomp_cpools_vr(nsl, :, i) = 0._r8
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index b1b4cb88..f901ac44 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -223,6 +223,10 @@ MODULE MOD_Namelist
+    ! puts half of it in pools that turn over in decades (paper V2 C-17).
+    ! Default off.
+    logical :: DEF_WETLAND_PEAT_C_PASSIVE = .false.
++   ! Only layers whose node lies at or below this depth [m] are moved to the
++   ! passive pool; the acrotelm above keeps the dataset's split (Clymo 1984
++   ! puts it at 10-50 cm). 0 moves every layer (paper V2 C-17b).
++   real(r8) :: DEF_WETLAND_PEAT_C_PASSIVE_ZTOP = 0._r8
+ 
+    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
+    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
+@@ -1262,6 +1266,7 @@ CONTAINS
+       DEF_USE_WETLAND_PEAT_C,                 &
+       DEF_WETLAND_PEAT_C_PROFILE,             &
+       DEF_WETLAND_PEAT_C_PASSIVE,             &
++      DEF_WETLAND_PEAT_C_PASSIVE_ZTOP,        &
+       DEF_BGC_DEBUG_SCALARS,                  &
+ 
+       DEF_USE_WaterTableInit,                 &
+@@ -1879,6 +1884,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_USE_WETLAND_PEAT_C                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_C_PROFILE             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_C_PASSIVE             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_PEAT_C_PASSIVE_ZTOP        ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

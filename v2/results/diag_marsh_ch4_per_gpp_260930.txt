@@ -1,0 +1,200 @@
+# diag_marsh_ch4_per_gpp_260930：三角洲复湿沼泽单位 GPP 甲烷偏低的诊断（Q-64）
+
+- **日期**：2026.09.30-05:30
+- **读者**：下一会话
+- **来源**：只读诊断子任务 methane-diag-marsh（未改码、未改配置、未投作业）；站点 tag `v2_p9f`（树 `cases/paper_v2/v260930/sp_v2_c91` @04842b9e，配置 `v2/config/v2_p8f`）与 `v2_p9a`（树 `sp_v2_c90` @24061070，配置 `v2_p8a`）；取数脚本 `v2/_scratch/marsh_q64/q64_budget.py`、`q64_soilT.py`、`q64_years.py`，现成 `v2/scripts/month_decomp.py`，输出同目录 `q64_budget.out`、`q64_soilT.out`、`q64_years_Sne.out`、`month_decomp_v2_p9f.out`；承接账本 Q-64、V-158、V-139、V-142、V-144、V-150、V-152、V-155、V-159、C-77、C-81、C-82、C-85、C-86、C-88、D-59、D-63 与 `lit_marsh_energy_260929.txt`、`lit_marsh_lai_260929.txt`、`lit_marsh_restoration_260929.txt`；根际氧化文献由一个只读文献子任务检索，著录本文逐条重打 Crossref
+- **状态**：问一、二、四已答；问三只答了模式侧，挺水沼泽根际氧化的文献范围未取得；改法只到依据与线性估算，未实跑
+- **失效于**：`v2_p8f` 里七座沼泽塔的盖度、埋碳份额或 LAI 上限任一改动后
+
+口径：
+- 月份：每塔取计分月（`score_series_v2.obs_monthly` 的闸门，账本 D-17；US-Sne 去掉复湿前的 2016 年），年量 = 计分月均值 × 365.25，g C m-2 yr-1（甲烷按 C 计）；月量 mg C m-2 d-1。本文 E 对塔上之比与 `scores77_v2_p9f.txt`、`scores77_v2_p9a.txt` 的 β 两位小数相同——已验证（q64_budget.out 末列对 scores77 两文件）。
+- 模式量（湿地斑块，读 `sp_v2_c91` 源码）：GPP = `f_assim` × 12.011；植物输入 I = GPP × `wetland_npp_frac` 0.5 × `wetland_cover_frac_site`（`main/TRACER/MOD_Tracer_Reactive_BgcShim.F90:274-281`）；分泌物 X = 0.15 I（同文件 294-297 行，当步在根处呼吸）；埋碳 B = 0.85 I × `wetland_burial_frac_site`（同文件 305-315 行，进 soil3）；凋落物 L = I − X − B；总分解 D = `f_hr` + P − O（`f_hr` 只含 CO2-C，`MOD_Tracer_Reactive_Methane_BgcLink.F90:149-163`）；P、O、E 为 `f_methane_prod_tot`、`f_methane_oxid_tot`、`f_methane_surf_flux_tot_active`；根际氧化 Orox = 植物通道净排放 × x/(1 − x)，x = `wetland_aereoxid` 0.40（`MOD_Tracer_Reactive_Methane_Physics.F90:3814-3820`：通道流量的 x 份记为氧化），土壤氧化 Osoil = O − Orox。
+- 塔上推算分解 D_t = Resp_DT − (1 − CUE) × GPP_DT + E_obs，CUE 取 0.50（模式 `wetland_npp_frac`）与 0.61（Rocha & Goulden 2009 香蒲沼泽 8 年实测）；这是把"自养呼吸 = (1 − CUE) GPP"当真，只作量级对照。
+- 偏差一律"模式 − 塔上"，比值一律"模式 / 塔上"。塔上土温 TS_n 在沉积物面以下（`diag_marsh_energy_260929.txt` 第 1 节第 3 条）。
+
+## 0. 覆盖面
+
+1. 账本：grep 行首 `^| <号> ` 取 Q-64、V-158、V-139、V-142、V-144、V-150、C-77、C-81、C-82、C-85、C-86、C-88、D-59、V-159 全行，另取 C-66、C-83、C-89、C-90、D-62、D-63、Q-52、Q-53、Q-63、V-141、V-143、V-149、V-152、V-154、V-155、V-156、V-157、V-172 全行（配置谱系与 LAI 上限、盖度、埋碳的定义）。
+2. 文献笔记：`lit_marsh_energy_260929.txt`、`lit_marsh_lai_260929.txt`、`lit_marsh_restoration_260929.txt` 全文；`diag_marsh_energy_260929.txt` 全文；`diag_marsh_260929.txt` 第 1–80 行（结论与四数表，其余为旧 tag 的逐项拆分）。本地 McNicol 2020 接受稿文本 `data/_tmp/分析_260925_站点测量高度/text/US-Myb/2019_McNicol.txt` grep `recent|half|two.thirds|photosynth`（10 处命中，读第 895–905、1021–1035 行）。
+3. 读码（`sp_v2_c91` 源码，即 `v2_p9f` 实跑版本；工作树 HEAD 与 04842b9e 在 main、share、mkinidata 有 9 个文件不同，故不引工作树行号）：
+   - 植物输入、分泌物、埋碳：`MOD_Tracer_Reactive_BgcShim.F90:248-340`；grep `wetland_cover_frac_site` 于 main/、share/（命中 5 处：BgcShim 第 281 行一处用、Const 第 799 行声明与第 1544、1995–1997 行读入与检查）。
+   - 分解与甲烷记账：`MOD_Tracer_Reactive_Methane_BgcLink.F90:95-270`；`MOD_Tracer_Reactive_Methane_Driver.F90:315-317`（分泌物并入甲烷侧的 hr_vr 与 lithr）。
+   - 产量：`MOD_Tracer_Reactive_Methane_Physics.F90:2330-2660`（基础分解第 2472 行、温度因子第 2544 行、f_methane 第 2554 行、pH 第 2581–2604 行、滞后第 2617–2621 行、上限 0.5 第 2625 行）；pH 取值 `MOD_Tracer_Reactive_Methane_pH.F90:54-160`、`MOD_Tracer_Reactive_Methane.F90:175-185、690-735`，`use_spatial_ph` 缺省 `.false.`（`Const.F90:141`）。
+   - 根际氧化：`Physics.F90:2826-2880`（`methane_root_oxid`，`rox_on_rooted_production` 缺省 `.false.`，`Const.F90:1023`，本 tag 未设）、`3790-3822`；植物 O2 入土在湿地关闭 `Physics.F90:1496、1666`。
+   - 分解温度 Q10 1.5：`mkinidata/MOD_Initialize.F90:695`；`main/BGC/MOD_BGC_Soil_BiogeochemDecompCascadeBGC.F90:70-127`。
+   - LAI 上限：`MOD_Tracer_Reactive_Methane_WetlandVeg.F90:250-313`（`wetveg_cap_lai` 只改 tlai）。
+   - 能量：`main/MOD_Thermal.F90:586-592`（地面比湿 hr = 1）、`646-705`（rss 下限：积水枯落物 80 × 挺水份额，C-83 分支）、`1413-1417`（积水热容开关）；`main/MOD_LeafTemperature.F90:660-690`（冠层下阻抗 rd）、`800-820`（叶片与地面导度）；`main/MOD_Albedo.F90:296-313`（两流按 lai + sai、地面反照率随第 1 层湿度）；`main/MOD_NetSolar.F90:131-204`（sabg 为冠层吸收后的余量）；`share/MOD_Namelist.F90:315、322`（`DEF_PONDING_HEAT` 缺省 `.false.`、`DEF_WETLAND_POND_LITTER_RSS` 缺省 0）。
+4. 配置：`sites_v2_p9f/_conf/ch4_parameter.nml` 全部非注释行；`ch4_param/US-Myb.nml`、`US-Sne.nml`、`US-WPT.nml`、`US-Tw1.nml` 对基础件的 diff；`SITE_PARAMS.csv`、`SITE_MAIN.csv` 六塔行；`template.nml` 与 `site_nml/US-Sne.nml` grep `LITTER_RSS|PONDING|FVEG|RSS_SCHEME`。
+5. 数据：六塔（US-Sne、US-Myb、US-WPT、US-Tw1、US-Tw4、US-Tw5）两个 tag 的全部 `hist_*.nc` 与 `hist_tracer_*.nc`；六个 `Observation/*_Flux.nc`（FCH4_f、GPP_DT、GPP、Resp_DT、NEE_f、TS_n 及其 probe_depths、WTD_f、Tair、Rnet_f、Qh_f、Qle_f、Qg_f、SWdown、LWdown、SWup_f、Wind）；`Sitedata/US-Sne_*_site.nc` 变量表。
+6. 根际氧化文献：已派只读检索子任务，交回本文前未返回，第 4 节文献部分空缺。
+7. 未看：无（代码、配置、数据）；文献一项见上条。
+8. 存疑：挺水沼泽根际氧化份额的文献范围（取回检索即可，不需实验）；第 5 节各候选的实跑量级；线性估算假定 E 与 D 同比例变（本文两 tag 间 E/D 只差 0.3 个百分点，第 2.1 节），实跑见各候选的"验证"。
+
+## 1. 结论
+
+1. 偏低落在底物量，不在产率与氧化：`v2_p9f` 模式总分解 D 只有塔上推算分解的 0.55–0.61（US-Sne）、0.50–0.68（US-Myb）、0.71–0.84（US-WPT），而单位分解的排放 E/D 模式 10.0–10.3 %、塔上推算 9.4–13.7 %——已验证（q64_budget.out 各塔第二行）；塔上推算以自养呼吸 = (1 − CUE) GPP 为前提——推测。`v2_p9a` → `v2_p9f` 的 β 下降全部来自 D（US-Sne 540 → 192、US-Myb 765 → 252、US-WPT 754 → 342 g C m-2 yr-1），E/D 两 tag 都在 10.0–10.3 %——已验证（q64_budget.out）。
+2. 单位 GPP 的甲烷在 `v2_p9a` 就已偏低：模式 E/GPP US-Sne 2.64 %、US-Myb 2.86 %、US-WPT 4.86 %，塔上 12.30 %、3.80 %、7.57 %；`v2_p9a` 的 β 1.25–1.62 是靠 GPP 偏高 2.16–5.83 倍抵消的——已验证（q64_budget.out）。
+3. D 偏小的首要来源是 C-77 盖度扣了两次：LAI 上限按塔上 GPP 反推、作用于斑块平均 LAI，宿主 GPP 已是足迹平均（模式 / 塔上 US-Myb 1.15、US-WPT 1.18），植物输入却再乘盖度 0.57、0.454、0.956——已验证（读码 `BgcShim.F90:281`、`WetlandVeg.F90:284-313`；账本 V-152"上限作用于斑块平均 LAI"；q64_budget.out）。D-63 当时已写明"宿主冠层代表足迹时 C-77 要关，避免扣两次"——已验证（账本 D-63 行）。关掉后按 E ∝ D 线性估：US-Myb β 0.55 → 0.95、US-Sne 0.45 → 0.89、US-WPT 0.66 → 0.69——已验证（q64_budget.out 第二行"cover off"列，算术）；实跑量级——推测。
+4. 其次是埋碳与塔上年份的碳平衡不符：US-WPT 份额 0.21 扣去输入的 18 %，而塔上 2011–2013 年 NEE 为 +61、+151、+259（净碳源）；去掉埋碳 β 0.66 → 0.80，与第 3 条合用 0.83——已验证（q64_budget.out；`q64_years.py` US-WPT 输出）。US-Sne 复湿头两年塔上 Reco 374、518 高于 GPP 175、524，年 E/GPP 12.3 % 超过平衡态模式的上限约 5 %（0.5 × P/D 0.17 × E/P 0.60），缺的是淹死牧草与老土的非平衡碳——已验证（q64_years_Sne.out；上限为 q64_budget.out 的比值相乘）；原因归属——推测（依据 `lit_marsh_restoration_260929.txt` 第 3.3、5 节）。
+5. 产率与氧化各项在三塔都不是偏低的来源：pH 因子恒为 1（站点不读空间 pH，取回退值 6.2）；滞后因子约为 1（常年积水，淹水比例 0.90–1.00 恒定，滞后只在淹水比例上升时起作用）；P/D 年均 16.9–17.6 %，即 f_methane 0.2 乘温度因子 1.33^((T − 21.85 °C)/10)；O/P 40.1–40.7 %，其中根际 38.3–39.9 %、土壤不到 1 %，E 的 96.7–99.9 % 走植物通道——已验证（读码 `pH.F90:147-154`、`Physics.F90:2544-2625`、`3814-3820`；q64_budget.out）。
+6. 土温：`v2_p9f` 在塔上探头深度（0.01–0.32 m）模式偏冷 US-Sne 2.5–2.7 K、US-Myb 1.6 K、US-WPT 2.2–2.3 K（1–3 月 3.0–4.0 K），US-Tw1 偏暖 2.2–2.7 K，US-Tw4 −0.1 到 +0.4 K——已验证（q64_soilT.out 第 A 段）。把各层土温换成塔上值，碳库平衡口径下 P 只升 4.4–7.5 %（碳库不随温度调整的口径 11–19 %），US-Tw1 降 7 %——已验证（q64_soilT.out 第 B 段），温度不是 β 0.45–0.66 的主因——推测（依据本条与第 1 条的量级）。
+7. 偏冷的能量原因：三塔地面的净辐射（Hg + LEg + G）只有 58、58、37 W m-2，小于地面蒸发 84、78、46，地面从空气吸感热（Hg −26.5、−20.4、−9.4），t_grnd 比气温低 0.2–0.8 K，而塔上底泥比气温高 0.5–2.2 K——已验证（q64_soilT.out 第 D 段与第 A 段）。地面拿到的短波少，是因为一层冠层铺满斑块、按 lai + sai 截光：冠层吸收 120、138、89，地面 74、76、41 W m-2；SAI 0.57–0.81 取自遥感像元、不随 LAI 上限缩（Sne 的 SAI 0.81 是 LAI 0.35 的两倍多），冠层把吸收的能量以感热 42–49 W m-2 还给空气，塔上整站感热只有 5–9——已验证（读码 `MOD_Albedo.F90:299`、`MOD_NetSolar.F90:186`、`WetlandVeg.F90:284-313`、`MOD_LeafTemperature.F90:806`；q64_soilT.out）。US-Sne 的地面蒸发 84 与 Sherman 拆分观测约 85 W m-2 相当，US-Myb 的 78 高于 Mayberry 的 35–64——已验证（q64_soilT.out；`lit_marsh_energy_260929.txt` 第 62 行转引 Eichelmann 等 2022）。US-WPT 冬季另缺冰盖与水层保温：积水不进热方程（`DEF_PONDING_HEAT` 缺省关），12–2 月塔上反照率 0.33、模式 0.14，模式土壤向上失热 12.7 W m-2——已验证（读码 `MOD_Thermal.F90:1413-1417`、`share/MOD_Namelist.F90:315`；q64_soilT.out US-WPT DJF 行）。
+8. 根际氧化份额 0.40：这几塔排放严格按 (1 − x) 缩放，但模式 E/D 与塔上推算之比 0.73–1.10，Q-64 不需要改份额——推测（依据第 2.1 节）；挺水沼泽实测份额的文献范围本文未取得——存疑（第 4 节）。
+9. 季节形状另有一处偏差：三塔模式 E 的夏冬比太平（7 月 / 1 月：US-Myb 模式 3.3、塔上 9.1），表观 Q10 模式 2.2–2.8、塔上 3.9–6.3，α 0.21–0.47；模式 D 里当步呼吸掉的分泌物只占 12–25 %，而 Mayberry 的甲烷有一半到三分之二来自新近固定的碳——已验证（month_decomp_v2_p9f.out；q64_budget.out；McNicol 等 2020 接受稿第 397–398 行）。
+10. 改法候选（第 5 节）按把握：① 关 C-77 盖度（六塔都关，US-Tw4 同时按塔上 GPP 定 LAI 上限）；② 埋碳份额按塔上年份的碳平衡定（US-WPT 取 0，US-Tw5 下调）；③ 提高当步供给的新鲜碳份额（全局，治季节形状）。US-Sne 的非平衡起步与根际份额、能量改法排在后面——推测（依据第 5 节）。
+
+## 2. 问一：甲烷收支
+
+### 2.1 年量（计分月，g C m-2 yr-1）
+
+| 塔 | 月数 | 盖度 | 埋碳份额 | GPP 模/塔 | I | X | B | L | D | D − (I − B) | P | O | Orox | Osoil | E 模/塔 | 植物/冒泡/扩散 | E/GPP 模/塔 % | P/D % | O/P % | E/D % | β |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| US-Sne | 24 | 0.454 | 0 | 697/349 | 158 | 24 | 0 | 135 | 192 | 34 | 32.4 | 13.2 | 12.4 | 0.8 | 19.2/43.0 | 18.6/0.5/0.2 | 2.76/12.30 | 16.9 | 40.7 | 10.0 | 0.45 |
+| US-Myb | 99 | 0.570 | 0.47 | 1448/1258 | 413 | 62 | 165 | 186 | 252 | 4 | 43.6 | 17.6 | 17.3 | 0.3 | 26.0/47.8 | 26.0/0.0/0.0 | 1.80/3.80 | 17.3 | 40.4 | 10.3 | 0.55 |
+| US-WPT | 34 | 0.956 | 0.21 | 832/705 | 398 | 60 | 71 | 267 | 342 | 15 | 58.6 | 23.7 | 23.3 | 0.3 | 35.2/53.3 | 35.0/0.0/0.1 | 4.23/7.57 | 17.1 | 40.4 | 10.3 | 0.66 |
+| US-Tw1 | 91 | 0.970 | 0.45 | 1857/1702 | 901 | 135 | 345 | 421 | 561 | 5 | 98.2 | 39.3 | 39.2 | 0.1 | 58.8/46.9 | 58.8/0.0/0.1 | 3.17/2.76 | 17.5 | 40.1 | 10.5 | 1.25 |
+| US-Tw4 | 61 | 0.842 | 0.53 | 1766/1283 | 744 | 112 | 335 | 297 | 365 | −44 | 63.9 | 25.7 | 25.5 | 0.3 | 38.3/32.3 | 38.2/0.0/0.1 | 2.17/2.52 | 17.5 | 40.2 | 10.5 | 1.19 |
+| US-Tw5 | 9 | 0.912 | 0.47 | 2339/1728 | 1067 | 160 | 426 | 481 | 585 | −55 | 103.1 | 41.3 | 41.2 | 0.1 | 61.8/86.5 | 61.8/0.0/0.1 | 2.64/5.01 | 17.6 | 40.0 | 10.6 | 0.71 |
+
+- 上表——已验证（q64_budget.out `v2_p9f` 行）。塔上 GPP 为 GPP_DT；按夜间法 GPP 算塔上 E/GPP 为 US-Sne 9.9 %、US-Myb 3.7 %、US-WPT 6.9 %——已验证（q64_budget.out GPP_NT 列，算术）。US-Tw5 只有 2018 年 4–12 月 9 个计分月，缺冬季低值月，年量偏高——已验证（q64_budget.out 月表）。
+- `v2_p9a` 同口径：US-Sne GPP 2038、I 463、D 540、E 53.8；US-Myb 2712、773、765、77.5；US-WPT 1573、752、754、76.5；E/D 10.0–10.1 %——已验证（q64_budget.out `v2_p9a` 行）。即两 tag 之间变的只有 D，E/D 不变——已验证（同上）。
+- 模式分解项之间的关系：D − (I − B) 在三塔为 34、4、15，即模式分解约等于当年输入减埋藏，碳库处在平衡（sasu spin-up）；US-Tw4、US-Tw5 为负，碳库仍在积累——已验证（q64_budget.out；土壤加凋落物碳 US-Tw4 2013–2018 年 24905 → 26720 g C m-2）。异养 CO2 呼吸 f_hr = D − P + O：US-Sne 173、US-Myb 226、US-WPT 307，P/f_hr 18.8–19.3 %——已验证（算术，输入取上表）。
+- 塔上对照：Reco（Resp_DT）US-Sne 446、US-Myb 953、US-WPT 707、US-Tw1 1156、US-Tw4 738、US-Tw5 997；NEE +195、−232、+154、−453、−369、−664；E/Reco 9.63、5.01、7.55、4.06、4.38、8.68 %——已验证（q64_budget.out obs 列）。塔上推算 D_t（CUE 0.50/0.61）：US-Sne 314/353、US-Myb 371/510、US-WPT 408/485、US-Tw1 353/540；D/D_t 为 0.61/0.55、0.68/0.50、0.84/0.71、1.59/1.04；塔上 E/D_t 13.7/12.2、12.9/9.4、13.1/11.0、13.3/8.7 %——已验证（q64_budget.out 各塔第二行）。US-Tw4、US-Tw5 按此式得 E/D_t 12–40 %，自养呼吸假定在这两塔明显不成立（Tw4 塔上 Reco 只有 GPP 的 0.58），不采用——推测。
+- 读法：β = (D/D_t) × (E/D)/(E/D_t)。三塔 D/D_t 0.50–0.84，E/D 之比 0.73–1.10（按 CUE 取值两端），偏低的大头在 D——已验证（上条数值相乘）。
+
+### 2.2 逐月（`v2_p9f`，计分月气候态）
+
+```text
+月                1     2     3     4     5     6     7     8     9    10    11    12
+US-Sne E 塔      15    26    43    99   166   227   220   202   192   130    60    33   mg C m-2 d-1
+       E 模      28    35    41    54    60    70    77    74    69    55    40    29
+       比值    1.86  1.36  0.97  0.55  0.36  0.31  0.35  0.37  0.36  0.42  0.67  0.88
+       GPP 塔  0.57  0.32  0.54  0.76  1.23  1.55  1.59  1.30  1.35  0.91  0.79  0.56   g C m-2 d-1
+       GPP 模  0.29  0.88  1.89  3.96  3.79  2.93  2.57  2.33  1.93  1.37  0.63  0.33
+       P/D %   13.4  14.4  15.1  15.9  17.0  18.5  19.4  19.0  18.6  17.1  15.3  13.6
+       dT K    +3.0  +2.6  +3.2  +3.5  +2.9  +2.9  +2.3  +2.3  +2.3  +2.0  +1.4  +2.5   塔上 - 模式，产量加权
+US-Myb E 塔      29    46    85   118   148   202   263   242   222   137    63    35
+       E 模      34    41    52    68    86   104   112   107    97    75    50    36
+       比值    1.17  0.90  0.62  0.58  0.58  0.51  0.43  0.44  0.44  0.55  0.79  1.03
+       GPP 塔  0.23  0.29  0.72  2.91  5.88  6.69  7.12  7.14  5.98  3.40  1.23  0.41
+       GPP 模  0.61  1.22  2.52  4.57  6.54  7.56  7.67  6.75  5.36  3.37  1.53  0.66
+       P/D %   13.7  14.8  15.8  16.7  17.6  18.8  19.4  19.1  18.7  17.4  15.4  13.8
+       dT K    +1.5  +1.3  +1.4  +1.6  +1.6  +1.3  +1.3  +1.2  +1.6  +1.6  +2.3  +2.4
+US-WPT E 塔       9    12    34    67   219   269   373   335   236    80    19     8
+       E 模      23    21    39    59   106   161   205   189   140    84    48    30
+       比值    2.45  1.82  1.15  0.88  0.49  0.60  0.55  0.56  0.59  1.05  2.49  3.82
+       GPP 塔  0.13  0.15  0.21  0.30  1.19  3.77  7.09  5.43  2.74  0.67  0.16  0.12
+       GPP 模  0.03  0.03  0.13  0.52  2.41  5.53  6.56  6.06  3.32  1.04  0.18  0.03
+       P/D %    9.5   9.2  12.2  14.1  17.5  19.3  21.0  20.0  18.4  15.7  13.1  11.1
+       dT K    +3.7  +3.9  +2.8  +2.3  +2.1  +1.7  +0.6  +0.9  +1.4  +1.7  +2.6  +3.2
+```
+
+- 上表——已验证（q64_budget.out 月表；dT 取 q64_soilT.out 第 B 段）。三塔的缺口集中在 4–10 月（比值 0.31–0.60），冬季模式反而持平或偏高；dT 全年大致均匀，冬季还更大，所以缺口的季节分布不是土温造成的——已验证（上表）。
+- US-Sne 模式 GPP 4 月最高（3.96），塔上 6–7 月最高（1.55–1.59）：遥感 LAI 仍是复湿前牧场的物候——已验证（上表；`lit_marsh_lai_260929.txt` 第 116 行同一判断）。US-Sne 分年：塔上 GPP_DT 2016 年 1797（牧场，不计分）、2017 年 175、2018 年 524，模式 813、551、843；LAI 上限 0.8 在三年都起作用——已验证（q64_years_Sne.out）。V-155 记"US-Sne 压 LAI 后 GPP 2.01 对 2.38 g C m-2 d-1、已对上"，模式那一数正是含 2016 年牧场年的三年均值（(813 + 551 + 843)/3/365.25 = 2.01）；只看计分的 2017–2018 年，模式 GPP 是塔上的 2.0 倍——已验证（账本 V-155 行；q64_years_Sne.out 算术；第 2.1 节 697/349）。
+- 表观 Q10（13 cm 土温，1 °C 以上月）：塔上 E US-Sne 3.85、US-Myb 6.26、US-WPT 5.35、US-Tw1 3.51、US-Tw4 3.02；模式 E 2.24、2.79、2.48、2.75、3.04，模式 f_hr 1.60–2.17——已验证（month_decomp_v2_p9f.out，全部月份口径）。
+- 分泌物（当步在根处呼吸，`BgcShim.F90:294-297`，甲烷侧并入 `Driver.F90:315-317`）占 D：US-Sne 12 %、US-Myb 25 %、US-WPT 18 %、US-Tw1 24 %、US-Tw4 31 %、US-Tw5 27 %——已验证（第 2.1 节 X/D 算术）。Mayberry 的甲烷有一半到三分之二来自新近固定的碳——已验证（McNicol 等 2020 接受稿 LLNL-JRNL-789121 第 397–398 行，本地文本第 901–903 行）。
+
+### 2.3 产率与氧化逐项
+
+- 基础分解：P 的底物是本步 somhr + lithr（含分泌物），按各层 hr_vr 分配，再乘 Walter 深度衰减 exp(−z/0.30 m) 并重归一——已验证（读码 `Physics.F90:2330-2341`、`2472`、`2521-2535`；`ch4_parameter.nml` `z0_methane_prod = 0.30`）。产量加权深度 0.10 m，81 % 在 0.166 m 以上、94 % 在 0.289 m 以上——已验证（q64_soilT.out 第 B 段）。
+- 温度：f_methane_adj = 0.2 × 1.33^((T − 295.0 K)/10)（`use_biome_f_methane = .false.`，温带沼泽的 0.15 未启用；`q10methane_local_base` 缺省 `.false.`）——已验证（读码 `Physics.F90:2345、2544、2554`；`Const.F90:315`；`ch4_parameter.nml`）。三塔月 P/D 13.4–21.0 %，年均 16.9–17.3 %——已验证（第 2.1、2.2 节）。
+- pH：`use_spatial_ph = .false.` 时不读 pH 文件，`get_ph_for_patch` 返回 6.2，pH 因子按 6.2 归一为 1——已验证（读码 `pH.F90:54、58、147-154`、`Methane.F90:180-184`、`Physics.F90:2276-2277、2594`）。
+- 滞后：C-89 单值 27 d，只在饱和子柱 finundated_lag < finundated 或非饱和子柱水位以下层起作用；六塔淹水比例全年恒为 0.90–1.00（积水目标维持），滞后因子约为 1——已验证（读码 `Physics.F90:2617-2621`；q64_budget.out 月表 fin 列）。
+- 氧化：O/P 40.0–40.7 %，其中根际 Orox/P 38.3–39.9 %，土壤甲烷氧化菌 Osoil 0.1–0.8 g C m-2 yr-1（不到 P 的 2.5 %）；植物通道占 E 的 96.7–99.9 %，冒泡与扩散可忽略——已验证（q64_budget.out）。即 D-59 的 0.40 在这几塔等于把排放整体乘 0.60——已验证（读码 `Physics.F90:3814-3820`：份额作用于每层通道流量）。V-159 的份额试验逐位符合这一比例：US-Myb 模式均值 0.40 为 283.47、0.25 为 354.26（× 1.250）、0.55 为 212.67（× 0.750），九座沼泽塔的倍数在 1.245–1.250 与 0.750–0.755 之间——已验证（`scores77_v2_p9a.txt`、`scores77_v2_p9s25.txt`、`scores77_v2_p9s55.txt` 沼泽行）。
+
+## 3. 问二：土温、积水与地面能量
+
+### 3.1 各层土温（`v2_p9f`，模式插值到探头深度）
+
+```text
+塔      探头(m)                 月数   塔上   模式   偏差   逐月偏差（1–12 月）
+US-Sne  TS_1-5 (0.01-0.32)      24     16.8-16.9  14.2  -2.5 到 -2.7   -1.3(11月) 到 -3.6(4月)，全年为负
+US-Myb  TS_1-5 (0.02-0.32)      51-87  16.1-16.4  14.6-14.8  -1.6    -1.0 到 -2.7，11–12 月最大
+US-WPT  TS_1 0.10, TS_2 0.30    30     13.4-13.6  11.2  -2.2 到 -2.3   1–3 月 -3.0 到 -4.0，7–8 月 -0.9 到 -1.0
+US-Tw1  TS_1-5 (0.02-0.32)      86     12.4-12.9  15.1  +2.2 到 +2.7   6 月最大 +3.7 到 +4.2，12 月约 0
+US-Tw4  TS_1,3,4,5              45-57  14.5-15.2  14.9-15.1  -0.1 到 +0.4（TS_2 只 12 个月 -1.8）
+US-Tw5  五支（2018 年 7 个月）   7      14.6-16.3  15.6  -0.8 到 +1.0（日晒型 TS_1、TS_2 偏冷，遮荫型 TS_3-5 偏暖）
+```
+
+- 上表——已验证（q64_soilT.out 第 A 段）。塔上底泥减气温：US-Sne +1.9、US-Myb +0.5 到 +0.8、US-WPT +2.1 到 +2.3、US-Tw1 −2.4 到 −2.9 K；模式 t_grnd 减气温 −0.7、−0.8、−0.2、−0.2 K——已验证（q64_soilT.out Tair 行与第 A 段）。模式在四座三角洲塔给出几乎相同的土温（14.2–15.1 °C），塔上相差 4.5 K（12.4–16.9 °C）——已验证（同上）。
+- `v2_p9a` 对照：US-Sne −2.9 到 −3.0、US-Myb −2.0、US-WPT −2.4 到 −2.5 K；LAI 上限让地面短波增加、三塔暖 0.2–0.4 K——已验证（q64_soilT.out `v2_p9a` 段）。V-139 所记的 3.1–4.7 K 是 C-82 之前的 tag（`v2_p7ph`）——已验证（账本 V-139、V-142 行）。
+
+### 3.2 积水深度
+
+- 模式积水对塔上水位：US-Sne 143 mm 对 0.157 m、US-WPT 390 对 0.399、US-Tw1 309 对 0.294、US-Tw4 190 对 0.193、US-Tw5 660 对 0.664 m；US-Myb 200 mm 对 1.227 m（渠道水深，植被区约 0.2 m）——已验证（q64_soilT.out 第 C 段；`diag_marsh_energy_260929.txt` 第 215 行）。积水深度不是偏差来源——推测（依据本条逐塔相符）。
+
+### 3.3 把土温换成塔上值能把 P 抬多少
+
+- 做法：每月每层 dT = 塔上探头按深度插值（深于最深探头取最深值）− 模式层温，用模式各层产量加权。碳库平衡口径只计产甲烷的附加 Q10 1.33（`Physics.F90:2544`），因为 sasu spin-up 后年分解由输入定、与温度无关；碳库不调整口径再乘分解 Q10 1.5（`MOD_Initialize.F90:695`）——已验证（读码）；两口径是上下界——推测。
+- 结果：US-Sne 1.075 / 1.193、US-Myb 1.045 / 1.113、US-WPT 1.044 / 1.112、US-Tw1 0.926 / 0.833、US-Tw4 0.997、US-Tw5 0.985——已验证（q64_soilT.out 第 B 段"P factor"行）。三塔 β 按上界 × 1.11–1.19，到不了 1——已验证（算术）。
+
+### 3.4 偏冷的原因：地面能量平衡
+
+年均（W m-2；Hg、LEg 为地面，Hl、LEtr 为冠层；塔上 H、LE 为整站）：
+
+```text
+塔      Rn 塔/模   H 塔/模    LE 塔/模    sabg   sabv   Hg     LEg    LEtr   Hl     LAI   SAI   反照率 塔/模
+US-Sne  116/124    4.7/22.1   101.6/101.4  74.0  119.7  -26.5   84.4   15.4   48.6   0.35  0.81  0.14/0.11
+US-Myb  112/134    9.2/22.1    97.8/111.7  75.5  137.5  -20.4   78.1   32.5   42.5   0.70  0.57  无/0.12
+US-WPT   98/99     8.8/32.5    58.8/66.3   41.1   88.6   -9.4   46.3   17.3   41.9   0.45  0.76  0.15/0.13
+US-Tw1  132/134   14.1/21.1    80.8/113.2  72.1  120.2  -12.2   70.9   40.2   33.3   0.91  0.37  0.14/0.13
+US-Tw4  137/138    6.5/18.3    87.8/120.0  75.6  116.8  -16.0   79.1   39.4   34.3   0.87  0.36  0.12/0.13
+6–8 月 US-Sne：塔 H 7.6、LE 164.1；模式 sabg 118.0、sabv 177.7、Hg -48.4、LEg 146.8、Hl 82.5
+12–2 月 US-WPT：塔 Rn 26.2、H 0.9、LE 13.4、反照率 0.33；模式 Hg +11.2、G -12.7、反照率 0.14
+```
+
+- 上表——已验证（q64_soilT.out 第 D 段）。逐项读：
+  1. 净辐射不是原因：US-Sne、US-WPT、US-Tw1、US-Tw4 模式 Rn 与塔上差 1–8 W m-2；US-Myb 高 22，来自强迫场短波比塔上实测高 9.5 W m-2（243.2 对 233.7）——已验证（上表；q64_soilT.out SW 列）。反照率模式反而低 0.01–0.03，多吸收——已验证（上表）。
+  2. 地面能量不够：地面净辐射 Hg + LEg + G 为 US-Sne 57.9、US-Myb 57.6、US-WPT 36.5，小于地面蒸发，地面只能从空气吸感热（Hg 为负），地面温度低于气温——已验证（上表，算术）。塔上三塔底泥都比气温暖——已验证（第 3.1 节）。
+  3. 短波被冠层截去：两流辐射对整个斑块用 lsai = lai + sai（`MOD_Albedo.F90:299`），地面吸收是冠层吸收后的余量（`MOD_NetSolar.F90:186`），斑块内没有开阔水块（C-83 未开）；LAI 上限只改 tlai（`WetlandVeg.F90:284-313`），SAI 保留遥感像元值 0.57–0.81——已验证（读码；上表）。冠层吸收 sabv 占三塔吸收短波的 62 %、65 %、68 %，而塔足迹开阔水份额 US-Sne 0.55、US-Myb 0.43——已验证（上表算术；`lit_marsh_energy_260929.txt` 第 111 行）。
+  4. 冠层把能量以感热给空气：叶与茎的感热导度 cfh = (lai + sai)/rb（`MOD_LeafTemperature.F90:806`），Hl 42–49 W m-2，比塔上整站感热 5–9 大 5–9 倍——已验证（读码；上表）。
+  5. 地面蒸发：第 1 层饱和时 hr = 1，qg = qsat(t_grnd)（`MOD_Thermal.F90:591`），地面水汽导度 1/(rd + rss)（`MOD_LeafTemperature.F90:815`），rss 下限 = 80 × 挺水份额 1.0（`MOD_Thermal.F90:656-663`）——已验证（读码；`template.nml` `DEF_WETLAND_POND_LITTER_RSS = 80.`）。US-Sne LEg 84.4 与 Sherman 拆分的水面蒸发约 1100 mm yr-1（约 85 W m-2）相当；US-Myb 78.1 高于 Mayberry 2013–2019 年 449–831 mm（35–64 W m-2）；US-Tw1 70.9 远高于 West Pond 200–300 mm（16–23 W m-2）——已验证（上表；`lit_marsh_energy_260929.txt` 第 62、143 行转引 Eichelmann 等 2022）。即 US-Sne 的潜热已不偏大，US-Myb 偏大 15–40 W m-2——推测（观测年份与模式不完全重合）。
+  6. 水层缺席：积水不进热方程（`DEF_PONDING_HEAT` 缺省 `.false.`，`share/MOD_Namelist.F90:315`；`MOD_Thermal.F90:1413-1417`），短波只在 1.75 cm 厚的第 1 层土顶面吸收并在此蒸发，没有透入水体、直达底泥的份额；湖泊方案则只让近红外在表面吸收、其余进水体、穿过水体的由底泥吸收——已验证（读码；`lit_marsh_energy_260929.txt` 第 4.1 节第 4 条、第 4.2 节转引 CTSM 技术手册 Lake 与 Subin 等 2012）。US-WPT 冬季缺冰盖与积雪：塔上 12–2 月反照率 0.33，模式 0.14，模式地面比气温暖、向空气放感热 11.2、土壤失热 12.7 W m-2，底泥偏冷 3.0–4.0 K——已验证（上表；第 3.1 节）。
+- 小结：US-Sne、US-Myb 偏冷的主项是地面拿到的辐射能太少（冠层含茎按整斑块截光、再以感热送走），US-Myb 叠加地面蒸发偏大；US-WPT 夏季同理、冬季主项是水层与冰盖保温缺席——推测（依据上面第 2–6 条的量级）。V-144 的教训是：只给地面更多短波而不限制开阔水面蒸发，多出的能量全进蒸发、土温不升——已验证（账本 V-144 行）。要让底泥暖，吸收位置要在蒸发面以下（水体或底泥），或冠层截光与感热同时变小——推测。
+- 这组偏差对甲烷的份量小：第 3.3 节上界 11–19 %——已验证。
+
+## 4. 问三：根际氧化份额 0.40 在挺水沼泽是否过高
+
+- 模式侧：这几塔 E 的 96.7–99.9 % 走植物通道、土壤氧化不到 P 的 2.5 %，所以 E 严格按 (1 − x) 缩放，份额每降 0.15 排放升 25 %——已验证（第 2.3 节；V-159 三个份额的 scores77）。
+- 对 Q-64 的份量：单位分解的排放 E/D 模式 10.0–10.3 %，塔上推算 9.4–13.7 %，比值 0.73–1.10（第 2.1 节），落在自养呼吸假定的不确定范围内；解释三塔 β 0.45–0.66 不需要改份额——推测（依据第 2.1 节）。关掉 C-77（第 5 节第 1 条）后若再把份额降到 0.25，US-Myb 约 0.95 → 1.19、US-Tw1 1.29 → 1.61，老塘会整体偏高——已验证（算术：× 1.25）。
+- 文献实测范围（芦苇、香蒲、藨草沼泽的根际氧化占植物通道输送的份额）：已派只读文献子任务检索，交回本文前尚未返回，本节未能给出处——存疑。要做的事：取回该检索结果，逐条打 Crossref 核著录，分清分母（占总产量、占潜在排放还是占植物输送量），再判断 0.40 对对流通气型挺水植物是否偏高；不需要实验。
+
+## 5. 问四：改法候选（按把握排序）
+
+线性估算均按"E 与 D 同比例变、E/D 不变"（第 2.1 节两 tag 间 E/D 不变），β 取 `v2_p9f`：
+
+1. 关 C-77 盖度（`wetland_cover_frac_site` 置 −1）
+   - 作用对象：湿地植物碳输入（`BgcShim.F90:281`）。
+   - 依据：LAI 上限按塔上 GPP 反推、作用于斑块平均 LAI，模式 GPP 已是足迹平均；开阔水的"零输入"已含在足迹平均 GPP 里，再乘盖度是第二次扣——已验证（读码 `WetlandVeg.F90:284-313`、`BgcShim.F90:281`；账本 V-152、D-63）。另一个佐证：埋碳份额按"文献积碳 ÷ (0.5 × 塔上 GPP) ÷ 0.85"定（`lit_marsh_lai_260929.txt` 第 5.3 节），只有输入取 0.5 GPP 时埋掉的绝对量才等于文献积碳；关掉盖度后 US-Myb 埋藏 165 → 289、US-Tw1 345 → 356 g C m-2 yr-1，与 Arias-Ortiz 等 2021 的 280 ± 90、350 ± 150 对上——已验证（算术：B/盖度；文献值取 `lit_marsh_lai_260929.txt` 第 5.2 节表）。
+   - 预期（线性）：US-Myb 0.55 → 0.95、US-Sne 0.45 → 0.89、US-WPT 0.66 → 0.69、US-Tw1 1.25 → 1.29、US-Tw4 1.19 → 1.43、US-Tw5 0.71 → 0.79；α 不变——已验证（q64_budget.out"cover off"列）。US-Tw4 会偏高，因为它的 GPP 是塔上的 1.38 倍（LAI 上限 3.0 高于像元峰值 1.5、不起作用），宜同时按 Q-63 办法由塔上 GPP 定 US-Tw4 上限，按 GPP 比折回约 1.0——推测。US-Sne 的上升是靠 GPP 偏高 2 倍换来的，见第 3 条。
+   - 性质：只是撤掉一个站点专用键、回到全球口径（全球无此键），不引入新参数——已验证（读码 `Const.F90:799` 缺省 −1）。
+   - 验证：`v2_p8f` 六塔改 −1，子集 marsh；比 β 与 E/D。
+2. 埋碳份额按塔上年份的碳平衡定（逐塔）
+   - 作用对象：`wetland_burial_frac_site`（`BgcShim.F90:305-315`）。
+   - 依据：US-WPT 份额 0.21 来自 1966–2013 年沉积芯，而塔上 2011–2013 年为净碳源（NEE +61、+151、+259），文献笔记已指出"拿塔上年份标定时 b 应接近 0"——已验证（`q64_years.py` US-WPT 输出；`lit_marsh_lai_260929.txt` 第 195 行；Chu 等 2015）。US-Tw5 份额 0.47 用的是 2013 年植被清除前 1997–2006 年的积碳，塔上只有 2018 年（重置后第 5 年）、E/GPP 5.0 %——已验证（`lit_marsh_lai_260929.txt` 第 185、193 行；第 2.1 节）。塔间差别是塔上年份的碳平衡不同，属物理区别——推测。
+   - 预期（线性）：US-WPT 取 0：0.66 → 0.80，与第 1 条合用 0.83；US-Tw5 去掉埋藏 0.71 → 1.23（合用 1.36），故只宜下调到约 0.2–0.3——已验证（q64_budget.out"burial off""both"列）；0.2–0.3 这一取值——推测。其余塔不动。
+   - 验证：与第 1 条同一 tag 内两塔改值。
+3. 提高当步供给的新鲜碳份额（全局机制，治季节形状）
+   - 作用对象：`root_exudate_frac`（现 0.15，C-69，湿地、土壤斑块共用），或新增"当步 GPP 的易分解份额"。
+   - 依据：模式 D 里当步呼吸的分泌物只占 12–31 %，Mayberry 甲烷的 1/2–2/3 来自新近固定碳（McNicol 等 2020）；PEPRMT 把每日 GPP 的 50 % 作易分解碳（Oikawa 等 2024 第 2.3.2 节，经 `lit_marsh_restoration_260929.txt` 第 163 行）；模式夏冬比太平、表观 Q10 2.2–2.8 对塔上 3.9–6.3、α 0.21–0.47——已验证（第 2.2 节）。
+   - 预期：夏季升、冬季降，六塔 α 与 r 升；年量在平衡口径下只因夏季温度因子高（夏 P/D 19–21 % 对年均 17 %）升约 5–15 %，有埋藏的塔另升（分泌物不入埋藏），但份额 b 要按同一积碳重定——推测。全局上改的是一切湿地与淹水土壤的季节形状，必须过全球筛选。
+   - 验证：站点子集 wet 跑 0.15 → 0.4，看 α、r 与湿苔原、bog 是否被带坏。
+4. US-Sne：计分年份的 GPP 与非平衡碳（逐塔，放在 D-63 ③ 一起做）
+   - 依据：计分的 2017–2018 年模式 GPP 是塔上的 2.0 倍且 4 月峰（牧场物候），上限 0.8 是含 2016 牧场年定的；塔上两年 Reco 高于 GPP、净碳源，E/GPP 12.3 % 超过平衡态上限——已验证（第 2.2 节；q64_years_Sne.out）。V-172 把上限改为 1.5 会让计分年 GPP 更偏高——推测（依据同上）。
+   - 改法：LAI 按湿地季节形状并由 2017–2018 年塔上 GPP 定（`lit_marsh_lai_260929.txt` 第 4.2 节反推 2017 年约 0.11–0.13、2018 年约 0.28–0.33 像元等效）；同时按复湿年瞬态起步，把复湿前牧草与表层易分解碳留给头几年——推测。
+   - 预期：只修 GPP（与第 1 条合用）β 约 0.45–0.5；再加非平衡碳才可能到 1——推测（依据第 2.1 节 D/D_t 与 GPP 比）。
+5. 根际氧化份额：Q-64 不需要改（第 4 节）；文献范围取回后再定是否对对流通气型挺水植物单列。
+6. 地面能量（全局机制，温度）
+   - 改法：让 LAI 上限同时按比例缩 SAI，或按开阔水份额分出无冠层地面（C-83），并给开阔水面保留蒸发限制；再进一步是积水作独立水温节点、短波部分透入水体与底泥、积水可结冰（CTSM h2osfc 加湖泊方案的透射；Subin 等 2012）——推测（依据第 3.4 节第 3–6 条）。
+   - 预期：US-Sne、US-Myb、US-WPT 土温升 1–3 K、US-Tw1 降，甲烷 +4–8 %（上界 +11–19 %）；主要收益在能量与土温本身，不在 β——已验证（第 3.3 节）；土温升幅——推测。
+
+## 6. 著录（Crossref 逐条核对，请求不带任何个人信息）
+
+1. Arias-Ortiz, A., Oikawa, P. Y., Carlin, J., Masqué, P., Shahan, J., Kanneg, S., Paytan, A., Baldocchi, D. D. (2021) Tidal and nontidal marsh restoration: a trade-off between carbon sequestration, methane emissions, and soil accretion. JGR Biogeosciences 126(12), e2021JG006573. doi:10.1029/2021JG006573。Crossref 已核（本文的积碳数经 `lit_marsh_lai_260929.txt` 第 5.2 节转引）
+2. Chu, H., Gottgens, J. F., Chen, J., Sun, G., Desai, A. R., Ouyang, Z., Shao, C., Czajkowski, K. (2015) Climatic variability, hydrologic anomaly, and methane emission can turn productive freshwater marshes into net carbon sources. Global Change Biology 21(3), 1165–1181. doi:10.1111/gcb.12760。Crossref 已核（在线 2014 年）
+3. Eichelmann, E., Mantoani, M. C., Chamberlain, S. D., Hemes, K. S., Oikawa, P. Y., Szutu, D., Valach, A., Verfaillie, J., Baldocchi, D. D. (2022) A novel approach to partitioning evapotranspiration into evaporation and transpiration in flooded ecosystems. Global Change Biology 28(3), 990–1007. doi:10.1111/gcb.15974。Crossref 已核
+4. Hemes, K. S., Chamberlain, S. D., Eichelmann, E., Anthony, T., Valach, A., Kasak, K., Szutu, D., Verfaillie, J., Silver, W. L., Baldocchi, D. D. (2019) Assessing the carbon and climate benefit of restoring degraded agricultural peat soils to managed wetlands. Agricultural and Forest Meteorology 268, 202–214. doi:10.1016/j.agrformet.2019.01.017。Crossref 已核
+5. McNicol, G., Knox, S. H., Guilderson, T. P., Baldocchi, D. D., Silver, W. L. (2020) Where old meets new: an ecosystem study of methanogenesis in a reflooded agricultural peatland. Global Change Biology 26(2), 772–785. doi:10.1111/gcb.14916。Crossref 已核
+6. Oikawa, P. Y., Sihi, D., Forbrich, I., 等 21 人 (2024) A new coupled biogeochemical modeling approach provides accurate predictions of methane and carbon dioxide fluxes across diverse tidal wetlands. JGR Biogeosciences 129(10), e2023JG007943. doi:10.1029/2023JG007943。Crossref 已核
+7. Rocha, A. V., Goulden, M. L. (2009) Why is marsh productivity so high? New insights from eddy covariance and biomass measurements in a Typha marsh. Agricultural and Forest Meteorology 149(1), 159–168. doi:10.1016/j.agrformet.2008.07.010。Crossref 已核
+8. Subin, Z. M., Riley, W. J., Mironov, D. (2012) An improved lake model for climate simulations: model structure, evaluation, and sensitivity analyses in CESM1. JAMES 4(1), 2011MS000072. doi:10.1029/2011MS000072。Crossref 已核

@@ -1,0 +1,268 @@
+From 44f90c76dd72a7c38267514e8e853a5238ed92a9 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 11:08:11 +0800
+Subject: [PATCH] feat(rice): flood irrigated paddies a set number of days
+ before sowing (candidate 25)
+
+DEF_PADDY_FALLOW_FLOOD (days, 0 or less is off, default 0): an irrigated
+paddy (PFT 62, flood or paddy method) that is not growing is bunded and
+topped up by the paddy irrigation (C-32b: puddled layer saturated plus 50 mm
+standing water) from this many days before its next sowing, first season or
+the C-45 second season, so the soil is anoxic at planting. The water comes
+through the irrigation supply and is counted in the irrigation totals; none
+is pumped onto frozen ground. 366 or more keeps the whole fallow flooded
+(winter-flooded paddy). Rainfed rice is left alone. Needs
+DEF_PADDY_RICE_BUND.
+
+The flag is set at the start of each time step (CalPaddyFallowFlood, from
+CoLMMAIN) from the date, croplive and the sowing dates only, so the
+hydrology of the same step sees it and a restart gives the same flag.
+
+Pre-season flooding of more than 30 d scales paddy emissions by 2.41 (SFp,
+IPCC 2019 Refinement Vol. 4 Table 5.13); winter-drained fields emit 42 %
+less in the rice season than winter-flooded ones (Cai et al. 2003); the
+non-growing season is 24 % of the annual paddy emission in DLEM.
+
+---
+ main/BGC/MOD_BGC_Vars_PFTimeVariables.F90 |  3 ++
+ main/CoLMMAIN.F90                         |  5 +-
+ main/MOD_Irrigation.F90                   | 66 +++++++++++++++++++++--
+ main/MOD_SoilSnowHydrology.F90            |  6 ++-
+ share/MOD_Namelist.F90                    | 13 +++++
+ 5 files changed, 86 insertions(+), 7 deletions(-)
+
+diff --git a/main/BGC/MOD_BGC_Vars_PFTimeVariables.F90 b/main/BGC/MOD_BGC_Vars_PFTimeVariables.F90
+index 70ad93d0..d5bdd56a 100644
+--- a/main/BGC/MOD_BGC_Vars_PFTimeVariables.F90
++++ b/main/BGC/MOD_BGC_Vars_PFTimeVariables.F90
+@@ -166,6 +166,7 @@ MODULE MOD_BGC_Vars_PFTimeVariables
+    real(r8),allocatable :: plantdate_p               (:)     ! planting date (input)
+    real(r8),allocatable :: rice_double_p             (:)     ! C-45: share of double-cropped irrigated rice (input, not in restart)
+    logical ,allocatable :: paddy_predrain_p          (:)     ! C-47: paddy in its pre-harvest drain window (set by CropPhenology, not in restart)
++   logical ,allocatable :: paddy_fallow_flood_p      (:)     ! candidate 25: irrigated paddy in its pre-sowing flood window (set by CalPaddyFallowFlood, not in restart)
+ #endif
+ ! --------------------- END CROP variables -------------------------
+ 
+@@ -563,6 +564,7 @@ CONTAINS
+             allocate (plantdate_p              (numpft)); plantdate_p              (:) = spval
+             allocate (rice_double_p            (numpft)); rice_double_p            (:) = 0._r8
+             allocate (paddy_predrain_p         (numpft)); paddy_predrain_p         (:) = .false.
++            allocate (paddy_fallow_flood_p     (numpft)); paddy_fallow_flood_p     (:) = .false.
+ #endif
+ 
+ ! SASU variables
+@@ -2100,6 +2102,7 @@ CONTAINS
+             deallocate (plantdate_p              )
+             deallocate (rice_double_p            )
+             deallocate (paddy_predrain_p         )
++            deallocate (paddy_fallow_flood_p     )
+ #endif
+ 
+ ! SASU variables
+diff --git a/main/CoLMMAIN.F90 b/main/CoLMMAIN.F90
+index aee6f48c..da92203a 100644
+--- a/main/CoLMMAIN.F90
++++ b/main/CoLMMAIN.F90
+@@ -238,7 +238,7 @@ SUBROUTINE CoLMMAIN ( &
+    USE YOS_CMF_INPUT, only: LWINFILT,LWEVAP
+ #endif
+ #ifdef CROP
+-   USE MOD_Irrigation, only: CalIrrigationApplicationFluxes
++   USE MOD_Irrigation, only: CalIrrigationApplicationFluxes, CalPaddyFallowFlood
+ #endif
+    USE MOD_SPMD_Task
+ 
+@@ -898,6 +898,9 @@ SUBROUTINE CoLMMAIN ( &
+             waterstorage_trc_beg = max(waterstorage(ipatch), 0._r8)
+ #endif
+             IF (patchtype == 0) THEN
++               ! candidate 25: pre-sowing flood window of irrigated paddies,
++               ! set before the hydrology bunds the field (off: all false)
++               CALL CalPaddyFallowFlood(ipatch,idate)
+                CALL CalIrrigationApplicationFluxes(ipatch,deltim,qflx_irrig_drip, &
+                   qflx_irrig_sprinkler,qflx_irrig_flood,qflx_irrig_paddy)
+             ENDIF
+diff --git a/main/MOD_Irrigation.F90 b/main/MOD_Irrigation.F90
+index 33f848e6..4a4e7c5f 100644
+--- a/main/MOD_Irrigation.F90
++++ b/main/MOD_Irrigation.F90
+@@ -7,12 +7,13 @@ MODULE MOD_Irrigation
+    USE MOD_Precision
+    USE MOD_TimeManager
+    USE MOD_Namelist, only: DEF_simulation_time, DEF_IRRIGATION_ALLOCATION, DEF_USE_VariablySaturatedFlow, &
+-       DEF_PADDY_RICE_BUND, DEF_PADDY_DRAIN_DAYS
++       DEF_PADDY_RICE_BUND, DEF_PADDY_DRAIN_DAYS, DEF_PADDY_FALLOW_FLOOD
+    USE MOD_Const_Physical, only: tfrz, denice, denh2o
+    USE MOD_Const_PFT, only: irrig_crop
+    USE MOD_LandPFT, only : patch_pft_s, patch_pft_e
+    USE MOD_Vars_Global, only: irrig_start_time, irrig_max_depth, irrig_threshold_fraction, irrig_supply_fraction, irrig_min_cphase, irrig_max_cphase, irrig_time_per_day, &
+-       irrig_method_drip, irrig_method_sprinkler, irrig_method_flood, irrig_method_paddy
++       irrig_method_drip, irrig_method_sprinkler, irrig_method_flood, irrig_method_paddy, &
++       nirrig_rice, spval
+    USE MOD_Qsadv, only: qsadv
+    USE MOD_Vars_TimeInvariants, only: pondmx, &
+ #ifdef vanGenuchten_Mualem_SOIL_MODEL
+@@ -27,7 +28,9 @@ MODULE MOD_Irrigation
+        waterstorage, deficit_irrig, actual_irrig, irrig_gw_alloc, irrig_sw_alloc, zwt_stand, wdsrf
+    USE MOD_Vars_PFTimeInvariants, only: pftclass
+    USE MOD_Vars_PFTimeVariables, only: irrig_method_p
+-   USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p, paddy_predrain_p
++   USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p, paddy_predrain_p, &
++       paddy_fallow_flood_p, croplive_p, plantdate_p, rice_double_p
++   USE MOD_BGC_Vars_TimeVariables, only: pdrice2
+    USE MOD_Vars_1DForcing, only: forc_t, forc_frl, forc_psrf, forc_us, forc_vs
+    USE MOD_Vars_1DFluxes, only: sabg, sabvsun, sabvsha, olrg, fgrnd
+    USE MOD_Hydro_SoilFunction, only: soil_vliq_from_psi
+@@ -39,6 +42,7 @@ MODULE MOD_Irrigation
+ 
+    PUBLIC :: CalIrrigationNeeded
+    PUBLIC :: CalIrrigationApplicationFluxes
++   PUBLIC :: CalPaddyFallowFlood
+ 
+    ! C-32b (paper V2, DEF_PADDY_RICE_BUND): standing water an irrigated paddy is
+    ! kept at, 5-10 cm under continuous flooding (Bouman et al. 2007, IRRI,
+@@ -331,12 +335,15 @@ CONTAINS
+       DO m = ps, pe
+          ivt = pftclass(m)
+          IF ((ivt >= npcropmin) .and. (irrig_crop(ivt)) .and. &
+-            (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m)<irrig_max_cphase) .and. &
++            (((cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m)<irrig_max_cphase) .and. &
+             ! C-32e: paddies are not irrigated from the start of grain fill;
+             ! C-47: or, with DEF_PADDY_DRAIN_DAYS set, in the pre-harvest drain window
+             .not. (DEF_PADDY_RICE_BUND .and. irrig_method_p(m) == irrig_method_paddy .and. &
+                    ((DEF_PADDY_DRAIN_DAYS <  0._r8 .and. cphase_p(m) >= 3._r8) .or. &
+-                    (DEF_PADDY_DRAIN_DAYS >= 0._r8 .and. paddy_predrain_p(m))))) THEN
++                    (DEF_PADDY_DRAIN_DAYS >= 0._r8 .and. paddy_predrain_p(m))))) .or. &
++            ! candidate 25: an irrigated paddy in its pre-sowing flood window is
++            ! topped up too, but no water is pumped onto frozen ground
++            (paddy_fallow_flood_p(m) .and. t_soisno(1,i) > tfrz))) THEN
+             IF (DEF_simulation_time%greenwich) THEN
+                 CALL gmt2local(idate, dlon, ldate)
+                 seconds_since_irrig_start_time = ldate(3) - irrig_start_time + deltim
+@@ -355,6 +362,55 @@ CONTAINS
+ 
+    END SUBROUTINE PointNeedsCheckForIrrig
+ 
++   SUBROUTINE CalPaddyFallowFlood(i,idate)
++      !   DESCRIPTION:
++      !   Candidate 25 (paper V2, DEF_PADDY_FALLOW_FLOOD): flags an irrigated
++      !   paddy (PFT 62) that is not growing and is at most DEF_PADDY_FALLOW_FLOOD
++      !   days before its next sowing, on the first-season date or, for
++      !   double-cropped rice (C-45), the second-season date. A flagged paddy is
++      !   bunded (paddy_bunded, MOD_SoilSnowHydrology) and topped up by the paddy
++      !   irrigation (C-32b) as in the growing season, so pre-season flooding
++      !   puts water on the field through the irrigation supply. Called at the
++      !   start of the time step, before the hydrology, from dates and restart
++      !   state only, so a restart gives the same flag.
++      integer, intent(in) :: i
++      integer, intent(in) :: idate(3)
++
++      integer :: ps, pe, m, ndays, days_to_sow
++
++      ps = patch_pft_s(i)
++      pe = patch_pft_e(i)
++
++      DO m = ps, pe
++         paddy_fallow_flood_p(m) = .false.
++      ENDDO
++      IF (DEF_PADDY_FALLOW_FLOOD <= 0._r8 .or. .not. DEF_PADDY_RICE_BUND) RETURN
++
++      IF (isleapyear(idate(1))) THEN
++         ndays = 366
++      ELSE
++         ndays = 365
++      ENDIF
++
++      DO m = ps, pe
++         IF (pftclass(m) /= nirrig_rice) CYCLE
++         IF (irrig_method_p(m) /= irrig_method_paddy .and. irrig_method_p(m) /= irrig_method_flood) CYCLE
++         IF (croplive_p(m)) CYCLE
++         days_to_sow = -1
++         IF (plantdate_p(m) > 0._r8 .and. plantdate_p(m) /= spval) &
++            days_to_sow = modulo(int(plantdate_p(m)) - idate(2), ndays)
++         IF (rice_double_p(m) >= 0.5_r8 .and. pdrice2(i) > 0._r8 .and. pdrice2(i) /= spval) THEN
++            IF (days_to_sow < 0) THEN
++               days_to_sow = modulo(int(pdrice2(i)) - idate(2), ndays)
++            ELSE
++               days_to_sow = min(days_to_sow, modulo(int(pdrice2(i)) - idate(2), ndays))
++            ENDIF
++         ENDIF
++         IF (days_to_sow >= 0) paddy_fallow_flood_p(m) = real(days_to_sow, r8) <= DEF_PADDY_FALLOW_FLOOD
++      ENDDO
++
++   END SUBROUTINE CalPaddyFallowFlood
++
+    ! SUBROUTINE CalPotentialEvapotranspiration(i,idate,dlon,deltim)
+    !     !   DESCRIPTION:
+    !     !   This SUBROUTINE is used to calculate daily potential evapotranspiration
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index 40483a14..0f83983a 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -2836,13 +2836,15 @@ ENDIF
+    ! C-32 (DEF_PADDY_RICE_BUND): only from planting to the start of grain
+    ! fill (C-32e, irrig_min_cphase <= cphase < 3); the field is then drained
+    ! and after harvest drains like any other soil column.
++   ! Candidate 25 (DEF_PADDY_FALLOW_FLOOD): an irrigated paddy is bunded again
++   ! from the set number of days before its next sowing (CalPaddyFallowFlood).
+    !-----------------------------------------------------------------------
+    logical FUNCTION paddy_bunded(m)
+ 
+    ! DEF_PADDY_RICE_BUND comes from the module header
+    USE MOD_Vars_Global, only: irrig_method_paddy, irrig_min_cphase, irrig_max_cphase
+    USE MOD_Vars_PFTimeVariables, only: irrig_method_p
+-   USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p, paddy_predrain_p
++   USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p, paddy_predrain_p, paddy_fallow_flood_p
+    USE MOD_Namelist, only: DEF_PADDY_DRAIN_DAYS
+ 
+    IMPLICIT NONE
+@@ -2859,6 +2861,8 @@ ENDIF
+             ! so it dries in the last two to three weeks before harvest
+             paddy_bunded = (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m) < 3._r8)
+          ENDIF
++         ! candidate 25: pre-sowing flood window of an irrigated paddy
++         paddy_bunded = paddy_bunded .or. paddy_fallow_flood_p(m)
+       ENDIF
+ 
+    END FUNCTION paddy_bunded
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index f65404bb..545ff4df 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -459,6 +459,17 @@ MODULE MOD_Namelist
+    ! harvest (the earlier of maturity at the season's mean heat-unit rate and
+    ! the maximum season length); negative keeps C-32e, drained from grain fill
+    real(r8) :: DEF_PADDY_DRAIN_DAYS = -1._r8
++   ! Candidate 25 (paper V2): an irrigated paddy (PFT 62, flood or paddy
++   ! method) is bunded and topped up by the paddy irrigation (C-32b) from this
++   ! many days before its next sowing, first or second (C-45) season, so its
++   ! soil is already anoxic at planting. Pre-season flooding of more than 30 d
++   ! scales rice emissions by 2.41 (SFp, IPCC 2019 Refinement Vol. 4 Table
++   ! 5.13); winter-drained fields emit 42 % less in the rice season than
++   ! winter-flooded ones (Cai et al. 2003); the non-growing season is 24 % of
++   ! the annual paddy emission in DLEM (Zhang 2016). A value of 366 or more
++   ! keeps the whole fallow flooded (winter-flooded paddy). Needs
++   ! DEF_PADDY_RICE_BUND; 0 or less is off.
++   real(r8) :: DEF_PADDY_FALLOW_FLOOD = 0._r8
+    ! C-37 (paper V2): share of the net assimilate (available C less growth
+    ! respiration) of live rice (PFT 61, 62) its roots exude; it enters the
+    ! metabolic litter along the fine-root profile. 0 is off.
+@@ -1231,6 +1242,7 @@ CONTAINS
+       DEF_CROP_FALLOW_NO_LAI,                 & !Q-33 (paper V2)
+       DEF_RICE_GRNFILL,                       & !Q-33 (paper V2)
+       DEF_PADDY_DRAIN_DAYS,                   & !C-47 (paper V2)
++      DEF_PADDY_FALLOW_FLOOD,                 & !candidate 25 (paper V2)
+       DEF_RICE_ROOT_EXUDATE,                  & !C-37 (paper V2)
+       DEF_USE_NOSTRESSNITROGEN,               & !add by Hongbin Liang @ sysu
+       DEF_RSTFAC,                             & !add by Hongbin Liang @ sysu
+@@ -1891,6 +1903,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_CROP_FALLOW_NO_LAI                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RICE_GRNFILL                       ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_PADDY_DRAIN_DAYS                   ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_PADDY_FALLOW_FLOOD                 ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RICE_ROOT_EXUDATE                  ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_NOSTRESSNITROGEN               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RSTFAC                             ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

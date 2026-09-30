@@ -1,0 +1,53 @@
+From 574ae54698da7928db8df26e9f4e8c054eba03c2 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Sun, 27 Sep 2026 21:58:41 +0800
+Subject: [PATCH] fix(irrigation): paddies are topped up to saturation plus
+ standing water (C-32b)
+
+---
+ main/MOD_Irrigation.F90 | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/main/MOD_Irrigation.F90 b/main/MOD_Irrigation.F90
+index 77852b5f..7ccd5cbb 100644
+--- a/main/MOD_Irrigation.F90
++++ b/main/MOD_Irrigation.F90
+@@ -24,7 +24,7 @@ MODULE MOD_Irrigation
+        tairday, usday, vsday, pairday, rnetday, fgrndday, potential_evapotranspiration,&
+        groundwater_demand, groundwater_supply, reservoirriver_demand, reservoirriver_supply, &
+        reservoir_supply, river_supply, runoff_supply, &
+-       waterstorage, deficit_irrig, actual_irrig, irrig_gw_alloc, irrig_sw_alloc, zwt_stand
++       waterstorage, deficit_irrig, actual_irrig, irrig_gw_alloc, irrig_sw_alloc, zwt_stand, wdsrf
+    USE MOD_Vars_PFTimeInvariants, only: pftclass
+    USE MOD_Vars_PFTimeVariables, only: irrig_method_p
+    USE MOD_BGC_Vars_PFTimeVariables, only: cphase_p
+@@ -40,6 +40,11 @@ MODULE MOD_Irrigation
+    PUBLIC :: CalIrrigationNeeded
+    PUBLIC :: CalIrrigationApplicationFluxes
+ 
++   ! C-32b (paper V2, DEF_PADDY_RICE_BUND): standing water an irrigated paddy is
++   ! kept at, 5-10 cm under continuous flooding (Bouman et al. 2007, IRRI,
++   ! Water management in irrigated rice); below the bund height pondmxc (100 mm).
++   real(r8), parameter :: paddy_pond_target = 50._r8   ! [mm]
++
+ CONTAINS
+ 
+    SUBROUTINE CalIrrigationNeeded(i,idate,nl_soil,nbedrock,z_soi,zi_soi,dz_soi,deltim,dlon,npcropmin)
+@@ -220,6 +225,14 @@ CONTAINS
+ 
+       !   calculate total irrigation
+       DO m = ps, pe
++         IF (DEF_PADDY_RICE_BUND .and. irrig_method_p(m) == irrig_method_paddy) THEN
++            ! C-32b: a paddy is topped up to a saturated root zone plus its
++            ! standing water. Upstream took the saturation threshold but the
++            ! field-capacity amount, so a soil between the two got nothing.
++            deficit_irrig(i) = irrig_supply_fraction * (max(h2osoi_liq_saturation_capacity_tot - h2osoi_liq_tot, 0._r8) &
++               + max(paddy_pond_target - wdsrf(i), 0._r8))
++            CYCLE
++         ENDIF
+          IF (h2osoi_liq_tot < h2osoi_liq_at_threshold) THEN
+             IF (irrig_method_p(m) == irrig_method_sprinkler) THEN
+                 deficit_irrig(i) = irrig_supply_fraction * (h2osoi_liq_field_capacity_tot - h2osoi_liq_tot)
+-- 
+2.53.0
+

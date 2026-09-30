@@ -1,0 +1,405 @@
+# lit_boreal_perarea_260929：北方湿地单位面积该取多少、塔与区域平均为何差一倍——文献调研
+
+- **日期**：2026.09.29-11:44
+- **读者**：下一会话
+- **来源**：文献线只读调研，承接 `v2/迭代账本.md` 的 Q-23（相关行 Q-8、Q-9、Q-25、Q-31、C-8、C-12、C-13、C-15、C-23、C-38、C-52、D-38、D-40、V-53、V-59、V-77、V-101、V-106）；两个只读子任务分读观测侧与反演侧全文，主读者逐项抽核（第 0 节第 4 条），并自读 BAWLD、BAWLD-CH4、Treat 2018 数据集与 GCP 表；第 3 节的模式诊断取 g2_fi 2018 年历史，读码行号取本树 c86605d3；第 4 节全部 DOI 于 2026-09-29 匿名查 Crossref 或 DataCite
+- **状态**：第 0 至 4 节成文；第 3.4 节两个候选只写依据与预期（编码已另派），未动代码与配置
+
+口径约定：年通量写 g CH4 m−2 yr−1，暖季日均写 mg CH4 m−2 d−1，区域量写 Tg CH4 yr−1，面积写 Mkm2。"按湿地面积"指 GLWD 或 BAWLD 的湿地面积（含未淹水泥炭），"按淹水面积"另注。出处简写"作者 年 位置"，完整著录见第 4 节。读法："全文"指读了原文并给页码、表号或节号；"只读摘要"指只读到摘要；"转引"指数值取自另一篇的转述；"数据"指直接读数据集计算；"子任务读"指子任务读全文、主读者未逐字抽核。模式数值一律为 g2_fi（`cases/paper_v2/v260928k/g2_fi`，代码 572f0a3d，O-3 加 C-44、C-50）2018 年、只计湿地斑块，另注者除外。
+
+## 0. 覆盖面
+
+1. 检索词与范围：
+   - 观测侧（本地 `docs/refs/`、`data/_tmp/分析_260926_苔藓蒸发阻抗/txt/` 721 个文本，加子任务下载的 Copernicus、仓储与 PMC 全文）：bog、fen、permafrost bog、palsa、peat plateau、tundra wetland、annual、non-growing、upscal、representativ、footprint、landscape、area-weighted、sedge、tree、water table、g CH4 m。本地文本命中后逐篇精读的 16 篇：Olefeldt 2013、Turetsky 2014、Knox 2019、Glagolev 2011、Helbig 2017、Parmentier 2011、Budishchev 2014、Nilsson 2008、Aurela 2009、Lohila 2016、Rinne 2007、Alekseychik 2021、Mathijssen 2016、McNicol 2023、Bohn 2015、Riley 2011。
+   - 反演与模式侧（本地 `docs/refs/reviews`、`docs/refs/models`，加下载全文）：60–90、boreal、Russia、Canada、high lat、per unit、flux densit、prior、WAD2M、Q10、Hudson、Siberia、overestim。读全文 20 篇，见第 4 节。
+   - 数据：BAWLD-CH4 陆地表 555 行（`~/data/methane/BAWLD-CH4/`）；BAWLD 0.5° 格点表 18289 格（`data/_tmp/分析_260909_BAWLD对比/bawld_cells.csv`）；Treat 2018 数据集（PANGAEA，853 条年值，去掉 1 条质控剔除）；GCP 2025 xlsx 四张湿地表逐行（含红字离群）；GCP 反演先验 `GCP_Prior_CH4_fluxes.nc`；Kuhn 2025 补充表 S1（xlsx）。
+   - 读码：本树 `main/`（`MOD_SoilSnowHydrology.F90`、`TRACER/` 下 Physics、BgcShim、WetlandVeg、BgcLink）与 CTSM `ch4Mod.F90`；配置 g2_fi 的 `bld/run/ch4_parameter.nml` 与 `CONFIG_SNAPSHOT/latest/input_g2_fi.nml`。
+   - 账本与兄弟报告：Q-23、Q-31 及上列各行全文；`data/_tmp/分析_260927_湿地分类/notes.txt`、`data/_tmp/分析_260926_有林湿地/notes.txt`；`v2/results/lit_models_wetland_260929.txt`、`lit_tundra_260929.txt`、`lit_per_area_by_type.json`、`lit_pathway_partition.json`（只引节号，不重读）。
+2. 模式诊断脚本（只读，node110 直跑，产物只打到终端）：scratchpad `boreal_diag.py`、`boreal_diag2.py`、`boreal_diag3.py`（湿地斑块按 GCP 区、GLWD 类、有林份额、雨养份额、纬带拆分），`bawld_region.py`（BAWLD 各类面积按 GCP 区合计）。
+3. 只读摘要：Baray 2021 摘要（数值另经子任务读全文）；Thompson 2017、Pickett-Heaps 2011 摘要（数值另经子任务读全文）；Ma 2021 摘要（Crossref 摘要字段）；Miller 2014（只读摘要，未入正文）。
+4. 主读者逐字或逐数抽核过的子任务项（均一致）：GCP xlsx 俄罗斯、加拿大、60–90° N 的 BU 与 TD 中位、范围与红字离群；GCP 先验积分（加拿大 11.18、俄罗斯 11.12、60–90° N 8.65）；Saunois 2025 表 6、表 7 与 p.1914、p.1917 原句；Zhang 2025 表 1 与 p.314 原句；Bohn 2015 摘要与表 4；Riley 2011 p.1937 的 Q10 原句；Meng 2012 的"12 到 22"；Miller 2016 两处原句；Baray 2021 湿地 9.6 ± 1.1；Stavert 2022 "only four regions" 原句；WAD2M 的 2.3 Mkm2 与 SWAMPS 原句；Kuhn 2025 正文 7.55 原句与补充表 S1；Kuhn 2021 表 3；Olefeldt 2021 表 3；Treat 2018 数据集的 5.6、8.4、6.8、17.6（主读者自算重现）；Helbig 2017 摘要；Tuovinen 2019 摘要与 35.8 km2；Chang 2014 两处原句；Glagolev 2011 的 3.91 与 5.7；Peltola 2019 表 2。
+5. 读不到全文：Treat 2018a 的表 S1、S3（Wiley 被拦，改用 PANGAEA 数据集重算）；Saunois 2025 补充表 S8–S11（各反演用了哪套先验）；Zhang 2025 补充材料（WAD2M 驱动运行的分区值）；Ma 2021 补充材料（"High-latitude" 区定义）；Kuhn 2025 Extended Data Table 1（图片，返回 404）；Stavert 2022 图中俄罗斯、加拿大湿地单项数值（只有图）。
+6. 未看：无。
+7. 存疑（要跑才能定）：
+   - ① 第 3.4 节两个候选的实际量级。依据是按比例外推，没有跑过；尤其是有林份额的改动，会连带底物库重新平衡，同时改变向土柱的氧输入。
+   - ② BAWLD 0.5° 表按余弦纬度近似格点面积，湿地合计 3.49 Mkm2，高于原文表 3 的 3.18。两者差 9%，原因未定（可能来自格点面积近似或域边界），实验是用原文的格点面积重算。
+
+## 1. 观测侧：北方湿地单位面积
+
+### 1.1 类型综合
+
+1. BAWLD-CH4（Kuhn 2021 表 3，p.5170，全文）按类的暖季逐站日均（mg CH4 m−2 d−1）：
+
+   | 类 | 站数 | 均值 | 中位 | 四分位 | 水位中位（cm） | 莎草优势站比例 |
+   | --- | --- | --- | --- | --- | --- | --- |
+   | 永冻 bog | 81 | 7.79 | 2.32 | 0–6.9 | −20 | 14 % |
+   | bog | 87 | 43.45 | 24.55 | 6.92–57.35 | −11 | 23 % |
+   | fen | 109 | 79.61 | 54 | 20–107.2 | −5 | 61 % |
+   | 苔原湿地 | 109 | 81.54 | 65 | 34–99.3 | 0 | 61 % |
+   | marsh | 33 | 171.61 | 106 | 70.5–200 | 0 | 91 % |
+
+   ——已验证（Kuhn 2021 表 3，p.5170，全文）。原文不做暖季到全年的换算，也不给上推总量——已验证（Kuhn 2021 第 2.5 节，全文）。
+2. 同一数据里决定通量的是水位与莎草，冻土本身不是：水位 ≤ −20 cm 为 3.6，> 0 cm 为 80.2；无莎草 6.4，莎草优势 72.0；顶 2 m 有冻土 33.5，无冻土 40.0——已验证（账本 Q-31；`data/_tmp/分析_260927_湿地分类/notes.txt` 第 3.x 节，数据）。原文措辞是："Permafrost Bogs were the only wetland class that fell into the lowest-emitting group of classes … the frozen and elevated nature of Permafrost Bogs typically leads to lower-water-table conditions"——已验证（Kuhn 2021 第 3.2 节，p.5167–5169，全文）。
+3. Treat 2018 数据集的北方（Boreal/Taiga）年排放。下表中位与四分位为 g CH4 m−2 yr−1，外推、实测两列为中位：
+
+   | 类 | 全部 中位（四分位，n） | 均值 | 生长季外推 | 全年实测 |
+   | --- | --- | --- | --- | --- |
+   | bog | 5.6（3.2–13.1，110） | 10.8 | 4.6（n 76） | 6.8（n 25） |
+   | fen | 8.4（4.4–18.7，227） | 13.7 | 7.2（n 183） | 17.6（n 39） |
+
+   另外，涡度法的 fen 为 9.2（n 11），苔原 bog 为 0.9（全年实测 0.2，n 4），北方 marsh 为 23.5（n 21）——已验证（PANGAEA 10.1594/PANGAEA.886976，数据，主读者与子任务分别自算，结果一致）。账本 Q-23 所引的"藓沼 5.6、泥沼 8.4、n = 110"就是这两格中位；其中 n = 110 只是 bog 的样本数，fen 为 227。
+4. Treat 2018 原文对这组年值口径的说明：
+   - 外推年值与实测年值的偏差："Estimated annual fluxes using cumulative growing season measurements ranged from 40% lower (fens) … than measured annual fluxes on average, while this method resulted in substantially higher estimated annual fluxes than observed fluxes in bogs (400%) … Some of this difference may be due to measurement bias in the annual measurements towards higher emitting sites and wetland classes (Table S3)."——已验证（Treat 2018 接受稿 p.8，第 177–181 行，全文）。
+   - 各生物群区年排放中位：苔原 6.2 ± 1.7、北方 7.2 ± 1.4、温带 13.3 ± 5.4——已验证（同稿 p.13，第 304–306 行）。
+   - 非生长季占全年：苔原 42 %（31–48）、温带 20 %、北方 16 %（12–17）——已验证（同稿 p.11，第 265–268 行）。
+   - 冻土台地的量级：Stordalen、Seida、Vaisjeäggi 的泥炭台地与 palsa "CH4 emissions were very small (<0.1 g CH4 m-2 y-1)"，紧邻的无冻土 fen 是热点——已验证（同稿 p.18，第 429–432 行）。
+5. Turetsky 2014（71 块湿地，箱式瞬时通量；子任务读全文，数值以兄弟笔记为准）：
+   - 各类均值与中位：北方 72.7（中位 36.7），bog 96.3（25.8），贫营养 fen 94.9（51.3）。
+   - 冻土：有冻土 47.9，无冻土 96.8。
+   - 优势植物：禾草 106，乔木 22（p.2188 图 4a，读图）。
+   - 最适水位：bog 在泥炭面下约 24 cm，贫营养 fen 在泥炭面附近。
+   - 出处：已验证（Turetsky 2014 表 1、表 2、图 4a，全文；图值经 `data/_tmp/分析_260926_有林湿地/notes.txt` 第 1.1 条）。
+6. Olefeldt 2013：
+   - 乔木优势站 CH4 中位约 1，乔木缺失约 37 mg CH4 m−2 d−1。乔木优势组含高地森林——已验证（Olefeldt 2013 图 3，p.594，前一会话读图）。
+   - CH4 占生态系统呼吸：bog 1.8 %，fen 8.7 %——已验证（Olefeldt 2013 表 1，p.595，兄弟报告抽核）。
+7. 西西伯利亚清单：
+   - 全区 3.91 ± 1.29 Tg CH4 yr−1，面积平均 5.7 g CH4 m−2 yr−1——已验证（Glagolev 2011 摘要与 p.5–6，全文）。
+   - 有林 bog（ryam）的份额与水位："covering vast areas of 44% of all West Siberia mires they account only for 11% of the regional CH4 flux"，水位"usually about 40 cm below surface"——已验证（Glagolev 2011 p.4，全文）。
+   - 湿的洼地、fen 与贫营养 fen 约占全区排放 70 %——已验证（同页）。
+
+### 1.2 BAWLD 的类型面积与区域加权
+
+1. 类型面积：BAWLD 湿地 3.18 Mkm2（95 % 区间 2.79–3.79），分类如下——已验证（Olefeldt 2021 表 3，p.5137，全文）：
+
+   | 类 | 面积（Mkm2） |
+   | --- | --- |
+   | fen | 0.91 |
+   | bog | 0.88 |
+   | 永冻 bog | 0.86 |
+   | 苔原湿地 | 0.38 |
+   | marsh | 0.16 |
+
+   原文按国家不拆分——已验证（同文，全文检索）。
+2. 按 GCP 区合计（BAWLD 0.5° 表，WET ≥ 5 % 的格点，面积按余弦纬度近似，单位 Mkm2）——已验证（`bawld_region.py`，数据）：
+
+   | 区 | 湿地合计 | 永冻 bog | 苔原湿地 | marsh | bog | fen | 永冻 bog 占比 |
+   | --- | --- | --- | --- | --- | --- | --- | --- |
+   | 俄罗斯 | 1.765 | 0.468 | 0.262 | 0.091 | 0.498 | 0.445 | 0.27 |
+   | 加拿大 | 1.360 | 0.354 | 0.128 | 0.067 | 0.374 | 0.437 | 0.26 |
+   | 60° N 以北 | 1.95 | — | — | — | — | — | 0.36 |
+
+   这张表全域合计 3.49，比原文 3.18 高 9 %（第 0 节存疑 ②）。
+3. BAWLD 口径的上推（Kuhn 2025）：
+   - 全文对比句："were similar to recent estimates (26 versus 14 to 25 Tg CH4 yr−1), but were based on wetland area that was twice as large (3.18 versus 1.6–2.0 × 10^6 km2) and a lower average wetland CH4 flux (7.55 versus 9.25 to 13.3 g CH4 m−2 yr−1)"——已验证（Kuhn 2025 正文，nature.com 页面，主读者抽核原句）。
+   - 冷季份额："a non-growing-season fraction (30% of annual emissions for permafrost bogs and 17% for other wetlands)"——已验证（同文方法节）。
+   - 补充表 S1 生长季中央值（Tg CH4 yr−1）：fen 9.47、marsh 4.40、苔原湿地 3.62、bog 3.04、永冻 bog 0.73；全年合计 25.78——已验证（Kuhn 2025 补充表 S1，xlsx 读表）。
+   - 按冷季份额换成全年再除以 Olefeldt 2021 面积，各类单位面积为 fen 约 12.5、marsh 约 33、苔原湿地约 11.5、bog 约 4.2、永冻 bog 约 1.2 g CH4 m−2 yr−1——已验证（S1 ÷ 面积自算，与子任务读图 1c 一致）。
+   - 用各类均值与中位上推的差别：均值 33.21 Tg，中位 21.42 Tg，作者模型 25.8 Tg——子任务读（Kuhn 2025 补充表 S5，未抽核）。
+4. 俄罗斯、加拿大的 BAWLD 加权单位面积（用上条面积，自算，g CH4 m−2 yr−1；括号内为总量 Tg）：
+
+   | 取值口径 | 俄罗斯 | 加拿大 | 60° N 以北 |
+   | --- | --- | --- | --- |
+   | Kuhn 2021 表 3 中位 × 150 d | 5.4（9.6） | 5.4（7.4） | 5.2（10.1） |
+   | Kuhn 2021 表 3 均值 × 150 d | 8.3（14.7） | 8.4（11.4） | 7.7（15.1） |
+   | Treat 2018 数据集中位 | 6.6（11.7） | 6.6（8.9） | 6.2（12.1） |
+   | Treat 2018 数据集均值 | 12.0（21.1） | 11.8（16.1） | 11.2（21.9） |
+   | Kuhn 2025 各类年单位面积 | 8.1（14.2） | 8.2（11.1） | — |
+
+   ——已验证（算术，输入为本节第 1–3 条与第 1.1 节第 1、3 条；Treat 均值把永冻 bog 对到苔原 bog、苔原湿地对到苔原 fen，属对应假设）。
+   - 若按原文面积 3.18 对 0.5° 表 3.49 缩放总量，俄罗斯的 Kuhn 2025 口径约 12.9 Tg，加拿大约 10.1 Tg——推测（缩放假设各区同比例）。
+
+### 1.3 涡度上推
+
+1. Peltola 2019 用 25 座塔、随机森林上推到 45° N 以北，三张湿地图下的年总量为 31.7（22.3–41.2）、30.6（21.4–39.9）、37.6（25.9–49.5）Tg。子区域：HBL 4.6–4.9，WSL 6.6–7.0——已验证（Peltola 2019 摘要与表 2，p.1277，全文）。
+2. 站点来源的偏向：
+   - 原文 "The measurements were largely concentrated in Fennoscandia and Alaska, whereas data from, for example, the HBL and WSL areas, were missing"——已验证（Peltola 2019 第 4.2.2 节，p.1279–1280，全文）。
+   - FI-Sii、FI-Lom、SE-Deg 三塔占训练月数约 38 %——子任务读（Peltola 2019 表 A1 自算，未抽核）。
+   - 按 HBL 湿地面积降回生态系统尺度得 11.0 g，是当地唯一塔 6.9 的 1.6 倍，原句 "the upscaled product likely overestimates"——子任务读（Peltola 2019 第 3.4 节，未抽核）。
+3. UpCH4（McNicol 2023）：60–90° N 约 7.3 Tg（5.6–9.0）——子任务读图（McNicol 2023 图 8，未抽核）。网络代表性原句 "lower dissimilarity in boreal and tundra regions"——子任务读（同文第 3.2.2 节，未抽核）。
+
+### 1.4 塔位与足迹的代表性
+
+1. 同一景观内湿地塔与景观塔的比值：
+   - Scotty Creek，也就是本模式的 CA-SCB 所在处："The cumulative growing season (May–October) wetland CH4 emission of ~13 g CH4 m−2 is the dominating contribution to the landscape CH4 emission of ~7 g CH4 m−2. In contrast, forest contributions to landscape CH4 emissions appear to be negligible"，这里的"森林"就是冻土泥炭台地——已验证（Helbig 2017 摘要，p.2413，全文）。比值约 1.9。
+   - 景观塔足迹里森林占 46 %、湿地 52 %——子任务读（Helbig 2017 结果节，未抽核）。
+2. 其他同景观对照：
+   - Tiksi 苔原塔均值与 6.3 km2 面积加权值的 "location bias of 14 %"——已验证（Tuovinen 2019 摘要，全文）；对 35.8 km2 区域约 30 %，强源湿 fen 与禾草苔原 17.7 % 面积贡献约 92 % 通量——子任务读（同文表 6、第 3.3 节，35.8 km2 已抽核）。
+   - Kytalyk 塔值约为地图面积加权值的 1.37 倍——子任务读（Budishchev 2014 第 3.2 节，未抽核）。
+3. 塔址的选择方式：
+   - Chang 2014 原句 "chambers or towers which are typically deployed in areas expected to be significant CH4 sources"；同一组飞机数据全阿拉斯加 8 ± 2 mg CH4 m−2 d−1，只归于湿地为 56（+22/−13）——已验证（Chang 2014，PMC 全文）。
+   - Olefeldt 2021 原句 "It is overall likely that studies of CH4 emissions from boreal and arctic ecosystems have focused disproportionally on sites with higher CH4 emissions"——已验证（Olefeldt 2021 p.5129，全文）。
+   - 北坡飞机与湿莎草塔在足迹重叠时一致，但 "fluxes from sedge vary at times by a factor of 2 or more even within a few kilometers of the tower"——已验证（Sayres 2017 摘要，全文）。
+4. 网络层面的代表性：
+   - "When we consider methane measurements … the values drop to about 1/5"；原句 "large parts of Siberia and patches of Canada were classified as underrepresented"——已验证（Pallandt 2022 摘要，p.559，全文）。
+   - AmeriFlux："only half of the wetland sites showed high representativeness even for a 250 m target area"——已验证（Chu 2021 第 3.2 节，接受稿全文）。
+5. 反例：塔不总是高于区域值。北方贫营养 fen 的涡度值低于同类箱式均值（Turetsky 2014，子任务读）；HBL 的上推值高于当地塔（本节第 1.3 节第 2 条）。
+6. BAWLD-CH4 表内涡度与箱式对比：bog 类涡度 6 站中位 56.5，箱式 29 站中位 28.4 mg CH4 m−2 d−1；涡度中 Scotty Creek 为 112.9——已验证（BAWLD-CH4 陆地表按 Meth 列分组，数据）。
+
+### 1.5 判断：单位面积该取多少，塔与区域为何差一倍
+
+1. 按全湿地面积，BAWLD 口径的北方区域平均取 7.5–8.5 g CH4 m−2 yr−1。依据是 Kuhn 2025 的 7.55，以及本文按俄罗斯、加拿大类型构成算得的 8.1–8.2（第 1.2 节第 3、4 条）。
+   - 用类中位做下界约 5.5–6.6，用类均值加冷季做上界约 12，两者差约 2 倍。
+   - 类中位会把少数高排放 fen 与 marsh 的面积贡献压低。类均值偏向被偏爱研究的高排放站，Olefeldt 2021 与 Treat 2018 都指出过这一点（第 1.4 节第 3 条，第 1.1 节第 4 条）。
+   - 这条判断为推测，理由即以上三点。
+2. 分类型的年单位面积（Kuhn 2025 口径）：永冻 bog 约 1.2、bog 约 4.2、fen 约 12.5、苔原湿地约 11.5、marsh 约 33——已验证（第 1.2 节第 3 条）。账本 Q-23 引的"藓沼 5.6、泥沼 8.4"是 Treat 数据集中位，而 fen 的全年实测中位是 17.6——已验证（第 1.1 节第 3 条）。
+3. 塔（14–24）与区域平均（约 7.5）差 2–3 倍，主要来自类型构成，其次是类内选址：
+   - 四座北方泥炭塔中，FI-Sii、FI-Lom、SE-Deg 是 fen，CA-SCB 是无冻土的崩塌型 bog。四座塔都有莎草（FLUXNET-CH4 通气组织植物标记全为 1，账本 Q-31 笔记第 4 节）。
+   - 按 BAWLD，区域湿地中 bog 与永冻 bog 占 55 %。这部分年单位面积只有 1.2–4.2，水位 −11 到 −20 cm，莎草优势站仅 14–23 %（第 1.1 节第 1 条，第 1.2 节第 1、3 条）。
+   - 塔所在的 fen 类，区域值约 12.5，塔高于它 1.1–1.9 倍。这一段与同景观塔对区域的实测比 1.14–1.94 同量级（第 1.4 节第 1、2 条）。
+   - 这条判断为推测。理由：Scotty Creek 一处同时给出"湿地塔 13、景观 7、森林（冻土台地）约 0"，与上述分解一致。
+4. 口径陷阱：Treat 数据集 64 % 的年值由生长季外推，fen 外推值系统偏低约 40 %。所以"类型中位 8.4 对塔 17"里的一半差距是口径造成的，不是塔位造成的——已验证（第 1.1 节第 4 条）。
+
+## 2. 反演与模式侧
+
+### 2.1 GCP 集合与反演在北方
+
+1. GCP 2025 xlsx 2010–2019 湿地（Tg CH4 yr−1）——已验证（xlsx 逐行，主读者读单元格字体颜色）：
+
+   | 区 | BU 中位 [范围]（22 行） | TD 中位 [范围]（26 行） | TD 去离群后 中位 / 最大 |
+   | --- | --- | --- | --- |
+   | 俄罗斯 | 12.0 [3.5–22.95] | 11.3 [8.2–20.9] | 11.1 / 13.4 |
+   | 加拿大 | 12.2 [3.1–25.9] | 11.2 [9.2–20.7] | 11.1 / 17.9 |
+   | 60–90° N | 9.9 [3.8–29.6] | 8.9 [6.9–17.3] | 8.8 / 16.75 |
+
+   - BU 的 22 行是 11 个模式各跑两套气候强迫——子任务读（xlsx 模式名列，未逐一抽核）。
+   - TD 的上限 20.9 与 20.7 是表里标红、被作者剔除的离群：俄罗斯是 NISMON-CH4 四个反演，加拿大是 TM5-inv5 与 TM5-inv6。`v2/results/region_eval_g2_fi_2018-2018.log` 引用的区间把这两个离群计入了。
+2. 反演中位几乎就是先验：GCP 下发的湿地先验（`flux_ch4_wetlands`，属性 "Saunois et al. (2020)"）积分为加拿大 11.18、俄罗斯 11.12、60–90° N 8.65，与 TD 中位只差 1–3 %——已验证（先验 nc 按 `GCP2023_regions_mask.nc` 积分，数据）。26 个反演中有 15–16 个落在先验 ±10 % 内——子任务读（未逐一抽核）。原文也写明 "in poorly observed regions, top-down inversions rely on the prior estimates"——子任务读（Saunois 2025 p.1915，未抽核）。
+3. Saunois 2025：
+   - 60–90° N 湿地加内陆淡水：BU 24 [9–53]，TD 9 [7–17]——已验证（表 6，p.1903，全文）。
+   - 自然与间接源：加拿大 BU 32 [11–63]、TD 14 [11–22]，俄罗斯 BU 25 [9–47]、TD 14 [11–18]——已验证（表 7，p.1918，全文）。
+   - "The largest discrepancies between the top-down and the bottom-up budgets are found in the mid-latitudes and boreal regions from the natural and indirect sources with bottom-up estimates twice as large as the top-down ones, especially in the inland freshwater category"——已验证（p.1917，全文）。
+   - TD 的"湿地"口径："the 'wetland emissions' in the top-down budget in fact better correspond to the sum of combined wetland and inland freshwater emissions in the bottom-up budget"——已验证（p.1914，全文）。
+   - TD 不确定度 "more than ± 20 % in the northern high latitudes"——已验证（p.1916，全文）。
+4. Zhang 2025（GCP 湿地集合）：
+   - 60–90° N 预报式运行 2010–2019：CRU 12 [4–30]，GSWP3 12 [4–29]——已验证（表 1，p.311，全文）。
+   - "The model ensemble mean has a higher CH4 emitting strength (i.e., CH4 emission per standard wetland area) for the high latitudes, leading to lower apparent Q10"——已验证（p.314，全文）。
+   - WSL 与 HBL 的年量与反演、原位清单 "good agreements"——已验证（p.311，全文）。
+5. Stavert 2022：原句 "only four regions (Canada, Central Asia, Russia, and Oceania) do not agree within the 25th‐75th percentile range, with all these regions showing total BU ≫TD. As with global estimates regional BU–TD discrepancies are driven by BU NonWetl emissions estimates"——已验证（Stavert 2022 第 3.2.1 节，PMC 全文）。
+6. 判断：GCP 湿地中位（俄罗斯约 11–12、加拿大约 11–12、60–90° N 约 9–10）不是彼此独立的两条约束，TD 约等于先验，先验又来自 BU 集合。在北方真正独立的数有三类：区域反演（第 2.2 节）、原位清单与上推（第 1 节）。三者同向，都落在 10–14 Tg——推测。理由：第 2.1 节第 2 条，第 2.2 节，第 1.2 节第 4 条。
+
+### 2.2 区域反演
+
+1. 加拿大：
+   - 自然源后验 11.6 ± 1.2（ECCC）与 11.7 ± 1.2（GOSAT），摘要称过程模式给的自然源 "on the order of ∼ 20 Tg a−1"——已验证（Baray 2021 摘要，只读摘要）。
+   - 分部门反演得湿地 9.6 ± 1.1——已验证（Baray 2021 p.18113，子任务下载全文、主读者抽核该句）。
+   - 后验季节 "slower to start emissions in the spring and a less intense peak in the summer"——已验证（Baray 2021 摘要）。
+2. HBL（面积 0.32 Mkm2，属加拿大）：
+   - Pickett-Heaps 2011 最佳估计 2.3 Tg a−1，加雪盖约束后模式季节肩部收窄——已验证（Pickett-Heaps 2011 摘要）。
+   - Thompson 2017 为 2.7–3.4，"close to the prior estimate"——已验证（Thompson 2017 摘要）。
+   - WETCHIMP 模式均值 5.4 ± 3.2——已验证（Peltola 2019 表 2 转引 Melton 2013）。
+3. 北美总体：原句 "several recent studies indicate that process models overestimate CH4 fluxes in warmer, boreal regions of North America"；北坡每 km2 湿地的排放约为州内较暖区域的 75 %，过程模式只给 10–43 %——已验证（Miller 2016，PMC 作者稿全文，主读者抽核两句）。
+4. 俄罗斯：
+   - 西西伯利亚低地 12 年均值：正演模式 5.34 ± 0.54，反演 6.06 ± 1.22，原位 3.91 ± 1.29 Tg CH4 yr−1——已验证（Bohn 2015 摘要，p.3321，全文）。
+   - Thompson 2017 的 WSL 总源（含人为源）19.3–19.9——已验证（Thompson 2017 摘要）；湿地部分 6.9 ± 3.6——转引（Peltola 2019 表 2）。
+   - Berchet 2015 湿地 "tolerance interval is 1–13"——子任务读（未抽核）。
+   - Wittig 2023 称欧亚 "most areas are unseen by the inversion"——子任务读（未抽核）。
+   - 对俄罗斯湿地的反演约束总体很弱——推测。理由：以上各条，加上第 2.1 节第 2 条。
+5. 卫星约束的集合：原句 "tropical wetland emissions contribute 72% (63%–85%) to the global wetland total. We also find that a lower-than-expected temperature sensitivity agrees better with atmospheric CH4 measurements"——已验证（Ma 2021 摘要，Crossref 摘要字段）。
+
+### 2.3 WetCHARTs 与 WAD2M
+
+1. WetCHARTs：F = s·A·R·q10^(T/10)，s 为按全球总量反解的单一系数，q10 取 1、2、3，没有单列的北方参数——已验证（Bloom 2017 式 1、3 与表 1，兄弟报告与子任务读全文）。原文说 >20° N 均值不确定性以面积为主，"the temperature CH4 : C dependence accounts for < 5 %"——子任务读（Bloom 2017 p.2148，未抽核）。
+2. WAD2M 在北方不是纯淹水面积：
+   - 原文 "Many arctic wetlands, including peatlands, do not have surface inundation and thus are not captured by SWAMPS"；60° N 以北合成静态图（NCSCD 泥炭加 CAWASAR）"covers 2.3 Mkm2 for the high latitudes (> 60° N), including peatlands and mineral wetlands in the tundra biomes"——已验证（Zhang 2021 p.2004–2005，全文）。
+   - 合成方式是：静态图大于 SWAMPS 年最大时，把年最大上调到静态图，再套 SWAMPS 的季节形态——子任务读（Zhang 2021 p.2003，未抽核）。
+   - v2 在高纬改用 Hugelius 2020 泥炭图——已验证（Saunois 2025 p.1893，全文）。
+   - 由此，"GCP 集合 ÷ WAD2M"得到的约 12 g CH4 m−2 yr−1 分母是"泥炭加淹水"的混合口径。账本 Q-23 的 6–9 月比较（模式 1.05 对 WAD2M 0.96 Mkm2）两边都不是整片泥炭面积，不宜据此把偏高全部归到"单位淹水面积"——推测。理由：WAD2M 的构成如上，模式湿地斑块的非饱和子柱也排放（第 3.1 节）。
+
+### 2.4 过程模式里决定北方单位面积的主导项（只补兄弟报告没有的）
+
+1. CLM4Me 谱系本身在北方偏高：
+   - 原句 "increasing the CLM4Me CH4 production Q10 value from the baseline value of 2 to 3 decreased high latitude emissions to be closer to top-down inversion values, increased simulated 20° S–10° S net emissions to unrealistically high values"——已验证（Riley 2011 p.1937，全文）。
+   - Meng 2012：取 Q10 2 使 >50° N 排放增加 80 %（由 12 到 22 Tg）——已验证（Meng 2012 p.2810，全文）。
+   - GCP 2025 集合里同谱系的 ELM-ECA 在俄罗斯为 19.75、22.95，是 11 个模式中最高——子任务读（xlsx 行，未逐一抽核）。
+   - 本模式的产甲烷温度项为宿主分解 Q10 1.5 × 甲烷侧 1.33、基准 295 K，有效 Q10 约 2——已验证（兄弟报告 `lit_models_wetland_260929.txt` 第 4.3 节）。
+2. 面积与强度互相补偿：
+   - 西西伯利亚低地 21 个配置，面积 0.2–1.2 Mkm2、JJA 强度 1–8 g CH4 m−2 month−1，"with no clear relationship between the two"——已验证（Bohn 2015 p.3333，全文）。
+   - 北半部（> 61° N）各组模式 JJA 排放 0.45–0.89 Tg month−1，比 Glagolev–Peregon 的 0.30 高 0.16–0.59；面积偏差只有 −21 到 +46 ×10^3 km2。作者对北半部的评语是 "relatively unbiased"，是与南半部由面积主导的偏差相比——已验证（Bohn 2015 表 4 与 p.3334 正文，全文）。
+   - 按表 4 均值减偏差反推，北半部清单 JJA 强度约 0.9 g CH4 m−2 month−1，各组模式为 1.6–2.8——推测（算术）。
+3. 宿主植被的影响：WETCHIMP 发现高通量模式多用旱地 PFT 的 NPP，原句 "This could indicate a general tendency to higher CH4 fluxes when upland PFTs instead of wetland PFTs are used"——已验证（Wania 2013 p.634，兄弟报告第 3.2 节第 4 条转引）。
+4. 冷季：
+   - GCP 16 个模式在 >60° N 的 9–5 月份额为 27 ± 9 %，升尺度为 45 %——已验证（兄弟报告第 3.2 节第 3 条，Ito 2023）。
+   - 反演一致指向模式春季起得太早：Pickett-Heaps 用雪盖约束使排放减 20 %，Baray 与 Berchet 的后验起始都推后——已验证（Pickett-Heaps 2011 摘要；Baray 2021 摘要）；Berchet 为子任务读。
+5. 别人的处理办法大致分五类：
+   - ① 北方单列比例因子。
+   - ② 提高相对 22 °C 基准的产甲烷 Q10。
+   - ③ 加 pH 与氧化还原抑制。
+   - ④ 用雪盖或冻融门控春季起始。
+   - ⑤ 分类型给面积与强度，含 BAWLD 的五类、Bohn 2015 建议的未淹水泥炭随水位排放。
+   - 出处：已验证（本节第 1、2、4 条；第 1.2 节第 3 条）。
+   - 有机理依据的是 ③、④、⑤；① 与 ② 分别是调参，或者会把热带抬高——推测。理由：Riley 2011 p.1937 原句。
+
+## 3. 对本模式
+
+### 3.1 诊断（g2_fi 2018，湿地斑块）
+
+1. 面积不偏大，偏高全在单位面积——已验证（`boreal_diag.py`；`bawld_region.py`；`v2/results/region_eval_g2_fi_2018-2018.log`）。GLWD 斑块面积与 BAWLD 湿地对比：
+
+   | 区 | GLWD 斑块面积（Mkm2） | BAWLD 湿地（Mkm2） | 排放（Tg） | 按湿地面积（g CH4 m−2 yr−1） |
+   | --- | --- | --- | --- | --- |
+   | 俄罗斯 | 1.79 | 1.765 | 22.3 | 12.5 |
+   | 加拿大 | 1.32 | 1.360 | 17.0 | 12.9 |
+   | 60–90° N | 2.04 | 1.95 | 20.5 | 10.1 |
+
+   区总量里另有洪泛：俄罗斯约 0.7，加拿大约 0.8 Tg。对照 BAWLD 口径 8.1、8.2（第 1.2 节第 4 条），模式约高 1.55 倍——推测（算术）。
+2. 淹水份额：年均俄罗斯 0.44、加拿大 0.35，6–9 月 0.39、0.30；按 6–9 月淹水面积折算，单位面积为 32、43——已验证（同上）。所以账本 Q-23 的"约 23 g"是除以 6–9 月淹水面积的口径，按湿地面积为 12.5–12.9。
+3. 永冻泥炭台地份额没有起作用——已验证（`boreal_diag.py`、`boreal_diag2.py`）。按 C-38 的雨养份额（D-40 版，即 BAWLD 永冻 bog 份额）分组：
+
+   | 区 | 分组 | 按湿地面积（g CH4 m−2 yr−1） | 6–9 月水位（m） |
+   | --- | --- | --- | --- |
+   | 俄罗斯 | 雨养份额 ≥ 0.3 | 12.1 | 0.115 |
+   | 俄罗斯 | 雨养份额 < 0.3 | 13.0 | 0.106 |
+   | 加拿大 | 雨养份额 ≥ 0.3 | 12.0 | 0.138 |
+   | 加拿大 | 雨养份额 < 0.3 | 13.5 | 0.133 |
+
+   按排放加权的永冻 bog 份额：俄罗斯 0.33，加拿大 0.23，60–90° N 0.42。BAWLD 口径下这部分面积的单位面积只有约 1.2（第 1.2 节第 3 条）。
+4. 有林份额抬高了产量，方向与观测相反——已验证（`boreal_diag3.py`）。同一纬带内：
+
+   | 纬带 | 有林份额 ≥ 0.7（g CH4 m−2 yr−1） | 有林份额 < 0.4（g CH4 m−2 yr−1） |
+   | --- | --- | --- |
+   | 55–60° N | 18.2 | 8.2 |
+   | 60–65° N | 15.7 | 8.6 |
+   | 65–70° N | 12.2 | 8.4 |
+
+   - 按面积的产量同比升高：55–60° N 为 24.9 对 12.1 g CH4 m−2 yr−1。E/P 不随有林份额变（0.70–0.77）。有林格点的 6–9 月淹水份额反而更低（0.20–0.27 对 0.44–0.53）。
+   - 加拿大有林份额 0.8–1.0 的格点占 0.70 Mkm2、12.2 Tg，单位面积 17.5；份额 0–0.3 的只有 4.1。
+   - 观测侧：BAWLD 里 GLWD 22 类（有林）与 23 类（无林）的类型构成加权通量几乎相同，39.8 对 41.6 mg CH4 m−2 d−1——已验证（账本 Q-31）。
+5. 通道与氧化：植物通道占排放 88–92 %，E/P 0.71–0.77，即只有 23–29 % 的产量被氧化——已验证（`boreal_diag.py`）。文献中 Sphagnum bog 的植物通道典型值 33 %，莎草 fen 65 %——已验证（`v2/results/lit_pathway_partition.json`，兄弟报告整理）。
+6. 冬季：10–5 月占全年，俄罗斯 22 %、加拿大 26 %、60–90° N 20 %；11–4 月占 7–11 %——已验证（`boreal_diag.py`）。这不高于观测（北方 16 %、苔原 42 %；GCP 模式在 >60° N 的 9–5 月为 27 %，升尺度为 45 %），所以冬季不是偏高的来源——推测。理由：第 1.1 节第 4 条，第 2.4 节第 4 条。
+7. 泥炭份额：GLWD 泥炭份额按面积加权，45–60° N 为 0.88，60–90° N 为 0.90——已验证（`v2/data/glwd_class_2deg_c38.nc` 计算）。它与站点取的 1 相差不大，因此不是全球与站点结论相反的原因——推测。
+8. C-52 的外推：在站点上，C-52 使北方塔的模式均值升高——已验证（`v2/results/scores77_v2_oo5.txt` 对 `scores77_v2_oo5p2.txt`）：
+
+   | 塔 | 升幅 |
+   | --- | --- |
+   | FI-Sii | +19 % |
+   | SE-Deg | +15 % |
+   | CA-SCB | +10 % |
+   | JP-BBY | +52 % |
+   | FI-Si2 | −20 % |
+
+   全球泥炭份额与站点接近，推广到全球后俄罗斯、加拿大可能再升 10–20 %——推测。理由：同一套泥炭端元按 0.9 的份额作用于北方斑块。
+
+### 3.2 把区域平均抬高的环节（读码行号取 c86605d3；g2_fi 所用 572f0a3d 中同段逻辑相同，行号不同处另注）
+
+1. 水位下限与 C-38 的补水写法（账本 C-8、Q-25、Q-31、C-38、D-40）：
+   - 湿地斑块水位深于类下限时从侧面补水，补水量等于把水位拉回下限所需的全部亏缺，再乘以（1 − 雨养份额）——已验证（`main/MOD_SoilSnowHydrology.F90:1233–1260`，乘份额在 1252 行，572f0a3d 为 1250 行；`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90:4108–4119` 的 `wetland_inflow_share`，572f0a3d 为 4000–4011 行）。
+   - 北方 fen 与 bog 下限同为 0.13 m（`Physics.F90:4079–4105` 的 `wetland_max_wtd_of`，572f0a3d 为 3971 起；g2_fi `ch4_parameter.nml` 中 `wetland_max_wtd_boreal_fen`、`_bog` 为 0.13，`use_biome_wetland_max_wtd = .true.`）。
+   - 每步都补回（1 − 份额）倍的亏缺，所以份额小于 1 时水位仍被钉在下限附近。第 3.1 节第 3 条的 0.106 对 0.115 m 就是这个结果。C-38 在全球只对份额为 1 的格点起作用——推测。理由：读码加诊断。
+2. 类标签（账本 Q-31）：纬度 > 50° 且表层有机质 > 150 kg m−3 归北方 bog，否则归 fen（`main/TRACER/MOD_Tracer_Reactive_Methane_BgcLink.F90:1240–1245`）。俄罗斯湿地斑块 1.79 Mkm2 中 1.67 为 bog 标签。它只决定下限（两类相同）与 redox 滞后（45 对 30 d）——已验证（读码；`boreal_diag.py` 按类型分组）。
+3. 淹水份额：微地形 σ = 0.11 m，有积水时以积水深定水面（`Physics.F90:874–889`，erfc 在 884 行，两个 commit 相同）；积水桶上限 200 mm，即候选池第 13 条。北方 6–9 月淹水面积与 WAD2M 只差一成（账本 Q-23），它不是主杠杆——推测。理由：第 3.1 节第 2 条。
+4. 有林份额的植物输入（账本 C-12、C-13、C-15、C-19、C-23、Q-9）：
+   - 输入等于斑块自身光合 × `wetland_npp_frac`（0.5），先扣 15 % 作分泌物沿根系在当层呼吸，其余按代谢、纤维、木质 0.25、0.5、0.25，C:N 46 进凋落物；有林与无林同一质量——已验证（`main/TRACER/MOD_Tracer_Reactive_BgcShim.F90:244–304`，分泌物在 274–277 行，分库在 288–300 行）。
+   - 地下份额按有林份额在 0.15 与 0.35 之间加权——已验证（`main/TRACER/MOD_Tracer_Reactive_Methane_WetlandVeg.F90:244–254`）。
+   - 有林部分保留遥感 LAI，只对无林部分封顶——已验证（`WetlandVeg.F90:182–211`，混合式在 209 行）。GLWD 改图后湿地斑块的遥感 LAI 与周边土壤斑块几乎相同，50–70° N 为 2.09 对 2.20——已验证（账本第 2.16 节）。
+   - 通气组织的分蘖量按 NPP × LAI 算，有林部分只把孔隙度乘 1/3——已验证（`Physics.F90:2785` 的 `m_tiller = anpp * nppratio * lai`，572f0a3d 为 2762 行；`WetlandVeg.F90:325–326`）。CTSM 在同一处用常数 4 代替 LAI——已验证（CTSM `ch4Mod.F90:3155`）。
+   - 于是有林份额越大，旱地林的光合就越多地作为草本质量底物，送到被下限托在 0.1 m 左右的水位之下。这与第 3.1 节第 4 条"同纬带有林格点的单位面积高 1.5–2 倍"一致——推测。理由：读码链条加诊断。
+5. 通道与氧化：植物通道占 88–92 %，而通道内的根际氧化由通气组织送氧决定，E/P 约 0.75。候选池第 4 条（根际氧化改为植物所输甲烷的固定份额）正对此——已验证（候选池 `v2/候选池.tsv` 第 4 条；第 3.1 节第 5 条）。
+6. 温度：`q10methane` 1.33，基准 295 K（`Physics.F90:2116–2121`），宿主分解另有 Q10 1.5。CLM4Me 在这一取值下北方高于反演（第 2.4 节第 1 条）。候选池第 3 条改的是局地基准：V-106 让俄罗斯由 23.0 升到 24.1、加拿大由 17.8 升到 18.3，因为局地基准去掉了纬度梯度——已验证（账本 V-106）。
+7. 冻结层：冻结层照样按缺氧速率分解（C-16，`BgcShim.F90:117`），冬季份额不高于观测（第 3.1 节第 6 条）。
+8. 其余不抬高北方的项：产甲烷率 f 为全局 0.2，C-30 已撤（D-38）；全球用 pH 图（`use_spatial_ph = .true.`），站点取 6.2 时 pH 因子为 1——全球若有差别也是压低——推测。
+
+### 3.3 为什么塔上偏低、区域偏高能同时成立
+
+- 模式的每个北方湿地斑块都是一根"湿型柱"：水位被下限托在约 0.1 m，底物随斑块光合走，通道以通气组织为主。站点取塔的类型参数（有林份额 0、泥炭份额 1、雨养份额 0），就是在模拟湿 fen 或崩塌型 bog。区域上同一根柱代表的是整片泥炭地，包括占 27–36 % 的永冻台地（观测约 1.2 g）与有林 bog。
+- 于是模式在塔上接近塔（β 0.47–0.84，账本 V-101），在区域上接近"塔乘面积"（12.5 对 BAWLD 8.1）。
+- 两边要同时对上，需要在斑块内表示类型构成，而不是改湿型柱本身的参数——推测。理由：第 1.5 节第 3 条，第 3.1 节第 3、4 条，第 1.4 节第 1 条（Scotty Creek 的湿地塔、景观塔与台地三者关系）。
+
+### 3.4 候选（编码已另派，此处只写依据与预期）
+
+#### 3.4.1 候选① C-38 由"按份额减补水"改为"按份额拆面积"：永冻泥炭台地移出湿型柱
+
+- 依据：
+  - 永冻 bog 占 BAWLD 湿地 27 %（Olefeldt 2021 表 3），单位面积约 1.2（Kuhn 2025 补充表 S1），水位中位 −20 cm（Kuhn 2021 表 3）。泥炭台地排放 "<0.1 g"（Treat 2018 p.18）；Scotty Creek 台地（森林）"negligible"（Helbig 2017）。
+  - 模式中份额 ≥ 0.3 的格点与其他格点单位面积相同，水位同样被托住（第 3.1 节第 3 条，第 3.2 节第 1 条）。
+  - 这是对已采纳 C-38 写法的修正，不是新参数；份额图沿用 `v2/data/glwd_class_2deg_c38.nc` 的 `rainfed_share`。
+- 改法：斑块面积的这一份额不进湿型柱的产甲烷与淹水分布。可以当作不接侧向来水、不设下限的干柱；也可以简化为按 BAWLD 永冻 bog 通量（约 1.2 g）计。其余（1 − 份额）照旧。站点份额照旧（只有 US-Uaf 为 1）。
+- 预期（按比例外推，推测）：
+  - 俄罗斯 22.3 → 约 15（去掉排放加权份额 0.33，再加回 0.61 Mkm2 × 1.2 g 约 0.7 Tg）；
+  - 加拿大 17.0 → 约 13.5；
+  - 60–90° N 20.5 → 约 12.5；
+  - 北方 fen 与 bog 塔（FI-Sii、SE-Deg、FI-Lom、CA-SCB、FI-Si2）不变，份额为 0；
+  - US-Uaf 若按份额 1 处理，会由 2.0 降到接近 0（塔上 4.0，现 β 0.51），需另给份额或保留简化通量。
+- 风险：
+  - 与候选池第 15 条（苔原高处份额）同构。两者对象不同（永冻 bog 对苔原湿地），但在北极格点叠加可能压过头。
+  - BAWLD 类型图本身的不确定性为永冻 bog 58 %（Olefeldt 2021 表 3）。
+  - 改法若是干柱，要注意台地上的冬季储存与春季释放。
+
+#### 3.4.2 候选② 有林份额的植物输入与分泌物不再以继承的旱地林光合作草本底物
+
+- 依据：
+  - 同纬带有林格点的单位面积与产量是无林格点的 1.5–2 倍，而 BAWLD 类型构成下两者几乎相同（第 3.1 节第 4 条）。
+  - 读码链条：斑块光合 × 0.5 全部按草本质量进凋落物，其中 15 % 作分泌物沿根系在水位下呼吸；有林部分保留旱地林的遥感 LAI（第 3.2 节第 4 条）。
+  - 观测侧的方向：乔木优势站低（Turetsky 2014 图 4a；Olefeldt 2013 图 3）；有林 bog 占西西伯利亚泥炭地面积 44 %、排放 11 %（Glagolev 2011 p.4）；树占优土壤厌氧最大产率约为禾草的 1/8（Treat 2015，前一会话读图，已知与干湿混杂）。
+  - 模式侧：WETCHIMP 指出用旱地 PFT 的 NPP 会带来更高通量（Wania 2013 p.634）。
+  - 此项与 D-38 不冲突。D-38 否定的是"树降低产率 f"。本候选改的是底物来源：有林份额的光合原本属于台地或丘上的树，不应作为湿型柱水位下的草本底物。
+- 改法（二选一或合用，由编码侧定）：
+  - ① 植物输入与分泌物只取无林份额的光合；
+  - ② 有林份额的输入改按宿主木本 PFT 的凋落物分配与质量，不产分泌物，并只落在地表剖面。
+  - 站点有林份额为 1 的五塔中，北方只有 US-Uaf、RU-Cok 受影响。
+- 预期（上界：有林格点降到同纬带无林格点水平，推测）：
+  - 50–70° N 合计约减 11 Tg，其中加拿大约 −5 到 −7，俄罗斯约 −3 到 −4；
+  - 与候选①叠加后，俄罗斯约 11–12、加拿大约 7–9，落到 GCP 中位与 BAWLD 口径附近或略低；
+  - 北方 fen 与 bog 塔不变；US-Uaf 下降。
+- 风险：
+  - 热带有林泥炭（GLWD 26 类）同受影响。东南亚现为 32.9，反演区间 14–29（V-78 已显示压热带泥炭会使东南亚跌出下限），需要看这一项在热带的量级。
+  - 底物库重新平衡需要冷启动或 SASU 周期，续跑年份看不全。
+  - 与候选①在有林的永冻台地格点上重复作用。
+
+### 3.5 已在候选池、对北方也起作用的（不重复立项，只写方向）
+
+- 第 2 条（取消或放深下限）与第 17 条（来水物理表示）：直接作用于第 3.2 节第 1 条；V-98、V-102 显示全局取消会使矿质沼泽干透，所以需要按类型与份额作用——已验证（账本 V-98、V-102）。
+- 第 3 条（Q10 2.0、局地基准）：局地基准使北方升高（V-106）；基准固定、只提高 Q10 会降低北方，但会抬高热带（Riley 2011 p.1937）——已验证（账本 V-106；第 2.4 节第 1 条）。
+- 第 4 条（根际氧化为植物所输甲烷的固定份额）：植物通道占 88–92 %，若取 20–50 %，北方湿地斑块排放按比例降 18–46 %——推测（第 3.1 节第 5 条的通道份额乘以候选区间）。
+- 第 13 条（积水外排，在测）：减少北方斑块的积水与淹水份额，方向为降。
+- 第 29 条（冻结层产甲烷不乘液态份额）：方向为升，与本报告的偏高相反。
+- 第 15 条（苔原高处份额）：与候选①同构，见第 3.4.1 节风险。
+
+### 3.6 看过但不列为候选（理由）
+
+- 有林份额的通气组织缩放：V-53 已表明本模式排放受产量限制，传输只改去向，不改量级——已验证（账本 V-53）。
+- 按树降产率 f（C-30）：已撤，D-38 的理由是全球不成立，且站点上有林塔低来自水位——已验证（账本 D-38）。
+- 北方单列比例因子（Kaplan、LPJ-wsl 等的做法）：属调参，不符合 D-47 与 D-58 的"不以拟合掩盖缺失过程"——推测。
+- bog 与 fen 的来水区分（BAWLD bog 占 28 %，单位面积约 4.2，而模式与 fen 同一下限）：D-40 已把开阔 bog 的泥炭持水另立问题。它是候选①、②之后剩下的最大一块类型差——推测。理由：第 1.2 节第 3 条。
+
+## 4. 文献清单（字段取自 Crossref，数据集取自 DataCite，2026-09-29 匿名查询；格式：第一作者，年｜题名｜刊 卷(期): 页或文章号｜DOI）
+
+- Baray, 2021｜Estimating 2010–2015 anthropogenic and natural methane emissions in Canada using ECCC surface and GOSAT satellite observations｜Atmospheric Chemistry and Physics 21(23): 18101-18121｜10.5194/acp-21-18101-2021
+- Berchet, 2015｜Natural and anthropogenic methane fluxes in Eurasia: a mesoscale quantification by generalized atmospheric inversion｜Biogeosciences 12(18): 5393-5414｜10.5194/bg-12-5393-2015
+- Bloom, 2017｜A global wetland methane emissions and uncertainty dataset for atmospheric chemical transport models (WetCHARTs version 1.0)｜Geoscientific Model Development 10(6): 2141-2156｜10.5194/gmd-10-2141-2017
+- Bohn, 2015｜WETCHIMP-WSL: intercomparison of wetland methane emissions models over West Siberia｜Biogeosciences 12(11): 3321-3349｜10.5194/bg-12-3321-2015
+- Budishchev, 2014｜Evaluation of a plot-scale methane emission model using eddy covariance observations and footprint modelling｜Biogeosciences 11(17): 4651-4664｜10.5194/bg-11-4651-2014
+- Chang, 2014｜Methane emissions from Alaska in 2012 from CARVE airborne observations｜Proceedings of the National Academy of Sciences 111(47): 16694-16699｜10.1073/pnas.1412953111
+- Chu, 2021｜Representativeness of Eddy-Covariance flux footprints for areas surrounding AmeriFlux sites｜Agricultural and Forest Meteorology 301-302: 108350｜10.1016/j.agrformet.2021.108350
+- Glagolev, 2011｜Regional methane emission from West Siberia mire landscapes｜Environmental Research Letters 6(4): 045214｜10.1088/1748-9326/6/4/045214
+- Hartery, 2018｜Estimating regional-scale methane flux and budgets using CARVE aircraft measurements over Alaska｜Atmospheric Chemistry and Physics 18(1): 185-202｜10.5194/acp-18-185-2018
+- Helbig, 2017｜The positive net radiative greenhouse gas forcing of increasing methane emissions from a thawing boreal forest-wetland landscape｜Global Change Biology 23(6): 2413-2427｜10.1111/gcb.13520
+- Ito, 2023｜Cold-Season Methane Fluxes Simulated by GCP-CH4 Models｜Geophysical Research Letters 50(14): e2023GL103037｜10.1029/2023GL103037
+- Kuhn, 2021｜BAWLD-CH4: a comprehensive dataset of methane fluxes from boreal and arctic ecosystems｜Earth System Science Data 13(11): 5151-5189｜10.5194/essd-13-5151-2021
+- Kuhn, 2025｜Current and future methane emissions from boreal-Arctic wetlands and lakes｜Nature Climate Change 15(9): 986-991｜10.1038/s41558-025-02413-y
+- Ma, 2021｜Satellite Constraints on the Latitudinal Distribution and Temperature Sensitivity of Wetland Methane Emissions｜AGU Advances 2(3): e2021AV000408｜10.1029/2021AV000408
+- McNicol, 2023｜Upscaling Wetland Methane Emissions From the FLUXNET-CH4 Eddy Covariance Network (UpCH4 v1.0): Model Development, Network Assessment, and Budget Comparison｜AGU Advances 4(5): e2023AV000956｜10.1029/2023AV000956
+- Melton, 2013｜Present state of global wetland extent and wetland methane modelling: conclusions from a model inter-comparison project (WETCHIMP)｜Biogeosciences 10(2): 753-788｜10.5194/bg-10-753-2013
+- Meng, 2012｜Sensitivity of wetland methane emissions to model assumptions: application and model testing against site observations｜Biogeosciences 9(7): 2793-2819｜10.5194/bg-9-2793-2012
+- Miller, 2016｜A multiyear estimate of methane fluxes in Alaska from CARVE atmospheric observations｜Global Biogeochemical Cycles 30(10): 1441-1453｜10.1002/2016GB005419
+- Olefeldt, 2013｜Environmental and physical controls on northern terrestrial methane emissions across permafrost zones｜Global Change Biology 19(2): 589-603｜10.1111/gcb.12071
+- Olefeldt, 2021｜The Boreal–Arctic Wetland and Lake Dataset (BAWLD)｜Earth System Science Data 13(11): 5127-5149｜10.5194/essd-13-5127-2021
+- Pallandt, 2022｜Representativeness assessment of the pan-Arctic eddy covariance site network and optimized future enhancements｜Biogeosciences 19(3): 559-583｜10.5194/bg-19-559-2022
+- Peltola, 2019｜Monthly gridded data product of northern wetland methane emissions based on upscaling eddy covariance observations｜Earth System Science Data 11(3): 1263-1289｜10.5194/essd-11-1263-2019
+- Pickett-Heaps, 2011｜Magnitude and seasonality of wetland methane emissions from the Hudson Bay Lowlands (Canada)｜Atmospheric Chemistry and Physics 11(8): 3773-3779｜10.5194/acp-11-3773-2011
+- Riley, 2011｜Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM｜Biogeosciences 8(7): 1925-1953｜10.5194/bg-8-1925-2011
+- Saunois, 2020｜The Global Methane Budget 2000–2017｜Earth System Science Data 12(3): 1561-1623｜10.5194/essd-12-1561-2020
+- Saunois, 2025｜Global Methane Budget 2000–2020｜Earth System Science Data 17(5): 1873-1958｜10.5194/essd-17-1873-2025
+- Sayres, 2017｜Arctic regional methane fluxes by ecotope as derived using eddy covariance from a low-flying aircraft｜Atmospheric Chemistry and Physics 17(13): 8619-8633｜10.5194/acp-17-8619-2017
+- Stavert, 2022｜Regional trends and drivers of the global methane budget｜Global Change Biology 28(1): 182-200｜10.1111/gcb.15901
+- Thompson, 2017｜Methane fluxes in the high northern latitudes for 2005–2013 estimated using a Bayesian atmospheric inversion｜Atmospheric Chemistry and Physics 17(5): 3553-3572｜10.5194/acp-17-3553-2017
+- Treat, 2015｜A pan-Arctic synthesis of CH4 and CO2 production from anoxic soil incubations｜Global Change Biology 21(7): 2787-2803｜10.1111/gcb.12875
+- Treat, 2018｜Nongrowing season methane emissions–a significant component of annual emissions across northern ecosystems｜Global Change Biology 24(8): 3331-3343｜10.1111/gcb.14137
+- Treat, 2018｜Growing season, non-growing season and annual CH4 fluxes from temperate, boreal, and Arctic wetlands and uplands｜PANGAEA（数据集，DataCite）｜10.1594/PANGAEA.886976
+- Treat, 2018｜Tundra landscape heterogeneity, not interannual variability, controls the decadal regional carbon balance in the Western Russian Arctic｜Global Change Biology 24(11): 5188-5204｜10.1111/gcb.14421
+- Tuovinen, 2019｜Interpreting eddy covariance data from heterogeneous Siberian tundra: land-cover-specific methane fluxes and spatial representativeness｜Biogeosciences 16(2): 255-274｜10.5194/bg-16-255-2019
+- Turetsky, 2014｜A synthesis of methane emissions from 71 northern, temperate, and subtropical wetlands｜Global Change Biology 20(7): 2183-2197｜10.1111/gcb.12580
+- Wania, 2013｜Present state of global wetland extent and wetland methane modelling: methodology of a model inter-comparison project (WETCHIMP)｜Geoscientific Model Development 6(3): 617-641｜10.5194/gmd-6-617-2013
+- Wittig, 2023｜Estimating methane emissions in the Arctic nations using surface observations from 2008 to 2019｜Atmospheric Chemistry and Physics 23(11): 6457-6485｜10.5194/acp-23-6457-2023
+- Zhang, 2021｜Development of the global dataset of Wetland Area and Dynamics for Methane Modeling (WAD2M)｜Earth System Science Data 13(5): 2001-2023｜10.5194/essd-13-2001-2021
+- Zhang, 2025｜Ensemble estimates of global wetland methane emissions over 2000–2020｜Biogeosciences 22(1): 305-321｜10.5194/bg-22-305-2025
+- 无 DOI 的源码：CTSM `src/biogeochem/ch4Mod.F90`（本地 `~/mode/Wetland/CTSM`），第 3155 行。

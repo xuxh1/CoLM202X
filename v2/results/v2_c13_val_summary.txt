@@ -1,0 +1,29 @@
+# v2_c13_val (paper_v2/v260925h/sp_v2_c13); validation towers; CH4 medians KGE_ln / beta / alpha / r
+all 18: -0.19 / 1.56 / 2.00 / 0.64
+  Bog         n= 1  -0.43 / 2.18 / 3.12 / 0.63
+  Drained     n= 1  -1.08 / 3.42 / 5.24 / 0.75
+  Fen         n= 1  -0.17 / 1.98 / 2.24 / 0.49
+  Marsh       n= 3  -0.27 / 2.24 / 1.94 / 0.86
+  Swamp       n= 3  -0.64 / 0.61 / 1.49 / 0.65
+  Wet tundra  n= 9  0.03 / 0.98 / 1.87 / 0.60
+water level (D-2): no tower with observed depths
+
+  site      label  KGEln  beta  alpha     r
+BW-Gum      Swamp  -0.05  0.41   1.49  0.65
+BW-Nxr      Swamp  -0.64  0.61   1.17 -0.55
+RU-Ch2 Wet tundra   0.03  1.82   2.14  0.88
+RU-Che    Drained  -1.08  3.42   5.24  0.75
+US-A03 Wet tundra   0.19  1.33   1.87  0.57
+US-A10 Wet tundra  -1.77  0.10   0.24  0.26
+US-Atq Wet tundra   0.15  0.89   2.07  0.57
+US-BZB        Bog  -0.43  2.18   3.12  0.63
+US-BZF        Fen  -0.17  1.98   2.24  0.49
+US-Beo Wet tundra   0.42  0.94   1.71  0.78
+US-Bes Wet tundra   0.57  0.98   1.18  0.60
+US-DPW      Marsh  -0.27  2.93   1.94  0.86
+US-ICs Wet tundra  -0.04  1.79   2.18  0.64
+US-Ivo Wet tundra  -0.51  2.24   3.49  0.73
+US-LA2      Marsh  -0.21  2.24   2.43  0.91
+US-NC4      Swamp  -0.81  4.97   2.18  0.68
+US-NGB Wet tundra  -0.02  0.78   0.72  0.06
+US-ORv      Marsh  -0.65  0.31   0.34  0.55

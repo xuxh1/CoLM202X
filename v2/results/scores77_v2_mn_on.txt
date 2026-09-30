@@ -1,0 +1,34 @@
+# paper_v2/v260930/sp_v2_dev_moss v2_mn_on: all 77 towers; KGE_ln / beta / alpha / r; means mg CH4 m-2 d-1
+site     class         n  KGEln   beta  alpha     r     obs   model
+CA-SCB   bog          21   0.59   1.13   1.35  0.76   67.49   76.27
+DE-SfN   bog          28  -1.66   8.40   4.64  0.55   12.68  106.43
+FI-Si2   bog          28   0.62   1.39   1.08  0.82   68.45   95.28
+JP-BBY   bog          39   0.39   1.61   1.36  0.77   66.92  107.89
+NZ-Kop   bog          48   0.37   1.67   1.17  0.66   61.37  102.42
+US-BZB   bog          20   0.18   1.35   2.07  0.78   59.79   80.65
+DE-Zrk   fen          63   0.09   0.88   0.41  0.89  114.56  100.50
+FI-Lom   fen          60   0.57   0.71   0.78  0.92   56.57   40.00
+FI-Sii   fen          61   0.43   1.58   1.36  0.88   49.76   78.58
+FR-LGt   fen          20  -2.79  21.89   8.62  0.59    5.10  111.52
+SE-Deg   fen          50   0.39   1.37   1.67  0.89   39.24   53.64
+US-BZF   fen          19   0.11   1.79   1.87  0.76   66.72  119.24
+US-Los   fen          59  -0.16   2.58   1.93  0.88   23.87   61.51
+RU-Ch2   wet tundra   26   0.53   1.13   1.55  0.89   34.24   38.83
+US-A03   wet tundra   25   0.25   1.43   1.89  0.81   37.65   53.72
+US-A10   wet tundra   17  -0.99   3.77   4.00  0.49   11.36   42.77
+US-Atq   wet tundra   26  -1.03   3.20   5.22  0.80    9.21   29.46
+US-Beo   wet tundra   16   0.04   1.41   2.41  0.85   11.20   15.83
+US-Bes   wet tundra   27   0.19   1.65   1.88  0.94   15.32   25.28
+US-ICs   wet tundra   16  -1.35   4.32   6.24  0.81   13.76   59.42
+US-Ivo   wet tundra   41  -0.24   1.61   3.06  0.73   20.79   33.57
+US-NGB   wet tundra   33   0.04   1.95   1.95  0.84   18.70   36.39
+US-Uaf   permafrost   46  -0.10   0.77   2.39  0.37    4.01    3.10
+# unscored: AT-Neu (0 common months), BR-Npw (0 common months), BW-Gum (0 common months), BW-Nxr (0 common months), CA-SCC (0 common months), CH-Cha (0 common months), CH-Dav (0 common months), CH-Oe2 (<8 obs months), CN-Hgu (0 common months), DE-Dgw (0 common months), DE-Hte (0 common months), FI-Hyy (<8 obs months), ID-Pag (0 common months), IT-BCi (<8 obs months), IT-Cas (0 common months), JP-Mse (0 common months), JP-SwL (<8 obs months), KR-CRK (0 common months), MY-MLM (0 common months), NL-Hor (<8 obs months), PH-RiF (0 common months), RU-Che (0 common months), RU-Cok (<8 obs months), RU-Fy2 (0 common months), US-BZS (0 common months), US-Bi1 (0 common months), US-Bi2 (0 common months), US-CRT (0 common months), US-DPW (0 common months), US-EDN (<8 obs months), US-EML (0 common months), US-HRA (<8 obs months), US-HRC (<8 obs months), US-Ho1 (0 common months), US-LA1 (0 common months), US-LA2 (0 common months), US-MAC (0 common months), US-MRM (0 common months), US-Myb (0 common months), US-NC4 (0 common months), US-NGC (<8 obs months), US-ORv (0 common months), US-OWC (<8 obs months), US-Pfa (0 common months), US-Snd (0 common months), US-Sne (0 common months), US-Srr (0 common months), US-StJ (0 common months), US-Tw1 (0 common months), US-Tw3 (<8 obs months), US-Tw4 (0 common months), US-Tw5 (0 common months), US-Twt (0 common months), US-WPT (0 common months)
+
+group          n  KGEln   beta  alpha     r
+all           23   0.11   1.61   1.89   0.81
+wetland       23   0.11   1.61   1.89   0.81
+bog            6   0.38   1.50   1.36   0.76
+fen            7   0.11   1.58   1.67   0.88
+wet tundra     9   0.04   1.65   2.41   0.81
+permafrost     1  -0.10   0.77   2.39   0.37

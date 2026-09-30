@@ -1,0 +1,491 @@
+From 5ce6e755782d80012411252f3e067e0bb54591ec Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 12:02:05 +0800
+Subject: [PATCH] feat(hydrology): finite lateral inflow to dynamic wetlands in
+ place of the floor refill (candidate 17)
+
+DEF_WETLAND_LATERAL_INFLOW (default off): a dynamic wetland tile no longer
+has its water table held at the floor from an unbounded source. Every
+step it takes the lateral inflow q_in = r R_up on the share that takes
+lateral inflow (wetland_inflow_share, as C-38 and the area split), at any
+water-table depth, as negative subsurface runoff through the same aquifer
+exchange as the floor refill, net of the peat outflow, which now runs at
+any depth (PEAT-CLSM Q = c T(zwt)). The exchange fills the pore space from
+the water table up and hands the rest to the ponding store; the wetland
+bucket spills ponding above wetwatmax as surface runoff in the same step,
+so the column is never oversaturated. The floor refill and the area split
+run only with the switch off.
+
+Global runs (CoLMDRIVER, after the patch loop): R_up is the area mean
+total runoff rnof of this step over the soil patches (patchtype 0, rice
+paddies excepted) of the element, and r = min(A_up / A_wet,
+DEF_WETLAND_INFLOW_RATIO_MAX) with A_up, A_wet the area shares of those
+patches and of all wetland patches of the element (elm_patch). The value
+r R_up is kept per wetland patch in the new restart field wetlatin
+(written and read, with a default of 0, only when the switch is on) and
+used at the next step, so the result does not depend on patch order. As
+in ORCHIDEE-PEAT (Qiu et al. 2018; Largeron et al. 2018, eq. 1) the runoff
+of the other soil tiles feeds the wetland; the cap, default 3, follows the
+catchment-to-peatland ratios of 2.2 and 3.3 of two boreal peatlands
+(Lambert et al. 2022) and the 2:1 to 3:1 upslope-to-fen ratio of Price et
+al. (2010); prairie wetlands need 3 to 20 (Hayashi et al. 2016).
+
+Single point (CoLMDRIVER, before the patch loop): R_up is the monthly
+climatology DEF_WETLAND_INFLOW_SITE_RUNOFF(12) [mm/day] and r is
+DEF_WETLAND_INFLOW_RATIO_SITE; both default to zero, a rain-fed tile.
+
+The inflow taken each step is kept in the patch flux wetinflow [mm/s] and
+written as f_wetinflow over the wetland patches when the switch and
+DEF_hist_vars%wetinflow are on. The upland runoff is not taken off the
+upland patches; with grid routing the wetland's negative runoff is netted
+against it in the unit catchment, and the inflow of an element is bounded
+by the upland runoff of the previous step.
+
+Off, the hydrology, the restart files and all output are unchanged.
+
+---
+ main/CoLMDRIVER.F90             | 120 +++++++++++++++++++++++++++++++-
+ main/MOD_Hist.F90               |   5 ++
+ main/MOD_SoilSnowHydrology.F90  |  23 +++++-
+ main/MOD_Vars_1DAccFluxes.F90   |   5 ++
+ main/MOD_Vars_1DFluxes.F90      |   3 +
+ main/MOD_Vars_TimeVariables.F90 |  16 ++++-
+ share/MOD_Namelist.F90          |  33 +++++++++
+ 7 files changed, 199 insertions(+), 6 deletions(-)
+
+diff --git a/main/CoLMDRIVER.F90 b/main/CoLMDRIVER.F90
+index ea910aaa..1243a4e4 100644
+--- a/main/CoLMDRIVER.F90
++++ b/main/CoLMDRIVER.F90
+@@ -23,7 +23,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep_in)
+    USE MOD_Vars_1DFluxes
+    USE MOD_LandPatch, only: numpatch,landpatch
+    USE MOD_LandUrban, only: patch2urban
+-   USE MOD_Namelist, only: DEF_forcing, DEF_URBAN_RUN
++   USE MOD_Namelist, only: DEF_forcing, DEF_URBAN_RUN, DEF_WETLAND_LATERAL_INFLOW
+    USE MOD_Forcing, only: forcmask_pch
+ 
+ #ifdef TRACER
+@@ -72,6 +72,16 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep_in)
+       CALL site_wtd_update (idate)
+ #endif
+ 
++      ! Candidate 17 (paper V2): the lateral inflow taken by a dynamic wetland
++      ! is booked by the host hydrology; patches that skip that branch keep
++      ! zero. At a tower the inflow offered this step comes from the namelist.
++      IF (DEF_WETLAND_LATERAL_INFLOW .and. (numpatch > 0)) THEN
++         wetinflow(:) = 0._r8
++#ifdef SinglePoint
++         CALL wetland_inflow_site ()
++#endif
++      ENDIF
++
+       DO i = 1, numpatch
+ 
+          ! Apply forcing mask
+@@ -409,10 +419,118 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro,istep_in)
+ #endif
+       ENDDO
+ 
++#ifndef SinglePoint
++      ! Candidate 17: the runoff of this step from the uplands of each element
++      ! is offered to its dynamic wetlands at the next step, once every patch
++      ! has run, so the result does not depend on the order of the patches.
++      IF (DEF_WETLAND_LATERAL_INFLOW .and. (numpatch > 0)) CALL wetland_inflow_upland ()
++#endif
++
+       ! Surface tracer diagnostics are routed through the TRACER entry point.
+ #ifdef TRACER
+       CALL tracer_report ()
+ #endif
+ 
++CONTAINS
++
++   SUBROUTINE wetland_inflow_upland ()
++   !--------------------------------------------------------------------
++   ! Candidate 17: lateral inflow offered to the dynamic wetland patches of
++   ! each element per unit area of their fed share, wetlatin = r R_up.
++   ! The runoff of the other soil tiles of a grid cell feeds its peat tile
++   ! in ORCHIDEE-PEAT (Qiu et al. 2018, p. 501; Largeron et al. 2018, eq. 1);
++   ! per unit wetland area it is the upland runoff times A_up / A_wet
++   ! (Hayashi et al. 2016, eq. 1). R_up is the area mean total runoff rnof
++   ! of this step over the soil patches of the element (patchtype 0), rice
++   ! paddies excepted, whose bunds hold their water; A_up and A_wet are the
++   ! area shares of those patches and of all wetland patches (patchtype 2)
++   ! in the element, and r = min(A_up / A_wet, DEF_WETLAND_INFLOW_RATIO_MAX).
++   ! The patches of an element sit on one process (elm_patch pairs the
++   ! local elements with the local patches). The upland runoff is not taken
++   ! off the uplands: the inflow is outside water, bounded by the runoff.
++   !--------------------------------------------------------------------
++   USE MOD_Mesh,      only: numelm
++   USE MOD_LandPatch, only: elm_patch
++   USE MOD_Namelist,  only: DEF_WETLAND_INFLOW_RATIO_MAX
++#ifdef CROP
++   USE MOD_LandPFT,   only: patch_pft_s, patch_pft_e
++   USE MOD_Vars_PFTimeInvariants, only: pftclass
++#endif
++
++   IMPLICIT NONE
++
++   integer  :: ielm, istt, iend, ip, ipft
++   real(r8) :: aup, awet, rup
++   logical  :: upland
++
++      wetlatin(:) = 0._r8
++      IF (.not. allocated(elm_patch%substt)) RETURN
++
++      DO ielm = 1, numelm
++         istt = elm_patch%substt(ielm)
++         iend = elm_patch%subend(ielm)
++         IF ((istt < 1) .or. (iend < istt)) CYCLE
++
++         aup  = 0._r8
++         awet = 0._r8
++         rup  = 0._r8
++         DO ip = istt, iend
++            IF (.not. patchmask(ip)) CYCLE
++            IF (DEF_forcing%has_missing_value) THEN
++               IF (.not. forcmask_pch(ip)) CYCLE
++            ENDIF
++            IF (patchtype(ip) == 2) THEN
++               awet = awet + elm_patch%subfrc(ip)
++            ELSEIF (patchtype(ip) == 0) THEN
++               upland = (rnof(ip) /= spval)
++#ifdef CROP
++               IF (patch_pft_s(ip) > 0) THEN
++                  DO ipft = patch_pft_s(ip), patch_pft_e(ip)
++                     IF ((pftclass(ipft) == nrice) .or. (pftclass(ipft) == nirrig_rice)) upland = .false.
++                  ENDDO
++               ENDIF
++#endif
++               IF (upland) THEN
++                  aup = aup + elm_patch%subfrc(ip)
++                  rup = rup + elm_patch%subfrc(ip) * rnof(ip)
++               ENDIF
++            ENDIF
++         ENDDO
++
++         IF ((aup > 0._r8) .and. (awet > 0._r8)) THEN
++            DO ip = istt, iend
++               IF (patchtype(ip) == 2) wetlatin(ip) = max(rup / aup, 0._r8) &
++                  * min(aup / awet, DEF_WETLAND_INFLOW_RATIO_MAX)
++            ENDDO
++         ENDIF
++      ENDDO
++
++   END SUBROUTINE wetland_inflow_upland
++
++   SUBROUTINE wetland_inflow_site ()
++   !--------------------------------------------------------------------
++   ! Candidate 17 at a tower (one wetland patch, no upland patch beside it):
++   ! wetlatin = r R_up with R_up the monthly climatology of the upland runoff
++   ! DEF_WETLAND_INFLOW_SITE_RUNOFF [mm/day] and r the upland-to-wetland area
++   ! ratio DEF_WETLAND_INFLOW_RATIO_SITE of the tower; both default to zero,
++   ! a rain-fed tile. The month is that of idate, the end of this step.
++   !--------------------------------------------------------------------
++   USE MOD_TimeManager, only: julian2monthday
++   USE MOD_Namelist,    only: DEF_WETLAND_INFLOW_SITE_RUNOFF, DEF_WETLAND_INFLOW_RATIO_SITE
++
++   IMPLICIT NONE
++
++   integer :: imonth, iday
++
++      CALL julian2monthday (idate(1), idate(2), imonth, iday)
++      WHERE (patchtype == 2)
++         wetlatin = max(DEF_WETLAND_INFLOW_SITE_RUNOFF(imonth), 0._r8) / 86400._r8 &
++            * max(DEF_WETLAND_INFLOW_RATIO_SITE, 0._r8)
++      ELSEWHERE
++         wetlatin = 0._r8
++      END WHERE
++
++   END SUBROUTINE wetland_inflow_site
++
+ END SUBROUTINE CoLMDRIVER
+ ! ---------- EOP ------------
+diff --git a/main/MOD_Hist.F90 b/main/MOD_Hist.F90
+index 63f97612..dbb4db6a 100644
+--- a/main/MOD_Hist.F90
++++ b/main/MOD_Hist.F90
+@@ -874,6 +874,11 @@ ENDIF
+             vecacc, file_hist, 'f_wetzwt', itime_in_file, sumarea, filter, &
+             'the depth to water table in wetland','m')
+ 
++         ! lateral inflow taken by a dynamic wetland (candidate 17) [mm/s]
++         CALL write_history_variable_2d ( DEF_hist_vars%wetinflow .and. DEF_WETLAND_LATERAL_INFLOW, &
++            a_wetinflow, file_hist, 'f_wetinflow', itime_in_file, sumarea, filter, &
++            'lateral inflow taken by a dynamic wetland','mm/s')
++
+          ! ------------------------------------------------------------------
+          ! Mapping the urban variables at patch [numurban] to grid
+          ! ------------------------------------------------------------------
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index 62d1ba4d..e3c27d33 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -10,7 +10,8 @@ MODULE MOD_SoilSnowHydrology
+                            DEF_DA_TWS_GRACE,        DEF_Optimize_Baseflow, &
+                            DEF_USE_Dynamic_Wetland, USE_SITE_WTD,          &
+                            DEF_PADDY_RICE_BUND,     DEF_FLOODPLAIN_INFILTRATION, &
+-                           DEF_WETLAND_POND_OUTFLOW, DEF_WETLAND_INFLOW_AREA_SPLIT
++                           DEF_WETLAND_POND_OUTFLOW, DEF_WETLAND_INFLOW_AREA_SPLIT, &
++                           DEF_WETLAND_LATERAL_INFLOW
+ #if (defined CaMa_Flood)
+    USE YOS_CMF_INPUT,      only: LWINFILT
+ #endif
+@@ -609,7 +610,8 @@ ENDIF
+ #ifdef TRACER
+    USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_max_wtd_of, wetland_peat_outflow, wetland_inflow_share
+    USE MOD_Vars_TimeInvariants, only: OM_density
+-   USE MOD_Vars_TimeVariables,  only: wetdef_noinfl
++   USE MOD_Vars_TimeVariables,  only: wetdef_noinfl, wetlatin
++   USE MOD_Vars_1DFluxes,       only: wetinflow
+ #endif
+ #ifdef DataAssimilation
+    USE MOD_DA_TWS, only: fslp_k
+@@ -1239,7 +1241,22 @@ IF((patchtype<=1) .or. is_dry_lake &
+       ! takes in from below and rnof books. Layers the solver treats as
+       ! impermeable (ice-filled) take none; it passes over them as the
+       ! exchange does, so the water perches above frozen ground.
+-      IF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2)) THEN
++      IF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2) .and. DEF_WETLAND_LATERAL_INFLOW) THEN
++         ! Candidate 17: in place of the floor, the tile takes the lateral
++         ! inflow wetlatin offered this step, r R_up (the upland runoff of
++         ! its element at the previous step times the upland-to-wetland area
++         ! ratio, or the tower's values), on the share that takes lateral
++         ! inflow, at any water-table depth. It enters through the same
++         ! aquifer exchange as the floor refill, net of the peat outflow,
++         ! which now runs at any depth (PEAT-CLSM Q = c T(zwt), Bechtold et
++         ! al. 2019, eq. 9). The exchange fills the pore space from the
++         ! water table up and passes what is left to the ponding store; the
++         ! wetland bucket below spills ponding above wetwatmax as surface
++         ! runoff in the same step, so the column is never oversaturated.
++         wetinflow(ipatch) = wetland_inflow_share(ipatch) * max(wetlatin(ipatch), 0._r8)
++         rsubst = wetland_peat_outflow(nl_soil, zi_soisno(0:nl_soil), hksati(1:nl_soil), &
++            OM_density(1:nl_soil,ipatch), zwtmm / 1000.) - wetinflow(ipatch)
++      ELSEIF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2)) THEN
+          zwt_floor = wetland_max_wtd_of(ipatch) * 1000.
+          IF ((zwt_floor >= 0.) .and. (zwtmm > zwt_floor)) THEN
+             wsupply = max(-wa, 0.)
+diff --git a/main/MOD_Vars_1DAccFluxes.F90 b/main/MOD_Vars_1DAccFluxes.F90
+index 00d5c7bb..3df6cd13 100644
+--- a/main/MOD_Vars_1DAccFluxes.F90
++++ b/main/MOD_Vars_1DAccFluxes.F90
+@@ -72,6 +72,7 @@ MODULE MOD_Vars_1DAccFluxes
+    real(r8), allocatable :: a_wa        (:)
+    real(r8), allocatable :: a_wat       (:)
+    real(r8), allocatable :: a_wetwat    (:)
++   real(r8), allocatable :: a_wetinflow (:)
+    real(r8), allocatable :: a_assim     (:)
+    real(r8), allocatable :: a_respc     (:)
+    real(r8), allocatable :: a_assimsun  (:)
+@@ -557,6 +558,7 @@ CONTAINS
+             allocate (a_wa        (numpatch))
+             allocate (a_wat       (numpatch))
+             allocate (a_wetwat    (numpatch))
++            allocate (a_wetinflow (numpatch))
+             allocate (a_assim     (numpatch))
+             allocate (a_respc     (numpatch))
+ 
+@@ -1050,6 +1052,7 @@ CONTAINS
+             deallocate (a_wa        )
+             deallocate (a_wat       )
+             deallocate (a_wetwat    )
++            deallocate (a_wetinflow )
+             deallocate (a_assim     )
+             deallocate (a_respc     )
+ 
+@@ -1552,6 +1555,7 @@ CONTAINS
+             a_wa        (:) = spval
+             a_wat       (:) = spval
+             a_wetwat    (:) = spval
++            a_wetinflow (:) = spval
+             a_assim     (:) = spval
+             a_respc     (:) = spval
+             a_assimsun  (:) = spval
+@@ -2135,6 +2139,7 @@ CONTAINS
+             CALL acc1d (wa            , a_wa             )
+             CALL acc1d (wat           , a_wat            )
+             CALL acc1d (wetwat        , a_wetwat         )
++            CALL acc1d (wetinflow     , a_wetinflow      )
+             CALL acc1d (assim         , a_assim          )
+             CALL acc1d (respc         , a_respc          )
+             CALL acc1d (assimsun_out  , a_assimsun       )
+diff --git a/main/MOD_Vars_1DFluxes.F90 b/main/MOD_Vars_1DFluxes.F90
+index 6e95bee0..2478a45d 100644
+--- a/main/MOD_Vars_1DFluxes.F90
++++ b/main/MOD_Vars_1DFluxes.F90
+@@ -74,6 +74,7 @@ MODULE MOD_Vars_1DFluxes
+    real(r8), allocatable :: rsur_ie(:) !infiltration excess surface runoff (mm h2o/s)
+    real(r8), allocatable :: rsub   (:) !subsurface runoff (mm h2o/s)
+    real(r8), allocatable :: rnof   (:) !total runoff (mm h2o/s)
++   real(r8), allocatable :: wetinflow(:) !lateral inflow taken by a dynamic wetland (mm h2o/s)
+    real(r8), allocatable :: qintr  (:) !interception (mm h2o/s)
+    real(r8), allocatable :: qinfl  (:) !infiltration (mm h2o/s)
+    real(r8), allocatable :: qdrip  (:) !throughfall (mm h2o/s)
+@@ -165,6 +166,7 @@ CONTAINS
+             allocate ( rsur_ie(numpatch) )  ; rsur_ie(:) = spval ! infiltration excess surface runoff (mm h2o/s)
+             allocate ( rsub   (numpatch) )  ; rsub   (:) = spval ! subsurface runoff (mm h2o/s)
+             allocate ( rnof   (numpatch) )  ; rnof   (:) = spval ! total runoff (mm h2o/s)
++            allocate ( wetinflow(numpatch) ); wetinflow(:) = 0._r8 ! lateral inflow taken by a dynamic wetland (mm h2o/s)
+             allocate ( qintr  (numpatch) )  ; qintr  (:) = spval ! interception (mm h2o/s)
+             allocate ( qinfl  (numpatch) )  ; qinfl  (:) = spval ! infiltration (mm h2o/s)
+             allocate ( qdrip  (numpatch) )  ; qdrip  (:) = spval ! throughfall (mm h2o/s)
+@@ -264,6 +266,7 @@ CONTAINS
+             deallocate ( rsur_ie )  ! infiltration excess surface runoff (mm h2o/s)
+             deallocate ( rsub    )  ! subsurface runoff (mm h2o/s)
+             deallocate ( rnof    )  ! total runoff (mm h2o/s)
++            deallocate ( wetinflow )  ! lateral inflow taken by a dynamic wetland (mm h2o/s)
+             deallocate ( qintr   )  ! interception (mm h2o/s)
+             deallocate ( qinfl   )  ! infiltration (mm h2o/s)
+             deallocate ( qdrip   )  ! throughfall (mm h2o/s)
+diff --git a/main/MOD_Vars_TimeVariables.F90 b/main/MOD_Vars_TimeVariables.F90
+index 03c64b81..170b433d 100644
+--- a/main/MOD_Vars_TimeVariables.F90
++++ b/main/MOD_Vars_TimeVariables.F90
+@@ -536,6 +536,7 @@ MODULE MOD_Vars_TimeVariables
+    real(r8), allocatable :: wa            (:) ! water storage in aquifer [mm]
+    real(r8), allocatable :: wetwat        (:) ! water storage in wetland [mm]
+    real(r8), allocatable :: wetdef_noinfl (:) ! deficit below the floor of the wetland share without inflow [mm]
++   real(r8), allocatable :: wetlatin      (:) ! lateral inflow offered to a wetland per unit fed area, r R_up [mm/s]
+    real(r8), allocatable :: wat           (:) ! total water storage [mm]
+    real(r8), allocatable :: wdsrf         (:) ! depth of surface water [mm]
+    real(r8), allocatable :: rss           (:) ! soil surface resistance [s/m]
+@@ -730,6 +731,7 @@ CONTAINS
+             allocate (wa                          (numpatch)); wa            (:) = spval
+             allocate (wetwat                      (numpatch)); wetwat        (:) = spval
+             allocate (wetdef_noinfl               (numpatch)); wetdef_noinfl (:) = 0._r8
++            allocate (wetlatin                    (numpatch)); wetlatin      (:) = 0._r8
+             allocate (wat                         (numpatch)); wat           (:) = spval
+             allocate (wdsrf                       (numpatch)); wdsrf         (:) = spval
+             allocate (rss                         (numpatch)); rss           (:) = spval
+@@ -931,6 +933,7 @@ CONTAINS
+             deallocate (wa                     )
+             deallocate (wetwat                 )
+             deallocate (wetdef_noinfl          )
++            deallocate (wetlatin               )
+             deallocate (wat                    )
+             deallocate (wdsrf                  )
+             deallocate (rss                    )
+@@ -1087,7 +1090,7 @@ CONTAINS
+    USE MOD_SPMD_Task
+    USE MOD_Namelist, only: DEF_REST_CompressLevel, DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, &
+                            DEF_USE_IRRIGATION, DEF_USE_Dynamic_Lake, SITE_landtype, &
+-                           DEF_WETLAND_INFLOW_AREA_SPLIT
++                           DEF_WETLAND_INFLOW_AREA_SPLIT, DEF_WETLAND_LATERAL_INFLOW
+    USE MOD_LandPatch
+    USE MOD_NetCDFVector
+    USE MOD_Vars_Global
+@@ -1214,6 +1217,8 @@ ENDIF
+       CALL ncio_write_vector (file_restart, 'wetwat  '   , 'patch', landpatch, wetwat    , compress)                    ! water storage in wetland [mm]
+       IF (DEF_WETLAND_INFLOW_AREA_SPLIT) &
+       CALL ncio_write_vector (file_restart, 'wetdef_noinfl', 'patch', landpatch, wetdef_noinfl, compress)               ! deficit of the wetland share without inflow [mm]
++      IF (DEF_WETLAND_LATERAL_INFLOW) &
++      CALL ncio_write_vector (file_restart, 'wetlatin', 'patch', landpatch, wetlatin, compress)                         ! lateral inflow offered to a wetland [mm/s]
+       CALL ncio_write_vector (file_restart, 'wdsrf   '   , 'patch', landpatch, wdsrf     , compress)                    ! depth of surface water [mm]
+       CALL ncio_write_vector (file_restart, 'rss     '   , 'patch', landpatch, rss       , compress)                    ! soil surface resistance [s/m]
+ 
+@@ -1431,6 +1436,10 @@ ENDIF
+       ! share without inflow at the floor.
+       IF (DEF_WETLAND_INFLOW_AREA_SPLIT) &
+       CALL ncio_read_vector (file_restart, 'wetdef_noinfl', landpatch, wetdef_noinfl, defval = 0._r8) ! [mm]
++      ! A restart written with DEF_WETLAND_LATERAL_INFLOW off offers no
++      ! inflow in the first step.
++      IF (DEF_WETLAND_LATERAL_INFLOW) &
++      CALL ncio_read_vector (file_restart, 'wetlatin', landpatch, wetlatin, defval = 0._r8) ! [mm/s]
+       CALL ncio_read_vector (file_restart, 'wdsrf   '   , landpatch, wdsrf      ) ! depth of surface water [mm]
+       CALL ncio_read_vector (file_restart, 'rss     '   , landpatch, rss        ) ! soil surface resistance [s/m]
+ 
+@@ -1547,7 +1556,8 @@ ENDIF
+    USE MOD_SPMD_Task
+    USE MOD_RangeCheck
+    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, DEF_USE_IRRIGATION, &
+-                           DEF_USE_SNICAR, DEF_USE_Dynamic_Lake, DEF_WETLAND_INFLOW_AREA_SPLIT
++                           DEF_USE_SNICAR, DEF_USE_Dynamic_Lake, DEF_WETLAND_INFLOW_AREA_SPLIT, &
++                           DEF_WETLAND_LATERAL_INFLOW
+    USE MOD_Vars_TimeInvariants, only: dz_lake
+ 
+    IMPLICIT NONE
+@@ -1590,6 +1600,8 @@ ENDIF
+       CALL check_vector_data ('wetwat      [mm]   ', wetwat     ) ! water storage in wetland [mm]
+       IF (DEF_WETLAND_INFLOW_AREA_SPLIT) &
+       CALL check_vector_data ('wetdef_noinfl [mm] ', wetdef_noinfl) ! deficit of the wetland share without inflow [mm]
++      IF (DEF_WETLAND_LATERAL_INFLOW) &
++      CALL check_vector_data ('wetlatin    [mm/s] ', wetlatin     ) ! lateral inflow offered to a wetland [mm/s]
+       CALL check_vector_data ('wdsrf       [mm]   ', wdsrf      ) ! depth of surface water [mm]
+       CALL check_vector_data ('rss         [s/m]  ', rss        ) ! soil surface resistance [s/m]
+ IF (DEF_USE_Dynamic_Lake) THEN
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 0a85fed6..41e6ea4e 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -263,6 +263,29 @@ MODULE MOD_Namelist
+    ! bogs and 58 for fens (BAWLD-CH4, Kuhn et al. 2021); northern bogs and
+    ! fens average 5.6 and 8.4 g CH4 m-2 yr-1 (Treat et al. 2018). Default off.
+    logical  :: DEF_WETLAND_INFLOW_AREA_SPLIT = .false.
++   ! Finite lateral inflow to the dynamic wetland tile in place of the
++   ! water-table floor refill (paper V2 candidate 17). The tile takes, every
++   ! step, the runoff of the uplands around it: q_in = r R_up on the share
++   ! that takes lateral inflow (wetland_inflow_share of the methane module),
++   ! as negative subsurface runoff, at any water-table depth, net of the peat
++   ! outflow. Globally R_up is the area mean total runoff of the previous
++   ! step of the soil patches (patchtype 0, rice paddies excepted) of the
++   ! same element and r = min(A_up / A_wet, DEF_WETLAND_INFLOW_RATIO_MAX),
++   ! as ORCHIDEE-PEAT routes the runoff of the other soil tiles of a grid
++   ! cell to its peat tile (Qiu et al. 2018; Largeron et al. 2018, eq. 1).
++   ! With the switch on the floor refill and the area split are not run.
++   logical  :: DEF_WETLAND_LATERAL_INFLOW = .false.
++   ! Cap on the upland-to-wetland area ratio r of an element. Two boreal
++   ! peatlands have catchments 2.2 and 3.3 times their area (Lambert et al.
++   ! 2022), an upslope-to-fen ratio of 2:1 at least and 3:1 at best sustains
++   ! a constructed fen (Price et al. 2010, in Ketcheson 2015), and prairie
++   ! wetlands need catchments 3 to 20 times their area (Hayashi et al.
++   ! 2016); ORCHIDEE-PEAT sets no cap.
++   real(r8) :: DEF_WETLAND_INFLOW_RATIO_MAX = 3._r8
++   ! Single point: monthly climatology of the upland runoff R_up [mm/day]
++   ! and the upland-to-wetland area ratio r of the tower; zero is rain-fed.
++   real(r8) :: DEF_WETLAND_INFLOW_SITE_RUNOFF(12) = 0._r8
++   real(r8) :: DEF_WETLAND_INFLOW_RATIO_SITE = 0._r8
+ 
+    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
+    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
+@@ -710,6 +733,7 @@ MODULE MOD_Namelist
+       logical :: wetwat                           = .true.
+       logical :: wetwat_inst                      = .true.
+       logical :: wetzwt                           = .true.
++      logical :: wetinflow                        = .true.
+       logical :: assim                            = .true.
+       logical :: respc                            = .true.
+       logical :: qcharge                          = .true.
+@@ -1382,6 +1406,10 @@ CONTAINS
+       DEF_WETLAND_PEAT_SOIL,                  &
+       DEF_WETLAND_POND_OUTFLOW,               &
+       DEF_WETLAND_INFLOW_AREA_SPLIT,          &
++      DEF_WETLAND_LATERAL_INFLOW,             &
++      DEF_WETLAND_INFLOW_RATIO_MAX,           &
++      DEF_WETLAND_INFLOW_SITE_RUNOFF,         &
++      DEF_WETLAND_INFLOW_RATIO_SITE,          &
+       DEF_BGC_DEBUG_SCALARS,                  &
+ 
+       DEF_USE_WaterTableInit,                 &
+@@ -2015,6 +2043,10 @@ CONTAINS
+       CALL mpi_bcast (DEF_WETLAND_PEAT_SOIL                  ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_POND_OUTFLOW               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_INFLOW_AREA_SPLIT          ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_LATERAL_INFLOW             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_INFLOW_RATIO_MAX           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_INFLOW_SITE_RUNOFF         ,12  ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_INFLOW_RATIO_SITE          ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+@@ -2276,6 +2308,7 @@ CONTAINS
+       CALL sync_hist_vars_one (DEF_hist_vars%wetwat      , set_defaults)
+       CALL sync_hist_vars_one (DEF_hist_vars%wetwat_inst , set_defaults)
+       CALL sync_hist_vars_one (DEF_hist_vars%wetzwt      , set_defaults)
++      CALL sync_hist_vars_one (DEF_hist_vars%wetinflow   , set_defaults)
+       CALL sync_hist_vars_one (DEF_hist_vars%assim       , set_defaults)
+       CALL sync_hist_vars_one (DEF_hist_vars%respc       , set_defaults)
+       CALL sync_hist_vars_one (DEF_hist_vars%qcharge     , set_defaults)
+-- 
+2.53.0
+

@@ -1,0 +1,299 @@
+# lit_ph_floor_260930：pH 因子下限 φ 的物理替代——淹水矿质土 pH 趋中、泥炭的长期响应、他模式做法、塔上 pH 对 GSDE
+
+- **日期**：2026.09.30-05:16
+- **读者**：下一会话
+- **来源**：文献线只读调研（中控派活 L-3，methane-lit-ph），承接 `v2/results/lit_ph_response_260929.txt`（下称"上一轮"）、`v2/results/diag_tropics_regions_260929.txt`、`v2/迭代账本.md` 的 C-84、V-146、Q-51；读码取本树 `main/TRACER/`、`~/mode/Wetland/CTSM`（7409d321 与 clm4_5_1_r115 f885e32d8）；自算脚本与输出在 `v2/_scratch/ph_floor/`（下称 scratch）
+- **状态**：五问已答，第 6 节给替代 φ 的改法、参数与三处方向；未动代码与配置，全球量级只有离线估算
+- **失效于**：第 6 节任一改法跑出全球或站点结果后，第 6.3 节方向估计以实跑为准
+
+口径约定：
+- D(pH) 指本模式现用 pH 因子：10^(−0.2235 pH² + 2.7727 pH − 8.6) 除以其在 pH 6.2 的值，夹到 [0, 1]，pH ≤ 2.2 或 ≥ 9.0 时产率置 0——已验证（读码 `main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90:2276–2277、2584–2606`）。φ 版指 C-84 的 φ + (1 − φ)·D，φ = 0.4——已验证（读码同上 2602–2605；`Const.F90:421–427`）。
+- 常用值：D(3.4) 0.018、D(4.0) 0.082、D(4.33) 0.164、D(4.6) 0.267、D(5.0) 0.475、D(5.7) 0.878、D(6.5) 0.956、D(6.7) 0.881、D(7.0) 0.721、D(7.5) 0.421；φ 版在 3.4、4.0、4.33、4.6、5.0 为 0.41、0.45、0.50、0.56、0.69——已验证（scratch 内 python 逐点算，式同上）。
+- "GSDE pH"指 `CoLMrawdata_glwd/soil/PHH2O1.nc` 上四层（底深 4.5、9.1、16.6、28.9 cm）按层厚对氢离子活度求平均再取 −log10，与 mksrf 的斑块聚合同式（`mksrfdata/Aggregation_MethanePH.F90:21–26`）；本文逐点取塔或文献坐标所在的 30″ 像元，另给 21×21 像元（约 ±9 km）的 p10–p90——已验证（scratch `p2_gsde_sample.py`）。
+- "差"一律写 GSDE − 实测。
+
+## 0. 覆盖面
+
+1. 检索词（网络与本地）：Ponnamperuma submerged soil pH kinetics；pH converge 6.7 7.2 flooding weeks；Sahrawat redox pH submerged rice；Narteh Sahrawat West African soils flooding；in situ pH waterlogged soil laboratory air-dried；Ding 2019 paddy pH flooding model；Amazon várzea igapó soil pH；Rio Negro black water sediment pH；Conrad tropical lake sediments Pantanal Amazon；Ji 2016 Amazonian lakes water types；Hernández Cunia igapó；Gontijo Amazon floodplain soils；Pantanal hydromorphic soils pH；Lima Acta Amazonica inundação；Methanosphaerula palustris；Methanobacterium paludis；methanogenic archaea in peatlands review；peatland liming methane；本地正则 `\bpH\b`（模式全文 11 篇）、`usephfact`（CTSM 两个版本）。
+2. 渠道：WebSearch、WebFetch（出版社页与 PDF）、Europe PMC 与 Semantic Scholar 匿名接口；著录由 scratch `p5_registry.py` 在 mgt01 匿名查 Crossref 与 DataCite（请求头只有中性 User-Agent，URL 无 mailto、无邮箱）；本地 `data/_tmp/分析_260925_模拟年份/txt/models/`；`scripts/sites/site_facts.csv`；上一轮与兄弟报告只引节号。
+3. 读到全文的篇目：Conrad 2011（出版社 PDF，scratch `conrad2011.txt`）、Lima 2005（SciELO PDF，`lima2005.txt`）、Sahrawat 2015（ICRISAT 仓库 PDF，`sahrawat2015.txt`）、Gontijo 2024（OSTI PDF，`gontijo2024.txt`，正文不含洪泛土 pH 数值）、Ricciuto 2021、Zhuang 2004（本地抽取文本）；全文检索 pH：Zhang 2016（LPJ-wsl）、Salmon 2022（ORCHIDEE-PEAT）、Parker 2022（JULES）、Gao 2025（JULES-HIMMELI）、Kallingal 2025（LPJ-GUESS）、Gedney 2019、Ringeval 2010。
+4. 只读摘要或只读网页表值：Ding 2019（Semantic Scholar 摘要）、Cadillo-Quiroz 2009 与 2014（Europe PMC 摘要）、Hernández 2019（Europe PMC 摘要，无 pH 数值）、Ji 2016（Europe PMC 摘要，无 pH 数值）、Coringa 2012（WebFetch 摘 SciELO 网页的表 2 数值，未对印刷版逐字核对）。
+5. 读不到的与已试路径：Ponnamperuma 1972（Elsevier 与一份政府站点 PDF 均 403，改用 Sahrawat 2015 转述）；Narteh and Sahrawat 1999（Crossref 与 Semantic Scholar 均无摘要，改用 Sahrawat 2015 转述）；Jiang 2025 Soil & Tillage Research（原位与实验室 pH 对比，ScienceDirect 403，两接口无摘要）；Ritvo 2003（常规测定 pH 与淹水原位 pH 的经验关系，无摘要）；Bräuer 2020 FEMS 综述（OUP 页只有摘要）；Forests 2020 奥里诺科 várzea 与 igapó 对比（MDPI 403）；Gontijo 2024 补充表（洪泛土 pH 只在补充材料）。
+6. 数据与读码（自算）：77 塔坐标取各塔 `sites_v2_p9f/<塔>/landdata/srfdata.nc` 的 latitude、longitude；站点 srfdata 没有任何 pH 变量（`ncdump -h` 列出的 44 个变量无 pH）——已验证（`ncdump -h sites_v2_p9f/BR-Npw/landdata/srfdata.nc`）。塔上实测 pH 取自 `site_facts.csv` 的 pH 行（130 行、77 塔，其中有数值的 61 塔），每塔取一个代表值（scratch `p1_site_ph_rows.txt`、`p3_site_bias.py`）；区域湿地斑块 pH 与因子取 `g2_bf/landdata`（`g2_ph4` 的 landdata 软链到它）的 `methane_ph_patches`，按 GLWD 湿地斑块类面积加权（`p4_region_factor.py`）。
+7. 未看：无。不入项及理由：稻田模式与稻田田测已由 `lit_models_rice_260929.txt` 第 2.10、5.1 节覆盖，本文只引；Keller and Bridgham 2007、Zalman 2018 等"同 pH 下 bog 比 fen 低"的机理不属 pH，只在第 6.2 节一句指向类型通道。
+8. 存疑（要跑实验才能定）：第 6.4 节三项。
+
+## 1. 结论
+
+1. 淹水矿质土：酸性矿质土淹水后因 Fe(III) 还原耗质子而 pH 上升，35 种稻田土（淹水前 pH 3.6–9.4）淹水后土壤 pH 收敛到 6.7–7.2、土壤溶液 6.5–7.0——已验证（Sahrawat 2015 p.1599 转述 Ponnamperuma, Martinez and Loy 1966；p.1600–1601 式 1）。时间尺度是 2 到 4 周基本到位、12 周稳定：西非 15 种土的 pH–Eh 关系在淹水第 4 周稳定，35 种土的溶液 pH 在第 12 周后稳定——已验证（Sahrawat 2015 p.1602 图 1 转述 Narteh and Sahrawat 1999；p.1599）。例外是部分酸性硫酸盐土长期淹水后仍不超过 pH 5——已验证（Sahrawat 2015 p.1601）。热带河滩的淹水沉积物实测：亚马孙马德拉河洪泛湖 5.9–7.6、潘塔纳尔南部洪泛湖 6.3–7.7，而同点 GSDE 为 3.74–4.32 与 5.70，GSDE 低 1.6–3.3 与 0.6–2.0 个单位——已验证（Conrad 2011 表 1 p.798；scratch `p2_points.csv`）。潘塔纳尔北部实验室测的土壤 A 层 pH(H2O) 4.1–5.8 与 GSDE 5.10 相当，说明 GSDE 反映的是旱地实验室 pH，不是淹水原位 pH——已验证（Coringa 2012 表 2，WebFetch 摘表值；`p2_points.csv`）。igapó 与刚果矿质洪泛沉积物在本次检索范围内没有找到可核的淹水原位 pH——已验证（检索词与已试路径见第 0 节第 1、5 条）。
+2. 泥炭：D 描述的是"群落被缓冲液突然推离自身 pH"的急性响应；酸性泥炭在原生 pH 下的产率是自身最大值的 0.3–1 倍，D 在同 pH 给 0.02–0.2，所以 D 高估了长期抑制——已验证（上一轮第 2.3、3.6、3.7 节）。泥炭分离株最适 pH 5.0–5.7（M. paludis 能生长到 pH 4.7，西西伯利亚嗜酸株在 pH 3.8 仍产甲烷），比 bog 原生 pH 高约 1 个单位，适应是部分的——已验证（Bräuer 2011 转引上一轮第 3.4 节；Cadillo-Quiroz 2009、2014 只读摘要）。长期响应的可用式：北方多站田间回归在不控水位时 log10 年排放对 pH 的斜率 0.071–0.078，控水位后约 0——已验证（上一轮第 4.1 节，Treat 2018 数据与 BAWLD-CH4 自算）；据此长期因子的上界是 10^(−0.075·max(0, 6.2 − pH))，下界是 1——推测。理由：不控水位的斜率混入了水位与类型的协变，只能当抑制强度的上限。
+3. 他模式：CLM4.5（clm4_5_1_r115）与 CTSM（CLM5 系）的 `usephfact` 缺省都是 `.false.`，CTSM 的 namelist 定义标"(EXPERIMENTAL, UNSUPPORTED, and UNTESTED!)"，技术手册写 f_pH "nominally set to 1"——已验证（读码 CLM4.5 `src/biogeochem/ch4varcon.F90:32`；CTSM `ch4varcon.F90:33`、`bld/namelist_files/namelist_definition_ctsm.xml:2754–2757`、`doc/source/tech_note/Methane/CLM50_Tech_Note_Methane.rst:60`）。LPJ-wsl、JULES（含 JULES-HIMMELI）、ORCHIDEE（含 ORCHIDEE-PEAT r7020）与 LPJ-GUESS 甲烷模块全文不含 pH 项——已验证（全文检索，见第 4 节表）。TEM 系列有 pH 项且常开，取 Cao 型，最适 7.5、pH < 5.5 时产甲烷为 0，比 D 在酸端更硬——已验证（Zhuang 2004 p.4 第 2.1.1.1 节第 [12] 段与第 [14] 段；附录式转引上一轮第 5 节表）。
+4. 77 塔：站点 srfdata 无 pH，站点口径 pH 恒 6.2、因子恒 1——已验证（`ncdump -h`；`v2/config/v2_p8ph4/ch4_parameter.nml:86`；`MOD_Tracer_Reactive_Methane_pH.F90:57–58`）。61 塔有实测值，其中塔上固相或孔隙水 44 塔：GSDE − 实测中位 +0.22、|差| 中位 0.79、13 塔 |差| > 1，秩相关 0.51；实测 ≤ 5.0 的 21 塔中位 +0.51（GSDE 偏高，压得偏轻），实测 > 5.0 的 23 塔中位 −0.44；Swamp 类 5 塔 +0.40 到 +1.00，孔隙水实测的非 bog 湿地（US-StJ、US-BZF、DE-Hte）GSDE 低 0.9–1.6——已验证（scratch `p3_site_bias.txt`）。
+5. 建议：φ 一刀切换成按对象分开的两条物理表示——土壤斑块淹水子柱与湿地斑块的非泥炭部分取淹水趋中后的 f_pH = 1（即 C-59 的 `flooded_soil_ph_neutral`，时间尺度由已有 30 天氧化还原滞后承担）；泥炭部分取长期响应，物理上是 f_pH = 1，若要保留 pH 效应，上限式为 10^(−0.075·max(0, 6.2 − pH))；两者都去掉 D 在 pH > 6.2 的碱端下降——推测。理由：第 2 至 5 节。相对现 φ = 0.4，三处都升：北方泥炭（芬诺斯堪的亚、西西伯利亚、哈德逊湾低地）×1.5–1.75（上限式 ×1.2–1.3），热带河滩亚马孙洪泛 ×1.9–2.1、潘塔纳尔与非洲 ×1.05–1.15，东南亚泥炭苏门答腊—婆罗洲 ×1.78（上限式 ×1.35）、新几内亚 ×1.31（×1.10）——推测。理由：离线按区域面积加权因子比，第 6.3 节表。全球由 194.5 Tg 升到约 250（上限式）到 290–310 Tg（全 1），出 GCP 区间——推测。理由：第 6.3 节第 3 条的拼算。即 φ = 0.4 在北方与东南亚压下的那部分，物理上不属于 pH，要由水位、类型与代表性去治。
+6. 附带发现：V-168（站点 `v2_p9ph`，φ = 0.4）跑出来会与 `v2_p9f` 逐位相同。站点 `use_spatial_ph = .false.` 时 pH 取 6.2，D(6.2) = 1，φ + (1 − φ)·1 = 1——已验证（读码 `Physics.F90:2276–2277、2597–2605`；`MOD_Tracer_Reactive_Methane_pH.F90:57–58、147–154`；配置 `v2/config/v2_p8ph4/ch4_parameter.nml:86、384`）。要在站点检验任何 pH 表示，先得让站点读 pH（第 5.3 节）。
+
+## 2. 问一：淹水矿质土 pH 趋中，热带河滩实测对 GSDE
+
+### 2.1 幅度、时间尺度与机理
+
+1. 35 种稻田土（台湾、越南、菲律宾，淹水前 pH 3.6–9.4，有机质 1.5–9.6%，活性铁 0.08–2.91%）在温室盆中淹水 16 周："the soil pH converged to a fairly stable range (from 6.7 to 7.2), whereas the soil solution pH stabilized in a range of 6.5 to 7.0 following 12 weeks of flooding"——已验证（Sahrawat 2015 p.1599，转述 Ponnamperuma, Martinez and Loy 1966；读全文）。
+2. 方向与机理：酸性土升、碱性与石灰性土降，收敛到 6.5–7.5；酸性土升 pH 靠 Fe(III) 还原耗质子，Fe2O3 + 1/2 CH2O + 4H+ = 2Fe2+ + 5/2 H2O + 1/2 CO2；热带稻田土多富可还原铁，这是升 pH 的主过程——已验证（Sahrawat 2015 p.1600–1601 式 1，引 Ponnamperuma 1972 与 Narteh and Sahrawat 1999）。
+3. 时间尺度：西非 15 种稻田土"The stability in the change of the pH-Eh relationships in soil solution of fifteen soils was attained at the fourth week after submergence"——已验证（Sahrawat 2015 p.1602 图 1，转述 Narteh and Sahrawat 1999）。20 种稻田土原位测 pH：淹水前 pH < 6.5 的土升到约 7.0，变化由初始 pH、CEC、有机质与淹水时长决定，作者给出由风干样实验室 pH 校到原位 pH 的预测式——已验证（Ding 2019，只读摘要）。
+4. 例外："in selected acidic sulfate soils the soil pH may not rise above 5 following prolonged submergence"，归因于 Fe(III) 氧化物相对酸度太少——已验证（Sahrawat 2015 p.1601，引 Konsten 1994）。
+5. 热带非稻田旁证：热带 Ultisol 对照 5.8，淹水或通 N2 处理 6.3–6.6——已验证（转引 `lit_floodplain_260929.txt` 第 3 节第 4 条，McNicol and Silver 2014 表 2）。亚马孙土壤淹水 6 个月培养：淹水使酸性土 pH 上升，"quando o pH dos solos atinge valores próximos a 6,5-7,0, estabelecem-se condições para a reoxidação do Fe2+"；该文没有报 pH 时间序列——已验证（Lima 2005 p.321，读全文）。
+6. 与本模式时间常数的对应：本模式对新淹水面积按滞后淹水比例压产率，滞后时间常数 30 天（`redoxlag = 30`）——已验证（读码 `Const.F90:416`、`Physics.F90:1128–1133、2621–2622`）；CTSM 手册同样把"alternative electron acceptors are reduced with an e-folding time of 30 days after inundation"作为 f_pE——已验证（CTSM `CLM50_Tech_Note_Methane.rst:67`）。pH 上升与这一还原过程是同一个反应（第 2 条式 1），时间尺度也同量级（第 3 条的 4 周）——推测。理由：式 1 把耗质子与 Fe(III) 还原绑定；第 3 条与 30 天 e 折时间的比较。
+7. 幅度小结：pH 4–5.5 的酸性矿质土淹水后到 6.5–7.2，升 1–3 个单位；D 在 4.33 为 0.164，在 6.5–7.0 为 0.72–0.96——已验证（第 1、2 条；口径约定的 D 值）。
+
+### 2.2 热带河滩实测与 GSDE
+
+| 地点 | 实测（介质、深度、时相） | 实测 pH | GSDE（中心像元；21×21 p10–p90） | 差 | 出处 |
+| --- | --- | --- | --- | --- | --- |
+| 亚马孙 马德拉河洪泛湖 5 个（Porto Velho 附近，7.4–8.7°S） | 沉积物 0–3 cm，多在高水位、上覆水缺氧时采 | 5.9、6.5、6.8、6.7、7.6 | 4.32、4.32、4.32、3.74、4.32（3.74–5.20） | −1.6 到 −3.3 | Conrad 2011 表 1 p.798、第 2.1 节 p.797、第 3 节 p.799 |
+| 潘塔纳尔南部洪泛湖 9 个（Ladário 附近，19°S） | 沉积物 0–3 cm；上覆水溶氧昼夜在过饱和与缺氧之间变 | 6.3–7.7（Lake 1 三次 7.7、6.5、7.0） | 均 5.70 | −0.6 到 −2.0 | 同上 |
+| 潘塔纳尔北部 Poconé 三剖面 | 实验室测土壤 A 层 0–12 至 0–18 cm，水浸 | 4.1、5.8、5.2 | 5.10（4.80–5.10） | +1.0、−0.7、−0.1 | Coringa 2012 表 2（WebFetch 摘表值） |
+| BR-Npw（潘塔纳尔北部塔） | 矿质土表层，Dystric Gleysol | 4.7 | 5.10 | +0.40 | `site_facts.csv` 第 39 行 |
+| 亚马孙 várzea 三个剖面（中亚马孙与上索利蒙伊斯，无坐标） | 风干土 A 层，水土比 1:2.5 | 4.84、5.40、5.38（C 层 6.51、5.60、6.41） | 同类地点 FP1（亚马孙与塔帕若斯汇口 várzea）4.40 | 约 −0.4 到 −1.0（不同点，只作量级） | Lima 2005 表 1 p.319；Gontijo 2024 第 2 节坐标 |
+| igapó 与清水河滩 | 未找到可核的淹水沉积物或土壤 pH | — | 塔帕若斯河滩 FP2 3.60 | — | Hernández 2019 只读摘要；Gontijo 2024 洪泛土 pH 只在补充表 |
+| 刚果中部 | 泥炭 3.4–4；矿质洪泛沉积物未找到 | 3.4–4（泥炭） | 盆地中部两点 4.63–4.66 | +0.6 到 +1.3（泥炭） | 转引上一轮第 4.3 节第 5 条（Girkin 2026）；转引 `lit_tropical_peat_260929.txt` 第 1.6 节 |
+| 奥卡万戈 BW-Gum（永久沼泽） | 地表水（三站合计） | 6.27（4.52–7.02） | 6.60 | +0.33 | `site_facts.csv` 第 76 行 |
+| 奥卡万戈 BW-Nxr（季节洪泛） | 砂土 0–10 cm，1:2.5；岛心干端 9.6 | 5.7 | 6.60 | +0.90 | `site_facts.csv` 第 115–116 行 |
+
+1. 上表各数——已验证（各行出处；GSDE 与差见 scratch `p2_points.csv`、`p2_summary.txt`、`p2_sites.csv`）。
+2. GSDE 在南美这几处是大片常数（马德拉河五点 21×21 像元的 p10–p90 落在 3.74–5.20，潘塔纳尔南部九点的 p10 与 p90 都是 5.70），反映土壤图多边形而非河滩沉积物——已验证（`p2_summary.txt` 的 p10–p90）。
+3. 读法：同一类地方，实验室测的土壤 pH（Lima 2005 风干样、Coringa 2012、BR-Npw）是 4.1–5.8，与 GSDE 相差 ±1 以内；淹水原位沉积物（Conrad 2011）是 5.9–7.7，比 GSDE 高 0.6–3.3。模式在淹水子柱用的是前一种——已验证（上表；读码 `MOD_Tracer_Reactive_Methane_pH.F90:12–14` 读 PHH2O）。
+4. 同样的错位在温带塔上也看得到：US-StJ 盐沼原位孔隙水 6–7，同点风干固相 2.7–2.9（硫化物风干氧化产酸），GSDE 4.87；US-BZF 孔隙水 6.14–6.29，GSDE 4.90；DE-Hte 孔隙水 6.4–7.2，GSDE 5.86——已验证（`site_facts.csv` 第 3107–3110、1717、434–436 行；`p3_site_bias.txt`）。
+5. 模式里的区域值：洪泛土壤斑块 pH 巴西 4.33（因子面积加权 0.22）、北部南美 4.60（0.31）、东南亚 5.10（0.54）、赤道非洲 5.68（0.77）、西南南美 5.81（0.75），亚马孙低地洪泛因子 0.11——已验证（转引 `diag_tropics_regions_260929.txt` 第 4.5 节表）。亚马孙洪泛若按马德拉河实测 5.9–7.6 取值，D 为 0.37–0.96，按趋中后 6.5–7.0 取值为 0.72–0.96——已验证（口径约定 D 值；本节表）。
+6. 已有全球实测：C-59（淹水土壤子柱不乘 pH 因子）连同 C-57、C-58 使洪泛土壤斑块 40.4 → 64.6 Tg，巴西洪泛 3.0 → 11.6——已验证（账本 V-111 行；转引 `diag_tropics_regions_260929.txt` 第 5.2 节）。
+
+## 3. 问二：泥炭的急性响应与长期适应
+
+### 3.1 两种量
+
+1. 急性：同一泥浆用缓冲液或酸碱调 pH 后几天到几周的产率比；D 就是它的拟合（Meng 2012 对 Dunfield 1993 图 5 的拟合）——已验证（上一轮第 2.5 节）。
+2. 长期：原生 pH 不同的泥炭之间、各自在原生 pH 下的产率比，即群落已适应之后的差。模式拿静态 pH 图乘 D，用的是急性曲线去表示长期差——已验证（上一轮第 1 节第 2 条；读码 `Physics.F90:2584–2606`）。
+
+### 3.2 证据要点（上一轮已答的只列结论与节号）
+
+1. 原生 pH 下对最大值的比：Dunfield 1993 各泥炭 0.55–0.8（最酸的 KLTS 原生 3.6 约 0.8，D 给 0.03）；Kotsyurbenko 2007 原生 4.8 对 6.0 为 0.61–0.79；Ye 2012 bog 1 效率 0.49；Horn 2003 富集物 4.5 与 6.5 相同——已验证（上一轮第 3.6、3.7 节表与各条出处）。
+2. 急性曲线本身也比 D 平 4–16 倍（Ye 2012、Kotsyurbenko 2007），D 连源数据 pH 4.3 处的点都低估约 4 倍——已验证（上一轮第 2.3、3.6 节）。
+3. 泥炭分离株：Methanoregula boonei 最适约 pH 5.1（分离自 pH 4.0–4.5 的雨养 bog）——已验证（转引上一轮第 3.4 节，Bräuer 2011 摘要）；Methanosphaerula palustris（矿养 fen）"slightly acidic pH (5.5)"——已验证（Cadillo-Quiroz 2009，只读摘要）；Methanobacterium paludis 生长范围 pH 4.7–7.1、最适 5.4–5.7（纽约矿养 fen 与阿拉斯加酸性贫营养 fen）——已验证（Cadillo-Quiroz 2014，只读摘要）；西西伯利亚嗜酸 Methanobacterium 最适 5.0–5.5——已验证（转引上一轮第 3.2 节）。即培养得到的泥炭产甲烷菌最适都在 5.0–5.7，比 bog 原生 pH 3.5–4.5 高约 1 个单位——已验证（本条各出处）。
+4. 原位：SPRUCE bog 近地表孔隙水 pH 约 4.0，仍有可测的季节 CH4 排放并被 ELM 的新模块模拟——已验证（Ricciuto 2021 p.3 第 2.1 节；p.4）；Horn 2003 的 bog 在 pH 4.3–4.5 原位排放 1.3 mmol m−2 d−1；MY-MLM 在 pH 3.4 处涡度通量 9.2 g C m−2 yr−1——已验证（转引上一轮第 3.3 节；`lit_tropical_peat_260929.txt` 第 1 节）。
+5. 田间多站：Treat 2018 数据集 log10(年排放 + 1) 对 pH 的斜率只放 pH 时 0.078（p 0.01），加水位后 −0.003（p 0.93）；BAWLD-CH4 暖季日均 0.071 → 加水位 0.042 → 再加类型 0.005——已验证（上一轮第 4.1 节，自算）。Olefeldt 2013 与 Kuhn 2021 的连续变量里 pH 不显著——已验证（上一轮第 4.1 节第 5、6 条）。
+
+### 3.3 D 是否高估长期抑制，用什么替代
+
+1. 是。原生 pH 3.4–4.5 处 D 为 0.018–0.225，培养得到的原生对最大比为 0.3–1、田间斜率上限对应 0.62–0.74——已验证（口径约定 D 值；第 3.2 节第 1、5 条；下条算式）。
+2. 候选式（都只作用于泥炭，都不含 pH > 6.2 的下降）：
+   - P1：f_pH = 1。依据：控制水位后田间斜率约 0（第 3.2 节第 5 条）；原生对最大比 0.3–1 与原生 pH 无单调关系（上一轮第 3.7 节第 2 条），这个常数被全局产率 f 吸收；站点标定就在 f_pH = 1 下做；CLM4Me 原版取 1（上一轮第 5 节表）——已验证（各条出处）。
+   - P2：f_pH = 10^(−b·max(0, 6.2 − pH))，b = 0.075（区间 0.071–0.078）。依据：Treat 2018 数据与 BAWLD-CH4 只放 pH 时的 log10 斜率（第 3.2 节第 5 条）。取值：pH 5.2 为 0.84，4.6 为 0.76，4.3 为 0.72，4.0 为 0.68，3.4 为 0.62——已验证（算式）。它是长期 pH 效应的上限而非估计值——推测。理由：不控水位的斜率包含了"酸性泥炭多为雨养、水位偏深"的协变。
+   - P3（敏感性）：PeatlandVU 的线性式，归到 pH 6.2 为 1 时，按相对读法（每低于 pH 7 一个单位减 10%）pH 3.4 为 0.70，按绝对读法为 0.33——已验证（转引上一轮第 5 节第 1 条，van Huissteden 2006 p.8）。原文读法不清，只作敏感性——推测。理由：p.8 只有一句。
+3. 同 pH 下 bog 仍比 rich fen 效率低 3–7 倍（Ye 2012），作者归于泥炭藓来源的抑制物而非 pH；这一差若要表示，走雨养份额（C-38 的 `rainfed_share`）或类型，不走 pH——推测。理由：转引上一轮第 3.1 节第 6 条与第 7.3 节第 5 条。
+
+## 4. 问三：其他模式
+
+| 模式 | pH 项 | 缺省 | 形式要点 | 出处 |
+| --- | --- | --- | --- | --- |
+| CLM4.5（clm4_5_1_r115） | 有开关 | `usephfact = .false.` | 与本式同（不归一），只在 pHmin < pH < pHmax 时乘；注释写"Strictly less than one, with optimum at 6.5"，而式的顶点实为 6.2 | 读码 `src/biogeochem/ch4varcon.F90:32`、`ch4Mod.F90:2164–2168`、`bld/namelist_files/namelist_definition_clm4_5.xml:1307–1310`（CTSM 仓 f885e32d8） |
+| CTSM / CLM5 系 | 有开关 | `usephfact = .false.`，定义标"(EXPERIMENTAL, UNSUPPORTED, and UNTESTED!)" | 手册："The factor f_pH is nominally set to 1"；"We consider both f_pH and f_pE to be poorly constrained"；表中 f_pH 缺省 1 | 读码 `ch4varcon.F90:33`、`ch4Mod.F90:2598`、`namelist_definition_ctsm.xml:2754–2757`；手册 `CLM50_Tech_Note_Methane.rst:60、67、89`（7409d321） |
+| CLM4Me（Riley 2011） | 取 1 | — | 表 1 f_pH 1 | 转引上一轮第 5 节表 |
+| 式的来源 | — | — | Meng 2012 对 Dunfield 1993 缓冲液数据的拟合 | 转引上一轮第 2.5 节 |
+| LPJ-wsl（Zhang 2016） | 无 | — | 全文检索 pH 0 处 | 本地全文检索 |
+| JULES（Gedney 2019；Parker 2022；JULES-HIMMELI，Gao 2025） | 无 | — | Gedney 2019 明写因观测不足不纳入 redox 与 pH；后两篇全文 pH 0 处 | 转引上一轮第 5 节表（Gedney 2019 原句）；本地全文检索 |
+| ORCHIDEE（Ringeval 2010；ORCHIDEE-PEAT r7020，Salmon 2022） | 无 | — | Ringeval 2010 以缺站点数据为由不纳入；Salmon 2022 全文 pH 0 处 | 转引上一轮第 5 节表；本地全文检索 |
+| LPJ-GUESS 湿地甲烷模块（Kallingal 2025） | 无 | — | 全文 pH 0 处 | 本地全文检索 |
+| TEM（Zhuang 2004） | 有，常开 | 无开关 | "f(pH(t)) is a multiplier that diminishes methanogenesis if the soil-water pH is not optimal (i.e., pH = 7.5) as described by Cao et al. [1996]"；"Soil-water pH is prescribed for a site"；Cao 型 pHmin 5.5、pHmax 9.0，窗外为 0 | Zhuang 2004 p.4 第 2.1.1.1 节第 [12] 段、第 [14] 段；式转引上一轮第 5 节表（附录式 A2） |
+| TEM 微生物功能群（Xu 2015）与 ELM（Ricciuto 2021） | 有，动态 | — | 乙酸生成使 pH 降，pH 反馈进产甲烷；ELM 在 SPRUCE（孔隙水 pH 约 4.0）使用 | 转引上一轮第 5 节表；Ricciuto 2021 p.3–4 |
+| DLEM、TRIPLEX-GHG | 有 | — | pH ≤ 4 为 0，比 D 在酸端更硬 | 转引上一轮第 5 节表 |
+
+1. 上表——已验证（各行出处）。本地全文检索用 `grep -cw pH`，命中 0 的五篇为 Zhang 2016、Salmon 2022、Parker 2022、Gao 2025、Kallingal 2025——已验证（命令输出）。
+2. 小结：CLM 两代都缺省关，全球湿地主力模式（LPJ 系、JULES、ORCHIDEE）不设 pH；设 pH 的 TEM 系、DLEM、TRIPLEX 酸端更硬，但都来自稻田土或少量泥炭培养，没有一家区分急性与长期——已验证（上表；上一轮第 5 节第 2、3 条）。
+
+## 5. 问四：77 塔实测 pH 对 GSDE
+
+### 5.1 口径
+
+1. 站点不读 pH：站点 srfdata 无 pH 变量；`use_spatial_ph = .false.` 时每斑块 pH 取 6.2，因子 1；Sitedata 的 `methane_ph` 没有代码读——已验证（第 0 节第 6 条；`v2/config/v2_p8ph4/ch4_parameter.nml:77–86`；`MOD_Tracer_Reactive_Methane_pH.F90:57–58、147–154`；上一轮第 6 节第 3 条）。
+2. 表中 GSDE 是塔坐标所在 30″ 像元按 mksrf 式聚合的值，即全球配置在该点若是单像元斑块时会读到的 pH；与 `ph_77sites.csv` 的算术平均版相比，70 塔差 ≤ 0.05，7 塔（US-BZB、US-BZF、US-BZS、US-Uaf、US-ICs、US-Ivo、JP-SwL）低 0.09–0.31——已验证（`p2_sites.csv` 对 `data/_tmp/分析_260828_pH两图对比/ph_77sites.csv`）。
+3. 代表值规则：塔上或同复合体的固相水浸（S）或孔隙水（P）优先，区间取中值；W 为地表水，K 为 KCl 或 CaCl2 浸提（比水浸低，不入统计），X 为代理（非本塔复合体）；行号指 `scripts/sites/site_facts.csv`，其来源 DOI 见该表，本文未逐条重核——已验证（`p3_site_bias.py` 列表）。
+4. 无实测值的 16 塔：AT-Neu、DE-Zrk、FI-Hyy、JP-Mse、JP-SwL、KR-CRK、RU-Ch2、RU-Che、US-DPW、US-EDN、US-LA1、US-LA2、US-Los、US-MAC、US-MRM、US-Pfa——已验证（`p1_site_ph_rows.txt` 的"未见"行）。
+
+### 5.2 偏差表（按类，差 = GSDE − 实测）
+
+| 塔 | 类 | 实测 | 介质 | 可信 | GSDE | 差 | D(实测) | D(GSDE) | 行号 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CA-SCB | Bog | 4.33 | P | 中 | 6.40 | +2.07 | 0.164 | 0.980 | 158 |
+| DE-SfN | Bog | 4.00 | S | 高 | 3.98 | −0.02 | 0.082 | 0.079 | 484 |
+| FI-Si2 | Bog | 4.40 | S | 中 | 4.31 | −0.09 | 0.188 | 0.158 | 665 |
+| JP-BBY | Bog | 5.00 | P | 高 | 6.32 | +1.32 | 0.475 | 0.993 | 942 |
+| NZ-Kop | Bog | 4.70 | S | 中 | 4.63 | −0.07 | 0.313 | 0.279 | 1228 |
+| US-BZB | Bog | 4.80 | S | 高 | 4.90 | +0.10 | 0.363 | 0.417 | 1670 |
+| US-Uaf | Bog | 6.61 | S | 高 | 4.90 | −1.71 | 0.918 | 0.417 | 3434–3436 |
+| DE-Hte | Fen | 6.80 | P | 高 | 5.86 | −0.94 | 0.832 | 0.940 | 434–436 |
+| FI-Lom | Fen | 5.50 | S | 高 | 4.50 | −1.00 | 0.775 | 0.226 | 614 |
+| FI-Sii | Fen | 4.40 | X | 低 | 4.50 | +0.10 | 0.188 | 0.226 | 716 |
+| FR-LGt | Fen | 4.50 | S | 中 | 6.61 | +2.11 | 0.225 | 0.918 | 767 |
+| SE-Deg | Fen | 4.50 | X | 低 | 4.79 | +0.29 | 0.225 | 0.358 | 1476 |
+| US-BZF | Fen | 6.20 | P | 高 | 4.90 | −1.30 | 1.000 | 0.417 | 1717 |
+| BR-Npw | Swamp | 4.70 | S | 高 | 5.10 | +0.40 | 0.313 | 0.535 | 39 |
+| BW-Gum | Swamp | 6.27 | W | 中 | 6.60 | +0.33 | 0.998 | 0.922 | 76 |
+| BW-Nxr | Swamp | 5.70 | S | 高 | 6.60 | +0.90 | 0.878 | 0.922 | 116 |
+| ID-Pag | Swamp | 3.42 | S | 中 | 4.30 | +0.88 | 0.019 | 0.155 | 827 |
+| MY-MLM | Swamp | 3.40 | S | 高 | 4.27 | +0.87 | 0.018 | 0.147 | 1124 |
+| US-NC4 | Swamp | 4.20 | S | 高 | 5.20 | +1.00 | 0.127 | 0.596 | 2656 |
+| RU-Cok | Wet tundra | 4.92 | S | 中 | 4.88 | −0.04 | 0.429 | 0.405 | 1398 |
+| US-A03 | Wet tundra | 5.50 | X | 低 | 5.10 | −0.40 | 0.775 | 0.535 | 1542 |
+| US-A10 | Wet tundra | 4.80 | X | 低 | 5.10 | +0.30 | 0.363 | 0.535 | 1577 |
+| US-Atq | Wet tundra | 4.80 | S | 中 | 5.71 | +0.91 | 0.363 | 0.883 | 1624 |
+| US-Beo | Wet tundra | 4.80 | S | 中 | 5.10 | +0.30 | 0.363 | 0.535 | 1788 |
+| US-Bes | Wet tundra | 4.73 | S | 高 | 5.10 | +0.37 | 0.327 | 0.535 | 1847–1851 |
+| US-ICs | Wet tundra | 4.80 | S | 中 | 5.27 | +0.47 | 0.363 | 0.637 | 2272 |
+| US-Ivo | Wet tundra | 4.80 | S | 中 | 6.47 | +1.67 | 0.363 | 0.963 | 2309 |
+| US-NGB | Wet tundra | 4.84 | K | 中 | 5.10 | +0.26 | 0.384 | 0.535 | 2705–2706 |
+| US-NGC | Wet tundra | 4.35 | S | 高 | 4.86 | +0.51 | 0.171 | 0.393 | 2749 |
+| US-Myb | Marsh | 6.99 | S | 高 | 6.44 | −0.55 | 0.727 | 0.971 | 2599 |
+| US-ORv | Marsh | 7.70 | W | 中 | 6.55 | −1.15 | 0.316 | 0.938 | 2791 |
+| US-OWC | Marsh | 7.00 | S | 高 | 6.40 | −0.60 | 0.721 | 0.980 | 2842–2848 |
+| US-Sne | Marsh | 6.10 | X | 中 | 6.44 | +0.34 | 0.995 | 0.971 | 2998 |
+| US-Tw1 | Marsh | 6.33 | S | 中 | 6.53 | +0.20 | 0.992 | 0.947 | 3165 |
+| US-Tw4 | Marsh | 5.62 | S | 高 | 6.53 | +0.91 | 0.840 | 0.947 | 3265 |
+| US-Tw5 | Marsh | 6.60 | W | 中 | 6.53 | −0.07 | 0.922 | 0.947 | 3318 |
+| US-WPT | Marsh | 7.90 | W | 高 | 6.50 | −1.40 | 0.227 | 0.956 | 3506 |
+| US-Srr | Salt marsh | 6.63 | S | 高 | 5.50 | −1.13 | 0.910 | 0.775 | 3047–3048 |
+| US-StJ | Salt marsh | 6.50 | P | 高 | 4.87 | −1.63 | 0.956 | 0.403 | 3107 |
+| IT-Cas | Rice | 7.00 | S | 高 | 6.57 | −0.43 | 0.721 | 0.934 | 904 |
+| PH-RiF | Rice | 6.44 | S | 高 | 6.00 | −0.44 | 0.971 | 0.979 | 1278 |
+| US-HRA | Rice | 5.80 | X | 低 | 5.70 | −0.10 | 0.920 | 0.879 | 2120 |
+| US-HRC | Rice | 5.80 | X | 低 | 5.70 | −0.10 | 0.920 | 0.879 | 2167 |
+| US-Twt | Rice | 5.75 | S | 高 | 6.00 | +0.25 | 0.900 | 0.979 | 3372 |
+| NL-Hor | Drained | 5.70 | S | 高 | 4.24 | −1.46 | 0.878 | 0.138 | 1176 |
+| US-Bi1 | Drained | 4.93 | S | 高 | 5.04 | +0.11 | 0.434 | 0.499 | 1894 |
+| US-Bi2 | Drained | 5.89 | S | 高 | 6.53 | +0.64 | 0.951 | 0.947 | 1930 |
+| US-Snd | Drained | 5.13 | S | 中 | 6.44 | +1.31 | 0.553 | 0.971 | 2952 |
+| US-Tw3 | Drained | 5.85 | S | 高 | 6.00 | +0.15 | 0.938 | 0.979 | 3230 |
+| DE-Dgw | Lake | 7.50 | S | 高 | 5.74 | −1.76 | 0.421 | 0.896 | 397 |
+| CA-SCC | Upland | 4.33 | X | 低 | 6.40 | +2.07 | 0.164 | 0.980 | 201–203 |
+| CH-Cha | Upland | 5.30 | K | 高 | 6.15 | +0.85 | 0.657 | 0.998 | 246 |
+| CH-Dav | Upland | 3.10 | S | 高 | 4.29 | +1.19 | 0.007 | 0.152 | 284 |
+| CH-Oe2 | Upland | 6.37 | S | 高 | 6.15 | −0.22 | 0.986 | 0.998 | 325 |
+| CN-Hgu | Upland | 6.24 | S | 高 | 7.13 | +0.89 | 0.999 | 0.643 | 361 |
+| IT-BCi | Upland | 7.50 | S | 高 | 8.04 | +0.54 | 0.421 | 0.176 | 867 |
+| RU-Fy2 | Upland | 3.68 | X | 低 | 5.30 | +1.62 | 0.038 | 0.657 | 1435 |
+| US-BZS | Upland | 5.60 | S | 高 | 4.90 | −0.70 | 0.829 | 0.417 | 1753 |
+| US-CRT | Upland | 6.45 | X | 低 | 6.50 | +0.05 | 0.969 | 0.956 | 1967 |
+| US-EML | Upland | 4.00 | S | 高 | 5.05 | +1.05 | 0.082 | 0.507 | 2077 |
+| US-Ho1 | Upland | 2.80 | K | 高 | 5.13 | +2.33 | 0.003 | 0.555 | 2212 |
+
+1. 上表——已验证（`p3_site_bias.csv`；实测值与介质按 `site_facts.csv` 各行转录，代表值规则见第 5.1 节第 3 条）。
+
+### 5.3 汇总与含义
+
+1. 统计：61 塔全部 GSDE − 实测中位 +0.25、|差| > 1 的 18 塔；S 与 P 44 塔中位 +0.22、|差| 中位 0.79、|差| > 1 的 13 塔、差 −1.76 到 +2.11、Spearman 0.51、Pearson 0.56；实测 ≤ 5.0 的 21 塔中位 +0.51，> 5.0 的 23 塔中位 −0.44；分类中位：Bog −0.02（7 塔，但 CA-SCB +2.07、JP-BBY +1.32、US-Uaf −1.71）、Fen −0.97（4）、Swamp +0.88（5）、Wet tundra +0.47（7）、Marsh −0.18（4）、Salt marsh −1.38（2）——已验证（`p3_site_bias.txt`）。
+2. 对因子的含义：同一塔用 GSDE 还是实测，D 可差 2–8 倍（MY-MLM、ID-Pag 8.4 倍，US-NC4 4.7 倍，FR-LGt 4.1 倍，CA-SCB 6.0 倍，FI-Lom 0.29 倍，NL-Hor 0.16 倍）——已验证（上表 D 列相除）。GSDE 在酸端整体偏高、在近中性湿地（孔隙水、盐沼、湖沉积物）偏低，两头都把 pH 往 5–6 拉——已验证（第 1 条分组中位）。
+3. 站点检验的前提：若全球保留任何 pH 表示，站点要读同一来源的 pH 才能检验（改 `use_spatial_ph` 的站点路径或让代码读 Sitedata 的 `methane_ph`）；V-168 现配置下不检验任何东西（第 1 节第 6 条）——推测。理由：站点 pH 恒 6.2 时所有 pH 式都给 1。
+
+## 6. 问五：用物理表示替代 φ
+
+### 6.1 作用对象与式子
+
+1. 对象 A：土壤斑块的饱和子柱（洪泛与稻田），矿质土。
+   - 式：f_pH = 1。时间依赖不另设状态量，由已有滞后淹水比例承担：新淹水部分的产率已乘 finundated_lag / finundated（`Physics.F90:2621–2622`），e 折时间 `redoxlag` 30 天。
+   - 参数与出处：趋中值 pH_eq 6.7（土壤 6.7–7.2、溶液 6.5–7.0），Sahrawat 2015 p.1599；稳定时间约 4 周，Sahrawat 2015 p.1602；D(6.5–7.0) = 0.72–0.96，稻田土产甲烷最适近中性（Wang 1993，转引上一轮第 4.4 节第 1 条），所以趋中后取 1 而不是 D(pH_eq)。
+   - 现成实现：C-59 `flooded_soil_ph_neutral = .true.`（`Const.F90:501–509`，`Physics.F90:2584–2585`），V-111 已在全球用过（第 2.2 节第 6 条）。现基线 `g2_ph4` 与 `g2_sp` 未开此键——已验证（`cases/paper_v2/v260929/g2_ph4/bld/run/ch4_parameter.nml`、`v260930/g2_sp/bld/run/ch4_parameter.nml` 均无该键，`g2_lk`、`g2_ri` 有）。
+   - 若要显式：pH_eff = pH_map + (pH_eq − pH_map)·finundated_lag / finundated，再代入一个在 pH ≥ 6.2 取 1 的因子；效果与上式差别只在新淹水部分，而该部分产率已被滞后压低——推测。理由：式 1 把升 pH 与 Fe(III) 还原绑定，二者同时间常数。
+   - 例外：酸性硫酸盐土长期淹水仍不超过 pH 5（Sahrawat 2015 p.1601）；缺铁的砂质灰化土（igapó）无实测——存疑。理由：全球没有酸性硫酸盐土与活性铁图，igapó 缺原位 pH；要定需区域敏感性试验（第 6.4 节第 2 条）。
+2. 对象 B：湿地斑块的非泥炭部分（GLWD 16–19 类，palustrine 淹水与季节饱和）。
+   - 式：同对象 A，f_pH = 1；按 GLWD 泥炭份额 s_peat = 面积(22–27) / 面积(16–19、22–27) 与对象 C 加权：f_pH = s_peat·F_peat(pH) + (1 − s_peat)。
+   - 数据：`v2/data/glwd_class_2deg_c38.nc` 已有逐类面积与 `forested_share`、`rainfed_share`——已验证（`ncdump -h glwd_class_2deg_c38.nc`）；全球模型从湿地植被文件读 `rainfed_share`（账本 C-38 行），加一个同源的 `peat_share` 字段即可——推测。理由：C-38 已走通同一数据通道。各区 s_peat：芬诺斯堪的亚 0.90、西西伯利亚 0.97、哈德逊湾低地 0.95、东加拿大 0.61、亚马孙低地 0.97、刚果 0.99、苏门答腊—婆罗洲 0.99、新几内亚 0.99、潘塔纳尔 0.70、奥卡万戈 0.80——已验证（`p4_region_factor.txt`）。亚马孙湿地斑块九成七被 GLWD 记为泥炭类，对象 B 在热带只影响潘塔纳尔、奥卡万戈这类小区——已验证（同上）；GLWD 的亚马孙泥炭范围可能偏宽，若偏宽，对象 B 在亚马孙的份额被低估——推测。理由：本文未对照独立泥炭图，只作提示。
+3. 对象 C：湿地斑块的泥炭部分（GLWD 22–27 类；与本模式按表层有机质判的热带泥炭、北方 bog 类大体重合）。
+   - 首选 P1：F_peat = 1。出处与理由见第 3.3 节第 2 条。
+   - 保留 pH 效应时用 P2：F_peat = 10^(−0.075·max(0, 6.2 − pH))，b 取 0.071–0.078（Treat 2018 数据集与 BAWLD-CH4 只放 pH 的斜率，上一轮第 4.1 节）。它在 pH < 5.7 处高于 φ 版：4.0 为 0.68 对 0.45，4.6 为 0.76 对 0.56，5.0 为 0.81 对 0.69——已验证（算式）。即现 φ = 0.4 比任何田间证据允许的抑制都强——推测。理由：P2 已是上限。
+   - 两式都不含 pH > 6.2 的下降；D 在碱端的下降（7.0 为 0.72、7.5 为 0.42）同样来自泥炭缓冲液实验——已验证（口径约定 D 值；上一轮第 2.1 节）。
+4. 站点：对象 A 至 C 若只用 P1，站点与全球口径自然一致（站点已是 1）；若用 P2，站点须读 pH（第 5.3 节第 3 条），代表值可取第 5.2 节表的实测或 GSDE 像元值——推测。理由：第 5.1 节第 1 条。
+
+### 6.2 为什么不是一刀切 φ
+
+1. φ 对所有斑块同乘，在热带河滩与泥炭上压得一样；实测表明河滩淹水沉积物近中性（第 2.2 节），泥炭在原生 pH 下离最适不远（第 3.2 节），二者的物理原因不同，量级也不同——已验证（各节出处）。
+2. V-146 里 φ = 0.4 把巴西拉回区间，也同时抬高了北方与东南亚；北方与东南亚偏高的原因在别处：全球 pH 因子在北方补的是塔址偏湿与区域地类构成的代表性差，在东南亚补的是热带泥炭产率与水位——已验证（账本 V-116、D-61、V-146 行；`diag_tropics_regions_260929.txt` 第 5.2 节）。所以 φ 的取值同时在做两件与 pH 无关的事——推测。理由：同上。
+
+### 6.3 三处方向（相对现 φ = 0.4，产量因子之比；排放大体同比）
+
+| 区（湿地斑块，GLWD 类面积加权） | 斑块 pH | 现 φ 版 | 改法 P1 与对象 A、B（全 1） | 改法 P2（泥炭）加对象 A、B |
+| --- | --- | --- | --- | --- |
+| 芬诺斯堪的亚 | 4.62 | 0.573 | ×1.75 | ×1.33 |
+| 欧俄 | 4.72 | 0.598 | ×1.67 | ×1.30 |
+| 西西伯利亚 | 4.69 | 0.594 | ×1.68 | ×1.30 |
+| 东西伯利亚 | 5.19 | 0.752 | ×1.33 | ×1.12 |
+| 阿拉斯加 | 4.95 | 0.672 | ×1.49 | ×1.20 |
+| 加拿大西部与西北 | 5.37 | 0.760 | ×1.32 | ×1.13 |
+| 哈德逊湾低地 | 4.91 | 0.660 | ×1.52 | ×1.21 |
+| 东加拿大 | 5.00 | 0.591 | ×1.69 | ×1.34（非泥炭 39% 取 1 后约 ×1.48） |
+| 亚马孙低地（斑块） | 4.46 | 0.545 | ×1.84 | ×1.36 |
+| 潘塔纳尔 | 5.55 | 0.879 | ×1.14 | ×1.02（非泥炭 30% 取 1 后约 ×1.05） |
+| 刚果盆地 | 4.62 | 0.569 | ×1.76 | ×1.34 |
+| 苏德 | 6.75 | 0.888 | ×1.13 | ×1.12 |
+| 奥卡万戈 | 6.78 | 0.903 | ×1.11 | ×1.11 |
+| 苏门答腊—婆罗洲 | 4.59 | 0.561 | ×1.78 | ×1.35 |
+| 新几内亚 | 5.22 | 0.766 | ×1.31 | ×1.10 |
+
+1. 斑块 pH、φ 版因子、1/φ 版与 P2/φ 版比——已验证（`p4_region_factor.txt`，格点斑块 pH 按像元数平均后按 GLWD 类面积加权）；P2 列未计入对象 B 的非泥炭部分取 1，括号内两格为按 s_peat 的手算修正——推测。理由：手算只用区域平均值。
+2. 热带河滩（土壤斑块淹水子柱，对象 A）：巴西洪泛 pH 4.33、φ 版 0.50 → 1，×2.0；亚马孙低地洪泛（D 面积均值 0.11，对应 pH 约 4.0，φ 版约 0.47）×2.1；北部南美 4.60 → ×1.8；东南亚洪泛 5.10 → ×1.39；赤道非洲 5.68、西南南美 5.81 → ×1.05–1.09——推测。理由：用 `diag_tropics_regions_260929.txt` 第 4.5 节的区均 pH 代入 φ 版式，格点间协变未计。
+3. 全球量级（湿地加洪泛，现 `g2_ph4` 194.5 Tg，其中湿地斑块 136.8、洪泛 57.8）：
+   - 全 1：V-116 由 D 到全关为 ×2.40（2018，`g2_ph0` 对 `g2_fi`），V-146 由 D 到 φ 0.4 为 ×1.66、扣去 C-69 的 ×1.10 后约 ×1.51，故由 φ 0.4 到全 1 约 ×1.59，得约 310 Tg；另按本节表的湿地斑块比值取约 ×1.6、洪泛取下条的 ×1.25，得 136.8 × 1.6 + 57.8 × 1.25 ≈ 291 Tg。
+   - 泥炭 P2、河滩取 1：湿地斑块按本节表 P2 列取约 ×1.28，洪泛取 ×1.25（V-111 中 C-59 使洪泛 ×1.60，V-146 中 φ 0.4 使洪泛 ×1.41、扣去 C-69 后 ×1.28，1.60 / 1.28 ≈ 1.25），得 136.8 × 1.28 + 57.8 × 1.25 ≈ 247 Tg。
+   - 两者都高于 GCP 区间上沿 203——推测。理由：各比值来自不同基底（`g2_fi`、`g2_bf`、`g2_lk`），V-111 还混有 C-57、C-58 的湖泊改动，区域比值被当作全局比值；只作方向与量级。
+4. 三处方向小结：北方泥炭升 1.2–1.75 倍（加重现有偏高）；热带河滩亚马孙升约 2 倍、其余河滩升 1.05–1.4 倍（朝参照走）；东南亚泥炭升 1.1–1.8 倍（加重新几内亚与婆罗洲的偏高）——推测。理由：本节表与第 2 条。
+
+### 6.4 建议的取舍与存疑
+
+1. 先上对象 A（C-59 开）：证据最硬（淹水趋中是土壤化学定论，热带河滩原位实测支持），方向与巴西偏低一致，且不牵动北方——推测。理由：第 2 节；第 6.3 节第 2 条。对象 A 开后，φ 对洪泛已不起作用，φ 只剩湿地斑块上的作用——已验证（读码 `Physics.F90:2584–2585`：开 C-59 时土壤斑块饱和子柱跳过整个 pH 段，φ 在该段内）。
+2. 泥炭的 φ 换成 P2 还是 P1，取决于北方与东南亚的非 pH 修正先不先到位；在它们到位前，P2 是有田间出处、比 φ 弱的过渡式，P1 是终态——推测。理由：第 3.3 节；第 6.2 节第 2 条。北方偏高的去处：代表性（`lit_boreal_perarea_260929.txt`）与 bog 雨养效率（Ye 2012，C-38）；东南亚：热带泥炭水位与产率（Q-56、Q-54）——已验证（账本 V-116、V-146 行与所引报告）。
+3. 存疑（要跑实验）：
+   - 对象 A 开、泥炭仍 φ 0.4 的全球试验（即 `g2_ph4` 加 `flooded_soil_ph_neutral = .true.`）：看巴西与北部南美洪泛是否过头、刚果是否被抬出反演区间（`lit_floodplain_260929.txt` 第 5.3 节第 6 条已提示刚果风险）。
+   - 酸性硫酸盐土与 igapó 的例外量级：在对象 A 基础上，把 GSDE pH < 4.5 且无泥炭的淹水子柱仍乘 D 的一版区域敏感性，看湄公河三角洲、泰国中部与内格罗河的差。
+   - P2 与 P1 在站点上的差：让站点读第 5.2 节的实测 pH（或 GSDE 像元值），77 塔跑 P1（即现 `v2_p9f`）与 P2 两组，比 bog、fen、swamp 类中位 β 与缩放后离散；替换 V-168 的现配置。
+
+## 7. DOI 列表（2026-09-30 匿名查 Crossref 或 DataCite，题名、作者、刊名、卷、页或文章号、年逐条取自注册库，scratch `p5_registry.tsv`）
+
+作者只列 Crossref 返回的姓，多于 6 位的写首位作者与总人数；题名去掉 HTML 标记后照 Crossref。
+
+- Conrad, Noll, Claus, Klose, Bastos, Enrich-Prast (2011) Stable carbon isotope discrimination and microbiology of methane formation in tropical anoxic lake sediments. Biogeosciences 8(3): 795–814. 10.5194/bg-8-795-2011｜已核（Crossref）
+- Coringa, Couto, Otero Perez, Torrado (2012) Atributos de solos hidromórficos no Pantanal Norte Matogrossense. Acta Amazonica 42(1): 19–28. 10.1590/S0044-59672012000100003｜已核（Crossref；WebFetch 页面所示页码 51–62 与注册库不符，以 Crossref 为准）
+- Lima, Mello, Schaefer, Ker (2005) Dinâmica da mobilização de elementos em solos da Amazônia submetidos à inundação. Acta Amazonica 35(3): 317–330. 10.1590/S0044-59672005000300003｜已核（Crossref）
+- Sahrawat (2015) Redox Potential and pH as Major Drivers of Fertility in Submerged Rice Soils: A Conceptual Framework for Management. Communications in Soil Science and Plant Analysis 46(13): 1597–1606. 10.1080/00103624.2015.1043451｜已核（Crossref）
+- Ding, Du, Ma, Li, Zhang, Wang (2019) Changes in the pH of paddy soils after flooding and drainage: Modeling and validation. Geoderma 337: 511–513. 10.1016/j.geoderma.2018.10.012｜已核（Crossref）；只读摘要
+- Ponnamperuma (1972) The Chemistry of Submerged Soils. Advances in Agronomy: 29–96（Crossref 未给卷号）. 10.1016/S0065-2113(08)60633-1｜已核（Crossref）；正文未读，经 Sahrawat 2015 转述
+- Narteh, Sahrawat (1999) Influence of flooding on electrochemical and chemical properties of West African soils. Geoderma 87(3–4): 179–207. 10.1016/S0016-7061(98)00053-6｜已核（Crossref）；正文未读，经 Sahrawat 2015 转述
+- McNicol, Silver (2014) Separate effects of flooding and anaerobiosis on soil greenhouse gas emissions and redox sensitive biogeochemistry. Journal of Geophysical Research: Biogeosciences 119(4): 557–566. 10.1002/2013JG002433｜已核（Crossref）；数值转引兄弟报告
+- Gontijo 等（16 位作者）(2024) Methane-cycling microbial communities from Amazon floodplains and upland forests respond differently to simulated climate change scenarios. Environmental Microbiome 19(1): 48. 10.1186/s40793-024-00596-z｜已核（Crossref）
+- Hernández 等（8 位作者）(2019) Structure, function and resilience to desiccation of methanogenic microbial communities in temporarily inundated soils of the Amazon rainforest (Cunia Reserve, Rondonia). Environmental Microbiology 21(5): 1702–1717. 10.1111/1462-2920.14535｜已核（Crossref）；只读摘要
+- Cadillo-Quiroz, Yavitt, Zinder (2009) Methanosphaerula palustris gen. nov., sp. nov., a hydrogenotrophic methanogen isolated from a minerotrophic fen peatland. International Journal of Systematic and Evolutionary Microbiology 59(5): 928–935. 10.1099/ijs.0.006890-0｜已核（Crossref）；只读摘要
+- Cadillo-Quiroz, Bräuer, Goodson, Yavitt, Zinder (2014) Methanobacterium paludis sp. nov. and a novel strain of Methanobacterium lacus isolated from northern peatlands. International Journal of Systematic and Evolutionary Microbiology 64(Pt 5): 1473–1480. 10.1099/ijs.0.059964-0｜已核（Crossref）；只读摘要
+- Ricciuto 等（18 位作者）(2021) An Integrative Model for Soil Biogeochemistry and Methane Processes: I. Model Structure and Sensitivity Analysis. Journal of Geophysical Research: Biogeosciences 126(8): e2019JG005468. 10.1029/2019JG005468｜已核（Crossref）
+- Salmon 等（31 位作者）(2022) Assessing methane emissions for northern peatlands in ORCHIDEE-PEAT revision 7020. Geoscientific Model Development 15(7): 2813–2838. 10.5194/gmd-15-2813-2022｜已核（Crossref）
+- Parker 等（15 位作者）(2022) Evaluation of wetland CH4 in the Joint UK Land Environment Simulator (JULES) land surface model using satellite observations. Biogeosciences 19(24): 5779–5805. 10.5194/bg-19-5779-2022｜已核（Crossref）
+- Gao 等（18 位作者）(2025) Assessing modelled methane emissions over northern wetlands by the JULES-HIMMELI model. Science of The Total Environment 980: 179526. 10.1016/j.scitotenv.2025.179526｜已核（Crossref）
+- Kallingal, Scholze, Miller, Lindström, Rinne, Aurela, Vestin, Weslien (2025) Assimilating multi-site eddy-covariance data to calibrate the wetland CH4 emission module in a terrestrial ecosystem model. Biogeosciences 22(16): 4061–4086. 10.5194/bg-22-4061-2025｜已核（Crossref）
+- Dunfield, Knowles, Dumont, Moore (1993) Methane production and consumption in temperate and subarctic peat soils: Response to temperature and pH. Soil Biology and Biochemistry 25(3): 321–326. 10.1016/0038-0717(93)90130-4｜已核（Crossref）
+- Meng 等（10 位作者）(2012) Sensitivity of wetland methane emissions to model assumptions: application and model testing against site observations. Biogeosciences 9(7): 2793–2819. 10.5194/bg-9-2793-2012｜已核（Crossref）
+- Riley 等（8 位作者）(2011) Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM. Biogeosciences 8(7): 1925–1953. 10.5194/bg-8-1925-2011｜已核（Crossref）
+- Ye, Jin, Bohannan, Keller, McAllister, Bridgham (2012) pH controls over anaerobic carbon mineralization, the efficiency of methane production, and methanogenic pathways in peatlands across an ombrotrophic–minerotrophic gradient. Soil Biology and Biochemistry 54: 36–47. 10.1016/j.soilbio.2012.05.015｜已核（Crossref）
+- Kotsyurbenko 等（7 位作者）(2007) Shift from Acetoclastic to H2-Dependent Methanogenesis in a West Siberian Peat Bog at Low pH Values and Isolation of an Acidophilic Methanobacterium Strain. Applied and Environmental Microbiology 73(7): 2344–2348. 10.1128/AEM.02413-06｜已核（Crossref）
+- Horn, Matthies, Küsel, Schramm, Drake (2003) Hydrogenotrophic Methanogenesis by Moderately Acid-Tolerant Methanogens of a Methane-Emitting Acidic Peat. Applied and Environmental Microbiology 69(1): 74–83. 10.1128/AEM.69.1.74-83.2003｜已核（Crossref）
+- Bräuer, Cadillo-Quiroz, Yashiro, Yavitt, Zinder (2006) Isolation of a novel acidiphilic methanogen from an acidic peat bog. Nature 442(7099): 192–194. 10.1038/nature04810｜已核（Crossref）
+- Bräuer, Cadillo-Quiroz, Ward, Yavitt, Zinder (2011) Methanoregula boonei gen. nov., sp. nov., an acidiphilic methanogen isolated from an acidic peat bog. International Journal of Systematic and Evolutionary Microbiology 61(1): 45–52. 10.1099/ijs.0.021782-0｜已核（Crossref）
+- van Huissteden, van den Bos, Marticorena Alvarez (2006) Modelling the effect of water-table management on CO2 and CH4 fluxes from peat soils. Netherlands Journal of Geosciences - Geologie en Mijnbouw 85(1): 3–18. 10.1017/S0016774600021399｜已核（Crossref）
+- Treat, Bloom, Marushchak (2018) Nongrowing season methane emissions–a significant component of annual emissions across northern ecosystems. Global Change Biology 24(8): 3331–3343. 10.1111/gcb.14137｜已核（Crossref）
+- Treat, Bloom, Marushchak (2018) Growing season, non-growing season and annual CH4 fluxes from temperate, boreal, and Arctic wetlands and uplands. PANGAEA（数据集）. 10.1594/PANGAEA.886976｜已核（DataCite）
+- Kuhn 等（9 位作者）(2021) BAWLD-CH4: a comprehensive dataset of methane fluxes from boreal and arctic ecosystems. Earth System Science Data 13(11): 5151–5189. 10.5194/essd-13-5151-2021｜已核（Crossref）
+- Olefeldt, Turetsky, Crill, McGuire (2013) Environmental and physical controls on northern terrestrial methane emissions across permafrost zones. Global Change Biology 19(2): 589–603. 10.1111/gcb.12071｜已核（Crossref；issued 字段为 2012，卷期为 2013 年第 19 卷）
+- Zhuang 等（8 位作者）(2004) Methane fluxes between terrestrial ecosystems and the atmosphere at northern high latitudes during the past century: A retrospective analysis with a process-based biogeochemistry model. Global Biogeochemical Cycles 18(3): 2004GB002239. 10.1029/2004GB002239｜已核（Crossref）
+- Zhang, Zimmermann, Kaplan, Poulter (2016) Modeling spatiotemporal dynamics of global wetlands: comprehensive evaluation of a new sub-grid TOPMODEL parameterization and uncertainties. Biogeosciences 13(5): 1387–1408. 10.5194/bg-13-1387-2016｜已核（Crossref）
+- Gedney, Huntingford, Comyn-Platt, Wiltshire (2019) Significant feedbacks of wetland methane release on climate change and the causes of their uncertainty. Environmental Research Letters 14(8): 084027. 10.1088/1748-9326/ab2726｜已核（Crossref）
+- Ringeval 等（7 位作者）(2010) An attempt to quantify the impact of changes in wetland extent on methane emissions on the seasonal and interannual time scales. Global Biogeochemical Cycles 24(2): 2008GB003354. 10.1029/2008GB003354｜已核（Crossref）
+- Wang, DeLaune, Patrick, Masscheleyn (1993) Soil Redox and pH Effects on Methane Production in a Flooded Rice Soil. Soil Science Society of America Journal 57(2): 382–385. 10.2136/sssaj1993.03615995005700020016x｜已核（Crossref）
+- Walter, Heimann (2000) A process-based, climate-sensitive model to derive methane emissions from natural wetlands: Application to five wetland sites, sensitivity to model parameters, and climate. Global Biogeochemical Cycles 14(3): 745–765. 10.1029/1999GB001204｜已核（Crossref）
+- Girkin 等（25 位作者）(2026) Environmental controls over greenhouse gas dynamics of tropical peatlands of the Central Congo Basin. Philosophical Transactions of the Royal Society B: Biological Sciences 381(1956): 20240482. 10.1098/rstb.2024.0482｜已核（Crossref）
+- Tian 等（7 位作者）(2010) Spatial and temporal patterns of CH4 and N2O fluxes in terrestrial ecosystems of North America during 1979–2008: application of a global biogeochemistry model. Biogeosciences 7(9): 2673–2694. 10.5194/bg-7-2673-2010｜已核（Crossref）
+- Zhu 等（10 位作者）(2014) Modelling methane emissions from natural wetlands by development and application of the TRIPLEX-GHG model. Geoscientific Model Development 7(3): 981–999. 10.5194/gmd-7-981-2014｜已核（Crossref）
+- 无 DOI：CTSM 源码与技术手册（`~/mode/Wetland/CTSM`，commit 7409d3218513e1d95dbc2828de9a11a8972b1386；CLM4.5 取同仓 f885e32d8b31c8b68d93c728c4fdf1e16ab1d27e，标签 clm4_5_1_r115）；GSDE 系 `PHH2O1.nc`（`/share/home/dq076/data/CoLMrawdata_glwd/soil/`）；GLWD 类面积 `v2/data/glwd_class_2deg_c38.nc`。
+- 塔上实测 pH 的原始文献著录以 `scripts/sites/site_facts.csv` 的 `source_doi` 列为准，本文未逐条重核；上一轮已核的其余著录（Xu 2015、Cao 1995 等）见 `lit_ph_response_260929.txt` 第 9 节。

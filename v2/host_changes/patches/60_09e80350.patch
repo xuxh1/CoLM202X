@@ -1,0 +1,178 @@
+From 09e80350e47c8b0219ba0dc664e873051c9583b5 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Wed, 30 Sep 2026 05:31:52 +0800
+Subject: [PATCH] feat(hydrology): perched water table of the dynamic wetland
+ tile above ice (I-25)
+
+With DEF_WETLAND_PERCHED_DRAINAGE (default off) the water-table consistency
+check of WATER_VSF passes over impermeable (ice-filled) layers on a dynamic
+wetland tile, as the solver's own water-table search does. Over permafrost
+the table then stays on the saturated zone perched on the ice instead of
+dropping to the column bottom, so the class floor refill, the peat outflow
+(C-11) and the lateral inflow act on it and the solver's aquifer exchange
+moves their water there. The peat outflow of such a table integrates the
+transmissivity only down to the frost table, the top of the first frozen
+or impermeable layer below it (Swenson et al. 2012; CLM5 perched drainage).
+With the key off the code path is unchanged.
+
+---
+ main/MOD_SoilSnowHydrology.F90 | 50 ++++++++++++++++++++++++++++++----
+ share/MOD_Namelist.F90         | 11 ++++++++
+ 2 files changed, 56 insertions(+), 5 deletions(-)
+
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index 7cbac8e6..b7a504bc 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -13,7 +13,7 @@ MODULE MOD_SoilSnowHydrology
+                            DEF_FLOODPLAIN_INFILT_FIX, &
+                            DEF_WETLAND_POND_OUTFLOW, DEF_WETLAND_INFLOW_AREA_SPLIT, &
+                            DEF_WETLAND_LATERAL_INFLOW, DEF_WETLAND_POND_TARGET_SITE, &
+-                           DEF_WETLAND_POND_MAX_SITE
++                           DEF_WETLAND_POND_MAX_SITE, DEF_WETLAND_PERCHED_DRAINAGE
+ #if (defined CaMa_Flood)
+    USE YOS_CMF_INPUT,      only: LWINFILT
+ #endif
+@@ -781,6 +781,8 @@ ENDIF
+    real(r8) :: pond_target                      ! managed ponding depth of a tower's wetland (mm), < 0 off
+    real(r8) :: pond_max                         ! ponding cap of a dynamic wetland tile (mm)
+    real(r8) :: qpond                            ! overland outflow of wetland ponding (mm s-1)
++   logical  :: perched                          ! I-25: water table perched above ice on a wetland tile
++   real(r8) :: zi_drain(0:nl_soil)              ! interfaces [m] the peat outflow integrates over
+    real(r8) :: sp_zc(1:nl_soil), sp_zi(0:nl_soil), sp_dz(1:nl_soil) ! in mm
+    logical  :: is_permeable(1:nl_soil)
+    real(r8) :: dzsum, dz
+@@ -1189,6 +1191,27 @@ IF((patchtype<=1) .or. is_dry_lake &
+       sp_zc(1:nl_soil) = z_soisno (1:nl_soil) * 1000.0   ! from meter to mm
+       sp_zi(0:nl_soil) = zi_soisno(0:nl_soil) * 1000.0   ! from meter to mm
+ 
++      ! I-25 (paper V2): perched water table of a dynamic wetland tile. The
++      ! consistency check below takes the water table under every layer beneath
++      ! it that is not liquid-saturated, and an ice-filled (impermeable) layer
++      ! never is. Over permafrost it thus drops the table the solver returned at
++      ! the last step (the top of the saturated zone perched on the ice; the
++      ! solver counts impermeable layers as saturated) to the column bottom:
++      ! the tile is always below its floor, the peat outflow above the floor
++      ! never runs, and the saturated zone above the ice loses water only to
++      ! evapotranspiration. With DEF_WETLAND_PERCHED_DRAINAGE the check passes
++      ! over impermeable layers, as the solver's own water-table search does,
++      ! so the table stays on the perched saturated zone as long as every
++      ! permeable layer beneath it is saturated; the floor refill, the peat
++      ! outflow and the lateral inflow then act on that table, and the
++      ! aquifer exchange of the solver adds or removes their water there. A
++      ! permeable layer below that is not saturated still takes the table
++      ! below it, as before.
++      perched = .false.
++#if defined(TRACER) && !defined(CatchLateralFlow)
++      perched = DEF_WETLAND_PERCHED_DRAINAGE .and. DEF_USE_Dynamic_Wetland .and. (patchtype == 2)
++#endif
++
+       ! check consistency between water table location and liquid water content
+       IF (wa < 0.) THEN
+          IF (zwtmm <= sp_zi(nl_soil)) THEN
+@@ -1198,6 +1221,7 @@ IF((patchtype<=1) .or. is_dry_lake &
+          ENDIF
+       ELSE
+          DO j = 1, nl_soil
++            IF (perched .and. (.not. is_permeable(j))) CYCLE
+             IF ((vol_liq(j) < eff_porosity(j)-1.e-8) .and. (zwtmm <= sp_zi(j-1))) THEN
+                zwtmm = sp_zi(j)
+             ENDIF
+@@ -1288,6 +1312,22 @@ IF((patchtype<=1) .or. is_dry_lake &
+       ! takes in from below and rnof books. Layers the solver treats as
+       ! impermeable (ice-filled) take none; it passes over them as the
+       ! exchange does, so the water perches above frozen ground.
++      ! I-25: the peat outflow of a perched table runs through the thawed
++      ! saturated zone above the ice only, a saturated layer over an
++      ! impermeable base (Swenson et al. 2012, eq. 6; CLM5 drains the perched
++      ! zone between the perched water table and the frost table, technical
++      ! note eqs. 7.166-7.167). Its transmissivity is integrated from the
++      ! table down to the frost table, the top of the first frozen or
++      ! impermeable layer below the table, instead of the column bottom.
++      zi_drain(0:nl_soil) = zi_soisno(0:nl_soil)
++      IF (perched) THEN
++         DO j = 1, nl_soil
++            IF ((sp_zi(j) > zwtmm) .and. ((t_soisno(j) <= tfrz) .or. (.not. is_permeable(j)))) THEN
++               zi_drain(j-1:nl_soil) = zi_soisno(j-1)
++               EXIT
++            ENDIF
++         ENDDO
++      ENDIF
+       pond_target = -1._r8
+ #ifdef SinglePoint
+       IF (DEF_WETLAND_POND_TARGET_SITE >= 0._r8) &
+@@ -1318,7 +1358,7 @@ IF((patchtype<=1) .or. is_dry_lake &
+          IF (wsupply > 0.) THEN
+             rsubst = - wsupply / deltim
+          ELSE
+-            rsubst = wetland_peat_outflow(nl_soil, zi_soisno(0:nl_soil), hksati(1:nl_soil), &
++            rsubst = wetland_peat_outflow(nl_soil, zi_drain(0:nl_soil), hksati(1:nl_soil), &
+                OM_density(1:nl_soil,ipatch), zwtmm / 1000.)
+          ENDIF
+          ! The whole tile is fed; the refill is the tile's lateral inflow.
+@@ -1355,7 +1395,7 @@ IF((patchtype<=1) .or. is_dry_lake &
+             ENDDO
+             wetinflow(ipatch) = wetinflow(ipatch) + fbog * wsupply / deltim
+          ENDIF
+-         rsubst = wetland_peat_outflow(nl_soil, zi_soisno(0:nl_soil), hksati(1:nl_soil), &
++         rsubst = wetland_peat_outflow(nl_soil, zi_drain(0:nl_soil), hksati(1:nl_soil), &
+             OM_density(1:nl_soil,ipatch), zwtmm / 1000.) - wetinflow(ipatch)
+       ELSEIF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2)) THEN
+          zwt_floor = wetland_max_wtd_of(ipatch) * 1000.
+@@ -1398,7 +1438,7 @@ IF((patchtype<=1) .or. is_dry_lake &
+          ELSE
+             ! Above the floor the tile drains laterally through its
+             ! saturated zone (peat transmissivity, off unless configured).
+-            rsubst = wetland_peat_outflow(nl_soil, zi_soisno(0:nl_soil), hksati(1:nl_soil), &
++            rsubst = wetland_peat_outflow(nl_soil, zi_drain(0:nl_soil), hksati(1:nl_soil), &
+                OM_density(1:nl_soil,ipatch), zwtmm / 1000.)
+             ! With the area split the two shares merge above the floor.
+             IF (DEF_WETLAND_INFLOW_AREA_SPLIT) wetdef_noinfl(ipatch) = 0._r8
+@@ -1536,7 +1576,7 @@ ENDIF
+             ! it over frozen or impermeable layers
+             IF (DEF_WETLAND_POND_OUTFLOW .and. DEF_USE_Dynamic_Wetland .and. (wdsrf > 0.) &
+                 .and. (t_soisno(1) > tfrz)) THEN
+-               qpond = min(wdsrf / deltim, wetland_peat_outflow(nl_soil, zi_soisno(0:nl_soil), &
++               qpond = min(wdsrf / deltim, wetland_peat_outflow(nl_soil, zi_drain(0:nl_soil), &
+                   hksati(1:nl_soil), OM_density(1:nl_soil,ipatch), 0._r8))
+                rsur_se = rsur_se + qpond
+                wdsrf = wdsrf - qpond * deltim
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 067aeb56..c4bc3ff7 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -266,6 +266,15 @@ MODULE MOD_Namelist
+    ! candidate 13; PEAT-CLSM semisurficial runoff, Bechtold et al. 2019)
+    ! instead of staying until the wetland water store overflows. Default off.
+    logical  :: DEF_WETLAND_POND_OUTFLOW = .false.
++   ! Perched water table of a dynamic wetland tile (paper V2 I-25): above
++   ! ice-filled soil layers (permafrost, or seasonal frost in spring) the
++   ! water table stays on the saturated zone perched on the ice instead of
++   ! dropping below the ice to the column bottom, so the water-table floor,
++   ! the peat outflow (DEF_METHANE%wetland_peat_drainage) and the lateral
++   ! inflow act on it, and the peat outflow drains only the thawed saturated
++   ! zone between the table and the frost table (Swenson et al. 2012; CLM5
++   ! perched drainage). Default off.
++   logical  :: DEF_WETLAND_PERCHED_DRAINAGE = .false.
+    ! Split the dynamic wetland tile by area at the water-table floor instead
+    ! of scaling the refill by the share that takes lateral inflow (paper V2
+    ! C-38, boreal wetlands). The fed share is held at the floor; the share
+@@ -1484,6 +1493,7 @@ CONTAINS
+       DEF_WETLAND_PEAT_TROP_ACRO,             &
+       DEF_WETLAND_PEAT_TROP_CATO,             &
+       DEF_WETLAND_POND_OUTFLOW,               &
++      DEF_WETLAND_PERCHED_DRAINAGE,           & !I-25 (paper V2)
+       DEF_WETLAND_INFLOW_AREA_SPLIT,          &
+       DEF_WETLAND_LATERAL_INFLOW,             &
+       DEF_WETLAND_INFLOW_RATIO_MAX,           &
+@@ -2138,6 +2148,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_WETLAND_PEAT_TROP_ACRO             ,4   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_PEAT_TROP_CATO             ,4   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_POND_OUTFLOW               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_PERCHED_DRAINAGE           ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_INFLOW_AREA_SPLIT          ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_LATERAL_INFLOW             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_INFLOW_RATIO_MAX           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

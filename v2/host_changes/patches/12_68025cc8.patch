@@ -1,0 +1,85 @@
+From 68025cc8c941654470631a87bf71f4f42313ff9f Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Fri, 25 Sep 2026 14:53:43 +0800
+Subject: [PATCH] feat(methane): semi-analytic spin-up of the wetland
+ decomposition pools (C-22)
+
+Ledger C-22 (paper V2), DEF_METHANE%wetland_bgc_sasu, off by default.
+Plain spin-up does not settle the wetland pools: after 30 cycles CH4 still
+moves 7% per 10 cycles (V-11), because soil2 and CWD turn over in 26-97
+years and litter at N-limited towers in 8-64 years. CoLM's CNSASU runs only
+in bgc_driver (patchtype 0), sees only phenology inputs and jumps with fpi-
+limited rates, so it cannot serve the wetland shim.
+
+With the switch on, the shim sums per layer over each spin-up cycle the
+pools, the flux-weighted rates before the N limit and the plant input; at
+the end of every cycle but the last, litter, CWD, soil1 and soil2 of each
+layer jump to -(A K)^-1 I (6x6 per layer, partial pivoting); soil3 keeps
+the seeded peat (C-17) and enters as a source. Rates before fpi are used
+because the tile's mineral N has no outlet, so its steady state has fpi 1;
+jumping with actual rates locks productive towers in the N limit. N of the
+floating C:N pools follows the input C:N, fixed pools follow their C:N.
+The sums reset each cycle and need no restart. Excludes
+wetland_vert_transp. Prototype: two jumps reach steady HR within 0.4%,
+where 60 plain cycles are still 2-98% off (Lu et al. 2020; Xia et al.
+2012).
+
+---
+ Makefile      |  3 +++
+ main/CoLM.F90 | 12 ++++++++++++
+ 2 files changed, 15 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index 791e7593..77867b0e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -807,6 +807,9 @@ CoLMMAIN.o: MOD_CaMa_colmCaMa.o MOD_Glacier.o MOD_Irrigation.o MOD_Lake.o MOD_Le
+ CoLM.o: MOD_CaMa_colmCaMa.o MOD_Catch_LateralFlow.o MOD_CheckEquilibrium.o MOD_DA_Main.o \
+ 	MOD_Grid_RiverLakeFlow.o MOD_Hist.o MOD_LightningData.o MOD_Lulcc_Driver.o MOD_Ozone.o \
+ 	MOD_ParameterOptimization.o
++ifeq (${METHANE_ENABLED},YES)
++CoLM.o: MOD_Tracer_Reactive_BgcShim.o
++endif
+ HistConcatenate.o: MOD_Concatenate.o
+ POST_Vector2Grid.o: MOD_Vector2Grid.o
+ 
+diff --git a/main/CoLM.F90 b/main/CoLM.F90
+index a6d72722..78521c26 100644
+--- a/main/CoLM.F90
++++ b/main/CoLM.F90
+@@ -115,6 +115,7 @@ PROGRAM CoLM
+ #endif
+ #if (defined TRACER) && (defined BGC)
+    USE MOD_Tracer_Reactive_Methane_WetlandVeg, only: wetveg_cap_lai
++   USE MOD_Tracer_Reactive_BgcShim, only: wetland_bgc_sasu_init, wetland_bgc_sasu_cycle_end
+ #endif
+ 
+ #ifdef DataAssimilation
+@@ -336,6 +337,11 @@ PROGRAM CoLM
+          casename, dir_restart, dir_landdata, ldew_rain, ldew_snow, wliq_soisno, &
+          wice_soisno, wa, wdsrf, wetwat, scv, waterstorage)
+ #endif
++#if (defined TRACER) && (defined BGC)
++      ! Wetland semi-analytic spin-up (DEF_METHANE%wetland_bgc_sasu, read by
++      ! land_tracer_init): armed only when this run makes spin-up cycles.
++      CALL wetland_bgc_sasu_init (merge(n_spinupcycle, 0, is_spinup))
++#endif
+ 
+       ! Read in SNICAR optical and aging parameters
+       IF (DEF_USE_SNICAR) THEN
+@@ -702,6 +708,12 @@ PROGRAM CoLM
+          IF (is_spinup) THEN
+             IF (ptstamp <= itstamp) THEN
+                IF (i_spinupcycle < n_spinupcycle) THEN
++#if (defined TRACER) && (defined BGC)
++                  ! The wetland pools jump to the steady state of the cycle just
++                  ! run (no-op unless DEF_METHANE%wetland_bgc_sasu); the last
++                  ! cycle runs plain.
++                  IF (p_is_worker) CALL wetland_bgc_sasu_cycle_end (i_spinupcycle + 1 == n_spinupcycle)
++#endif
+                   i_spinupcycle = i_spinupcycle + 1
+                   idate   = sdate
+                   jdate   = sdate
+-- 
+2.53.0
+

@@ -1,0 +1,88 @@
+From 813679efdcf07d8c2d3d69b90be0b23e581ee6c7 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Sat, 26 Sep 2026 21:57:32 +0800
+Subject: [PATCH] feat(physics): Sturm et al. (1997) snow thermal conductivity
+ as a namelist option (C-31)
+
+DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME = 2 replaces Jordan (1991) in soil
+columns with the Sturm et al. (1997) regression for seasonal snow, about
+2.4 times lower at 200-350 kg m-3. Default 1 keeps Jordan. The formula
+once commented as Sturm had wrong signs and is marked as such.
+
+---
+ main/MOD_GroundTemperature.F90 | 19 +++++++++++++++----
+ share/MOD_Namelist.F90         |  5 +++++
+ 2 files changed, 20 insertions(+), 4 deletions(-)
+
+diff --git a/main/MOD_GroundTemperature.F90 b/main/MOD_GroundTemperature.F90
+index 02ce9b47..f16af737 100644
+--- a/main/MOD_GroundTemperature.F90
++++ b/main/MOD_GroundTemperature.F90
+@@ -73,7 +73,7 @@ CONTAINS
+ 
+    USE MOD_Precision
+    USE MOD_Const_Physical, only: stefnc,denh2o,denice,tfrz,cpice,cpliq,tkwat,tkice,tkair
+-   USE MOD_Namelist, only: DEF_USE_SNICAR, DEF_SPLIT_SOILSNOW
++   USE MOD_Namelist, only: DEF_USE_SNICAR, DEF_SPLIT_SOILSNOW, DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME
+    USE MOD_PhaseChange
+    USE MOD_SoilThermalParameters
+    USE MOD_SPMD_Task
+@@ -223,11 +223,22 @@ CONTAINS
+          DO i = lb, 0
+          rhosnow = (wice_soisno(i)+wliq_soisno(i))/dz_soisno(i)
+ 
+-         ! presently option [1] is the default option
++         ! DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME selects the option; [1] is the default
++         IF (DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME == 2) THEN
++         ! [2] Sturm et al. (1997) regression over seasonal snow (taiga and tundra),
++         !     rho in g cm-3: 0.138 - 1.01 rho + 3.233 rho^2 for 0.156 <= rho <= 0.6,
++         !     0.023 + 0.234 rho below 0.156; the quadratic is held beyond 0.6
++            IF (rhosnow < 156.) THEN
++               thk(i) = 0.023 + 0.234e-3*rhosnow
++            ELSE
++               thk(i) = 0.138 - 1.01e-3*rhosnow + 3.233e-6*rhosnow*rhosnow
++            ENDIF
++         ELSE
+          ! [1] Jordan (1991) pp. 18
+-         thk(i) = tkair+(7.75e-5*rhosnow+1.105e-6*rhosnow*rhosnow)*(tkice-tkair)
++            thk(i) = tkair+(7.75e-5*rhosnow+1.105e-6*rhosnow*rhosnow)*(tkice-tkair)
++         ENDIF
+ 
+-         ! [2] Sturm et al (1997)
++         ! [2] as once commented here (wrong signs, not Sturm et al. 1997)
+          ! thk(i) = 0.0138 + 1.01e-3*rhosnow + 3.233e-6*rhosnow**2
+          ! [3] Ostin and Andersson presented in Sturm et al., (1997)
+          ! thk(i) = -0.871e-2 + 0.439e-3*rhosnow + 1.05e-6*rhosnow**2
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 6d8a529d..4ab0d941 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -289,6 +289,9 @@ MODULE MOD_Namelist
+                                                    ! 6: Tarnawski and Leong (2012)
+                                                    ! 7: De Vries (1963)
+                                                    ! 8: Yan Hengnian, He Hailong et al.(2019)
++   integer :: DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME = 1  ! Options for snow thermal conductivity (soil columns)
++                                                        ! 1: Jordan (1991)
++                                                        ! 2: Sturm et al. (1997) regression for seasonal snow
+ 
+    logical :: DEF_USE_SUPERCOOL_WATER = .true.     ! supercooled soil water scheme, Niu & Yang (2006)
+ 
+@@ -1193,6 +1196,7 @@ CONTAINS
+ 
+       DEF_USE_SOILPAR_UPS_FIT,                &
+       DEF_THERMAL_CONDUCTIVITY_SCHEME,        &
++      DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME,   &
+       DEF_USE_SUPERCOOL_WATER,                &
+       DEF_SOIL_REFL_SCHEME,                   &
+       DEF_RSS_SCHEME,                         &
+@@ -1845,6 +1849,7 @@ CONTAINS
+       ! 06/2023, added by weinan
+       CALL mpi_bcast (DEF_USE_SOILPAR_UPS_FIT                ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_THERMAL_CONDUCTIVITY_SCHEME        ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME   ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_SUPERCOOL_WATER                ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       ! 06/2023, added by hua yuan
+-- 
+2.53.0
+

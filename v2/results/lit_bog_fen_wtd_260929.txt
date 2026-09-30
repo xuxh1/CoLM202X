@@ -1,0 +1,393 @@
+# lit_bog_fen_wtd_260929：北方 bog 与 fen 的水位与水源差别，以及 bog 水位怎么进模式——文献调研
+
+- **日期**：2026.09.29-13:10
+- **读者**：下一会话
+- **来源**：文献线只读调研，承接 `v2/results/lit_boreal_perarea_260929.txt` 第 3.6 节末条（bog 与 fen 的来水区分是剩下的最大类型差）与账本 Q-31、C-38、D-40、C-65、C-67、V-70、V-98、V-102、Q-20、Q-25、C-26；先读 `lit_boreal_perarea_260929.txt`、`lit_inflow_lsm_260929.txt`、`lit_inflow_hand_260929.txt`，已有内容只引节号；两个只读子任务分读区域份额图（第 4 节）与观测侧补充篇目（第 1.3 节、第 2.2 节第 5 条），主读者抽核其关键数；数据自算用 BAWLD-CH4、Treat 2018 PANGAEA 数据集、FLUXNET-CH4 站点水位、BAWLD 0.5° 表与 Bechtold 2019 表 A2；读码取本树 728dbfd7；第 6 节 DOI 于 2026-09-29 匿名查 Crossref 或 DataCite
+- **状态**：第 0 至 6 节成文；第 5 节两个候选只到依据、式子、参数与预期，未动代码与配置
+
+口径约定：水位一律写"地表以下为正、积水为负"的深度，单位 cm 或 m；BAWLD-CH4 原字段为"地表以上为正"，已变号；PEAT-CLSM 与 Turetsky 2014 的原式保留原符号并在该处注明。排放单位暖季日均写 mg CH4 m−2 d−1，年值写 g CH4 m−2 yr−1。"全文"指读了原文并给页码、表号或式号；"只读摘要"指只读到摘要；"转引"指取自另一篇或兄弟报告；"数据"指直接读数据集自算。自算脚本与输出都在 `<scratch>/lit_bogfen/`（下文简称 scratchpad），输出文件名为脚本名换 `.out`。
+
+## 0. 覆盖面
+
+1. 检索词：bog、fen、ombrotroph、minerotroph、rain-fed、run-on、lateral inflow、water table、WTD、acrotelm、catotelm、transmissivity、Granberg、lagg、Boussinesq、optimal water table、pH、acetate、hydrogenotrophic、ombrotrophic–minerotrophic gradient、peatland type map、bog fen percentage。
+2. 渠道与范围：
+   - 本地全文：`docs/refs/models`、`docs/refs/reviews`、`docs/refs/sites`、`docs/refs/WFT`、`docs/refs/data`，`data/_tmp/分析_260926_苔藓蒸发阻抗/txt/` 的 721 个文本，以及早前会话 scratchpad 里已下载的 PDF（Bechtold 2019、Chaudhary 2017、Frolking 2010、Shi 2015、Treat 2015、Treat 2018 接受稿、Wu 2016、Wu and Blodau 2013、Morris 2022、Largeron 2018、Chadburn 2022）。
+   - 网络（匿名，UA 为 "curl"，请求头、URL 与参数都不含邮箱或个人信息，mgt01 上 `--noproxy '*'`）：Crossref、DataCite、PANGAEA（Treat 2018 数据集）、GitHub API（DigiBog 代码）、WebSearch（DigiBog、Ye 2012 线索）；子任务另用 OpenAlex、Semantic Scholar、Europe PMC、Copernicus、White Rose、Leeds 与 Arctic Data Center 仓储、open.canada.ca、Bolin Centre、Wayback。
+   - 兄弟报告：`lit_boreal_perarea_260929.txt`、`lit_inflow_lsm_260929.txt`、`lit_inflow_hand_260929.txt` 全文读过，已有结论只引节号；账本 Q-18、Q-20、Q-25、Q-31、C-26、C-38、C-65、C-67、D-40、V-28、V-36、V-56、V-70、V-72、V-98、V-102 各行。
+3. 读到全文的篇目（主读者）：Granberg 1999、Wania 2009a、Chaudhary 2017、Zhuang 2004、Frolking 2010、Shi 2015、Wu 2016、Wu and Blodau 2013、Kleinen 2020、Bechtold 2019（含表 A2）、Turetsky 2014、Olefeldt 2013（摘要与节选）、Bridgham 2013、Treat 2015（早期在线版）、Treat 2018（接受稿）、Morris 2022、Gao 2025、Kallingal 2025（节选）、Kuhn 2021（类定义段）、Olefeldt 2021（抽核段）。子任务读到全文的：Olefeldt 2021、Kuhn 2021、PEATMAP 接受稿、Lehner 2025、Melton 2022、Terentieva 2016、Hugelius 2020（全文 XML 与 SI）、Webster 2018、Tanneberger 2017、Evans 2021（接受稿与 Extended Data 表）、Abdalla 2016、Ye 2012、Keller and Bridgham 2007、Couwenberg and Fritz 2012、Moore and Roulet 1993、Bubier 1995、Lafleur 2003、Holden and Burt 2003（HTML 无页码）、芬兰 Metsähallitus 监测网报告。
+4. 只读摘要或部分的：Baird 2012（DigiBog，只读摘要，另读 Young 2017 的公开代码代替正文）、Menberu 2016（摘要）、Zalman 2018（摘要与数据包说明书转载的图表）、Tarnocai 2011、Vompersky 2011、Aselmann and Crutzen 1989（摘要或元数据）。
+5. 读不到的与已试路径：Menberu 2016 全文（Wiley 与 Oulu 仓储均被 Cloudflare 拦，Wayback 无 PDF，未用需带邮箱的 Unpaywall）；Holden 2011（闭源，检索额度用尽）；Ye 2012 的 uoregon 原链接 404（子任务从 Wayback 取到）；Young 2017 正文（出版社页要求脚本）；Tarnocai 2011 落地页（证书过期，未用 -k）；Hugelius 2020 的 PNAS PDF（403，按节名引用）。
+6. 数据与读码（自算，脚本与输出见 scratchpad）：BAWLD-CH4 陆地表 555 行（`bawld_wt.py`、`bawld_q2.py`、`robust.py`）；Treat 2018 PANGAEA 数据集 853 行（`treat_wt.py`、`robust.py`）；FLUXNET-CH4 16 座 bog 与 fen 塔的逐日实测水位（`fx_wtd.py`）；BAWLD 0.5° 表（`bawld_share.py`）；Bechtold 2019 表 A2 的 94 口井（`bechtold_A2.py`）；PEAT-CLSM 稳态水位（`steady_wt.py`）；读码 `main/MOD_SoilSnowHydrology.F90`、`main/TRACER/MOD_Tracer_Reactive_Methane_{Physics,Const,BgcLink}.F90`、`v2/scripts/mk_rainfed_share.py`、g2_bf 的 `ch4_parameter.nml`。
+7. 未看：无。
+8. 存疑（要跑实验才能定）：
+   - 第 5 节两个候选的实际量级：按观测斜率外推，没有跑；实验为 77 塔与全球续跑各一组，判据见第 5.5 节。
+   - 芬兰原始 bog 型与 fen 型的逐年水位、季节振幅与年际变幅：数据已公开（第 1.3 节第 2 条），要下载后在计算节点统计。
+
+## 1. 实测：bog 与 fen 的水位与水源
+
+### 1.1 多站综合（生长季平均水位，地表以下为正，单位 cm）
+
+| 来源 | 类 | 样本 | 中位 | 四分位 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| BAWLD-CH4 逐行 | bog | 67 | 11.0 | 5.0–20.0 | 字段 WTAv（生长季平均），已变号 |
+| BAWLD-CH4 逐行 | fen | 91 | 5.0 | 1.0–10.0 | 同上 |
+| BAWLD-CH4 逐行 | 永冻 bog | 62 | 20.0 | 10.2–37.2 | 同上 |
+| BAWLD-CH4 逐行 | 苔原湿地 | 91 | 0.0 | −4.0–5.0 | 同上，负值为积水 |
+| BAWLD-CH4 按站平均 | bog | 27 站 | 11.0 | 7.2–15.0 | SiteID 内先平均 |
+| BAWLD-CH4 按站平均 | fen | 21 站 | 5.0 | 1.8–8.0 | 同上 |
+| BAWLD-CH4 按站平均 | 永冻 bog | 32 站 | 20.9 | 15.0–33.4 | 同上 |
+| Treat 2018 数据集，北方 | bog | 89 | 16.8 | 7.1–26.5 | 字段 WTD_cm |
+| Treat 2018 数据集，北方 | fen | 187 | 5.9 | 0.0–14.6 | 同上 |
+| Treat 2018 数据集，北方，按站点位置平均 | bog | 63 | 20.0 | 10.1–35.2 | 同上 |
+| Treat 2018 数据集，北方，按站点位置平均 | fen | 142 | 7.8 | 0.6–16.0 | 同上 |
+| Treat 2018 数据集，苔原 | bog | 29 | 17.0 | 11.8–25.0 | 同上 |
+| Treat 2018 数据集，苔原 | fen | 35 | 3.0 | 0.0–6.0 | 同上 |
+
+1. 上表 BAWLD-CH4 各行——已验证（`~/data/methane/BAWLD-CH4/BAWLD_CH4_Terrestrial.csv` 的 WTAv、Class，自算，scratchpad `bawld_wt.py`；字段定义取同目录 `BAWLD_CH4_metadata_EML.xml`："Average water table depth over the growing season, positive values represent water above the soil surface"）。Kuhn 2021 表 3 给的逐站中位 bog −11、fen −5、永冻 bog −20 cm 与此一致——已验证（`lit_boreal_perarea_260929.txt` 第 1.1 节第 1 条转引 Kuhn 2021 表 3，p.5170）。
+2. 上表 Treat 2018 各行——已验证（PANGAEA 10.1594/PANGAEA.886976 下载的 `Annual CH4 estimates_v6a2.txt`，去 RemoveQC 与 |WTD| > 200 的哨兵值，自算，scratchpad `treat_wt.py`、`robust.py`）。
+3. Treat 2018 数据集 WTD_cm 的正负按数据判定为"地表以下为正"：旱地中位 30、浅水 −2.95、沼泽 −5.2 cm——已验证（同文件按 WetlandClass 分组）。原文 p.6 写"mean seasonal water table position ... where positive values indicate a flooded site"，与数据相反——已验证（Treat 2018 接受稿 p.6，第 141–143 行）。原文所说可能是分析时变号后的量——推测。理由：旱地、浅水、沼泽三类的分布与"地表以下为正"一致，本报告按数据分布取号，结论不依赖原文这句描述。
+4. 生长季水位的季节变幅（BAWLD-CH4 字段 WTFluc，生长季最高与最低之差；缺值处用 WTMax − WTMin 补）：bog 20.0 cm（16.0–27.5，n 19），fen 8.0 cm（6.0–15.0，n 29），永冻 bog 18.0 cm（6.5–20.0，n 19）；按站平均 bog 20.3（n 8）、fen 12.0（n 9）——已验证（同第 1 条文件，自算）。生长季最深水位 WTMin：bog 20.0 cm（16.0–27.5，n 19），fen 8.0 cm（3.0–12.0，n 29）——已验证（同上）。
+5. 两套综合里 bog 比 fen 深 6–11 cm（生长季平均），季节变幅 bog 约为 fen 的 1.7–2.5 倍；bog 的生长季最深水位中位约 20 cm——已验证（本节表与第 4 条）。两套数据集都汇编自公开文献，站点有重叠（Salmisuo、Stordalen、Siikaneva 两边都有），未逐条去重，不能当作两组独立证据——已验证（两文件按站名检索）。
+6. BAWLD-CH4 的 bog 行中，生长季平均水位深于 13 cm（即本模式北方下限 0.13 m）的占 27/67（40 %），深于 20 cm 的占 18/67（27 %）；fen 行分别为 17/91（19 %）、7/91（8 %）——已验证（同第 1 条文件，自算，`robust.py`）。
+7. pH：BAWLD-CH4 bog 4.9（4.3–4.9，n 29），fen 6.0（4.5–8.5，n 42）——已验证（同第 1 条文件，自算）。
+
+### 1.2 塔站逐年水位（FLUXNET-CH4，只计实测日）
+
+| 塔 | 类 | 生长季年数 | 生长季平均中位 | 年际范围 | 年际标准差 | 季节变幅（月均最大减最小） | 生长季日值 10–90 分位 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CA-SCB | bog | 4 | 14.6 | 10.1–17.5 | 3.3 | 19.1 | 5.1–26.6 |
+| FI-Si2 | bog | 5 | 11.0 | 7.1–13.6 | 2.4 | 3.9 | 6.5–14.7 |
+| US-Uaf | bog（永冻台地） | 8 | 15.8 | 9.2–20.3 | 3.9 | 11.8 | 4.2–26.5 |
+| JP-BBY | bog（温带） | 4 | 6.6 | 5.1–8.8 | 1.9 | 7.0 | −0.2–14.1 |
+| NZ-Kop | bog（南半球温带） | 4 | 13.4 | 9.7–15.2 | 2.4 | — | 6.2–22.6 |
+| FI-Lom | fen | 5 | −3.0 | −7.1–0.2 | 2.6 | 5.4 | −7.2–0.9 |
+| FI-Sii | fen | 5 | 7.4 | 0.0–19.9 | 7.7 | 11.1 | −1.8–20.9 |
+| SE-Deg | fen | 5 | 9.2 | 6.6–15.6 | 3.4 | 10.2 | 2.8–17.6 |
+| US-Los | fen（温带） | 4 | 9.8 | 7.7–15.8 | 3.5 | 10.8 | 3.2–20.8 |
+
+单位 cm，地表以下为正。生长季取 5–9 月（NZ-Kop 取 11–3 月），一年至少 120 个实测日才计。
+
+1. 上表——已验证（`data/FLUXNET-CH4/Sitedata/*_site.nc` 的 WTD_daily，只取 WTD_daily_flag = 0 的实测日；站类取 `raw/FLX_AA-Flx_CH4-META_*.csv` 的 SITE_CLASSIFICATION；自算，scratchpad `fx_wtd.py`）。DE-SfN、US-BZB、US-BZF 无完整生长季实测，SE-St1 无站点文件；复湿或退化的 DE-Hte、DE-Zrk、FR-LGt 不列入——已验证（同脚本输出）。
+2. 北方天然 bog 塔（CA-SCB、FI-Si2）生长季平均 11–15 cm，天然 fen 塔（FI-Lom、FI-Sii、SE-Deg）−3–9 cm；年际标准差 bog 2.4–3.9、fen 2.6–7.7 cm，两类没有明显差别——已验证（上表）。塔址偏湿，塔上 bog 的水位接近 BAWLD 综合 bog 的中位而浅于 Treat 综合的中位——推测。理由：第 1.1 节表 11.0 与 16.8；塔址偏向高排放处见 `lit_boreal_perarea_260929.txt` 第 1.4 节第 3 条。
+3. 单站例证（偏干的温带雨养 bog）：Mer Bleue 1999–2004 年 5–10 月平均水位 0.34–0.51 m——已验证（Wu and Blodau 2013 表 6，p.1196）。
+
+### 1.3 其他综合与单站
+
+本节由只读子任务 B 读全文（报告 scratchpad `sub_obs/report.txt`），主读者抽核了 Evans 2021 式 3、Abdalla 2016 的均值与回归式、Bubier 1995 表 1、Moore and Roulet 1993 表 1、Couwenberg and Fritz 2012 表 2 与原句，数值一致；未抽核的标"子任务读"。
+
+1. 专门统计"北方原始 bog 与原始 fen 的水位均值、季节振幅、年际变幅"的多站综合没有找到；Menberu 2016（芬兰 43 块泥炭地，含 19 块原始对照）只读到摘要，摘要不给原始 bog 与 fen 的水位数值——已验证（子任务读 OpenAlex 摘要；全文路径见第 0 节第 4 条）。
+2. 同一芬兰监测网的 Metsähallitus 报告（无 DOI）：原始点水位中位 12.25 cm 深（N 6700）；读图 3 约值，贫营养 pine mire（最接近 bog）12–14 cm，贫营养 fen 5–9 cm，中营养 fen 8–17 cm，富营养 fen 约 1 cm，类内标准差多为 4–8 cm——已验证（子任务读报告 p.8、p.9 图 3，读图约值）。该监测网 43 点到 2022 年的逐时水位已公开（Fairdata，DOI 10.23729/fd-c33fead1-9b4d-3927-9ac5-a382f07f0004，CC BY 4.0，144 MB），可直接算原始 bog 型与 fen 型的均值、振幅与年际变幅——已验证（子任务查 DataCite）；本报告未下载、未计算。
+3. 同一地区内的 bog 与 fen 对照（地表以下为正，cm）：
+   - Manitoba BOREAS NSA 1994 年生长季：开阔 bog 6.4–11.1，开阔 fen −2.6（积水）至 9.6，开阔 poor fen 8.1–11.2——已验证（主读者抽核 Bubier 1995 表 1，p.458）。
+   - 密歇根上半岛：bog 16–27，acidic 与 intermediate fen 10–17，rich fen 常年积水约 30——已验证（子任务读 Ye 2012 第 2.1 节，p.38）。
+   - 英国（温带）：通量塔 bog 8 站有效水位中位 6.5、均值 9.9，fen 3 站均值 7.7；箱式点 raised bog 9 处中位 5.0，fen 14 处中位 6.5——已验证（子任务读 Evans 2021 Extended Data 表 1、表 3，统计量为子任务转录自算）。
+   - 明尼苏达三处泥炭藓泥炭地 5 次观测：Bog Lake Fen 7.0–24.2，S1 Bog 3.6–27.4，Zim Bog 16.6–29.3——已验证（子任务读 Zalman 2018 数据包说明书 p.23）。
+4. 单站的年际与极端：
+   - Moor House 覆盖型 bog 1995–1999 年逐时水位：82.4 % 的时间在地表以下 5 cm 以内，典型夏季 3–4 次短暂降到约 20 cm，1995 年大旱最深 42 cm——已验证（子任务读 Holden and Burt 2003 结果 (a) 节与图 3）。
+   - Mer Bleue（温带雨养 bog）从丘面平均高度起算：湿年 2000 年 27–45 cm，常年最深 60–70 cm，2001 年干年 7–8 月深于 70 cm 约 5 周；丘洼高差 0.25 m，丘占 70 %——已验证（子任务读 Lafleur 2003 p.5-2、p.5-5）。同站 1999–2004 年 5–10 月平均 0.34–0.51 m——已验证（Wu and Blodau 2013 表 6，p.1196）。PEATBOG 表 6 也按丘面起算——推测。理由：数值与 Lafleur 2003 的丘面口径相近，表 6 未写起算面。
+   - 西西伯利亚有林 bog（ryam）水位约 40 cm 深——已验证（`lit_boreal_perarea_260929.txt` 第 1.1 节第 7 条转引 Glagolev 2011 p.4）。
+5. 同一地区对照中 bog 比 fen 深几 cm 到十几 cm，与第 1.1 节的综合一致；温带偏湿的 bog（英国）与 fen 几乎同深——推测。理由：本节第 3 条各项。
+
+### 1.4 水源差别
+
+1. 定义：矿养泥炭地接受地下水和/或地表水来水，雨养泥炭地只有降水来水——已验证（Bridgham 2013 p.1329 原句 "minerotrophic peatlands having groundwater and/or surface water inputs and ombrotrophic peatlands having only precipitation inputs"）。
+2. 这个定义是水源上的"有无"，量上不一定悬殊：Degerö Stormyr 这类混合泥炭沼泽（fen 为主）"with a large mire/total watershed area ratio, situated in flat terrain"，陆地来水相对降水很小，Granberg 模型因此只取降水与融雪作来水——已验证（Granberg 1999 第 3.4 节，p.3774）。
+3. 纯雨养的 PEAT-CLSM 在 22 块 bog 与 22 块 fen 的 94 口井上，时间相关 R 为 bog 0.64、fen 0.66，距平相关 bog 0.46、fen 0.59——已验证（Bechtold 2019 p.2141 数据说明、p.2145 结果）。按表 A2 逐井重算，ExpC 偏差（模式减观测，负为模式偏深）bog 55 井均值 −0.099 m、中位 −0.090 m，fen 39 井均值 −0.106 m、中位 −0.110 m——已验证（Bechtold 2019 表 A2，逐行解析自算，scratchpad `bechtold_A2.py`）。即只吃降水的模式在 bog 与 fen 上偏深的程度相同，约 10 cm。
+4. 同一模式在 Western Canada Boreal Plains 偏差最负、R 最低，作者归因于降水不足处矿质地下水或相邻泥炭的来水不可缺——已验证（Bechtold 2019 p.2147、p.2135）。
+5. 北方泥炭地的汇水比与地下水来水份额（Lambert 2022 两块泥炭地汇水/泥炭面积 2.2、3.3，地下水入流占 22 %、56 %；Ketcheson 2015 转引 fen 设计比 2:1–3:1）见 `lit_inflow_hand_260929.txt` 第 1.2、1.3 节，不重复。
+
+### 1.5 小结
+
+1. 生长季平均水位：北方 bog 中位 11–17 cm（四分位约 5–27），fen 5–6 cm（0–15），永冻 bog 20 cm（10–37）；bog 比 fen 深 6–11 cm——已验证（第 1.1 节表）。
+2. 季节变幅：bog 约 20 cm，fen 约 8–12 cm；bog 生长季最深水位中位约 20 cm（四分位 16–28）——已验证（第 1.1 节第 4 条）。
+3. 年际变幅：塔站生长季平均的年际标准差 bog 2–4 cm、fen 3–8 cm，两类差别不明显——已验证（第 1.2 节表）。多站的年际综合没有找到；单站干年 bog 可降到 40–70 cm（Moor House、Mer Bleue）——已验证（第 1.3 节第 1、4 条）。
+4. 水源差别在量上：多数北方 fen 的侧向来水是降水之外的补充而非主项，只吃降水的模式在 fen 上的表现不比 bog 差（第 1.4 节第 2、3 条）；侧向来水不可缺的是降水不足区（Boreal Plains）与矿质沼泽——推测。理由：第 1.4 节第 3、4 条，以及账本 V-98 取消下限后矿质沼泽干透。
+
+## 2. 同水位下 bog 与 fen 的排放是否不同
+
+### 2.1 数据自算
+
+1. BAWLD-CH4，暖季日均排放 CH4Av（mg CH4 m−2 d−1）按生长季平均水位分档的中位（括号内为行数）——已验证（BAWLD-CH4 陆地表，自算，`bawld_q2.py`）：
+
+   | 水位档（地表以下，cm） | bog | fen | 永冻 bog |
+   | --- | --- | --- | --- |
+   | ≥ 20 | 4.0（18） | 11.5（7） | 2.2（35） |
+   | 10–20 | 30.7（21） | 27.0（21） | 5.1（12） |
+   | 5–10 | 63.6（12） | 51.6（24） | 7.8（6） |
+   | 0–5 | 38.2（11） | 65.6（24） | 6.3（4） |
+   | 积水 | 32.0（5） | 88.6（15） | 31.2（4） |
+
+   同档莎草优势（Sedge = D）的比例：bog 0.08–0.40，fen 0.43–0.73——已验证（同脚本）。
+2. BAWLD-CH4 回归，y = log10(CH4Av + 1)，WTFit 为截到 −25 cm 的水位（cm，地表以上为正）——已验证（同脚本，OLS）：
+   - 只放类型：fen 系数 0.372（p < 0.001，n 164），即 fen 是 bog 的 2.4 倍。
+   - 加水位：水位系数 0.029 cm−1，fen 系数降到 0.182（p 0.04），即 1.5 倍。
+   - 再加莎草：fen 系数 0.096（p 0.31，n 160），即 1.25 倍且不显著；莎草优势系数 0.266（p 0.048）。
+   - 加 pH（有 pH 的 68 行）：pH 系数 −0.001（p 0.96），fen 系数 0.362 不变。
+   - 按站先平均（47 站）：fen 系数 0.372 → 加水位 0.198（p 0.20）→ 再加莎草 0.150（p 0.36）。
+   按对数差分解，bog 比 fen 低的部分约一半由水位解释，约四分之一由莎草解释，余下约四分之一在统计上不显著，pH 不解释——推测。理由：以上系数之比；样本为观测研究，水位与莎草本身相关（第 1 条同档莎草比例）。
+3. Treat 2018 数据集北方年排放（g CH4 m−2 yr−1）按水位分档的中位（括号内为行数）——已验证（PANGAEA 数据集，自算，`treat_wt.py`）：
+
+   | 水位档（地表以下，cm） | bog | fen |
+   | --- | --- | --- |
+   | 积水或 0 | 16.5（5） | 18.9（51） |
+   | 0–5 | 16.1（12） | 13.2（39） |
+   | 5–10 | 12.1（15） | 10.1（33） |
+   | 10–20 | 6.8（22） | 6.1（30） |
+   | 20–30 | 4.0（14） | 3.7（17） |
+   | > 30 | 3.2（21） | 3.1（17） |
+
+4. Treat 2018 数据集回归，y = log10(年排放 + 1)，水位截到 40 cm——已验证（同脚本，OLS）：只放类型 fen 系数 0.129（p 0.004，n 276）；加水位后 fen 系数 0.008（p 0.84），水位系数 −0.010 cm−1；再加莎草（Cyperaceae 有无或优势）fen 系数 −0.044（p 0.27）。按站点位置先平均（205 个）：加水位后 fen 系数 −0.006（p 0.89）——已验证（`robust.py`）。
+
+### 2.2 文献
+
+1. 71 块湿地约 19000 个箱式瞬时通量拟合 CH4 = Fmax·exp[−0.5 (WT − uR)²/tR²]（式 1）：最大通量 Fmax bog 132.4 ± 10.2、贫营养 fen 140.6 ± 3.6、富营养 fen 148.5 ± 6.5 mg CH4 m−2 d−1；最适水位 uR bog −23.8 ± 2.4、贫营养 fen −0.1 ± 0.9、富营养 fen 9.7 ± 1.4 cm（负为地表以下）；宽度 tR 21.7、14.9、15.3 cm——已验证（Turetsky 2014 表 2，p.2189；式 1 在 p.2186）。作者认为 bog 最适水位偏低可能因为 bog 的高水位多出现在春秋冷季——已验证（Turetsky 2014 p.2193）。
+2. 以禾草为主的采样点，平均通量在 bog、贫营养 fen、富营养 fen 中相近（约 115 mg CH4 m−2 d−1）；fen 的类平均通量随禾草占比线性增加（R² 0.89），bog 中不成立——已验证（Turetsky 2014 p.2188，图 4b 及说明）。
+3. "Sites with a dense sedge cover had higher emissions than other sites at comparable water table positions"；bog 与 fen 这类水位在地表以下的系统对水位变化更敏感——已验证（Olefeldt 2013 摘要，p.589）。
+4. 厌氧培养：禾草与灌木为主的土壤最大产甲烷率是有树土壤的 5 倍以上，有泥炭藓或其他藓的是无藓的 2 倍以上——已验证（Treat 2015 早期在线版 p.9，对应 GCB 21(7) 正刊页码未核）。
+5. 机理层面：bog 的溶解有机质活性低于莎草 fen，bog 培养的 CO2:CH4 常偏高、乙酸累积、氢营养途径常占优；低 pH 不足以解释更雨养位点的低产甲烷效率，作者推测存在泥炭藓来源的酚类抑制物——已验证（Bridgham 2013 p.1330、p.1334–1335，后者转述 Ye 2012）。培养的定量倍数：
+   - Keller and Bridgham 2007（密歇根三处，3 天泥浆培养）：CH4 产率 bog 0.3–2.3、intermediate fen 1.3–7.8、rich fen 0.04–0.6 µmol g−1 d−1，intermediate fen 约为 bog 的 3–4 倍，rich fen 最低——已验证（子任务读 p.101）。
+   - Ye 2012（同区六处，43 天）：本地 pH 下 rich fen 约为 bog 的 13 倍、intermediate fen 约 3 倍；统一调到 pH 5.5 仍为 5–20 倍；CH4/(CO2 + CH4) 效率在本地 pH 下差约 6 倍——已验证（子任务读 p.41 图 4c、p.42 图 5，读图约值）。
+   - Zalman 2018（明尼苏达三处泥炭藓泥炭地，153 天累计）：贫营养 fen 约为 bog 洼地的 1.3 倍、另一 bog 的 1.6 倍；23 处调查中 bog 类内部相差 3–4 个数量级——已验证（子任务读数据包说明书 p.10、p.19 转载图，读图约值）。
+   培养中 bog 相对 fen 的产率倍数随 fen 的营养程度从约 1.3 到 13 不等，且不单调（Keller 2007 的 rich fen 最低）——推测。理由：以上三条。
+6. CLASS-CTEM 泥炭版把 bog 与 fen 的分解参数分开，把两者对调（K-SWAP）后逐日累积差异处处小于 15 %，作者判断"parameterizing fens and bogs differently for the regulation of water table depth on soil decomposition does not make a large difference"——已验证（Wu 2016 p.2656）。
+7. Evans 2021（英国与爱尔兰 41 点，温带，含 bog、fen 与管理泥炭地）：F = 0.334 × 0.5^((WTDe + 5)/6.31)（t CH4-C ha−1 yr−1，WTDe 为年均有效水位，cm，地表以下为正），R² 0.55，"no other measured site variable provided additional explanatory power"——已验证（主读者抽核接受稿 p.4 式 3 与原句）。用其 Extended Data 表 3 的 23 个箱式点拟合 ln(CH4) = a + b·WTDe + c·[bog]，c = −0.34（p 约 0.07），即同水位 raised bog 约为 fen 的 0.71 倍、不显著——已验证（子任务转录自算，脚本 `sub_obs/evans_edt3.py`）。
+8. Abdalla 2016（北方天然泥炭地 108 点）：不控制水位时 fen 59 点均值 15.4、bog 49 点 7.1 g C m−2 yr−1（p 0.05）；合并式 CH4 = 32.462 exp(0.08 WT)（WT 为 cm，负为地表以下，n 87，r² 0.54），即水位每降约 8.7 cm 通量减半——已验证（主读者抽核 p.7084 原句与式）。混合模型控制水位与 pH 后泥炭类型仍显著（估计 0.271，p 0.03），但响应变量与编码未写明，换算不成倍数——已验证（子任务读表 2，p.7092）。
+9. Couwenberg and Fritz 2012：年均水位浅于 −20 cm 才有显著排放，"applies to boreal as well as to temperate peatlands and to bogs and fens alike"；北方"湿且有通气组织植物"一格里 bog 12 [3.1–59]、fen 123 [6.6–525] kg ha−1 a−1，其余格不分 bog 与 fen——已验证（主读者抽核 p.6–7 原句与表 2，p.9）。表头未写是 CH4 还是 CH4-C——存疑。
+10. Bubier 1995（Manitoba 泥炭复合体）：水位在 6–11 cm 的重叠段，开阔 bog 55–97、开阔 fen 55–77、poor fen 61–108 mg CH4 m−2 d−1，看不出 bog 系统偏低——已验证（主读者抽核表 1，p.458）；CCA 显示 CH4 与 bog 到 fen 的水化学轴只有弱相关——已验证（子任务读摘要，p.455）。
+11. Moore and Roulet 1993（加拿大 127 个湿地点）：log10(CH4) = 1.22 + 0.026 WT（WT 为 cm，正为地表以上），r² 0.33；各区斜率 0.022–0.037 无显著差别，常数相差约 26 倍——已验证（主读者抽核表 1，p.589）。室内泥炭柱中 bog、fen、swamp 泥炭对水位下降的响应形状相同，峰值都在 10–20 cm——已验证（子任务读图 1，p.588）。
+
+### 2.3 判断：改水文为主，植被为辅，不改产率
+
+1. 田间综合里 bog 排放低，首要是水位低：Treat 数据集控制水位后 bog 与 fen 无差别，BAWLD-CH4 中水位解释约一半，Evans 2021 的英国数据同水位 bog/fen 为 0.71 且不显著，Bubier 1995 同水位段无系统差别——已验证（第 2.1 节第 2、4 条；第 2.2 节第 7、10 条）。
+2. 其次是植被：BAWLD-CH4 中莎草优势再解释约四分之一；Turetsky 2014 禾草主导点 bog 与 fen 相近；Couwenberg and Fritz 2012 的十倍差只出现在"北方、湿、有通气组织植物"一格——已验证（第 2.1 节第 2 条；第 2.2 节第 2、3、9 条）。
+3. "同水位同植被下 bog 产率本身更低"：培养里 bog 比 fen 低约 1.3 至 13 倍，随 fen 的营养程度而变且不单调；田间综合扣除水位与莎草后剩约 1.25 倍、不显著；Abdalla 2016 的类型项显著但换不成倍数——推测。理由：第 2.1 节第 2 条，第 2.2 节第 5、8 条；田间样本有限、植被分类粗，培养条件与田间不同。
+4. 对模式的含义：bog 的区别先落在水文（bog 份额的水位分布），其次落在植被输入与通气组织（莎草份额），不单独降 bog 的产率 f——推测。理由：以上三条；账本 D-38 已否定按树降 f，本条与之同向。Turetsky 2014 的 bog 最适水位在 −24 cm、Fmax 与 fen 相当，意味着 bog 水位只在长时间深于约 20 cm 时才显著压低排放（第 2.1 节第 1 条表中 bog 在 10–20 cm 档仍有 30.7），水文改动的效果集中在干季的深水位尾部——推测。
+
+## 3. 模式怎么区分 bog 与 fen
+
+### 3.1 总表
+
+| 模式 | bog 与 fen 的水源区分 | 水位怎么定 | 出处 |
+| --- | --- | --- | --- |
+| ORCHIDEE-PEAT（Qiu 2018） | 不区分，全部当 fen 接同格点其他瓦片的地表径流 | 11 层土柱水量，式 4 | 见 `lit_inflow_lsm_260929.txt` 第 2.1 节 |
+| ORC-HL-PEAT（Largeron 2018） | 区分：先关来水跑一次，1990–2010 平均年水位浅于 30 cm 连续 4 个月以上的格点判 bog 保持无来水，其余判 fen 打开来水 | 式 1 W_supply = TF + S_runoff + R_stagnant | 同上第 2.2 节（p.3287） |
+| PEAT-CLSM（Bechtold 2019） | 不区分，全部按 bog | 微地形正态分布 + 出流 Q = c·T_a | 同上第 1.1 节 |
+| LPJ-WHyMe（Wania 2009a） | 不区分，全部只吃降水 | ΔV = P + M − ET − Q（式 20），式 22–24 | 第 3.2 节第 2 条 |
+| LPJ-GUESS 泥炭（Chaudhary 2017） | 不区分；景观内高低斑块之间水位拉平 | W = P − ET − R − DR ± LF（式 7） | 第 3.2 节第 3 条 |
+| TEM（Zhuang 2004） | 不区分 | Granberg 式水量平衡，30 cm 以下常饱和 | 第 3.2 节第 4 条 |
+| HPM（Frolking 2010） | 以总泥炭高度作雨养程度的代理，只作用于植被；水文不接地下水 | 年水量 dW/dt = P + R_on − ET − R_off | 第 3.2 节第 5 条 |
+| CLASS-CTEM 泥炭（Wu 2016） | 水文不区分（无来水）；bog 与 fen 只在分解参数与活藓厚度上不同 | 一维柱，10 层以下视为基岩 | 第 2.2 节第 6 条；`lit_inflow_lsm_260929.txt` 第 3 节 |
+| ELM-SPRUCE（Shi 2015） | 专为雨养穹状 bog 写：只吃降水，向泥炭地边缘的 lagg 侧向排水 | 式 2 排水在水位深于 lagg 深度时为 0 | 第 3.2 节第 6 条 |
+| CLM5/CTSM | 不区分，坡地水文按列传递壤中流 | 坡地列 | 见 `lit_inflow_lsm_260929.txt` 第 5 节 |
+| JULES-Peat（Chadburn 2022） | 不区分；要更湿时把侧向流置 0 | TOPMODEL | 同上第 4.3 节 |
+| JULES-HIMMELI（Gao 2025） | 不区分；作者建议今后按 bog 与 fen 分组率定 | JULES 水文 | Gao 2025 PDF 第 15 页（文章号 179526） |
+| JSBACH（Kleinen 2020） | 不区分，只算 TOPMODEL 淹水面积 | TOPMODEL | 第 3.2 节第 8 条 |
+| DigiBog（Baird 2012；Young 2017 代码） | 专为雨养 bog 写：净雨输入，二维 Boussinesq 侧流，边缘列定水头 | Boussinesq | 第 3.2 节第 7 条 |
+| PEATBOG（Wu and Blodau 2013） | 专为 bog 写，只吃降水与融雪 | 改写的 Granberg 水量平衡 | 第 3.2 节第 9 条 |
+
+各模式出处中，本节新读的逐条见第 3.2 节；ORCHIDEE、PEAT-CLSM、CLM5、JULES-Peat 的式与页码见 `lit_inflow_lsm_260929.txt`，不重复。
+
+### 3.2 雨养 bog 的简单式子
+
+1. Granberg 1999（TEM、LPJ-WHyMe、PEATBOG 的水文都出自这里）：
+   - 水量平衡 ΔS = P + S_m − E − Q_out（式 6，p.3774）；来水只取降水与融雪，理由是混合泥炭沼泽汇水比小、地势平——已验证（Granberg 1999 第 3.4 节，p.3774）。
+   - 实际蒸散 E_a = E_p（z ≤ a_ea），E_a = E_p·√[(b_ea − z_wt)/(b_ea − a_ea)]（z > a_ea）（式 8，p.3774）；a_ea = 0、b_ea = 0.28 m，即水位降到 0.28 m 时蒸散为 0——已验证（式 8，p.3774；表 1，p.3776）。
+   - 出流 Q_out = −T_r·w·(dh/dl)/A（式 9，p.3774），导水系数 T_r = a_t·exp(−b_t z_wt)（式 10，p.3775），a_t 1.98 m² d−1、b_t 24.38 m−1、dh/dl 0.0033（Degerö）与 0.0028（Storåmyran）；上层冻结质量份额超过 0.7 时无出流——已验证（p.3774–3775；表 1，p.3776）。b_t 24.38 m−1 意味着水位每降 4.1 cm 导水系数降为 1/e——推测。依据：算术。
+   - 最大水位深度 z_b = 0.30 m（表 1 "measured"），水位由总水量反解（式 4–5）——已验证（p.3774；表 1，p.3776）。
+2. LPJ-WHyMe（Wania 2009a）：
+   - 泥炭分上 0.3 m 的活动层（acrotelm）与其下常饱和的 catotelm；水位按 Granberg 1999 略作修改——已验证（Wania 2009a 第 2.3.2 节 [47]，p.6 of 19）。
+   - ΔV_tot = P + M − ET − Q_runoff（式 20）；ET = ET_pot (1.02 + 0.00075 WTP)（式 23，WTP 为 mm，地表以下为负）；Q_runoff = e^(0.01 WTP)（mm d−1，WTP > −150 mm），否则 0（式 24），最大 2.7 mm d−1（WTP 100 mm），最小 0.23 mm d−1（WTP −149 mm）；积水上限 0.1 m；垂向排水不计——已验证（Wania 2009a 第 2.3.2 节 [49]–[52]，p.6 of 19）。
+   - spin-up 期另加 0.5 mm d−1 的"run-on"来水以免植被振荡——已验证（同文 [53]，p.6 of 19）。
+   - 作者明言 fen 要靠另一水源："since fens by definition receive water from groundwater or overland flow ... To model fens effectively, it would be necessary to incorporate a hydrological routing scheme"；BOREAS 站把排水设 0.15 mm d−1 后水位才对上——已验证（同文 [75]–[76]，p.11 of 19）。
+3. LPJ-GUESS 泥炭（Chaudhary 2017）：
+   - W = P − ET − R − DR ± LF（式 7）；R = BR + e^(0.01 WTP)（WTP > TH），否则 0（式 9），TH −30 cm（验证试验 −40 cm）；BR = u·D（式 10），u 0.45（验证试验 0）；积水上限 +20 cm——已验证（Chaudhary 2017 第 2.1.4 节，p.2576；表 2，p.2576）。
+   - LF 只在景观内 10 个高低不同的斑块之间把水位拉平（式 13–15），没有景观外来水——已验证（p.2577–2578）。
+   - 1990–2000 年平均水位：Fäjemyr（bog）观测 0 至 −20、模拟 −15.2 ± 1.8 cm；Degerö（fen）观测 −4 至 −20、模拟 −2.9；Siikaneva（fen）观测 2 至 −25、模拟 1.85 cm——已验证（表 5，p.2582）。
+4. TEM（Zhuang 2004）：dWS/dt = IF − EV − ES − QDR（式 D11），QDR = QDRMAX·f(coarse)，QDRMAX 20 mm d−1（式 D12）；30 cm 以下常饱和、30 cm 为最大水位深度；无侧向来水项——已验证（Zhuang 2004 [20]，p.5 of 23；附录 D6 [70]–[71]，p.18–19 of 23）。
+5. HPM（Frolking 2010）：
+   - 年水量 dW/dt = P + R_on − ET − R_off——已验证（p.3）。首版不接地下水："we are assuming no groundwater exchange"——已验证（p.4）。
+   - ET 随年均水位分段下降（式 11），z1 0.3 m 起降、z2 0.7 m 止，最低为 ET0/(1 + c6)，c6 0.5；R = R1·T·(1 − 10 z_WT)（积水时）或 R1·T（式 12）；R1 = (P − ET0 + R0)(1 + c8·h_PD)（式 13），R0 0.05 m yr−1、c8 0.2 m−1；T 为水位以下积分导水与全剖面之比，下限 T0 0.5（式 14）——已验证（式 11–14，p.7；表 2，p.6）。
+   - 雨养程度只用总泥炭高度 h_PD 作代理，进植被生产力，不进水源——已验证（p.4，图 2 说明）。
+6. ELM-SPRUCE（Shi 2015，雨养穹状 bog）：
+   - q_drai = q_drai,0 [exp(−f_drai z_w) − exp(−f_drai z_lagg)]（z_w < z_lagg），否则 0（式 2）；f_drai 2.5 m−1，z_lagg 相对洼地 0.4 m、相对丘顶 0.7 m——已验证（Shi 2015 p.6467）。率定得 q_drai,0 = 9.20 × 10−6 kg m−2 s−1（约 0.8 mm d−1）——已验证（表 1，p.6469）；约 0.8 mm d−1 为换算——推测。依据：算术。
+   - 丘与洼两列按水位差侧向交换（式 3），洼地积水外排 q = r·z²（式 4）；默认 CLM 水位 3–4 m，改后小于 1 m，2012 年旱季洼地水位降到约 0.30 m——已验证（p.6467–6469）。
+7. DigiBog：以净雨（降水减蒸散）为输入、二维 Boussinesq 方程算侧向流、边缘列设定水头（Dirichlet）——已验证（Young 2017 的公开代码 `DigiBog_WRR2017_hydro_module.f90` 与 README，GitHub youngdm/Digibog_PDM_WRR2017，读码）。原始描述在 Baird 2012，只读到摘要："based on a numerical solution to a version of the Boussinesq equation"——已验证（Baird 2012 摘要，经检索页）。
+8. JSBACH（Kleinen 2020）：用 TOPMODEL 定淹水范围，不单列泥炭水文；作者注明北方泥炭地水位夏季常在地表以下，这部分产甲烷面积不在淹水范围内——已验证（Kleinen 2020 第 2.2.1 节，p.577；p.579 第 4 条）。
+9. PEATBOG（Wu and Blodau 2013）：水位由改写的 Granberg 水量平衡算，来水为降水与融雪，蒸散乘水位与根深因子，积水溢流——已验证（p.1177–1178）。Mer Bleue 1999–2004 年 5–10 月平均水位观测 0.34–0.51 m，模拟差 −0.12 至 +0.03 m——已验证（表 6，p.1196）。
+10. 泥炭饱和导水率随营养梯度升高：2507 条记录的模型 1 中类型哑变量 blanket −1.365、raised bog 0.675、poor fen 0.866、moderate fen 2.134、rich fen 1.877（log10 K_sat 的加项）——已验证（Morris 2022 式 2，p.12 PDF 页；p.11 "increases almost monotonically along the trophic gradient"）。bog 泥炭导水低于 fen，这是 bog 出流对水位下降响应更陡的一个来源——推测。
+
+### 3.3 由 PEAT-CLSM 出流式推出的 bog 稳态水位
+
+1. 只吃降水、长期储量不变的系统满足 Q = P − E（Bechtold 2019 式 12，原文注明 "features that typify natural bogs"）——已验证（p.2147）。
+2. 把 Q = c·T_a(z̄) 与 T_a = K0 (1 − 100 z̄)^(1−m) / [100(m − 1)]（Bechtold 2019 式 8–9，z̄ ≤ 0）代入第 1 条，得长期平均水位 z̄ = {1 − [100(m − 1)(P − E)/(c·K0)]^(1/(1−m))}/100——推测。依据：由式 8、9、12 代数推出。
+3. 取本模式现用值 K0 = 10 m s−1、m = 3、c = 1.5 × 10−5 m−1（g2_bf 的 `ch4_parameter.nml` 第 239–241 行）：P − E = 50、100、150、250、400 mm yr−1 时 z̄ = −0.21、−0.14、−0.12、−0.09、−0.07 m——已验证（scratchpad `steady_wt.py`）。北方 bog 生长季平均观测 0.11–0.17 m 深（第 1.5 节第 1 条），年均稳态落在同一量级，说明现用出流参数不会单独把 bog 抽干——推测。理由：年均稳态比生长季浅，夏季 E > P 时水位再降。
+4. 取 c = 1.5 × 10−7（Bechtold 2019 正文值）时，同样 P − E 下 z̄ 在 −0.012 至 +0.002 m，水位贴地表——已验证（scratchpad `steady_wt.py`）。这支持 `lit_inflow_lsm_260929.txt` 第 1.3 节"10−5 更像实际用值"的判断——推测。
+5. 账本 V-70 中开阔 bog 塔断来水后被抽干，Q-20 记湿地斑块潜热偏高 1.2–1.4 倍、以地面蒸发为主；结合第 3 条，干的主因是蒸发偏强而非出流——推测。理由：面积劈分下低于下限的份额不走出流（`main/MOD_SoilSnowHydrology.F90:1275–1296`，只有补水项），失水只剩蒸散。
+
+## 4. 全球与区域 bog/fen 份额数据
+
+本节由只读子任务 A 读全文与数据（报告 scratchpad `sub_maps/report.txt`），主读者抽核了 BAWLD 许可证、类定义与"分开 75 %、合并 87 %"原句（结果一致）。
+
+### 4.1 总表
+
+| 数据 | 分不分 bog 与 fen | 分辨率与格式 | 覆盖 | 许可证 | 下载 |
+| --- | --- | --- | --- | --- | --- |
+| BAWLD（Olefeldt 2021） | 分：BOG、FEN，另有 PEB、MAR、WTU；各带 95 % 低高值 | 0.5° 格，23 469 个多边形，shapefile，北极 Lambert 等积投影；值为占格面积的 % | 北方林与苔原，25.5 Mkm2 | CC BY 4.0 | doi:10.18739/A2C824F9X |
+| PEATMAP（Xu 2018） | 不分，只有泥炭范围（加拿大另有泥炭占比） | 按洲分包的矢量，源比例尺 1:25 000 至 1:6 500 000 | 全球 | CC BY 4.0 | doi:10.5518/252 |
+| Peatlands of Canada（Tarnocai 2011） | 分：多边形内 bog、fen、swamp、marsh 各占 % | 1:6 500 000，多边形 | 加拿大 | OGL-Canada | doi:10.4095/288786（落地页证书过期，未打开） |
+| 加拿大 250 m 九类泥炭图（2020） | 分：bog、poor fen、rich fen × 开阔、稀树、有林；bog 与 fen 按落叶松含量判 | 250 m GeoTIFF，EPSG:3978 | 加拿大 | OGL-Canada | open.canada.ca 数据集 62d63169-7739-4515-9178-8f628c32a9d4 |
+| Hugelius 2020 北方泥炭图 | 主图只分冻土与非冻土；附带的贫营养与富营养份额层是把加拿大各生物群系比例外推到北半球 | 10 km，等距方位投影 | 23° N 以北 | CC BY 4.0 | doi:10.17043/hugelius-2020-peatland-1、-2 |
+| Peat-ML（Melton 2022） | 不分 | 5′ NetCDF | 全球 | CC BY 4.0 | doi:10.5281/zenodo.5794336 |
+| GLWD v2（Lehner 2025） | 不分；泥炭按气候带与有林无林分 22–27 类 | 15″ GeoTIFF | 全球 | CC BY 4.0 | doi:10.6084/m9.figshare.28519994 |
+| 西西伯利亚泰加湿地复合体（Terentieva 2016） | 分：贫营养单元（洼地、脊、ryam、palsa）与综合 fen 类（含 wooded swamp） | 30 m 分类；公开的是 0.1° 汇总网格 shapefile | 西西伯利亚泰加带 | 论文 CC BY 3.0 | 论文补充材料 zip |
+| 西西伯利亚低地泥炭 GIS（Sheng 2004） | 分泥炭矿床营养型：贫营养、过渡、富营养、混合、未定 | 1:1 000 000 多边形 | 西西伯利亚低地 | 两处记录冲突（CC BY 4.0 与 UCAR 条款） | doi:10.5065/D65T3HM5 |
+
+1. BAWLD 行：类定义、四根分类轴、格点形式与字段——已验证（子任务读 Olefeldt 2021 p.5131–5132、p.5143 与 `~/data/methane/BAWLD/BAWLD_V1_Data_Info.pdf`、`shp/BAWLD_V1.dbf` 字段表）；许可证——已验证（主读者读 `~/data/methane/BAWLD/eml.xml` 的 intellectualRights："Creative Commons Attribution 4.0 International License"）。
+2. 其余各行——已验证（子任务读各数据集元数据、dbf 字段或全文：PEATMAP 接受稿与 Leeds 仓储 readme，GLWD v2 p.2289、p.2308 与 TechDoc，Peat-ML p.4709–4718，Hugelius 2020 SI Appendix p.5–6 与表 S5，Terentieva 2016 表 1–3 与补充材料，Sheng 2004 数据文档）。Tarnocai 2011 与 Vompersky 系列未读到原件，字段名与是否分营养型未能确认，见子任务报告第 3.1、3.9 节——存疑。
+
+### 4.2 BAWLD 的 bog 与 fen 是怎么定的
+
+1. 定义按水源与营养：bog 为 ombrotrophic，"only dependent on precipitation and snowmelt for water inputs"，泥炭至少 40 cm、不受冻土影响，"a water table that rarely is above the surface or more than 50 cm below the surface"，pH < 5；fen 为 minerotrophic，经地表水或地下水与周边矿质土连通，水流缓慢，含贫到富营养——已验证（主读者读 Kuhn 2021 第 2.1.2 节，p.5154；子任务读 p.5154–5155）。bog 类并入了 treed swamp，fen 类并入了 shrubby swamp——已验证（子任务读 Kuhn 2021 p.5154–5155）。
+2. 但格点份额不是由水化学观测得来：29 位专家给约 3 % 的格打分，再用随机森林外推，主要预测量是 NCSCD histosol、GlobLand30 湿地、年均气温与冻土范围——已验证（子任务读 Olefeldt 2021 p.5133–5136）。原文："Predictive models explained ∼ 75 % of the variability in the expert assessments for Bogs and Fens separately (Table 2) but 87 % when considered jointly"，即现有预测量更适合给两者之和建模——已验证（主读者读 Olefeldt 2021 全文文本）。
+3. 面积与不确定度（Mkm2，括号为 95 % 区间）：bog 0.88（0.71–1.24），fen 0.91（0.76–1.14），永冻 bog 0.86（0.67–1.17），marsh 0.16（0.12–0.23），苔原湿地 0.38（0.31–0.53），湿地合计 3.18（2.79–3.79）；区间宽度占中心值 bog 60 %、fen 42 %——已验证（Olefeldt 2021 表 3，p.5137；子任务由 dbf 按 Shp_Area 加权逐位复现）。
+4. 衍生比例：bog/(bog + fen) 全域 0.49，北美 0.45，欧亚 0.52；把永冻 bog 算作 bog 时为 0.66——已验证（子任务由 `BAWLD_V1.dbf` 自算）。本报告第 5.1 节第 4 条用 0.5° 表按余弦纬度加权得 bog 0.28、fen 0.28 的湿地占比，与此一致——已验证（scratchpad `bawld_share.py`）。
+5. 空间格局：bog 与 fen 在较暖区占优，西西伯利亚、哈德逊湾低地、马更些河流域最密；更冷更干处由 bog 转向 fen；年均气温低于 −2.5 °C 时永冻 bog 多于 bog——已验证（子任务读 Olefeldt 2021 p.5136 第 3.1 节）。
+
+### 4.3 区域独立数字
+
+1. 加拿大：Peatlands of Canada 2005 版 bog 724.9、fen 374.1 × 10³ km2（bog 66 %）；Webster 2018 的 250 m 图 bog 73 %；2020 版九类图 bog 751.1、poor fen 150.4、rich fen 61.0 × 10³ km2（bog 78 %，未做投影面积校正）；Hugelius 2020 表 S5 贫营养 67 %、富营养 33 %——已验证（子任务读 Webster 2018 表 5、Hugelius SI 表 S5 p.26，并对 2020 版 GeoTIFF 计数）。加拿大 bog 占 66–78 %，高于 BAWLD 北美的 bog/(bog + fen) 0.45——已验证（第 4.2 节第 4 条与本条）。两者差别部分来自定义（加拿大图的 bog 含有林泥炭，BAWLD 把 treed swamp 归 bog、shrubby swamp 归 fen，且另列永冻 bog）——推测。
+2. 西西伯利亚泰加带：fens 占湿地 14.3 %（南泰加 35 %、中 9 %、北 7 %），贫营养单元（洼地、脊、ryam、palsa）合计 64.5 %——已验证（子任务读 Terentieva 2016 表 3，p.4621）。西西伯利亚低地泥炭矿床：贫营养 41.6 %、过渡 14.5 %、富营养 2.0 %、混合 19.9 %、未定 22.0 %——已验证（子任务对 Sheng 2004 peattype.dbf 自算，合计 592 440 km2 与原文摘要一致）。
+3. 西西伯利亚的有林 bog（ryam）水位"usually about 40 cm below surface"，占全区沼泽 44 %、排放 11 %——已验证（`lit_boreal_perarea_260929.txt` 第 1.1 节第 7 条，Glagolev 2011 p.4）。
+
+### 4.4 对本模式的含义
+
+1. 能直接进 2° 格点的只有 BAWLD：它已在 `data/_tmp/分析_260909_BAWLD对比/bawld_cells.csv` 里（b_bog、b_fen 等列），`mk_rainfed_share.py` 的读法可直接复用——已验证（第 5.1 节第 4 条）。
+2. BAWLD 的 bog 与 fen 各自不确定度大（区间宽 60 %、42 %），两者之和的把握明显高于拆分——已验证（第 4.2 节第 2、3 条）。候选里 bog 份额只用来决定水位托底深度，份额误差直接变成托底深度误差——推测。
+3. BAWLD 域外（温带 bog，如欧洲、北美东部）没有可用的 bog/fen 份额，候选在域外取 0，行为不变——推测。依据：设计。
+
+## 5. 对本模式的含义与候选
+
+### 5.1 现状（读码，本树 728dbfd7）
+
+1. 下限分支：动态湿地斑块水位深于类下限时从侧面补回到下限，补水乘接来水份额（1 − rainfed_share）；开面积劈分（C-65）时斑块看作"接来水份额钉在下限"与"不接来水份额自带亏缺"的面积平均；水位在下限以上时走 PEAT-CLSM 出流——已验证（`main/MOD_SoilSnowHydrology.F90:1259–1305`）。低于下限的不接来水份额只有补水项的配平，没有出流——已验证（同段 1275–1293）。
+2. 下限按类取值（`wetland_max_wtd_of`，`main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90:4369–4395`）；g2_bf 的 `ch4_parameter.nml` 北方 fen 与 bog 同为 0.13 m、出流开（K0 10、m 3、c 1.5 × 10−5）——已验证（`cases/paper_v2/v260929/g2_bf/bld/run/ch4_parameter.nml:229–243`）。
+3. 北方 bog 与 fen 的类标签只看纬度大于 50° 且表层有机质大于 150 kg m−3——已验证（`main/TRACER/MOD_Tracer_Reactive_Methane_BgcLink.F90:1358–1362`）。俄罗斯湿地斑块 1.79 Mkm2 中 1.67 被标为 bog——已验证（`lit_boreal_perarea_260929.txt` 第 3.2 节第 2 条）。所以这个标签不能当 BAWLD 意义上的 bog 份额用——推测。
+4. rainfed_share 现只取 BAWLD 永冻 bog：PEB/(PEB + WTU + MAR + BOG + FEN)——已验证（`v2/scripts/mk_rainfed_share.py` 文件头与第 30–32 行）。BAWLD 0.5° 表按余弦纬度加权，湿地中 PEB 0.26、BOG 0.28、FEN 0.28、WTU 0.13、MAR 0.05；每格 bog 份额按湿地面积加权的中位 0.31（四分位 0.03–0.49）——已验证（`data/_tmp/分析_260909_BAWLD对比/bawld_cells.csv`，自算，scratchpad `bawld_share.py`）。
+5. 侧向来水分支（C-67，默认关，V-127 排队）：来水 = wetland_inflow_share × r·R_up，任何水位都进，出流任何水位都走——已验证（`main/MOD_SoilSnowHydrology.F90:1244–1258`）。这一分支里雨养份额的作用是按比例削减来水——已验证（同段第 1256 行）。
+6. 苔藓与泥炭表面蒸发阻抗（C-26）已有开关 `wetland_moss_rss`，默认关——已验证（`main/TRACER/MOD_Tracer_Reactive_Methane_Const.F90:968–977`）；账本 D-25 未采用。
+
+### 5.2 为什么不直接给开阔 bog 断来水
+
+1. 塔上已试过：V-70 把六座开阔雨养 bog 塔的雨养份额设 1，bog 类中位 KGE_ln 0.08 → −0.63，CA-SCB β 0.77 → 0.25，账本判为"开阔 bog 一去掉侧向补水就被抽干"——已验证（账本 V-70）。
+2. 湿地斑块潜热比塔上高 1.2–1.4 倍，北方站地面蒸发占潜热 80–97 %——已验证（账本 Q-20）。按第 3.3 节，现用出流的年均稳态水位与观测同量级，抽干主要来自蒸发——推测。
+3. 文献中只吃降水的模式都带两道"刹车"：一是水位降到活动层底（约 0.3 m）时蒸散趋零或减弱（Granberg 式 8，b_ea 0.28 m；Wania 式 23；HPM 式 11），二是活动层以下常饱和、出流随水位指数或幂次下降（Granberg 式 10；TEM 30 cm；LPJ-WHyMe catotelm；PEAT-CLSM 式 8）——已验证（第 3.2 节第 1、2、4、5 条；`lit_inflow_lsm_260929.txt` 第 1.1 节）。本模式有第二道（出流），缺第一道，0.13 m 下限在替补它（账本 D-40 的判断）——推测。理由：第 5.1 节第 1 条，账本 D-40 原文。
+4. 纯雨养的 PEAT-CLSM 在 bog 上也偏深约 10 cm（第 1.4 节第 3 条）。所以 bog 的水位描述不能只是"断来水"，还要有深度上的刹车——推测。
+
+### 5.3 候选①：bog 份额深托底（推荐先做）
+
+1. 描述：斑块里 BAWLD bog 所占的那部分不再钉在 0.13 m，而是只吃降水，在 0.13 m 与 z_bog 之间随 P − ET − Q 自由升降；深于 z_bog 才补回。z_bog 代表活动层底：其下常饱和，蒸散与出流都趋零。fen、湿苔原、marsh 份额不变，永冻 bog 份额照 C-65 不设下限。
+2. 输入量：
+   - `bog_share`：BAWLD BOG/(PEB + WTU + MAR + BOG + FEN)，与 rainfed_share 同法由 0.5° 按湿地面积加权到 2°，写进同一个 wetland_veg_file；缺省或 BAWLD 域外为 0。
+   - 已有的 rainfed_share（PEB）。
+3. 式子（下限分支，在第 1260 行取下限处改一处）：
+   - w_b = min(max(bog_share / (1 − rainfed_share), 0), 1)，即接来水份额里 bog 的占比。
+   - z_floor = (1 − w_b)·z_class + w_b·z_bog，z_class 为现 `wetland_max_wtd_of` 的值。
+   - 其余补水、面积劈分、出流逐字不动。
+   这是"斑块单柱、水位取面积平均"下的最简写法：下限取各份额下限的面积平均——推测。依据：设计，未编码。更忠实的写法是像 C-65 那样给 bog 份额再开一个自带亏缺的重启字段，代价是多一个重启量。
+4. 参数：z_bog = 0.30 m，敏感性 0.25–0.35 m。依据：
+   - 模式先例：Granberg 最大水位深度 0.30 m、蒸散在 0.28 m 归零（表 1，p.3776；式 8，p.3774）；TEM 30 cm 以下常饱和（p.19 of 23）；LPJ-WHyMe 活动层 0.3 m、其下常饱和（p.6 of 19）；LPJ-GUESS 出流阈值 −30 cm（p.2576）；HPM 蒸散起降深度 z1 0.3 m（表 2，p.6）——已验证（第 3.2 节）。
+   - 观测：BAWLD-CH4 bog 生长季最深水位中位 20 cm、下四分位 27.5 cm；Treat 数据集北方 bog 水位上四分位 26.5 cm（按站 35.2）；北方 bog 塔生长季日值 90 分位 14.7–26.6 cm——已验证（第 1.1、1.2 节）。0.30 m 约为 bog 干季状态的 75–90 分位——推测。
+5. 开关（默认关）：
+   - `DEF_METHANE%wetland_max_wtd_bog_share`（m），缺省 −1 即不改下限；文件无 `bog_share` 时 w_b = 0，行为逐位不变。
+   - 站点覆盖 `DEF_METHANE%wetland_bog_share_site`，缺省 −1 取文件值；开阔 bog 塔 CA-SCB、DE-SfN、FI-Si2、JP-BBY、NZ-Kop、US-BZB 取 1，其余 0；US-Uaf 已由 C-38 按永冻台地处理，不重复。
+   - C-67 分支若转正：bog 份额同样不接 r·R_up（来水乘 1 − rainfed_share − bog_share），并保留 z_bog 这道托底。
+6. 预期：
+   - 北方格点平均 w_b ≈ 0.28/(1 − 0.26) = 0.38，斑块下限由 0.13 m 变为约 0.195 m；bog 份额大的格点（bog_share 0.5）约 0.23 m——推测。依据：算术，取第 5.1 节第 4 条的份额。
+   - 模式北方水位在夏季贴着下限（账本 Q-25），这几个月水位加深约 6 cm；按观测斜率（BAWLD-CH4 暖季每 cm 0.029 个 log10 单位，Treat 年值每 cm 0.010）换算，贴底时段排放降为 0.65–0.86 倍；贴底时段若占全年排放的一半到八成，北方湿地单位面积降约 7–28 %，取 5–25 % 作量级——推测。理由：第 2.1 节回归系数；贴底时段占全年排放的比例未量，模式自身的水位–排放敏感度也未量。
+   - 斑块只有一根柱、甲烷按平均水位算，而排放对水位是下凸函数，用平均水位算会高估降幅——推测。
+   - 北方 fen 塔（FI-Sii、FI-Lom、SE-Deg）不变；开阔 bog 塔水位可降到 0.30 m 为止，不会重演 V-70 的抽干——推测。
+7. 风险：塔上 bog 实测偏湿（FI-Si2 90 分位 14.7 cm），模式若常落到 0.30 m 会比 C-38 前变差；BAWLD 的 bog 与 fen 份额本身不确定度大（子任务 A 结果见第 4 节）。
+
+### 5.4 候选②：雨养 bog 断来水，加随水位增大的蒸发阻抗
+
+1. 描述：bog 份额与永冻 bog 一样不设下限（并入 C-65 的不接来水份额），失水的刹车改由 C-26 的苔藓与泥炭表面阻抗承担：水位 0.10 m 以内 100 s m−1，更深处按 e 折 0.155 m 增长，上限 1000 s m−1（账本 C-26）。
+2. 输入量：rainfed_share′ = (PEB + BOG)/(PEB + WTU + MAR + BOG + FEN)，由 `mk_rainfed_share.py` 另出一份文件（不覆盖 c38 版）。
+3. 开关：全部已有且默认关，即 `DEF_WETLAND_INFLOW_AREA_SPLIT`、`wetland_moss_rss`、wetland_veg_file 指向新文件；不改代码。
+4. 参数依据：C-26 的阻抗取自 Alekseychik 2018（Degerö、Siikaneva 水位 0–0.20 m 时约 100、0.35 m 时约 460 s m−1）——已验证（账本 C-26 行转引，未重读原文）。同一形状在文献模式里的对应：Granberg 式 8 的 E_a/E_p 在 0.10、0.20 m 为 0.80、0.53；Wania 式 23 为 0.945、0.87——推测。依据：按式 8、23 算术。
+5. 预期：bog 份额水位比候选①更深，北方单位面积降幅更大，量级 10–30 %，上限取决于蒸发阻抗这道刹车够不够——推测。理由：无托底，按第 2.1 节斜率外推。
+6. 风险：V-36 里 C-26 使泥炭站潜热降 10–40 %，但主判据集蒸发比 1.02 → 0.87、9 座靠近观测 8 座远离，未采用（账本 V-36、D-25）；纯雨养模式在 bog 上偏深约 10 cm（第 1.4 节第 3 条）。建议①验过后再试②，或②加①的 0.30 m 托底一起试。
+
+### 5.5 验收用的数（落 log 文件）
+
+1. 塔上：开阔 bog 塔生长季平均水位落在实测 ±5 cm（CA-SCB 14.6、FI-Si2 11.0、JP-BBY 6.6、NZ-Kop 13.4 cm），90 分位不深于实测 90 分位 5 cm 以上（26.6、14.7、14.1、22.6 cm）；bog 类中位 KGE_ln 与三分量不低于父 tag；fen 塔逐位不变（份额 0）——推测。依据：判据设计，数取第 1.2 节。
+2. 全球：北方湿地单位面积对 BAWLD 口径 7.5–8.5 g CH4 m−2 yr−1（`lit_boreal_perarea_260929.txt` 第 1.5 节）；bog 份额 ≥ 0.4 的格点 6–9 月水位分布对 BAWLD-CH4 bog 生长季四分位 5–20 cm——推测。依据：判据设计。
+
+### 5.6 看过但不列为候选
+
+1. 单独降 bog 的产甲烷率 f：田间综合里扣除水位与莎草后 bog 与 fen 差别不显著（第 2.3 节），账本 D-38 已否定按树降 f——推测。
+2. 只把 `wetland_max_wtd_boreal_bog` 放深：类标签把俄罗斯 93 % 的湿地都标成 bog（第 5.1 节第 3 条），放深等于把 fen 一起放深，V-98、V-102 已显示 fen 与 marsh 离不开下限——已验证（账本 V-98、V-102）。
+3. ORC-HL-PEAT 的判别法（先关来水跑一次，按水位判 bog）：BAWLD 域内有实测份额可用，不必再判；BAWLD 域外（温带 bog）可作后备——推测。
+4. ELM-SPRUCE 的"水位低于 lagg 深度出流为 0"：本模式出流已按 (1 − 100z)^(−2) 急降，0.2 m 处只剩地表的约 1/441，效果与之相近，不另加——推测。依据：按 Bechtold 式 8 算术，m = 3。
+
+## 6. 文献与数据清单（字段取自 Crossref，数据集取自 DataCite，2026-09-29 匿名查询，结果存 scratchpad `xref_main.tsv`、`xref_sub.tsv`；子任务交回的著录全部重查；格式：第一作者，年｜题名｜刊 卷(期): 页或文章号｜DOI｜核查）
+
+- Abdalla, 2016｜Emissions of methane from northern peatlands: a review of management impacts and implications for future management options｜Ecology and Evolution 6(19): 7080-7102｜10.1002/ece3.2469｜已核（Crossref）
+- Baird, 2012｜The DigiBog peatland development model 1: rationale, conceptual model, and hydrological basis｜Ecohydrology 5(3): 242-255｜10.1002/eco.230｜已核（Crossref）
+- Bechtold, 2019｜PEAT-CLSM: A Specific Treatment of Peatland Hydrology in the NASA Catchment Land Surface Model｜Journal of Advances in Modeling Earth Systems 11(7): 2130-2162｜10.1029/2018MS001574｜已核（Crossref）
+- Bridgham, 2013｜Methane emissions from wetlands: biogeochemical, microbial, and modeling perspectives from local to global scales｜Global Change Biology 19(5): 1325-1346｜10.1111/gcb.12131｜已核（Crossref）
+- Bubier, 1995｜Ecological controls on methane emissions from a Northern Peatland Complex in the zone of discontinuous permafrost, Manitoba, Canada｜Global Biogeochemical Cycles 9(4): 455-470｜10.1029/95gb02379｜已核（Crossref）
+- Chadburn, 2022｜A new approach to simulate peat accumulation, degradation and stability in a global land surface scheme (JULES vn5.8_accumulate_soil) for northern and temperate peatlands｜Geoscientific Model Development 15(4): 1633-1657｜10.5194/gmd-15-1633-2022｜已核（Crossref）
+- Chaudhary, 2017｜Modelling Holocene peatland dynamics with an individual-based dynamic vegetation model｜Biogeosciences 14(10): 2571-2596｜10.5194/bg-14-2571-2017｜已核（Crossref）
+- Couwenberg, 2012｜Towards Developing IPCC Methane 'Emission Factors' for Peatlands (Organic Soils)｜Mires and Peat 10（Crossref 无页码；原文页脚 Article 03, 1–17）｜10.19189/001c.128455｜已核（Crossref）
+- Delwiche, 2021｜FLUXNET-CH4: a global, multi-ecosystem dataset and analysis of methane seasonality from freshwater wetlands｜Earth System Science Data 13(7): 3607-3689｜10.5194/essd-13-3607-2021｜已核（Crossref）
+- Evans, 2021｜Overriding water table control on managed peatland greenhouse gas emissions｜Nature 593(7860): 548-552｜10.1038/s41586-021-03523-1｜已核（Crossref）；页码按 White Rose 接受稿
+- Frolking, 2010｜A new model of Holocene peatland net primary production, decomposition, water balance, and peat accumulation｜Earth System Dynamics 1(1): 1-21｜10.5194/esd-1-1-2010｜已核（Crossref）
+- Gao, 2025｜Assessing modelled methane emissions over northern wetlands by the JULES-HIMMELI model｜Science of The Total Environment 980: 179526｜10.1016/j.scitotenv.2025.179526｜已核（Crossref）
+- Glagolev, 2011｜Regional methane emission from West Siberia mire landscapes｜Environmental Research Letters 6(4): 045214｜10.1088/1748-9326/6/4/045214｜已核（Crossref）
+- Granberg, 1999｜A simple model for simulation of water content, soil frost, and soil temperatures in boreal mixed mires｜Water Resources Research 35(12): 3771-3782｜10.1029/1999WR900216｜已核（Crossref）
+- Holden, 2003｜Hydrological studies on blanket peat: the significance of the acrotelm-catotelm model｜Journal of Ecology 91(1): 86-102｜10.1046/j.1365-2745.2003.00748.x｜已核（Crossref）
+- Hugelius, 2020｜Large stocks of peatland carbon and nitrogen are vulnerable to permafrost thaw｜Proceedings of the National Academy of Sciences 117(34): 20438-20446｜10.1073/pnas.1916387117｜已核（Crossref）
+- Hugelius, 2020｜Maps of northern peatland extent, depth, carbon storage and nitrogen storage｜Bolin Centre Database（数据集，第 1 版；第 2 版 2021 年为 10.17043/hugelius-2020-peatland-2）｜10.17043/hugelius-2020-peatland-1｜已核（DataCite，两版都查）
+- Kallingal, 2025｜Assimilating multi-site eddy-covariance data to calibrate the wetland CH4 emission module in a terrestrial ecosystem model｜Biogeosciences 22(16): 4061-4086｜10.5194/bg-22-4061-2025｜已核（Crossref）
+- Keller, 2007｜Pathways of anaerobic carbon cycling across an ombrotrophic-minerotrophic peatland gradient｜Limnology and Oceanography 52(1): 96-107｜10.4319/lo.2007.52.1.0096｜已核（Crossref）
+- Kleinen, 2020｜Terrestrial methane emissions from the Last Glacial Maximum to the preindustrial period｜Climate of the Past 16(2): 575-595｜10.5194/cp-16-575-2020｜已核（Crossref）
+- Kuhn, 2021｜BAWLD-CH4: a comprehensive dataset of methane fluxes from boreal and arctic ecosystems｜Earth System Science Data 13(11): 5151-5189｜10.5194/essd-13-5151-2021｜已核（Crossref）
+- Kuhn, 2021｜BAWLD-CH4: Methane Fluxes from Boreal and Arctic Ecosystems｜NSF Arctic Data Center（数据集）｜10.18739/A27H1DN5S｜已核（DataCite）；本地元数据写明 CC0 1.0
+- Kuhn, 2025｜Current and future methane emissions from boreal-Arctic wetlands and lakes｜Nature Climate Change 15(9): 986-991｜10.1038/s41558-025-02413-y｜已核（Crossref）
+- Lafleur, 2003｜Interannual variability in the peatland-atmosphere carbon dioxide exchange at an ombrotrophic bog｜Global Biogeochemical Cycles 17(2): 2002GB001983｜10.1029/2002gb001983｜已核（Crossref）
+- Largeron, 2018｜Implementing northern peatlands in a global land surface model: description and evaluation in the ORCHIDEE high-latitude version model (ORC-HL-PEAT)｜Geoscientific Model Development 11(8): 3279-3297｜10.5194/gmd-11-3279-2018｜已核（Crossref）
+- Lehner, 2025｜Global Lakes and Wetlands Database (GLWD) version 2.0｜figshare（数据集）｜10.6084/m9.figshare.28519994｜已核（DataCite）
+- Lehner, 2025｜Mapping the world's inland surface waters: an upgrade to the Global Lakes and Wetlands Database (GLWD v2)｜Earth System Science Data 17(6): 2277-2329｜10.5194/essd-17-2277-2025｜已核（Crossref）
+- Lu, 2025｜Water Table and Porewater Temperature Data from Peatland Restoration Monitoring Network in Finland｜Fairdata（数据集；DataCite 的 publisher 字段为作者名）｜10.23729/fd-c33fead1-9b4d-3927-9ac5-a382f07f0004｜已核（DataCite）
+- Melton, 2021｜A map of global peatland extent created using machine learning (Peat-ML)｜Zenodo（数据集）｜10.5281/zenodo.5794336｜已核（DataCite）
+- Melton, 2022｜A map of global peatland extent created using machine learning (Peat-ML)｜Geoscientific Model Development 15(12): 4709-4738｜10.5194/gmd-15-4709-2022｜已核（Crossref）
+- Menberu, 2016｜Water-table-dependent hydrological changes following peatland forestry drainage and restoration: Analysis of restoration success｜Water Resources Research 52(5): 3742-3760｜10.1002/2015wr018578｜已核（Crossref）；只读摘要
+- Moore, 1993｜Methane flux: Water table relations in northern wetlands｜Geophysical Research Letters 20(7): 587-590｜10.1029/93gl00208｜已核（Crossref）
+- Morris, 2022｜Saturated Hydraulic Conductivity in Northern Peats Inferred From Other Measurements｜Water Resources Research 58(11): e2022WR033181｜10.1029/2022WR033181｜已核（Crossref）
+- Olefeldt, 2013｜Environmental and physical controls on northern terrestrial methane emissions across permafrost zones｜Global Change Biology 19(2): 589-603｜10.1111/gcb.12071｜已核（Crossref）
+- Olefeldt, 2021｜The Boreal–Arctic Wetland and Lake Dataset (BAWLD)｜Earth System Science Data 13(11): 5127-5149｜10.5194/essd-13-5127-2021｜已核（Crossref）
+- Olefeldt, 2021｜The fractional land cover estimates from the Boreal-Arctic Wetland and Lake Dataset (BAWLD), 2021.｜NSF Arctic Data Center（数据集）｜10.18739/A2C824F9X｜已核（DataCite）
+- Qiu, 2018｜ORCHIDEE-PEAT (revision 4596), a model for northern peatland CO2, water, and energy fluxes on daily to annual scales｜Geoscientific Model Development 11(2): 497-519｜10.5194/gmd-11-497-2018｜已核（Crossref）
+- Sheng, 2004｜A high-resolution GIS-based inventory of the west Siberian peat carbon pool｜Global Biogeochemical Cycles 18(3): 2003GB002190｜10.1029/2003GB002190｜已核（Crossref）
+- Sheng, 2009｜West Siberian Lowland Peatland GIS Data Collection, Version 1.0｜UCAR/NCAR Earth Observing Laboratory（数据集）｜10.5065/D65T3HM5｜已核（DataCite）
+- Shi, 2015｜Representing northern peatland microtopography and hydrology within the Community Land Model｜Biogeosciences 12(21): 6463-6477｜10.5194/bg-12-6463-2015｜已核（Crossref）
+- Tarnocai, 2011｜Peatlands of Canada｜Natural Resources Canada（报告，Crossref 无刊名与页码）｜10.4095/288786｜已核（Crossref）；只读摘要
+- Terentieva, 2016｜Mapping of West Siberian taiga wetland complexes using Landsat imagery: implications for methane emissions｜Biogeosciences 13(16): 4615-4626｜10.5194/bg-13-4615-2016｜已核（Crossref）
+- Treat, 2015｜A pan-Arctic synthesis of CH4 and CO2 production from anoxic soil incubations｜Global Change Biology 21(7): 2787-2803｜10.1111/gcb.12875｜已核（Crossref）；正文页码按早期在线版，与正刊页码的对应未核
+- Treat, 2018｜Growing season, non-growing season and annual CH4 fluxes from temperate, boreal, and Arctic wetlands and uplands｜PANGAEA（数据集）｜10.1594/PANGAEA.886976｜已核（DataCite）
+- Treat, 2018｜Nongrowing season methane emissions–a significant component of annual emissions across northern ecosystems｜Global Change Biology 24(8): 3331-3343｜10.1111/gcb.14137｜已核（Crossref）；正文页码按接受稿
+- Turetsky, 2014｜A synthesis of methane emissions from 71 northern, temperate, and subtropical wetlands｜Global Change Biology 20(7): 2183-2197｜10.1111/gcb.12580｜已核（Crossref）
+- Vompersky, 2011｜Estimation of forest cover extent over peatlands and paludified shallow-peat lands in Russia｜Contemporary Problems of Ecology 4(7): 734-741｜10.1134/S1995425511070058｜已核（Crossref）；只读摘要
+- Wania, 2009｜Integrating peatlands and permafrost into a dynamic global vegetation model: 1. Evaluation and sensitivity of physical land surface processes｜Global Biogeochemical Cycles 23(3): 2008GB003412｜10.1029/2008GB003412｜已核（Crossref；原文页眉印 GB3014）
+- Webster, 2018｜Spatially-integrated estimates of net ecosystem exchange and methane fluxes from Canadian peatlands｜Carbon Balance and Management 13(1): 16｜10.1186/s13021-018-0105-5｜已核（Crossref）
+- Wu, 2013｜PEATBOG: a biogeochemical model for analyzing coupled carbon and nitrogen dynamics in northern peatlands｜Geoscientific Model Development 6(4): 1173-1207｜10.5194/gmd-6-1173-2013｜已核（Crossref）
+- Wu, 2016｜Integrating peatlands into the coupled Canadian Land Surface Scheme (CLASS) v3.6 and the Canadian Terrestrial Ecosystem Model (CTEM) v2.0｜Geoscientific Model Development 9(8): 2639-2663｜10.5194/gmd-9-2639-2016｜已核（Crossref）
+- Xu, 2017｜PEATMAP: Refining estimates of global peatland distribution based on a meta-analysis.｜University of Leeds（数据集）｜10.5518/252｜已核（DataCite）
+- Xu, 2018｜PEATMAP: Refining estimates of global peatland distribution based on a meta-analysis｜CATENA 160: 134-140｜10.1016/j.catena.2017.09.010｜已核（Crossref）；页码未对正式版排版，正文按接受稿
+- Ye, 2012｜pH controls over anaerobic carbon mineralization, the efficiency of methane production, and methanogenic pathways in peatlands across an ombrotrophic–minerotrophic gradient｜Soil Biology and Biochemistry 54: 36-47｜10.1016/j.soilbio.2012.05.015｜已核（Crossref）
+- Young, 2017｜Simulating the long-term impacts of drainage and restoration on the ecohydrology of peatlands｜Water Resources Research 53(8): 6510-6522｜10.1002/2016WR019898｜已核（Crossref）；只读其公开代码，正文未读
+- Zalman, 2018｜Small differences in ombrotrophy control regional-scale variation in methane cycling among Sphagnum-dominated peatlands｜Biogeochemistry 139(2): 155-177｜10.1007/s10533-018-0460-z｜已核（Crossref）；只读摘要
+- Zalman, 2018｜SPRUCE Small Differences in Ombrotrophy Control Regional-Scale Variation in Methane Cycling among Sphagnum-Dominated Peatlands: Supporting Data｜ORNL Terrestrial Ecosystem Science SFA（数据集）｜10.25581/spruce.043/1434643｜已核（DataCite）
+- Zhuang, 2004｜Methane fluxes between terrestrial ecosystems and the atmosphere at northern high latitudes during the past century: A retrospective analysis with a process-based biogeochemistry model｜Global Biogeochemical Cycles 18(3): 2004GB002239｜10.1029/2004GB002239｜已核（Crossref；原文页眉印 GB3010）
+- 无 DOI 的源码：DigiBog_WRR2017（GitHub youngdm/Digibog_PDM_WRR2017，`DigiBog_WRR2017_hydro_module.f90`、`README.md`，2026-09-29 取）。
+- 无 DOI：Ronkanen A-K 等，Boreal Peatland LIFE-project – Effect of restoration and drainage on peatland hydrology: A study of data before and after restoration at 46 sites in Finland，Metsähallitus 报告（未印年份），落地页 https://julkaisut.metsa.fi/en/publication/boreal-peatland-life-project-effect-of-restoration-and-drainage-on-peatland-hydrology-a-study-of-data-before-and-after-restoration-at-46-sites-in-finland/ ；加拿大 250 m 九类泥炭图，https://open.canada.ca/data/en/dataset/62d63169-7739-4515-9178-8f628c32a9d4 。

@@ -1,0 +1,317 @@
+# lit_models_lake_260929：湖泊甲烷模式按过程对比、取长补短——文献调研
+
+- **日期**：2026.09.29-09:52
+- **读者**：下一会话
+- **来源**：文献线只读调研，承接 `v2/迭代账本.md` 的 Q-29、Q-35、Q-36、Q-39、C-33、C-40、C-43、D-41、D-44、D-49、V-34、V-59、V-64、V-73、V-76、V-77 与旧笔记 `data/_tmp/分析_260927_湖泊/notes.txt`；三个只读子任务分读 Purdue 组模式（bLake4Me、ALBM）、其他模式（LAKE、FLaMe、Schmid、DLEM、MeEP 与各陆面模式）、观测证据；主会话读码、做全球诊断（g2_fi 2018）、抽核子任务关键原句、对全部 DOI 重查 Crossref
+- **状态**：第 0 至 6 节成文；第 6 节 67 个 DOI 于 2026-09-29 逐条查过 Crossref（无报错）；第 5 节候选只到依据、改法与离线估算，未动代码与配置
+
+单位：排放一律 CH₄ 质量；g CH₄ m⁻² yr⁻¹ 均按湖面积；1 mmol CH₄ = 16.04 mg。出处简写"作者 年 位置"，完整著录见第 6 节。"全文"指读了原文并给页码、式号或表号；"只读摘要"指只读到摘要；"转引"指数值取自另一篇的转述。行号按树 CoLM202X-paper-v2（HEAD a01c6451）工作副本。
+
+## 0. 覆盖面
+
+1. 读码检索（不分大小写 "lake"）：
+   - `main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90` 448 行命中；读了湖泊数据流上的全部段：底物与产量 2145–2194、沉积氧化 2497–2519、冒泡 2871–2885、传输入口 1509–1520、冰相库 1112–1166、水体节点与水中氧化 3114–3170、分层门控与水气交换 3474–3507、沉积—水导度 3540–3545、冒泡出口 3279–3283 与 3771–3774、O₂ 回写 3868–3874。其余命中按 grep 清单判为诊断输出、重启与调试段。
+   - `MOD_Tracer_Reactive_Methane_Const.F90` 95 行命中（湖泊键 222–225、278–279、315–323、361–417、479–491、717–747 读过）；`mkinidata/MOD_Initialize.F90` 59 行命中（底物初始化 386–405 读过）；`main/MOD_Lake.F90` 416 行命中（说明段 325–359、光衰减 1040–1050、涡扩散 2029–2074 读过）。
+   - CTSM `src/biogeochem/ch4Mod.F90` 253 行命中（产量 2455–2594、冒泡 3316–3335 读过）；`ch4varcon.F90` 开关；`LakeTemperatureMod.F90` 953–972；技术手册 `doc/source/tech_note/Methane`、`Lake` 两章检索 "lake"、"methane"。
+2. 全球诊断：`paper_v2/v260928k/g2_fi` 2018 年 history（`hist_tracer`、`hist`）与 `landdata/diag/lakedepth_2005.nc`，脚本内联，输出存 scratchpad `lake/depthbins_g2_fi_2018.txt`、`region_depth_g2_fi_2018.txt`、`water_path_g2_fi_2018.txt`、`biglakes_g2_fi_2018.txt`、`offline_k1_k4_g2_fi_2018.txt`；另读 `v2/results/lake_regions_*.log`（12 个）与 g2_fi 的 `bld/run/ch4_parameter.nml`。
+3. 文献（检索词与命中，细目在三份子任务笔记的覆盖面节）：
+   - 模式线本地 txt（`data/_tmp/分析_260925_模拟年份/txt/models/`）：ALBM 2024 "lake" 384、bLake4Me 378、FLaMe 464、Schmid 2017 331、LAKE 2.0 303、Schneider von Deimling 86、MeEP 55、DLEM 49；逐项检索词 ebulli / oxid / labile / Q10 / trophic / depth / ice / SOD / dissol（各文件命中数见子任务 a1 笔记第 7 节）。无湖泊甲烷的模式逐个检索 lake、pond、freshwater：JULES、UKESM1、ORCHIDEE（三篇）、ORCHIDEE-PCH4、JSBACH、ICON-XPP、LPJmL6、CLIMBER-X、ELM。
+   - 观测线本地 txt：Johnson 2022 "lake" 513、Kuhn 2021 217、Saunois 2025 139、Rosentreter 2021 72；联网下载全文 17 篇（Sanches 2019、DelSontro 2018 作者稿、Beaulieu 2019、Borges 2011、Borges 2022、Morana 2015、Morana 2020、Durisch-Kaiser 2011、McGinnis 2006、Lauerwald 2023a、b、Wik 2016 GRL、Lofton 2014、Reis 2022、Guseva 2020、Li 2026 预印本、FLaMe 补充材料），Purdue 组全文 7 篇与 ALBM 代码库。
+4. 读法：全文——bLake4Me 2015、Tan & Zhuang 2015 两篇、Zhuang 2023、Tan 2024、Tan 2017、Tan 2018、Guo 2020、LAKE 2.0、Li 2026（LAKE2.6）、FLaMe 2025、Schmid 2017、Guseva 2020、DLEM 2022、MeEP 2023、Schneider von Deimling 2015、Johnson 2022、Rosentreter 2021、Saunois 2025 湖泊节、Kuhn 2021、Sanches 2019、Borges 2011、2022、Morana 2015、2020、Durisch-Kaiser 2011、McGinnis 2006、Lauerwald 2023a、b、Wik 2016 GRL、Lofton 2014；部分读——Guo 2023、Lin 2026（方法与参数节）。只读摘要——Holgerson & Raymond 2016、Wik 2016 NG、Li 2020、Deemer & Holgerson 2021、Rinta 2016、Engle & Melack 2000、Bastviken 2010、Thottathil 2018、2019、Thornton 2016、Kyzivat & Smith 2023，以及旧笔记已记的 Bastviken 2008、DelSontro 2016、West 2016、Jansen 2019、Denfeld 2018、Encinas Fernández 2014。
+5. 主会话抽核：子任务所引原句逐字对过 20 处（Zhuang 2023 的 24.0 ± 8.4、上 0.3 m、无数据湖一律寡营养、单位面积 16.9；Tan 2024 的活性库 10%、MM 低估两到三个量级、热带与 60°N 归因原话；bLake4Me 的 8.94 kgC m⁻²、冰泡 60%、深层产量只能成泡、湖心溶解 99% 来自表层；LAKE 2.0 的 Vmax,w、Km,w、68–70%；LAKE2.6 的 17.7–20.1、αnew 热带深湖 11、浅于 5 m 占面积 1% 贡献 > 63%、3.6/8.6/18.1；FLaMe 的 52% 对 28%、7.39、营养 > 气候 > 湖深；Schmid 的 60% 直达、99% 被氧化；Johnson 的大湖取 10%、热带研究稀缺；Borges 2022 沿岸 < 10 m 积分；Lofton 2014 的 Vmax 0.32、运行在能力的 25% 与 7%；McGinnis 的 30% 与 < 100 m；Morana 2015 的 51–84%），均与子任务笔记一致。
+6. 未看：无。取不到原文的（出版社 403 或补充材料不开放）：Zhuang 2023 与 Tan 2024 补充材料、Johnson 2022 Data Set S1、DelSontro 2018 表 S6、Guérin & Abril 2007、Schmid 2017 补充材料；这些来源的数值本文未采用，或只按"转引"标出。
+7. 存疑（需跑实验才能定）：第 5 节各候选对全球与 DE-Dgw 的量级，见各候选"测法"。
+
+## 1. 模式清单
+
+| 模式 | 版本与宿主 | 主文献（读法） | 尺度 | 本文用途 |
+| --- | --- | --- | --- | --- |
+| CLM4Me 湖泊分支 | CTSM ch4Mod（`allowlakeprod`），E3SM ELM 同源；CoLM V2 沿用并加了水体节点 | CTSM 源码（读码）；Riley 2011 未含湖泊 | 全球 | 被评模式的来源 |
+| bLake4Me | 独立一维湖模式 | Tan, Zhuang & Walter Anthony 2015（全文）；Tan & Zhuang 2015 ERL、JGR-B（全文） | 站点、泛北极 | 底物库、冰泡、气泡溶解 |
+| ALBM | 独立一维，目标接 E3SM | Tan 2017、Tan 2018、Tan 2024（全文）；Zhuang 2023 全球（全文）；Guo 2020、2023，Lin 2026 | 站点、全球 | 两库底物、多沉积柱、非线性氧化、SOD |
+| LAKE 2.0 / 2.6 | 独立一维，k–ε 闭合 | Stepanenko 2016（全文）；Li 2026 预印本（全文） | 站点、全球 | 表层产量、气泡模型、SOD、深度带 |
+| FLaMe v1.0 | CSLM 加生物地化 | Maisonnier 2025（全文，含补充） | 欧洲 | 自生碳底物、谷形湖盆、冒泡阈值深度 |
+| Kinneret 冒泡模式 | Simstrat + 离散气泡模型 | Schmid 2017（全文） | 单湖 | 气泡溶解随深度、水柱氧化 99% |
+| DLEM 内陆水 | DLEM 2.0 路由 | Yao 2022（全文） | 美国本土 | 反例：冒泡瞬达、无分层 |
+| MeEP | FLake 物理核 | Rehder 2023（全文） | 北极池塘 | 植物通道、NPP 驱动产量 |
+| 热融湖多库 | 二维多库永冻土模式 | Schneider von Deimling 2015（全文） | 泛北极 | 老碳、固定氧化 15% |
+| Johnson 2022 | 经验上推（生态气候湖型 × 卫星冰期 × 温度订正） | Johnson 2022（全文） | 全球 | 观测约束与评估对象 |
+
+- 无湖泊甲烷：JULES（Parker 2022 p.5781："We do not model CH4 emissions from freshwater lakes."）、UKESM1（Folberth 2022 第 2.2.1 节）、ORCHIDEE（Ringeval 2010 把湖泊从淹水面积剔除；ORCHIDEE-FLake 只算能量，Bernus & Ottlé 2022 只读摘要）、JSBACH（Kaiser 2017）、ICON-XPP（Wilkenskjeld 2025 预印本）、LPJmL6（Schaphoff 2026 预印本 p.27 列为模式外源）、CLIMBER-X（Willeit 2023 p.3508）——已验证（子任务 a2 逐篇检索与原句）。
+- FLake 本身没有甲烷模块，只有 MeEP 在其外挂甲烷——已验证（两轮检索；Guseva 2020 p.701 表 2 FLake 的生物地化气体栏为空）。
+- CLM4Me 湖泊分支在原宿主默认关闭：CTSM `ch4varcon.F90:27` `allowlakeprod = .false.`，namelist 定义注 "(EXPERIMENTAL, UNSUPPORTED!)"；E3SM ELM 同名开关注 "(EXPERIMENTAL)"——已验证（读 CTSM 源码；E3SM 源码由子任务 a2 下载读）。CTSM 技术手册甲烷章只有一句"如需要，对湖泊再解一次方程"，湖泊章不提甲烷——已验证（检索两章）。Tan 2024 摘要："no earth system model (ESM) has represented lake CH4 dynamics"——已验证（原句）。
+
+## 2. 过程对比矩阵
+
+每项先列各模式做法（关键式或参数，出处），末行是 CoLM V2（读码行号），第 4 节再比差异。
+
+### 2.1 沉积物底物：来源、库、随深度与年龄的反应性
+
+- bLake4Me：两库；新碳库 C = a_erode · 8.94 kgC m⁻²（魁北克 13 湖均值）· (√A/D)^−0.555 · f_pos(h) · SOM/SOM_ref，从界面向下按 αH 指数衰减（先验 1–10 m⁻¹，Tan 2018 调参 3.5 m⁻¹）；老碳只在 yedoma 热融湖融区，29.3 kg m⁻³、三分之一可活化——已验证（Tan 2015 p.465 式 12；Tan 2018 p.4684 表 1）。作者："owing to the low gas diffusivity in sediments, produced CH4 is prone to accumulate locally, yielding bubbles rather than diffusing"（p.471），湖心溶解 CH₄ "primarily from surface sediment methanogenesis (99%)"（p.472）——已验证（原句）。
+- ALBM（Tan 2024）：活性库由浮游藻类碎屑沉降加陆源有机碳的 10% 供给，惰性库由陆源颗粒碳沉降供给，热融湖另有老碳；沉积碳逐步埋深；GPP 受 PAR、温度、SRP 限制，SRP 负荷由实测 SRP 与换水时间估——已验证（p.4、p.8；Tan 2017 式 5）。活性库 "is quickly mineralized in surface sediment where bubbles are difficult to form"（p.10）——已验证（子任务 a1 原句）。
+- ALBM 全球版（Zhuang 2023）：活性碳 = 上 0.3 m 沉积碳（GSOCmap 土壤碳近似）× α_labile，α_labile 按湖型 15%（寡中营养与浅暖湖）、20%（冻土湖）、22%（富营养）、45%（超富营养）；无水质数据的湖一律按寡营养——已验证（p.2 式 1、p.3 表 1、p.4）。
+- LAKE 2.0：P = P0 exp(−αnew z) H(T − T_m) q10^(T/10)/(1 + α_O2 C_O2)，αnew = 3 m⁻¹，P0 为标定常数（3×10⁻⁸ mol m⁻³ s⁻¹），碳库不显式——已验证（Stepanenko 2016 p.1982 式 12，p.1995）。LAKE2.6 全球：P0 随无冰期气温升高而降低（"lakes in colder climates tend to provide more labile carbon"），αnew 1–11 m⁻¹，热带 > 25 m 深湖固定 11——已验证（Li 2026 预印本 p.18–21、p.24 原句）。
+- FLaMe：只算自生有机碳一个库：dC/dt = F_PP − k20 θ^(T−20) C − k_bur C，F_PP 由 TP（GlobalNEWS 负荷路由）、PAR、温度算，k20 = 0.008 d⁻¹、θ = 1.02、k_bur = k20/2、产甲烷份额 f_mm = 1/4；产率沿沉积深度 exp(−α z)，α = 10 m⁻¹ + β F_PP（10–70）——已验证（Maisonnier 2025 式 2–14 p.1785–1787，表 1 p.1783）。
+- DLEM：冒泡 CH₄ 来自沉积 POC 分解（k_POC 0.005 d⁻¹），全部底物来自陆面输入——已验证（Yao 2022 补充 Text S3 式 15，表 S1）。
+- MeEP：产量 75% 线性依赖一月滑动 NPP、25% 为基础——已验证（Rehder 2023 p.2840 式 1）。
+- CTSM：lake_soilc = 580 × cellorg，产量 ∝ lake_soilc(j)·dz(j)，partition_z = 1——已验证（ch4Mod.F90:815、2540–2541、2566）。
+- CoLM V2：lake_soilc = OM_density × 580 gC kg⁻¹（全球 landdata 无 lake_soilc_patches 时回落）——已验证（mkinidata/MOD_Initialize.F90:386–405）；产量 = lake_decomp_fact · lake_soilc(j) · dz(j) · Q10 因子，C-40 的 e 折分布键默认关——已验证（Physics:2147–2173；Const:728）；全球 `replenishlakec = .true.` 碳库不耗减——已验证（g2_fi `bld/run/ch4_parameter.nml:267`）。
+
+### 2.2 产甲烷温度依赖与产量份额
+
+- bLake4Me：P = Rc · C · PQ10^((T − Tpr)/10)，Tpr 新碳 3.5 °C、老碳 0 °C，PQ10,new 先验 1.7–16，冻结即停；无 O₂ 抑制与替代电子受体——已验证（Tan 2015 p.464 式 11，p.470 表 2）。
+- ALBM：P = V_CH4 f(Rx) f(sal) PQ10^((T − Tpr)/10)[OC]，三库各自 V_CH4（惰性 0.002–0.02、活性 0.02–0.1 yr⁻¹）与 PQ10；CO₂:CH₄ 产比惰性、活性、老碳 2、8、8——已验证（Tan 2024 p.4 式 1，p.9 表 2）。Zhuang 2023 标定后 PQ10 1.7–5.5（分湖类）——已验证（p.9）。
+- LAKE 2.0：q10 = 2.3（Liikanen 2002），O₂ 抑制 α = 316.8 m³ mol⁻¹；LAKE2.6 q10 2.5、硫酸盐 > 30 µmol L⁻¹ 置零——已验证（Stepanenko 2016 p.1982；Li 2026 p.28 式 A2）。
+- FLaMe：无单独温度式，温度只经矿化 θ = 1.02 进入——已验证（p.1786–1787）。
+- 观测：BAWLD 表观 Q10 扩散 4.3、冒泡 2.4——已验证（Kuhn 2021 p.5168、p.5170）；Yvon-Durocher 2014 生态系统尺度 0.96 eV——已验证（旧笔记第 2.5 节，本地 PDF）。
+- CTSM：Q10lake = 1.5 × q10ch4，基准 298 K，f_ch4_adj = 0.5（"assume no redox limitation"）——已验证（ch4Mod.F90:2464、2541、2593）。
+- CoLM V2：Q10lake = 1.5 × q10methane（g2_fi 1.33 → 2.0）或 `q10lake` 覆盖，基准 298 K，冻结斜坡 min(1, max(0, T − Tf + 1))，CH₄ 份额 min(f_methane, 0.5) = 0.2——已验证（Physics:2145–2146、2175、2180；Const:315–319；g2_fi nml:80、93）。
+
+### 2.3 沉积物内与水柱的甲烷氧化、下层耗氧
+
+- bLake4Me：双 MM × OQ10（Tor = −5.5 °C），Tan 2018 取 Q_CH4 4.4 µmol m⁻³ s⁻¹、k_CH4 18.6 mmol m⁻³、k_O2 109 mmol m⁻³、OQ10 2.1；无光合产氧，水—沉积界面 O₂ 通量为零（即无 SOD）——已验证（Tan 2015 p.467 式 21–24；Tan 2018 p.4684 表 1）。
+- ALBM：用 Thottathil 2019 非线性式 O = Q[CH₄]^β e^(−λ[O₂])(1 − e^(−30[O₂])) OQ10^(…)，β 0.5–1.5、λ 2–20，理由是 MM "would either underestimate CH4 oxidation in the hypolimnion or overestimate it in the epilimnion"；O₂ 收支含光合产氧、DOC 矿化、藻类呼吸、甲烷氧化——已验证（Tan 2024 p.4 式 2，p.9 表 2；Tan 2017 式 18）。多数代表湖水柱氧化占收支 85–97%——推测（读 Tan 2024 图 9 的约值）。Guo 2023 热带洪泛湖另加 SOD = k_s θ_s^(T−20)(1/A)∂A/∂z，k_s 1.74×10⁻²–1.15×10⁻¹ mg O₂ m⁻² s⁻¹，θ_s 1.065，上覆水缺氧时为零——已验证（Guo 2023 p.7–9 表 2，主会话抽核 θ_s 与 k_s）。
+- LAKE 2.0：水柱与沉积顶层都用双 MM：水中 Vmax,w = 1.16×10⁻⁵ mol m⁻³ s⁻¹、K_CH4,w = 3.75×10⁻² mol m⁻³（标定，"a crucial parameter"）、K_O2,w = 2.1×10⁻²；沉积氧化只在 1 cm 顶层；O₂ 汇含 SOD（Walker & Snodgrass 1986，作为湖盆边缘通量）、BOD、呼吸与甲烷氧化——已验证（Stepanenko 2016 p.1983 式 14，p.1984 式 15–17，主会话抽核 Vmax 与 Km）。
+- FLaMe：水柱双 MM × Q10（k_max 0.69 g m⁻³ d⁻¹、K_s,CH4 0.6 g m⁻³），沉积氧化由底水 O₂ 控制，呼吸 80% 在光合层、20% 在下层；敏感性上 k_max 与 Q10,ox 影响 < 10%——已验证（式 15–30 p.1788–1789，表 3 p.1798）。
+- Schmid 2017：水柱 MM（Km 5 µmol L⁻¹、v_max 标定 16 µmol L⁻¹ d⁻¹），零级耗氧 0.081 mg L⁻¹ d⁻¹；进入水柱的溶解 CH₄ 约 99% 被好氧氧化——已验证（p.2680 式 3–6，p.2674 摘要原句）。
+- 观测动力学：Lofton 2014 阿拉斯加两湖下层水 Vmax 0.32 与 8.39 µmol L⁻¹ d⁻¹、Km 4.45 与 10.61 µM，原位只用到能力的约 25% 与 7%；Liikanen 2002 超富营养湖 Vmax 36–140、Km 5.5–44——已验证（Lofton 2014 Results；Liikanen 为转引自 Lofton 2014）。非洲湖表层黑暗培养的周转时间 2–100 h——已验证（Morana 2020 p.5216）。
+- 观测比例：基伍湖 10 m 氧跃层内氧化上升通量的 51–84%，排放只及上升通量约 1%（0.038 对 9.38 mmol m⁻² d⁻¹）——已验证（Morana 2015 p.2078、p.2083）；坦噶尼喀深水产 CH₄ 只有百分之几排出，好氧与厌氧（硫酸盐）氧化各约一半——已验证（Durisch-Kaiser 2011 p.13 of 16）；深处沉积产出的 CH₄ 51–80% 在水柱被氧化——已验证（Bastviken 2008 摘要，旧笔记）。
+- CTSM：湖水不储存、不氧化，只作扩散阻力——已验证（LakeTemperatureMod.F90:953–972）。
+- CoLM V2：沉积层 MM（湖泊可覆盖 vmax、k_m_o2、氧化层深，g2_fi 全取默认）——已验证（Physics:2497–2519；g2_fi nml:199–202）；C-33 让沉积非甲烷分解按 1:1 耗 O₂——已验证（Physics:2194；g2_fi nml:338）；水体一个节点，氧化 = scale · vmax · c/(k_m + c) · O₂/(k_m_o2 + O₂) · 1.9^((T − 285.15)/10) · 液深，vmax 与 k_m 用土壤值 1.25×10⁻⁵ mol m⁻³ s⁻¹ 与 5×10⁻³ mol m⁻³——已验证（Physics:3150–3170；g2_fi nml:189、191）。水体 O₂ 只有空气交换来源与甲烷氧化、沉积吸收两个汇，无 SOD 公式——已验证（Physics:3868–3874 与上段）。
+
+### 2.4 冒泡：阈值、与水深的关系、水柱溶解
+
+- bLake4Me：孔隙水 CH₄ 超过临界浓度 40% 成泡，临界值含大气压 + 该处静水压、扣 N₂；气泡上升、膨胀并与周围水交换四种气体，到水面释放；按岸带与湖心各用平均水深——已验证（Tan 2015 p.465–466 式 13–19，p.470）。
+- ALBM：沿用上述气泡模块，新加每湖 5 个沉积柱（等深线），各柱用自己的水深算阈值："most of ebullitive CH4 can be emitted without much loss unless blocked by lake ice or dissolved during transport in deep lakes"——已验证（Tan 2024 p.4、p.8、p.10 原句）。
+- LAKE 2.0：多沉积柱 + McGinnis 型单气泡模型逐层溶解进水柱；12.5 m 深处离开沉积的气泡 CH₄ 有 68–70% 到达水面——已验证（Stepanenko 2016 p.1984–1986 式 23–30，p.1995 原句）。LAKE2.6 全球：0–2 m 深度带 20.0、> 25 m 深度带 0.3 mg m⁻² d⁻¹；浅于 5 m 的湖占面积 1% 贡献 > 63%——已验证（Li 2026 p.25 原句）。
+- FLaMe：沉积中 CH₄ + N₂ 分压超过静水压的深度 z_eb,min 以下全部冒泡、以上全部扩散；气泡按 McGinnis f_bdiss(z) 溶解（5 mm）；理论湖 10 m 对 35 m，产量走冒泡的份额 52% 对 28%——已验证（p.1787–1788 式 16–22；补充 S4.4 原句）。
+- Schmid 2017（Kinneret，最大 44 m）：气泡 CH₄ 7% 溶在 20 m 以下、33% 溶在 20 m 以上、60% 直达大气——已验证（p.2682 原句）。
+- 观测：McGinnis 2006 淡水水库 23 m 深，6 mm 气泡到水面仍剩约 30% CH₄；只有 < 100 m 水深的渗漏能把显著 CH₄ 送到大气——已验证（p.12–13 of 15 原句）。Borges 2022 只在 < 10 m 沿岸带积分冒泡（面积 135 206 km²，对前人全湖 585 536 km²），泛热带冒泡因此比前人低 6 倍——已验证（原句）。DelSontro 2016 湖泊冒泡只见于 < 3 m 水深——已验证（旧笔记，只读摘要）。BAWLD 北方湖冒泡与水深无统计关系（P = 0.91，北方湖多 < 5 m）——已验证（Kuhn 2021 p.5170）。
+- DLEM：气泡"would instantly release into the atmosphere"，不随水深——已验证（Yao 2022 Text S3）。
+- CTSM 与 CoLM V2：层内气相份额超过 vgc_max（0.15）即冒泡，压力 = 大气 + ρg(z + 水深)；冰份额 > 0.1 时关——已验证（Physics:2871–2885；ch4Mod.F90:3316、3335）。冒泡总量直接作水面通量，不进水体节点、不溶解、不氧化——已验证（Physics:3279–3283、3771–3774）。
+
+### 2.5 扩散与气体交换
+
+- bLake4Me：Riera 1999 风速式（2.07 + 0.125 U^1.7）——已验证（Tan 2015 p.467 式 25）。
+- ALBM 与 Zhuang 2023：Heiskanen 2014 表面更新式（风 + 浮力对流速度 w*）；Tan 2017："the wind-based models … are likely to underestimate air-water gas transfer velocity … during surface cooling"——已验证（Tan 2017 式 19 与原句；Zhuang 2023 式 4）。
+- LAKE 2.0：Cole & Caraco 风速式或表面更新式二选一；LAKE2.6 用表面更新式——已验证（Stepanenko 2016 式 21–22；Li 2026 式 A6–A7）。
+- FLaMe：Cole & Caraco（5.75×10⁻⁶ + 5.97×10⁻⁷ U^1.7 m s⁻¹）——已验证（式 33，表 1）。
+- 含湖面积的经验式（Vachon & Prairie 2013：k600 = 2.51 + 1.48 U + 0.39 U log10(LA)）——转引自 Yao 2022 补充表 S3，原文未读。
+- CoLM V2：Cole & Caraco k600 = 2.07 + 0.215 U^1.7 cm h⁻¹，Schmidt 数校正，冰份额 > 0.1 或（C-43 开时）分层时关——已验证（Physics:3488–3507）。
+
+### 2.6 分层、翻转、冰封与春季释放
+
+- bLake4Me：冰下低强度气泡被冰捕获，融冰时释放 60%（其余视为损失）；高强度热点气泡可穿冰——已验证（Tan 2015 p.466 原句）。
+- ALBM：冰困气泡融冰释放速率 0.14–1 d⁻¹、冰内溶解速率 0.005–0.14 d⁻¹；代码注释 "only 10% of bubble remains in gaseous state after winter"——已验证（Tan 2024 p.9 表 2；代码 bubble_mod.f90:481–492，子任务 a1 读码）。代码与论文版本是否一致——存疑（子任务未核）。
+- LAKE2.6：冰期 90% 气泡被截留，破冰时释放 67.5%——已验证（Li 2026 附录 A）；同处与附录 B 的比例互不自洽——存疑（原文问题）。
+- FLaMe：表层水温接近 4 °C 判翻转，整柱均匀化；冰盖使欧洲总量减 7%——已验证（p.1788–1789，p.1798）。
+- Johnson 2022：冰下与分层期下层累积，融冰与春翻释放时氧化 75%、秋翻 89%——已验证（p.9–10 of 22）。
+- 观测：融冰期占年排放 27%（Denfeld 2018）、26–59%（Jansen 2019）——已验证（旧笔记，只读摘要）；冰下积累的 CH₄ 64–96% 逃过氧化（Jansen 2019）——已验证（旧笔记，只读摘要）。
+- CoLM V2：冰封时水体库按液态份额转入冻结库，融化时放回；冰份额 > 0.1 关冒泡与交换，CH₄ 积在沉积孔隙水，融冰后以冒泡释放、不经氧化——已验证（Physics:1112–1166、2871–2874、3489）。C-43 分层门控只把水体节点与大气隔开，键默认 −1——已验证（Physics:3474–3490；Const:747）。宿主湖温是多层涡扩散（kme 为局部变量，未输出）——已验证（MOD_Lake.F90:333–359、2029–2064）。
+
+### 2.7 植物（湖滨带）
+
+- bLake4Me、LAKE 2.0、LAKE2.6、FLaMe、Schmid、DLEM 均无植物通道——已验证（Tan 2015 p.480 建议将来加；Stepanenko 2016 p.1982；Li 2026 p.29；Maisonnier 2025 p.1801 列为局限）。ALBM 有沉水植物生物量（只供沉积碳），无导管——已验证（Tan 2024 p.5 式 4）。MeEP 有且为主通道（水深 < 0.5 m 视为覆草，f_ox 0.2）——已验证（Rehder 2023 p.2840 式 2）。
+- CoLM V2：湖斑块植物通道与根际送氧置零——已验证（Physics:1515–1518）。
+
+### 2.8 湖盆形态、湖型与大小
+
+- bLake4Me：湖分热融岸带、非热融岸带、湖心三区，岸带截面随深度线性减——已验证（Tan 2015 p.470）；ERL 版缺深度一律 3 m，Guo 2020 批评其高估冒泡——已验证（Tan & Zhuang 2015 ERL p.3；Guo 2020 p.5）。
+- ALBM：每湖一个水柱 + 5 个沉积柱（GLOBathy 湖盆），十类代表湖各自标定；Zhuang 2023 按 0.5° 格内湖型、深度（1 m 或 10 m 一档）、形状因子聚簇——已验证（Tan 2024 p.7–8 表 1；Zhuang 2023 p.4–5）。
+- LAKE2.6：HydroLAKES > 10 ha 按 2° 格 × 5 个深度带（0–2、2–5、5–10、10–25、> 25 m）合成 14 844 个湖格——已验证（Li 2026 p.6–7、p.21）。
+- FLaMe：谷形湖盆 A(z) = A0/(2s)·(s + arctanh((1 − 2z/h_max) tanh s))，s = 2，h_max = 2 h_mean（HydroLAKES），每 0.5 m 水层接一个沉积柱；格内按面积分 4 级，营养由 TP 表征——已验证（式 1 p.1782）。
+- Johnson 2022：7 类生态气候湖型，另按 < 5000 与 ≥ 5000 km²；≥ 5000 km² 的湖取同区小湖的 10%（非实测）——已验证（p.5 表 2；p.9 of 22 原句）。
+- CoLM V2：每湖斑块一个 lakedepth（O-4 起只取有湖深的像元，缺失取 10 m），无湖盆、大小、营养分级；光衰减 eta = 1.1925 · max(depth, 1)^−0.424——已验证（账本 Q-39、V-82；MOD_Lake.F90:1047）。
+
+## 3. 评估证据：哪些机理与更好表现相关，纬度形态怎么解释
+
+### 3.1 模式作者对机理与表现的原话
+
+1. 营养状态第一：FLaMe "the trophic level exerts the most important control on CH4 dynamics, followed by climate, and finally, lake depth"，南欧高值 "driven by much higher eutrophic status of southern lakes (together with higher temperatures)"；敏感性 f_mm、P_Chl,max、K_s,P 主导，k_max 与 Q10,ox < 10%——已验证（Maisonnier 2025 p.1795、p.1797 原句；表 3 p.1798）。
+2. ALBM 纬度形态归因：热带与约 50°N 高值 "mainly caused by strong CH4 emissions from eutrophic lakes where CH4 production can be fueled by high rates of carbon deposition from in‐lake primary production"；约 60°N 低值因 "lakes are usually oligotrophic and have long ice‐cover periods and mild summers"——已验证（Tan 2024 p.19，主会话抽核）。
+3. 水柱氧化动力学：ALBM 以 MM 式在热带洪泛湖（Janauacá）把氧化 "underestimated … by two to three orders of magnitude"，改用非线性式——已验证（Tan 2024 p.18 原句）。LAKE 2.0 称水中 K_CH4 "a crucial parameter … effectively changing mean levels of mixed-layer CH4 concentration"——已验证（子任务 a2 原句）。
+4. 深湖与热带深湖：LAKE2.6 若按回归给热带深湖 αnew 会高估扩散，改为固定 11 m⁻¹，理由是深湖排放高于浅湖 "contradicts previous understanding based on observations"——已验证（Li 2026 p.18 原句，主会话抽核）。浅于 5 m 的湖占面积 1% 贡献 > 63%——已验证（同 p.25）。
+5. 深湖气泡与氧化：Schmid 2017 "at least one of the two sources needs to be quantified independently"，因为冒泡直达大气、扩散几乎全被氧化——已验证（p.2690–2691）。Guo 2020："methane can be oxidized along diffusive transportation, and thus deeper lakes usually mean more loss by oxidation"——已验证（子任务 a1 原句）。
+6. 过程模式的局限：Zhuang 2023 "Classifying all lakes without water quality information as oligotrophic is likely to underestimate emissions"，氧化参数 "not based on observed methane oxidation rate, rather based on the net lake emission data"——已验证（p.10–11）。LAKE2.6 "the model lacks parameterization of lake productivity"，高通量富营养湖普遍低估——已验证（Li 2026 p.19–20）。
+
+### 3.2 实测纬度形态
+
+1. Johnson 2022 表 2：热带/亚热带小湖（< 5000 km²）排放季日均 235 mg m⁻² d⁻¹ × 363 d ≈ 85 g m⁻² yr⁻¹，大湖按假设 23 mg m⁻² d⁻¹（≈ 8.4 g）；按面积加权热带 50.7、温带 8.4、高纬 7.0 g CH₄ m⁻² yr⁻¹——已验证（子任务 a3 由 p.5 表 2 两列相乘并与各类 Tg 回算一致）。作者："There is also a particular shortage of detailed spatiotemporal studies of tropical lakes"——已验证（p.15 of 22 原句）。
+2. Zhuang 2023（过程模式）：热带 16.9、温带 8.0、泛北极 5.6 g m⁻² yr⁻¹，全球 24.0 ± 8.4 Tg（含水库 2.1）；Saunois 2025 转述其湖泊为 21.9 ± 8.0，"generated much lower flux estimates from tropical lakes than previously implemented statistical approaches, but in line with … Borges et al. (2022)"——已验证（Zhuang 2023 p.6；Saunois 2025 p.1895）。21.9 = 24.0 − 2.1（水库）——推测（算术吻合，Saunois 未写明）。
+3. LAKE2.6：亚北极 3.6、温带 8.6、热带 18.1 mg m⁻² d⁻¹（约 1.3、3.1、6.6 g m⁻² yr⁻¹），全球 17.7–20.1 Tg，冒泡 78–80%——已验证（Li 2026 p.22–23 原句）。
+4. 非洲实测：基伍湖主湖区年排放 13 mmol m⁻² yr⁻¹（约 0.21 g）——已验证（Borges 2011 摘要）；非洲热带湖（> 0.1 km²）扩散 0.4、冒泡 1.8 Tg，泛热带扩散 0.7、冒泡 4.4 Tg（前人 3.1 与 22.2）——已验证（Borges 2022 表 1）；折合非洲热带湖均值约 10.5 g m⁻² yr⁻¹——推测（按其 209 394 km² 面积相除）。
+5. 社区采用值：> 0.1 km² 湖 33 ± 26 Tg，另加 < 0.1 km² 小湖塘 20 [6–33] Tg，湖泊合计 53 [19–86]——已验证（Saunois 2025 p.1895）。
+6. 观测控制因子：湖面积与水深、生产力（总通量 ∝ chla^0.778，DelSontro 2018 式经 Beaulieu 2019 表 3 转引）、温度与排放季、DOC；"small, shallow, productive, and low latitude lakes … show higher areal methane emissions"——已验证（Lauerwald 2023a p.17 原句；Beaulieu 2019 p.4 表 3）。Li 2020："no significant differences in global sediment CH4 production were found for the different maximum depths"，深湖扩散低归因于氧化路径——已验证（只读摘要）。
+7. 扩散份额：全球扩散 14.1、冒泡 23.4 Tg（扩散约占总量 34%）——已验证（Johnson 2022 摘要，旧笔记）；三通道同测的 30 湖扩散 30.9%、储存 35.7%、冒泡 33.4%——已验证（Sanches 2019 p.3）。
+
+### 3.3 热带与北方单位面积差异的解释（只列原文说过的）
+
+- 热带高：温度与富营养化（FLaMe 南欧、ALBM 热带），小浅湖多（ALBM、LAKE2.6），热带大湖低（Borges 2022：深湖混合层深促进氧化、强分层隔离下层，"in the deeper and larger lakes, deeper mixed layers might promote microbial methane oxidation (MOX)"）——已验证（各原句）。
+- 北方低：寡营养、冰期长、夏季温和（ALBM）；排放季短，按全年排放计会高 2–3 倍（Johnson 2022 p.13）；北方冰川湖面积大而低产（Zhuang 2023 p.8 对 Tan 2015 偏高的解释）——已验证（原句）。
+- Zhuang 2023 只把纬度形态归因于湖面积分布，未解释热带单位面积为何高——已验证（子任务 a1 查 p.6–10）。
+
+## 4. 对照本模式
+
+### 4.1 逐过程差异
+
+| 过程 | 本模式（g2_fi 配置） | 他模式共同做法 | 差在哪 |
+| --- | --- | --- | --- |
+| 底物 | 整柱土壤 OM × 580，各纬带 85–104 kgC m⁻²，不耗减，速率只受温度 | 有限的表层活性库，由沉降（初级生产、陆源）补给，营养状态分级或 TP 驱动 | 与营养、湖形、湖龄无关；稳态产量不受供给限制 |
+| 产量深度分布 | 按碳剖面，97% 在 9 cm 以下（C-40 可改，默认关） | exp(−αz)，α 3–11 m⁻¹（LAKE）、10–70（FLaMe）、3.5（ALBM 惰性库） | 方向相反；C-40 已写，D-41 挂起 |
+| 温度 | Q10 2.0，基准 298 K | PQ10 1.7–5.5（ALBM 分类标定）、2.3–2.5（LAKE）、θ = 1.02（FLaMe） | 数值在文献范围；问题不在温度式本身 |
+| 水柱氧化 | 单节点，土壤 MM，一阶约 216 d⁻¹ | 分层水柱；湖泊实测 Vmax/Km 0.07–6.5 d⁻¹，LAKE 约 27 d⁻¹，bLake4Me 约 20 d⁻¹ | 高 1–3 个量级：任何进入水体的 CH₄ 几乎当步被氧化 |
+| 下层耗氧 | 无 SOD；V-76 水体 O₂ 全年 1.0–1.5 mol m⁻² 不缺氧 | SOD（LAKE、Guo 2023）、藻类与 DOC 呼吸（ALBM、FLaMe） | C-43 门控无效的直接原因 |
+| 冒泡 | 稳态产量减少量氧化全部冒出，与水深无关，直达大气 | 多沉积柱各自阈值 + 上升溶解；深处冒泡份额小 | 深湖与 10 m 缺省湖的冒泡偏高 |
+| 气体交换 | Cole & Caraco 风速式 | 表面更新（ALBM、LAKE2.6）或同式 | 次要（现在扩散约 0，k 不起作用） |
+| 冰与春释放 | 冰下 CH₄ 积在孔隙水，融冰以冒泡释放、不氧化 | 冰困气泡部分损失（释放 60%，或只剩 10%），融冰氧化 75% | 北方春季峰偏大 |
+| 植物 | 无 | 多数无，MeEP 有 | 不是主差 |
+| 湖盆、大小 | 一个 lakedepth，无形态与大小 | 等深线、谷形湖盆、深度带、面积分级 | 无沿岸带 |
+
+以下为本节诊断数（g2_fi 2018，按湖面积加权，g CH₄ m⁻² yr⁻¹）：
+1. 全球湖泊：产量 34.3、沉积氧化 1.87、沉积到水体 0.37、水中氧化 0.19、冒泡 30.9、水面扩散 0.04、排放 30.9；冒泡占排放 99.9%，氧化占产量 5.5%——已验证（scratchpad `water_path_g2_fi_2018.txt`）。对照观测扩散约占 34%（Johnson）、深处产出 51–80% 在水柱被氧化（Bastviken 2008）。
+2. 热带：进入水体的 0.70 全被水中氧化（0.71），扩散 −0.01——已验证（同上）。即 k_ox ≫ k_gas。
+3. 按湖深档，热带 0.5–50 m 各档排放 96–108、产量 99–111，排放 ≈ 产量减约 3，与水深无关——已验证（`depthbins_g2_fi_2018.txt`）。
+4. 大深湖：维多利亚（格点湖深 57 m）85、马拉维（292 m）67、基伍所在格（57 m）74、苏必利尔（177 m）7.1、大奴湖（28.5 m）20、大熊湖（67 m）26——已验证（`biglakes_g2_fi_2018.txt`，2° 格点值）。坦噶尼喀（572 m）与贝加尔（744 m）排放 0、产量 54 与 17–22：孔隙水尚未灌到极高静水压下的冒泡阈值；平衡后按第 3 条机理也会全部冒出——推测（2018 年单年诊断，未看逐年储量）。对照实测基伍 0.21 g（Borges 2011）。
+5. 北方季节：> 60°N 5–6 月占全年排放 57%（4 月 5.8%、5 月 31.7%、6 月 25.2%）；45–60°N 3–5 月 47%——已验证（`offline_k1_k4_g2_fi_2018.txt`）。对照融冰期占 27%（Denfeld 2018）、Johnson 网格 > 60°N 融冰加翻转约 26%（旧笔记）。
+
+### 4.2 "热带偏高、北方偏低"最可能来自哪几个过程
+
+先订正口径：按现行配置（Q10 = 2，g2_fi 2018）北方已不偏低：加拿大 18.7 对 Johnson 8.8、俄罗斯 14.4 对 9.1；全部 18 区中 15 区单位面积偏高（北非、南亚、澳新偏低），全球 71.3 对 41.6 Tg——已验证（`v2/results/lake_regions_g2_fi_2018-2018.log`）。"北方偏低"只在 V-34（Q10 = 3、冷启动后沉积储量未平衡）成立——已验证（账本 Q-29 补查、Q-35）。所以现在的问题是"各纬带都偏高，热带部分区偏高更多"。按过程分：
+
+1. 冒泡与水深脱钩（最大单项）：稳态下深层产量只能冒出，而冒泡不溶解、不经氧化（4.1 第 3、4 条）。赤道非洲 ≥ 30 m 湖深格点 0.080 Mkm² 排 5.2 Tg，已超过 Johnson 该区总量 4.1 Tg——已验证（`region_depth_g2_fi_2018.txt`；lake_regions 日志）。观测上大深湖靠分层储存、跃层氧化与"冒泡只在沿岸"压到很低（Borges 2022、Morana 2015、Durisch-Kaiser 2011）。加拿大 ≥ 10 m 格点（含 10 m 缺省）0.495 Mkm² 排 9.3 Tg，也是同一机理——已验证（同上）。
+2. 水体扩散路径被土壤氧化动力学封死（放大第 1 条）：水中一阶约 216 d⁻¹ 对气体交换约 0.1 d⁻¹，扩散只能约 0，排放只剩冒泡一路，任何"先溶解后逃逸"的路都不通——推测（按式换算，数据见 2.3）。
+3. 底物与营养无关、稳态不受供给限制：热带各档产量都约 100，因为整柱泥炭量级碳乘 25–27 °C 的速率；观测与 ALBM、FLaMe 都把热带高值归于小浅富营养湖，而大贫营养湖低——推测（机理对照，底物数见旧笔记 1.1）。
+4. 湖面积（热带部分区）：巴西模式湖面积 0.091 对 Johnson 0.024 Mkm²、东南亚 0.050 对 0.021（水体含河道），排放偏高主要是面积，单位面积只偏高 1.45 与 1.26 倍——已验证（lake_regions_g2_fi_2018 日志；账本 Q-29）。
+5. 北方：冰下积累的孔隙水 CH₄ 融冰时全部冒出（第 4.1 第 5 条），加上第 1 条的深湖与 10 m 缺省湖——推测（季节份额已验证，归因为推测）。
+6. 温度不是主因：模式热带/北方单位面积比约 100/18 ≈ 5.5，Johnson 约 50.7/7.0 ≈ 7.2——已验证（按上列数相除）；把 Q10 调低只会整体缩放，改不了深湖与季节形态——推测。
+
+## 5. 机理候选
+
+编号 K-1 至 K-5（本文件内部编号，入候选池时由中控另编）。候选池 `v2/候选池.tsv` 现有 8 项均为湿地与稻田，无湖泊项；账本已有的 C-40（e 折产量）、C-43（分层隔绝）不重复提，K-2、K-3 是让这两项生效的缺件。离线估算只作量级参考。
+
+### K-1 冒泡按水深溶解进入水体节点（沉积按谷形湖盆分深度）
+
+- 借自：LAKE 2.0 多沉积柱 + 单气泡溶解（Stepanenko 2016 p.1984–1986 式 23–30、p.1995 的 68–70%）；ALBM 5 个沉积柱（Tan 2024 p.4、p.8）；FLaMe 谷形湖盆 + f_bdiss(z)（Maisonnier 2025 式 1 p.1782，p.1788，补充 S4.4 的 52% 对 28%）；Schmid 2017 的 60% 直达（p.2682）；McGinnis 2006 的 23 m 剩约 30%（p.12 of 15）。
+- 物理依据：静水压使深处更难成泡，气泡上升时 CH₄ 与水体交换而溶解，溶解部分进入水柱受氧化；湖底面积随深度按湖盆形态分布，浅沿岸带面积份额决定能直达大气的冒泡。
+- 改什么：湖泊分支的冒泡总量不再全作水面通量，按 f_s = Σ_k ΔA_k exp(−z_k/h_b)/ΣΔA_k 分成直达大气与溶入水体节点两份；ΔA_k 用 FLaMe 谷形式（s = 2，h_max = 2 × lakedepth）离线算成 lakedepth 的查表函数；溶入部分并入 `lake_water_ch4_stock` 的源项（与水中氧化、水气交换同一处理，Physics:3114–3170）。新键 `lake_bubble_dissol_depth`（h_b，m，≤ 0 关，默认关）。冒泡阈值压力仍用全水深，不改。
+- 参数与文献值：h_b 由 LAKE 2.0 的 12.5 m 到达 68–70% 反推约 34 m；由 McGinnis 的 23 m 剩约 30% 反推约 19 m——推测（按 exp(−z/h_b) 反推，两者气泡大小与水体不同）。取 20–34 m 两档。
+- 预期影响：离线上限（溶入部分全被氧化，h_b = 33.7 m）全球 71.3 → 53.1 Tg；赤道非洲 11.9 → 7.2、加拿大 10.7 → 6.8、美国 4.7 → 3.1、南部非洲 3.9 → 2.1，巴西 9.3 → 8.4、东南亚 5.1 → 4.6（浅湖为主，变化小）——推测（`offline_k1_k4_g2_fi_2018.txt`，按格点湖深算，未计 K-2 下溶解 CH₄ 的部分逃逸）。纬度形态：压深湖多的赤道非洲与北方大湖，热带浅湖基本不变，与观测"深大湖低、小浅湖高"同向——推测。
+- 风险：单一沉积柱的温度取湖底温度，沿岸浅区实际更暖，K-1 只修了气泡路径没修"浅区产量更高"；湖深数据仍多为缺省 10 m（Q-39 之后 1900 个斑块）；与 K-2 联用前，溶入部分会被当步全部氧化，等于直接删减。
+
+### K-2 水体节点的甲烷氧化改用湖水实测动力学
+
+- 借自：LAKE 2.0 水中 K_CH4,w = 3.75×10⁻² mol m⁻³（p.1983，标定且称关键参数）；ALBM 非线性动力学与最适 O₂（Tan 2024 p.4 式 2）；观测 Lofton 2014（Vmax 0.32–8.39 µmol L⁻¹ d⁻¹，Km 4.45–10.6 µM，原位只用到能力的 7–25%）、Liikanen 2002（转引，超富营养湖 Vmax 36–140）、Morana 2020 表层周转 2–100 h。
+- 物理依据：湖水体中甲烷氧化菌密度与饱和土壤不同，实测一阶常数 Vmax/Km 为 0.07–6.5 d⁻¹，现用土壤值约 216 d⁻¹。稳态下进入混合层的 CH₄ 排出份额约 k_gas/(k_gas + k_ox)：现值约 0.05%，按实测 1.5–59%；魁北克表水层约 30% 被氧化（Thottathil 2018 只读摘要），基伍整柱约 99% 被氧化——推测（按式换算）。
+- 改什么：已有键 `lake_vmax_methane_oxid`（Const:224）只改 vmax；新加 `lake_k_m`（mol m⁻³，≤ 0 沿用 `k_m`，默认关），替换 Physics:3161 的 `DEF_METHANE%k_m`。可选第二步：O₂ 最适型抑制（Thottathil 2019 最适约 15 µmol L⁻¹，只读摘要），暂不入。
+- 参数与文献值：k_m 取 LAKE 2.0 的 3.75×10⁻² mol m⁻³；vmax 取实测 0.3–140 µmol L⁻¹ d⁻¹ 即 3.5×10⁻⁹–1.6×10⁻⁶ mol m⁻³ s⁻¹，中值档 8.4 µmol L⁻¹ d⁻¹（9.7×10⁻⁸，Lofton 2014 GTH 114）——已验证（数值见 2.3）。
+- 预期影响：单独开时全球变化小（现沉积到水体只 0.37 g m⁻² yr⁻¹）；与 K-1、C-40、C-43 联用时才打开扩散路径，扩散份额由约 0 升向观测的 30% 量级——推测。
+- 风险：这是按介质换参数，数值跨三个量级，须以通道比例（扩散约 1/3）而非总量验收；单节点水体仍无法表示跃层氧化峰（ALBM 改非线性式的理由），深分层湖要靠 K-3 与 C-43。
+
+### K-3 水体下层耗氧（SOD），让 C-43 分层隔绝产生缺氧储存
+
+- 借自：Guo 2023（ALBM 热带洪泛湖）SOD = k_s θ_s^(T−20)(1/A)∂A/∂z，k_s 1.74×10⁻²–1.15×10⁻¹ mg O₂ m⁻² s⁻¹，θ_s 1.065，上覆水缺氧时为零（p.7–9 表 2）；LAKE 2.0 SOD（Walker & Snodgrass 1986）作边缘通量，夏季下层 1–6×10⁻⁸ mol m⁻³ s⁻¹（p.1984、p.1994）；Schmid 2017 零级耗氧 0.081 mg L⁻¹ d⁻¹（p.2680）。
+- 物理依据：分层期下层与大气隔绝，O₂ 被沉积物与沉降有机物消耗至缺氧，此后甲烷在下层积累、翻转时释放（Encinas Fernández 2014、Bastviken 2008）。V-76 已查明门控在触发，但模式耗氧只来自沉积碳分解约 1 mmol O₂ m⁻² d⁻¹，O₂ 储量 1.0–1.5 mol m⁻² 从不耗尽——已验证（账本 V-76）。
+- 改什么：水体 O₂ 节点加汇 SOD = sod20 · 1.065^(T_bot − 293.15) · O₂/(K + O₂)（Physics:3150–3170 同一处），T_bot 取最底湖层 t_lake；新键 `lake_sod20`（g O₂ m⁻² d⁻¹，≤ 0 关，默认关）。只在 C-43 开时有意义。
+- 参数与文献值：Guo 2023 的 k_s 下界 1.74×10⁻² mg O₂ m⁻² s⁻¹ = 1.5 g O₂ m⁻² d⁻¹（约 47 mmol m⁻² d⁻¹），可在约 30 天耗尽 1.5 mol m⁻² 的 O₂——推测（按式换算）。
+- 预期影响：DE-Dgw 类分层富营养湖出现夏季缺氧储存与秋季翻转峰（塔上 9–10 月 81–85 mg m⁻² d⁻¹，账本 V-64）；翻转释放时储量经水中氧化（K-2）再排出；全球量级与方向取决于 K-2 的氧化常数——推测。
+- 风险：统一的 sod20 会让贫营养深湖（苏必利尔、贝加尔）也缺氧，与实测不符；SOD 本应随营养状态变（D-49 把营养放在后面），所以 K-3 在 K-4 之前只宜作站点机理检验，不宜直接上全球。
+
+### K-4 活性底物库由沉降通量补给（两库，稳态产量受供给限制）
+
+- 借自：ALBM 活性库（浮游藻类碎屑 + 陆源 10%，V_CH4 活性 0.02–0.1 yr⁻¹，Tan 2024 p.4、p.9 表 2）；FLaMe dC/dt = F_PP − k20 θ^(T−20) C − k_bur C，f_mm = 1/4（式 2–10）；bLake4Me 库大小 8.94 kgC m⁻² × (√A/D)^−0.555 × 流域 SOC 比（Tan 2015 式 12）；Zhuang 2023 按营养状态分 α_labile 15/20/22/45%（表 1）；LAKE2.6 P0 随无冰期气温升高而降（p.24）；Schmid 2017 碳收支上限 CH₄ ≤ ½ × (1 − 埋藏 10–40%) × 碳输出（p.2687–2688）。
+- 物理依据：产甲烷消耗的是新沉降的易分解有机碳，稳态下年产量等于沉降通量减埋藏，温度只改变库大小与季节时机；现行不耗减的整柱土壤碳让产量只随温度走，热带与北方的差异全来自 Q10（旧笔记 1.2）。
+- 改什么：湖泊分支加活性库状态量 C_act（gC m⁻²，表层按 exp(−αz) 分布，可接 C-40 的 `lake_prod_efold`），dC_act/dt = F_dep − k_act Q10^(…) C_act − k_bur C_act；产量 = f × k_act Q10^(…) C_act；惰性库保留现行土壤碳但换成惰性速率（ALBM 0.002–0.02 yr⁻¹）。F_dep 的数据三选一：① 营养状态分级（Zhuang 2023 的 LWQ + GLORICH 做法）；② 湖泊有机碳埋藏图配埋藏效率反推（Mendonça 2017，旧笔记 2.6）；③ 按生产力经验式（总通量 ∝ chla^0.778，DelSontro 2018 经 Beaulieu 2019 表 3）。开关 `lake_active_pool`（默认关）。
+- 参数与文献值：k_act 0.02–0.1 yr⁻¹（ALBM）或 k20 = 0.008 d⁻¹、θ = 1.02（FLaMe）；f 0.25（FLaMe f_mm）；埋藏 k_bur = k20/2（FLaMe）——已验证（出处同上）。
+- 预期影响：热带大贫营养湖与北方冰川湖下降，富营养温带湖（DE-Dgw）上升；纬度对比由营养状态与湖形而非只由温度给出——推测。全球量级取决于 F_dep 数据，无法离线估。
+- 风险：需要新数据与重做湖泊初值（D-49 定在物理修正之后）；方案 ③ 的经验式与评估对象（Johnson 的湖型通量）部分同源（账本 Q-36 已指出湖型法同源）；需要新的重启字段与守恒检查。
+
+### K-5 冰封期冒泡进入冰困库，融冰释放时部分氧化
+
+- 借自：bLake4Me 冰困气泡融冰释放 60%（Tan 2015 p.466，引 Greene 2014）；ALBM 冰困气泡释放速率 0.14–1 d⁻¹、冰内溶解 0.005–0.14 d⁻¹（Tan 2024 表 2）；LAKE2.6 冰期截留 90%、破冰释放 67.5%（Li 2026 附录 A）；Johnson 2022 融冰释放时氧化 75%（p.9 of 22）。
+- 物理依据：冰下沉积照常产甲烷，气泡被冰截住或溶入冰下水体，部分在冰下与融冰混合时被氧化；观测融冰期占年排放约 27%（Denfeld 2018），冰下积累 64–96% 逃过氧化（Jansen 2019，只读摘要），各研究之间差异大。
+- 改什么：冰份额 > 0.1 时不再把冒泡置零（Physics:2871–2874），改为照常计算冒泡并送入新状态量"冰困泡库"；融冰（冰份额降到 0.1 以下）后按速率 c_ice 释放，释放时份额 f_ice_ox 进入水体节点（再按 K-2 氧化或逃逸），其余直达大气。新键 `lake_icebubble_release`（d⁻¹）、`lake_icebubble_dissol`（0–1），≤ 0 关，默认关。
+- 参数与文献值：c_ice 0.14–1 d⁻¹，溶解份额 0.4（bLake4Me 释放 60%）到 0.9（ALBM 代码只剩 10%）——已验证（出处同上；ALBM 代码与论文一致性存疑）。
+- 预期影响：> 60°N 5–6 月占全年 57%，其中大部分是冰下积累——推测（7–8 月产量高于 5–6 月而排放低，按此判断）；若积累量的 40–75% 被氧化，> 60°N 年排放降约 15–28%，加拿大 10.7 → 约 8–9 Tg，春季峰份额向观测的约 27% 靠——推测（按季节份额粗算，未跑）。
+- 风险：冰困气泡在沉积还是冰层，模式无冰内结构；释放比例文献跨 10%–60%，是弱约束参数；热带无影响。
+
+### 5.6 建议排序（交中控与用户定）
+
+1. K-1：不依赖新数据，单项离线上限约 −18 Tg，直接针对赤道非洲与北方深湖——推测。
+2. K-5：不依赖新数据，只动北方季节与量级——推测。
+3. K-2 与 K-3 成组，与已挂起的 C-40、C-43 一起在 DE-Dgw 上验：看扩散份额、夏季缺氧与 9–10 月峰；D-41、D-44 挂起的理由正是缺这两件——推测。
+4. K-4 放在营养数据议定之后（D-49）；它决定量级与空间格局的主杠杆——推测。
+测法共同前提：站点用 DE-Dgw（湖深改 9.5 m，旧笔记 1.4），不以 JP-SwL 作量级目标（渗漏热点，旧笔记 1.6）；全球以 g2_fi 同年对照，报 lake_regions 18 区单位面积与扩散/冒泡份额。
+
+## 6. 文献著录（Crossref 返回，2026-09-29 逐条查询）
+
+格式：作者（Crossref 顺序，超过 4 位写首位 et al.），年：题名. 刊名 卷(期), 页或文章号. DOI。预印本与无卷页者照 Crossref 所给。
+
+- Riley, W. J. et al., 2011: Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM. Biogeosciences 8(7), 1925–1953. doi:10.5194/bg-8-1925-2011
+- Tan, Z., Zhuang, Q., Walter Anthony, K., 2015: Modeling methane emissions from arctic lakes: Model development and site-level study. Journal of Advances in Modeling Earth Systems 7(2), 459–483. doi:10.1002/2014ms000344
+- Tan, Z., Zhuang, Q., 2015: Methane emissions from pan-Arctic lakes during the 21st century: An analysis with process-based models of lake evolution and biogeochemistry. Journal of Geophysical Research: Biogeosciences 120(12), 2641–2653. doi:10.1002/2015jg003184
+- Tan, Z., Zhuang, Q., 2015: Arctic lakes are continuous methane sources to the atmosphere under warming conditions. Environmental Research Letters 10(5), 054016. doi:10.1088/1748-9326/10/5/054016
+- Zhuang, Q. et al., 2023: Current and Future Global Lake Methane Emissions: A Process-Based Modeling Analysis. Journal of Geophysical Research: Biogeosciences 128(3), e2022JG007137. doi:10.1029/2022jg007137
+- Tan, Z. et al., 2024: A Lake Biogeochemistry Model for Global Methane Emissions: Model Development, Site-Level Validation, and Global Applicability. Journal of Advances in Modeling Earth Systems 16(10), e2024MS004275. doi:10.1029/2024ms004275
+- Tan, Z. et al., 2017: Modeling CO2 emissions from Arctic lakes: Model development and site-level study. Journal of Advances in Modeling Earth Systems 9(5), 2190–2213. doi:10.1002/2017ms001028
+- Tan, Z., Yao, H., Zhuang, Q., 2018: A Small Temperate Lake in the 21st Century: Dynamics of Water Temperature, Ice Phenology, Dissolved Oxygen, and Chlorophyll a. Water Resources Research 54(7), 4681–4699. doi:10.1029/2017wr022334
+- Guo, M. et al., 2020: Rising methane emissions from boreal lakes due to increasing ice-free days. Environmental Research Letters 15(6), 064008. doi:10.1088/1748-9326/ab8254
+- Guo, M. et al., 2023: Linking Biogeochemical and Hydrodynamic Processes to Model Methane Fluxes in Shallow, Tropical Floodplain Lakes. Journal of Advances in Modeling Earth Systems 15(12), e2022MS003385. doi:10.1029/2022ms003385
+- Lin, J. et al., 2026: Enhancing the Advanced Lake Biogeochemistry Model for Application to Thermokarst Lakes on Qinghai-Tibet Plateau. Journal of Advances in Modeling Earth Systems 18(7), e2025MS005716. doi:10.1029/2025ms005716
+- Stepanenko, V. et al., 2016: LAKE 2.0: a model for temperature, methane, carbon dioxide and oxygen dynamics in lakes. Geoscientific Model Development 9(5), 1977–2006. doi:10.5194/gmd-9-1977-2016
+- Li, X. et al., 2026: Towards a process-based estimation of global lake methane emissions using LAKE2.6（EGUsphere 预印本，Crossref 无卷页）. doi:10.5194/egusphere-2026-2349
+- Maisonnier, M. et al., 2025: A new biogeochemical modelling framework (FLaMe-v1.0) for lake methane emissions on the regional scale: development and application to the European domain. Earth System Dynamics 16(5), 1779–1808. doi:10.5194/esd-16-1779-2025
+- Schmid, M., Ostrovsky, I., McGinnis, D. F., 2017: Role of gas ebullition in the methane budget of a deep subtropical lake: What can we learn from process-based modeling? Limnology and Oceanography 62(6), 2674–2698. doi:10.1002/lno.10598
+- Guseva, S. et al., 2020: Multimodel simulation of vertical gas transfer in a temperate lake. Hydrology and Earth System Sciences 24(2), 697–715. doi:10.5194/hess-24-697-2020
+- Yao, Y. et al., 2022: Dynamics and controls of inland water CH4 emissions across the Conterminous United States: 1860–2019. Water Research 224, 119043. doi:10.1016/j.watres.2022.119043
+- Rehder, Z. et al., 2023: Simulated methane emissions from Arctic ponds are highly sensitive to warming. Biogeosciences 20(14), 2837–2855. doi:10.5194/bg-20-2837-2023
+- Schneider von Deimling, T. et al., 2015: Observation-based modelling of permafrost carbon fluxes with accounting for deep carbon deposits and thermokarst activity. Biogeosciences 12(11), 3469–3488. doi:10.5194/bg-12-3469-2015
+- Parker, R. J. et al., 2022: Evaluation of wetland CH4 in the Joint UK Land Environment Simulator (JULES) land surface model using satellite observations. Biogeosciences 19(24), 5779–5805. doi:10.5194/bg-19-5779-2022
+- Folberth, G. A. et al., 2022: Description and Evaluation of an Emission-Driven and Fully Coupled Methane Cycle in UKESM1. Journal of Advances in Modeling Earth Systems 14(7), e2021MS002982. doi:10.1029/2021ms002982
+- Ringeval, B. et al., 2010: An attempt to quantify the impact of changes in wetland extent on methane emissions on the seasonal and interannual time scales. Global Biogeochemical Cycles 24(2), 2008GB003354. doi:10.1029/2008gb003354
+- Bernus, A., Ottlé, C., 2022: Modeling subgrid lake energy balance in ORCHIDEE terrestrial scheme using the FLake lake model. Geoscientific Model Development 15(10), 4275–4295. doi:10.5194/gmd-15-4275-2022
+- Kaiser, S. et al., 2017: Process-based modelling of the methane balance in periglacial landscapes (JSBACH-methane). Geoscientific Model Development 10(1), 333–358. doi:10.5194/gmd-10-333-2017
+- Schaphoff, S. et al., 2026: Implementing methane dynamics into the LPJmL6 model（EGUsphere 预印本，Crossref 无卷页）. doi:10.5194/egusphere-2025-6210
+- Willeit, M. et al., 2023: The Earth system model CLIMBER-X v1.0 – Part 2: The global carbon cycle. Geoscientific Model Development 16(12), 3501–3534. doi:10.5194/gmd-16-3501-2023
+- Wilkenskjeld, S., Kleinen, T., Stacke, T., Brovkin, V., 2025: Natural wetland methane emissions simulated by ICON-XPP（EGUsphere 预印本，Crossref 无卷页）. doi:10.5194/egusphere-2025-3601
+- Johnson, M. S. et al., 2022: Methane Emission From Global Lakes: New Spatiotemporal Data and Observation-Driven Modeling of Methane Dynamics Indicates Lower Emissions. Journal of Geophysical Research: Biogeosciences 127(7), e2022JG006793. doi:10.1029/2022jg006793
+- Rosentreter, J. A. et al., 2021: Half of global methane emissions come from highly variable aquatic ecosystem sources. Nature Geoscience 14(4), 225–230. doi:10.1038/s41561-021-00715-2
+- Saunois, M. et al., 2025: Global Methane Budget 2000–2020. Earth System Science Data 17(5), 1873–1958. doi:10.5194/essd-17-1873-2025
+- Kuhn, M. A. et al., 2021: BAWLD-CH4: a comprehensive dataset of methane fluxes from boreal and arctic ecosystems. Earth System Science Data 13(11), 5151–5189. doi:10.5194/essd-13-5151-2021
+- Sanches, L. F. et al., 2019: Global regulation of methane emission from natural lakes. Scientific Reports 9(1), 255. doi:10.1038/s41598-018-36519-5
+- DelSontro, T., Beaulieu, J. J., Downing, J. A., 2018: Greenhouse gas emissions from lakes and impoundments: Upscaling in the face of global change. Limnology and Oceanography Letters 3(3), 64–75. doi:10.1002/lol2.10073
+- Beaulieu, J. J., DelSontro, T., Downing, J. A., 2019: Eutrophication will increase methane emissions from lakes and impoundments during the 21st century. Nature Communications 10(1), 1375. doi:10.1038/s41467-019-09100-5
+- Deemer, B. R., Holgerson, M. A., 2021: Drivers of Methane Flux Differ Between Lakes and Reservoirs, Complicating Global Upscaling Efforts. Journal of Geophysical Research: Biogeosciences 126(4), e2019JG005600. doi:10.1029/2019jg005600
+- Li, M. et al., 2020: The significant contribution of lake depth in regulating global lake diffusive methane emissions. Water Research 172, 115465. doi:10.1016/j.watres.2020.115465
+- Borges, A. V. et al., 2022: Greenhouse gas emissions from African lakes are no longer a blind spot. Science Advances 8(25), eabi8716. doi:10.1126/sciadv.abi8716
+- Borges, A. V. et al., 2011: Diffusive methane emissions to the atmosphere from Lake Kivu (Eastern Africa). Journal of Geophysical Research 116(G3), G03032. doi:10.1029/2011jg001673
+- Morana, C. et al., 2015: Methanotrophy within the water column of a large meromictic tropical lake (Lake Kivu, East Africa). Biogeosciences 12(7), 2077–2088. doi:10.5194/bg-12-2077-2015
+- Morana, C. et al., 2020: Methane paradox in tropical lakes? Sedimentary fluxes rather than pelagic production in oxic conditions sustain methanotrophy and emissions to the atmosphere. Biogeosciences 17(20), 5209–5221. doi:10.5194/bg-17-5209-2020
+- Durisch-Kaiser, E. et al., 2011: What prevents outgassing of methane to the atmosphere in Lake Tanganyika? Journal of Geophysical Research 116(G2), G02022. doi:10.1029/2010jg001323
+- McGinnis, D. F. et al., 2006: Fate of rising methane bubbles in stratified waters: How much methane reaches the atmosphere? Journal of Geophysical Research: Oceans 111(C9), 2005JC003183. doi:10.1029/2005jc003183
+- Lofton, D. D., Whalen, S. C., Hershey, A. E., 2014: Effect of temperature on methane dynamics and evaluation of methane oxidation kinetics in shallow Arctic Alaskan lakes. Hydrobiologia 721(1), 209–222. doi:10.1007/s10750-013-1663-x
+- Thottathil, S. D., Reis, P. C. J., Prairie, Y. T., 2019: Methane oxidation kinetics in northern freshwater lakes. Biogeochemistry 143(1), 105–116. doi:10.1007/s10533-019-00552-x
+- Thottathil, S. D., Reis, P. C. J., del Giorgio, P. A., Prairie, Y. T., 2018: The Extent and Regulation of Summer Methane Oxidation in Northern Lakes. Journal of Geophysical Research: Biogeosciences 123(10), 3216–3230. doi:10.1029/2018jg004464
+- Lauerwald, R. et al., 2023: Inland Water Greenhouse Gas Budgets for RECCAP2: 1. State-Of-The-Art of Global Scale Assessments. Global Biogeochemical Cycles 37(5), e2022GB007657. doi:10.1029/2022gb007657
+- Lauerwald, R. et al., 2023: Inland Water Greenhouse Gas Budgets for RECCAP2: 2. Regionalization and Homogenization of Estimates. Global Biogeochemical Cycles 37(5), e2022GB007658. doi:10.1029/2022gb007658
+- Thornton, B. F., Wik, M., Crill, P. M., 2016: Double-counting challenges the accuracy of high-latitude methane inventories. Geophysical Research Letters 43(24)（Crossref 未给页码）. doi:10.1002/2016gl071772
+- Wik, M. et al., 2016: Biased sampling of methane release from northern lakes: A problem for extrapolation. Geophysical Research Letters 43(3), 1256–1262. doi:10.1002/2015gl066501
+- Wik, M. et al., 2016: Climate-sensitive northern lakes and ponds are critical components of methane release. Nature Geoscience 9(2), 99–105. doi:10.1038/ngeo2578
+- Holgerson, M. A., Raymond, P. A., 2016: Large contribution to inland water CO2 and CH4 emissions from very small ponds. Nature Geoscience 9(3), 222–226. doi:10.1038/ngeo2654
+- Bastviken, D., Cole, J. J., Pace, M. L., Van de Bogert, M. C., 2008: Fates of methane from different lake habitats: Connecting whole-lake budgets and CH4 emissions. Journal of Geophysical Research: Biogeosciences 113(G2), 2007JG000608. doi:10.1029/2007jg000608
+- Bastviken, D. et al., 2011: Freshwater Methane Emissions Offset the Continental Carbon Sink. Science 331(6013), 50. doi:10.1126/science.1196808
+- DelSontro, T. et al., 2016: Methane ebullition and diffusion from northern ponds and lakes regulated by the interaction between temperature and system productivity. Limnology and Oceanography 61(S1)（Crossref 未给页码）. doi:10.1002/lno.10335
+- West, W. E., Creamer, K. P., Jones, S. E., 2016: Productivity and depth regulate lake contributions to atmospheric methane. Limnology and Oceanography 61(S1)（Crossref 未给页码）. doi:10.1002/lno.10247
+- Yvon-Durocher, G. et al., 2014: Methane fluxes show consistent temperature dependence across microbial to ecosystem scales. Nature 507(7493), 488–491. doi:10.1038/nature13164
+- Jansen, J. et al., 2019: Climate-Sensitive Controls on Large Spring Emissions of CH4 and CO2 From Northern Lakes. Journal of Geophysical Research: Biogeosciences 124(7), 2379–2399. doi:10.1029/2019jg005094
+- Denfeld, B. A. et al., 2018: A synthesis of carbon dioxide and methane dynamics during the ice-covered period of northern lakes. Limnology and Oceanography Letters 3(3), 117–131. doi:10.1002/lol2.10079
+- Encinas Fernández, J., Peeters, F., Hofmann, H., 2014: Importance of the Autumn Overturn and Anoxic Conditions in the Hypolimnion for the Annual Methane Emissions from a Temperate Lake. Environmental Science & Technology 48(13), 7297–7304. doi:10.1021/es4056164
+- Guseva, S. et al., 2021: Energy Flux Paths in Lakes and Reservoirs. Water 13(22), 3270. doi:10.3390/w13223270
+- Messager, M. L. et al., 2016: Estimating the volume and age of water stored in global lakes using a geo-statistical approach. Nature Communications 7(1), 13603. doi:10.1038/ncomms13603
+- Cole, J. J., Caraco, N. F., 1998: Atmospheric exchange of carbon dioxide in a low-wind oligotrophic lake measured by the addition of SF6. Limnology and Oceanography 43(4), 647–656. doi:10.4319/lo.1998.43.4.0647
+- Heiskanen, J. J. et al., 2014: Effects of cooling and internal wave motions on gas transfer coefficients in a boreal lake. Tellus B: Chemical and Physical Meteorology 66(1), 22827. doi:10.3402/tellusb.v66.22827
+- Mendonça, R. et al., 2017: Organic carbon burial in global lakes and reservoirs. Nature Communications 8(1), 1694. doi:10.1038/s41467-017-01789-6
+- Kyzivat, E. D., Smith, L. C., 2023: A Closer Look at the Effects of Lake Area, Aquatic Vegetation, and Double-Counted Wetlands on Pan-Arctic Lake Methane Emissions Estimates. Geophysical Research Letters 50(24), e2023GL104825. doi:10.1029/2023gl104825
+- Bastviken, D. et al., 2010: Methane Emissions from Pantanal, South America, during the Low Water Season: Toward More Comprehensive Sampling. Environmental Science & Technology 44(14), 5450–5455. doi:10.1021/es1005048
+- Rinta, P. et al., 2016: Higher late summer methane emission from central than northern European lakes. Journal of Limnology（Crossref 未给卷页）. doi:10.4081/jlimnol.2016.1475
+
+以上 67 条由 DOI 查 Crossref 得到（原始返回 scratchpad `lake/crossref_out.tsv`）——已验证（crossref.py 查询，0 条报错）。只作转引、未给 DOI 的：Liikanen 2002、Walker & Snodgrass 1986、Vachon & Prairie 2013、Greene 2014、Grinham 2011，著录未核。

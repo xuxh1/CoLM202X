@@ -1,0 +1,47 @@
+盘点_260928_泥炭土壤参数（只读子任务报告，原文照录；hook 不许在 docs/_tmp 新建该名，改存本处作 Q-45 证据）
+
+日期：2026.09.29-00:12
+来源：读码 CoLM202X-paper-v2 @0d67e4e0（methane-paper-v2）与 ~/mode/Wetland/CTSM @7409d321、tag clm4_5_1_r115；6 站 Sitedata、两批站点 srfdata、v2/config/v2_oo4fpi、CLM 参数 nc
+状态：只读盘点完成；未改代码、未编译、未投递
+
+0. 覆盖面
+范围：paper-v2 树全部 *.F90（mksrfdata/、preprocess/、mkinidata/、main/ 含 HYDRO/TRACER/BGC/URBAN、share/、extends/）；scripts/sites/run_sites.py、v2/scripts/build_site_tree.sh、run/scripts/copy_restart；CTSM master 与 tag clm4_5_1_r115 的土壤常量初始化文件与技术手册 rst。
+检索：vf_om|OM_density|wf_om 28 文件 363 行（数据流上的逐个读，其余为输出、裁剪、Catch、URBAN、Lake）；wetland_tile_peat_share|wetland_peat_share_read|DEF_WETLAND_PEAT_SHARE 4 文件 31 行全读；USE_SITE_soilparameters 2 文件 4 行；organic_max 7 文件 29 行；CALL soil_hcap_cond|hCapacity|hConductivity 4 文件 5 行（后两者无调用）；对 porsl|psi0|bsw|hksati|csol|k_solids|dksatu|dksatf|dkdry|OM_density|sc_vgm|fc_vgm 的赋值（排除 Readin）23 行，均无二次改写 TimeInvariants 数组；CTSM om_* 常数 53/51/22 行全读；14 个 nc 用 ncdump 取值。
+未看：无。
+存疑：冷偏差里孔隙度（潜热库）与导热各占多少，读码定不了；实验：同一站只换泥炭土壤参数、其余逐字不变，比 13 cm 土温与零幕长度。
+
+1. mksrfdata：有机质怎么进土壤参数
+1.1 mksrfdata 不跑 PTF，只读 DEF_dir_rawdata/soil/*.nc 的 30″ 场再聚合（mksrfdata/Aggregation_SoilParameters.F90:296-298, 636-641, 893-907, 1096-1117, 1331-1344）；30″ 场由 preprocess/ 生成（rd_soil_properties.F90:477-499），不在构建里。
+1.1b FI-Sii 站点 srfdata 8 层值（vf_om 0.102089、wf_om 0.05172、OM_density 62.064、theta_s 0.532356、csol 1.101678e6、tksatu 1.14506、tksatf 2.40077、tkdry 0.135876）可由 rd_soil_properties.F90:422-429 的水体缺省（砂 10 %、黏 45 %、SOC 3 %、BD 1.2）逐位手算复现——已验证（ncdump 取值并手算）；推论：该 500 m 像元在预处理地类图上是水体——推测；与 Aggregation_SoilParameters.F90:191-216 水体填充常数同源。
+1.2 预处理：SOC 限 [0.01, 58] %（rd_soil_properties.F90:464-465）；BD<0.111、>2.0 或 SOC>10 % 时 BD = 0.111·2/(2·SOM/100 + 0.111·(100−SOM)/100)，SOM = 1.724·SOC（469-472）。颗粒密度有机质 1.3、矿物 2.71、砾石 2.80（rawdata_soil_solids_fractions.F90:68-75）；vf_om = wf_om·BD/1.3（101）；孔隙度 = 1 − BD·[…/2.80 + …/2.71 + wf_om/1.3]（104-110），theta_s = 孔隙度（rd_soil_properties.F90:483）；OM_density = BD·wf_om·1000 kg m-3（120）；写盘前 vf_* 除以 (1 − 孔隙度)，故 srfdata 的 soil_vf_om 是固相内份额（rd_soil_properties.F90:501-503）。
+热参数（rawdata_soil_thermal_parameters.F90）：csol = vf_grav·2.35e6 + vf_om·2.51e6 + vf_min·csol_min，权重为土体份额，已含 (1 − 孔隙度)（77-107）；方案 4 Balland–Arp：kdry 按固相份额加权（有机质 0.05，135-137, 208）；k_solids = 2.875^vf_grav · 0.25^vf_om · k_min^a（土体份额指数，210-212）；ksat_u = k_solids·0.57^孔隙度、ksat_f = k_solids·2.29^孔隙度（214-215）；FI-Sii 复算一致。
+1.3 水力：ψs、λ 取 8 个 PTF 中位再拟合（rawdata_soil_hydraulic_parameters.F90:183-364），含 SOC 的只有 Mayr–Jarvis 与 Williams，且前者在 SOC≥5 %、BD≤0.9 时剔除（261-275）；k_s 取 23 个 PTF 中位（829-1123）；vG 取 11 个 PTF 中位再拟合（476-755）。结论：有机质经容重与颗粒密度进孔隙度与热参数；ψs、λ、k_s、vG 无泥炭端元。
+1.4 聚合：每斑块只聚合自己的像元（MOD_AggregationRequestData.F90:348-350）；vf、theta_s、csol、OM_density 算术平均，k_s、tksatu、tksatf、tkdry、k_solids 几何平均，ψs、λ、α、n、L 中位；DEF_USE_SOILPAR_UPS_FIT 默认真（MOD_Namelist.F90:163）；湿地像元无专门处理（Aggregation_SoilParameters.F90:323-336）。
+1.5 与 Lawrence and Slater (2008)：CLM 按 f_om = min(ρ_om/130, 1) 线性混合泥炭端元（孔隙度 0.9 或随深度 0.93→0.83、b、ψsat、k_sat 渗流、tkm 0.25、tkdry 0.05、csol 2.5e6 固相值运行时再乘 (1−θsat)）；CoLM 由 BD、SOC 算组分体积份额，无权重。FI-Sii 实测泥炭（BD 80 kg m-3、wf_om 0.971）OM 密度 77.68，按 CLM 只得 f_om 0.60；US-Ivo 第 5 层 OM_density 195.5 但 BD 1385、θs 0.413，按 CLM 封顶为 1。CoLM 公式喂 FI-Sii 实测泥炭（BD 修正后 0.114 g cm-3）得孔隙度约 0.914、vf_om 约 0.986、csol 约 0.22e6、tksatu 约 0.53、tksatf 约 1.90、tkdry 约 0.050（现用 0.532、0.102、1.10e6、1.145、2.401、0.136）——已验证（手算）。
+
+2. 运行时
+2.1 读入：单点每层 SITE_soil_* 标量赋所有斑块（mkinidata/MOD_SoilParametersReadin.F90:137-165），全球逐斑块读（167-300）；porsl = theta_s，psi0 = psi_s·10，vG 构建 psi0 固定 −10 mm（356），bsw = 1/lambda，wfc 由 vG 在 −339.9 cm 算（361-362），hksati = k_s·10/86400；8 数据层映射 10 模式层（416-487），13 cm 落数据第 3 层；读入后无任何代码按有机质再混合。
+2.2 热：CoLMMAIN.F90:844（patchtype≤2 同支）→ THERMAL → MOD_GroundTemperature.F90:204-271 调 soil_hcap_cond；hcap = csol + vf_water·4.188e6 + vf_ice·1.94153e6（MOD_SoilThermalParameters.F90:299，csol 不再乘 1−孔隙度）；方案 4 默认（MOD_Namelist.F90:283）：未冻 ke 指数含 vf_om（393-394），冻结 ke = sr^(1+vf_om)（396），T>tfrz 用 dksatu，否则整层切 dksatf（422-429）；CTSM 按液水分数混合（SoilTemperatureMod.F90:720-721）。
+2.3 相变：过冷水上限按 ψ = L_f(T−tfrz)/(gT)（MOD_PhaseChange.F90:147-162）；vG 分支液水下限为 θr（MOD_Hydro_SoilFunction.F90:163-167），FI-Sii θr 0.116 永不冻；构建为 vG（include/define.h:42-43）。
+2.4 水文：WATER_VSF 用 vG 数组（MOD_SoilSnowHydrology.F90:806-814）；OM_density 只进动态湿地侧向排水 wetland_peat_outflow（TRACER/…Physics.F90:4014-4049，fom = min(OM_density/130,1) 混合 Bechtold 2019 泥炭导水与该层 hksat）；bsw 另被 CH4 非饱和区扩散（Physics.F90:3496-3504）、BGC 硝化（MOD_BGC_Soil_BiogeochemNitrifDenitrif.F90:82-94）、VIC 径流使用。
+
+3. 湿地斑块与单点
+全球湿地斑块有自己一组聚合值，计算链同土壤斑块；单点所有斑块共用 SITE_soil_*；patchtype 0 与 2 同一热与水文分支（CoLMMAIN.F90:844、1079、1246）。USE_SITE_soilparameters=.false. 时单点参数从 rawdata 500 m 网格按经纬度取点（MOD_SingleSrfdata.F90:771-842），.true. 时逐变量回退（缺哪个取 rawdata）。Sitedata 已有实测（B-18）：FI-Sii BD 80、wf_om 0.971、OM 77.68、θs 0.95；FI-Lom BD 108、wf_om 0.619、OM 66.852；SE-Deg BD 75、θs 0.98；三苔原站无 soil_*。当前模板该键为 .false.；打开过的先例 b18、b18b_sp30（scripts/sites/EXPERIMENTS.md:47,49）。
+六站现用值（8 数据层）：FI-Sii vf_om 0.102、OM 62.1、θs 0.532、BD 1200、csol 1.10e6、tksatu 1.145、tksatf 2.401、tkdry 0.136；SE-Deg 0.12–0.22、74–156、0.41–0.58、713–1468、0.67–1.34e6、0.87–1.60、1.90–3.04、0.082–0.172；FI-Lom 0.15–0.18、84–92、0.57–0.61、468–1099、0.49–0.89e6、0.76–1.24、1.76–2.85、0.072–0.106；US-Ivo L1–7 0.13–0.26、83–196、0.40–0.63、571–1471；US-ICs L1–3 0.18 L4 起≤0.04、θs L1–3 0.64 L4 起 0.35–0.37；US-A10 L1–3 0.23、θs 0.66 L4 起 0.77–0.79。
+
+4. 泥炭份额与挂点
+键 DEF_WETLAND_PEAT_SHARE_FILE/SITE（share/MOD_Namelist.F90:225-239）；wetland_peat_share_read 在 mkinidata/MOD_Initialize.F90:1841-1953（先全 1，SITE≥0 全置该值，文件 null 直接返回，有文件取最近格点 GLWD 22–27/(16–19+22–27)）；mkini 只在 CN 初值且 PEAT_C_PASSIVE 时读（893-908, 1048-1052）；colm 只在 moss_rss 或 tropical_peat 时读（CoLM.F90:349-350），当前两者都关。
+土壤参数唯一读入点 MOD_Initialize.F90:383（仅 mkinidata.x）；此前 patchtype（318）与经纬度（339-342）已就绪；此后依赖：湖泊碳回退（396-406）、sc_vgm/fc_vgm（409-421）、WRITE_TimeInvariants（750）、湿地碳初值 OM_density·580（1104-1174）、初始水分水位（1476-1495）。全部土壤常量写进 restart/const（MOD_Vars_TimeInvariants.F90:667, 711-759），colm 只读；站点每阶段重跑 mkini（run_sites.py:162-172）；全球续跑整目录拷基线 const（copy_restart:36-37）。
+
+5. CLM 参照
+CLM4.0（src_clm40/main/iniTimeConst.F90:152-162, 622-676）：om_watsat 0.9、om_hksat 0.1 mm s-1、om_tkm 0.25、om_sucsat 10.3 mm、om_csol 2.5e6、om_tkd 0.05、om_b 2.7、organic_max 130；om_frac = (organic/130)^2。
+CLM4.5（src/biogeophys/SoilStateInitTimeConstMod.F90:114-128, 415-496）：端元随深度 om_watsat = max(0.93−0.1z/0.5, 0.83)、om_b = min(2.7+9.3z/0.5, 12)、om_sucsat = min(10.3−0.2z/0.5, 10.1)、om_hksat = max(0.28−0.2799z/0.5, 0.0001)。
+CTSM master（同名文件 457-589 @7409d321）：om_frac = min(organic/organic_max, 1)（平方默认关），watsat 封顶 0.93；热常数从参数文件读（本地为 git-lfs 指针），技术手册 λ_s,om 0.25、λ_dry,om 0.05、c_s,om 2.5e6（CLM50_Tech_Note_Soil_Snow_Temperatures.rst:648, 692, 708, 781）；运行时 cv = csol·(1−watsat)·dz（SoilTemperatureMod.F90:850）。
+
+6. 挂点（事实层面）
+① Sitedata 补齐 soil_* 并开 USE_SITE_soilparameters：只单点；缺项逐变量回退成混搭；改 OM_density 连带湿地碳初值；不涉全球。
+② mkini 读入后（MOD_Initialize.F90:383 之后、409 之前）按 patchtype 2 与份额逐斑块混合：派生量、初始水分、const 都用新值；需在此读份额；全球续跑拷基线 const，不冷启动不生效。
+③ colm 启动时（CoLM.F90:330 之后）只改内存：sc_vgm/fc_vgm、wfc 不重算，初始状态仍旧。
+④ mksrfdata 或预处理：聚合阶段拿不到份额，预处理不在构建里，要重跑全球 mksrf。
+共同事实：权重可用泥炭份额或 OM_density/130，两者差异大；CoLM 只有有机质热端元常数（1.3、2.51e6、0.25/0.05），无泥炭 vG 端元，vG 构建宿主水文不读 bsw、psi0 固定；wetland_peat_outflow 已按 OM_density/130 混泥炭导水，再混 hksati 会重复；dksatu/dksatf 与孔隙度非线性，应以混合后的孔隙度重算；csol 已含 (1−孔隙度)；湖泊、城市也调 soil_hcap_cond，限定 patchtype 2 不波及。
+冷偏差三来源（推测）：θs 0.53 对泥炭 0.91 少约 40 % 可冻水（潜热库小、零幕短）；冻结饱和导热 2.40 对泥炭约 1.90 高约 26 %；vG θr 下限水永不冻。

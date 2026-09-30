@@ -1,0 +1,2 @@
+# tower<TAB>wetland share of the flux footprint<TAB>source (score77.py multiplies the modelled wetland flux by the share; user 2026-09-29, Q-50)
+US-ORv	0.195	v2/results/diag_marsh_260929.txt: wetland is 19.5 % of the tower footprint; modelled 46.5 mg m-2 d-1 matches patch-level chambers (open water 47.5, emergent 59.6)

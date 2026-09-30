@@ -1,0 +1,52 @@
+From 6e07a0b018741d21debb1d341397a2a5e0ece229 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Thu, 24 Sep 2026 20:12:04 +0800
+Subject: [PATCH] feat(methane): drain the dynamic wetland through peat
+ transmissivity and inundate by microtopography
+
+Ledger C-11 (paper V2). Two switches, both off by default so the default
+configuration is unchanged:
+
+- wetland_peat_drainage: above the water-table floor the dynamic wetland
+  loses Q = c T(zwt) as positive subsurface runoff, T the transmissivity
+  below the table (PEAT-CLSM, Bechtold et al. 2019, eqs 6-9: K0 = 10 m/s,
+  m = 3, c = 1.5e-5 1/m). Each layer mixes peat and its own mineral
+  saturated conductivity by OM_density / organic_max (130 kg/m3, CLM).
+- wetland_microtopo_sigma > 0: the inundated fraction is the share of a
+  normally distributed surface below the water level, the ponded depth
+  taking precedence over zwt (the liquid-water table falls below an
+  ice-filled top layer under a pond in frozen months).
+
+---
+ main/MOD_SoilSnowHydrology.F90 | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index d5002699..f53709b2 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -604,7 +604,8 @@ ENDIF
+ #endif
+    USE MOD_Opt_Baseflow,        only: scale_baseflow
+ #ifdef TRACER
+-   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_max_wtd_of
++   USE MOD_Tracer_Reactive_Methane_Physics, only: wetland_max_wtd_of, wetland_peat_outflow
++   USE MOD_Vars_TimeInvariants, only: OM_density
+ #endif
+ #ifdef DataAssimilation
+    USE MOD_DA_TWS, only: fslp_k
+@@ -1202,6 +1203,11 @@ IF((patchtype<=1) .or. is_dry_lake &
+                ENDIF
+             ENDDO
+             rsubst = - wsupply / deltim
++         ELSE
++            ! Above the floor the tile drains laterally through its
++            ! saturated zone (peat transmissivity, off unless configured).
++            rsubst = wetland_peat_outflow(nl_soil, zi_soisno(0:nl_soil), hksati(1:nl_soil), &
++               OM_density(1:nl_soil,ipatch), zwtmm / 1000.)
+          ENDIF
+       ENDIF
+ #endif
+-- 
+2.53.0
+

@@ -1,0 +1,107 @@
+# 参数依据审计 260929 说明
+
+- **日期**：2026.09.29-08:56
+- **读者**：下一会话
+- **来源**：主控会话派的只读文献线任务（v2_oo5 参数依据审计）；配套表 v2/results/audit_params_260929.tsv
+- **状态**：78 个参数已分级、给出处置与拟合区间；需主控定的事见第 2 节
+- **失效于**：站点基线由 v2_oo5 换代，或表中任一参数改值
+
+## 0. 覆盖面
+
+### 0.1 口径
+
+- 审计对象：v2/config/v2_oo5/ch4_parameter.nml 与 template.nml 中显式赋值、物理上可调的数值。纳入 78 个：ch4_parameter.nml 74 个、template.nml 4 个（DEF_WETLAND_PEAT_C_PASSIVE_ZTOP、DEF_RICE_ROOT_EXUDATE、DEF_RICE_GRNFILL、DEF_PADDY_DRAIN_DAYS）。
+- 排除不审：
+  1. 按湿地类别的参数 20 个（f_methane_ 后缀 8 个、redoxlag_ 后缀 7 个、wetland_max_wtd_ 后缀 5 个），由用户管理。
+  2. 示踪登记元数据：DEF_TRACER%mol_weight 16.04、ref_ratio、init_delta、reactive_decay_rate，以及 template 的 DEF_TRACER_REF_RATIO、DEF_TRACER_INIT_DELTA、DEF_TRACER_REACTIVE_DECAY_RATE、DEF_TRACER_MRAT（物理常数或登记项）。
+  3. 数值与诊断键：numerical_correction_fatal_threshold、lake_restart_debug_ 开头 4 个、timestep 1800。
+  4. 方案整数与年份：DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME=2、DEF_Runoff_SCHEME=0、DEF_LC_YEAR=2005；逻辑开关、文件路径、日期占位符。
+- 行号口径：全部取自 v2_oo5 实际所用树的提交 5b95cdb6（账本 V-97），用 git show 读取。表中文件名省略前缀 main/TRACER/MOD_Tracer_Reactive_，例如 Methane_Physics.F90 即 main/TRACER/MOD_Tracer_Reactive_Methane_Physics.F90，BgcShim.F90 即 main/TRACER/MOD_Tracer_Reactive_BgcShim.F90；宿主文件写全路径。审计期间工作树 HEAD 由 f5920654 前进到 21d74eda（候选 4、5 等），Physics 与 Const 的行号已偏移，引用以 5b95cdb6 为准——已验证（git log、git diff --stat 5b95cdb6 HEAD）。
+- "生效"按 v2_oo5 配置判断：inundation_mode=colm（方案 8）、use_biome_f_methane=.false.、use_biome_redoxlag=.true.、use_spatial_ph=.false.（pH 恒 6.2）、use_ch4_sif=.false.、bgc_anoxia_limits_decomp=.true.、anoxicmicrosites=.false.、use_aereoxid_prog=.true.、use_microbial_pools=.false.、floodplain_anoxic_decomp 未设（默认关）——已验证（读 Methane_Const.F90 configure_methane_inundation_mode 与各消费点上下文）。
+- 等级口径：A 多站或全球综合；B 单站或单次实验（含他模式在少数站的拟合值）；C 沿用 CLM/CLM4Me 默认（写 CLM 自己的出处，即便 CLM 所引本身是综述也记 C，评价写在"更好的依据"列）；D 无出处或作者取值（含中性开关与关闭值）；E 本分支自己拟合（本次无）。
+
+### 0.2 检索表
+
+| 来源 | 检索方式 | 命中 | 处置 |
+| --- | --- | --- | --- |
+| V2 代码 @5b95cdb6 | 78 个键逐个 grep "DEF_METHANE%键" 与宿主键名，14 个文件；逐处读上下文 | 78/78 有消费点 | 写入"消费点"列，并注明是否生效 |
+| v2/迭代账本.md | 逐键 grep 键名（严格词界），另按中文别名补查（Q10、微地形、σ、水位下限、NPP/GPP） | 按键名有行的 26 个，0 行的 52 个 | 有行的读全行写入"现来源"；0 行的追 CLM 默认或代码注释 |
+| CTSM 源码 | ch4Mod.F90（checkout 7409d3218）硬编码常数；tag clm4_5_1_r115 的 ch4Mod.F90；提交 f003690b8（clm4_0_60）ch4varcon.F90 注释；CanopyFluxesMod.F90:1106、BareGroundFluxesMod.F90:414 | 硬编码 4 处（0.3、0.22、2.9e-3、0.57），注释 30 余条 | C 级来源 |
+| CLM 参数文件 | ncdump v1/CLM_params/clm5_params.c171117.nc、clm_params.c170913.nc | 甲烷参数 34 个，稻 grnfill | 逐值核对 |
+| CLM5 技术手册甲烷章 | 读 doc/source/tech_note/Methane/CLM50_Tech_Note_Methane.rst 参数表与正文 | 1 张表 | 写入 vgc_max、scale_factor_aere 等 |
+| 本地文本 721 篇（data/_tmp/分析_260926_苔藓蒸发阻抗/txt/） | grep 计数："CO2:CH4" 18、"Q10" 203、"Vmax" 36（去站点档案 30）、厌氧对有氧 139、tiller 62、porosity 172、ebullition 212、CUE 15、根际沉积或分泌 169、acrotelm 39、microtopograph 147、边界层或气动阻抗 130 | 见左 | 只把综述、合成、多站培养与 CLM 系参数来源列为读取对象，逐篇读了 Moser 2026、Segers 1998、Yvon-Durocher 2014、Turetsky 2014、Bridgham 2013、Riley 2011、Wania 2010、Walter and Heimann 2000、Walter et al. 2001、Müller 2015、Peltola 2018、Colmer 2003、Schimel 1995、Dunfield 1993 的相关节与表；"CO2:CH4" 其余 11 篇逐篇 grep 核过，均为单站或火灾、反演语境，无数值合成；CUE 15 篇均为单站档案，由 Luo 2025 的 2,737 站年合成取代；Vmax 30 篇为他模式取值，不作观测依据；其余高频命中为单站或非参数语境，不入读 |
+| 本地 PDF | pdftotext -layout 与 PyMuPDF 定位表格与页码 | 17 篇 | 页码与表号写入表 |
+| 既有笔记 | v2/results/lit_npp_allocation.json；data/_tmp/分析_260926_湿地根系剖面/notes.txt；分析_260927_稻田/notes.txt；分析_260927_湖泊/notes.txt | 4 份 | 引其数值处注明"前一轮核对，本次未复读原文" |
+| 网络检索 | WebSearch 6 次（Treat 2015、Schädel 2016、DeLucia 2007、Collalti and Prentice 2019、Kuzyakov and Domanski 2000、Bender and Conrad 1992） | 6 | 取可下的全文或摘要 |
+| 网络取文 | Treat 2015 全文（NAU 公开 PDF）；Pausch and Kuzyakov 2018 全文（作者主页 PDF）；Schädel 2016 摘要（USGS）；DeLucia 2007 摘要（Illinois）；Bender and Conrad 1992 摘要（OSTI）；Luo 2025 摘要（PubMed eutils）；Hui and Jackson 2006、Jones et al. 2004、Schnell and King 1996 摘要（Europe PMC）；Epp and Chanton 1993、Lu et al. 2002、Kelly and Chynoweth 1981、Bechtold 2019 摘要（Crossref）；NOAA GML 全球 CH4 年均文件 | 14 | 写入表；只读摘要的在表中注明 |
+| 著录核对 | Crossref 逐条查 34 个 DOI，DataCite 1 个 | 35/35 存在 | 刊名、卷、页、年与表中一致；著录见第 3 节 |
+
+- 未能读到原文（已尝试）：Clymo 1984（出版社页面被反爬拦截）。只经二手转引、表中已标"转引"或"未读原文"的：Knoblauch et al. 2018（经 Moser 2026）、Moldrup et al. 2003（经 Riley 2011）、Romanov 1968 与 Ivanov 1981 与 Weiss et al. 2006（经 Bechtold 2019）、Kellner et al. 2006（经 Peltola 2018）、Lidstrom and Somers 1984（经 Segers 1998）、van Bodegom 2000（经稻田笔记）。它们都不是表中任何处置的唯一依据。
+- 未看：无。
+- 存疑（要跑实验才能定）：
+  1. grnd_methane_cond_default 对非饱和子柱与通气组织的实际影响量级。粗算：饱和土表层半层液相扩散阻抗约 1e7 s m⁻¹，1e6 s m⁻¹ 的地表阻抗只占一成；非饱和层气相扩散阻抗约 1e3 s m⁻¹，此时 1e6 s m⁻¹ 成为主控——推测。需一次敏感性试验（见第 2 节第 1 条）。
+  2. peat_c 取 1.5e-5 还是 1.5e-7。Bechtold et al. 2019 第 2.2.2 节正文印 1.5 × 10⁻⁷ m⁻¹——已验证（读 PMC 全文）；按 Q = c·T、T(0) = K0/(100(m−1)) = 0.05 m² s⁻¹ 粗算，c = 1.5e-5 时地表水位出水约 65 mm d⁻¹，c = 1.5e-7 时约 0.65 mm d⁻¹——推测。需对有实测水位的塔跑两档比水位误差。
+
+## 1. 结论要点
+
+- 78 个参数：A 2、B 11、C 35、D 30、E 0。其中中性（=1 或 0 门槛）、关闭或在 v2_oo5 下不生效的 35 个（微生物库 12、湖泊诊断开关 6、wtd 四个、pH 窗口两个、redoxlag 两个、oxinhib、aereoxid、wetland_max_wtd、wetland_f_tree_ratio、cnscalefactor、om_frac_sf、两个扩散乘子、hybrid_soil_threshold），真正起作用的 43 个——已验证（逐消费点读码）。
+- 起作用的 43 个：A 2、B 11、C 26、D 4。来源是单站或无出处（B、D）的 15 个。其中沿用 CLM、但 CLM 自己取自单站的：vmax_methane_oxid（Michigan 站 45 µM h⁻¹，连同 12 °C 氧化基准）、q10methane_base（Michigan bog）、bubble_f（Kellner 2006 单项研究），这三个记 B；aere_radius 与 tiller_C（阿拉斯加单站两种莎草）记 C，因为建议并入 scale_factor_aere 一起拟合——已验证（CLM 注释与原文）。
+- 建议改为文献值 5 个：vmax_methane_oxid 1.25e-5 → 5.6e-6（Walter and Heimann 2000 多研究默认 20 µM h⁻¹，与 Segers 1998 自然湿地几何均值一致）；mino2lim 0.2 → 0.29（Schädel 2016，25 项研究）；wetland_npp_frac 0.5 → 0.43（Luo 2025，2,737 站年）；k_m_unsat 5e-4 → 4.0e-5（Bender and Conrad 1992，只作用于旱地斑块）；atm_methane 1.7e-6 → NOAA 逐年值。
+- 建议拟合 13 个，按对站点指标的影响排：f_methane [0.03, 0.5]、q10methane [1.0, 2.8]、scale_factor_aere [0.2, 2.0]（代替通气组织几何四个单站参数）、wetland_bg_frac [0.28, 0.86]、z0_methane_prod [0.24, 0.53]；其后 k_m_o2、wetland_microtopo_sigma、peat_c、wetland_exudate_frac、DEF_RICE_ROOT_EXUDATE、lake_decomp_fact、q10methane_base（与 f 合并）、grnd_methane_cond_default（建议改结构，不拟合）。
+- 共线关系：β 上 f、wetland_npp_frac、q10methane_base 三者近乎相乘；vmax_methane_oxid 与 k_m_o2 部分共线；通气组织的孔隙度、半径、每分蘖碳、rob 与 scale_factor_aere 完全相乘；湖泊 lake_decomp_fact 与 q10lakebase、湖泊底物、f 共线——已验证（读产量与通气组织公式）。
+
+## 2. 需要主控会话决定的事
+
+1. grnd_methane_cond_default（1e-6 m s⁻¹）：所有有植被斑块的地表扩散边界与通气组织边界都用这个无出处的回退值（Methane_Physics.F90:597–613），CLM 则由冠层通量现算 1/(raw_above+raw_below)。选项：先跑一次敏感性（例如 1e-2 m s⁻¹ 或宿主现算值）看量级，再决定是否改结构。
+2. 拟合的次序与自由度：建议先把 vmax_methane_oxid、mino2lim、wetland_npp_frac 定到文献值并固定 q10methane_base = 295 K，再按 β 拟合 f_methane；q10methane 与 C-53 的 q10methane_base_weight 按 α 与 NDJF 比联合拟合；通气组织只放开 scale_factor_aere，按 r 与植物通道占比拟合；z0_methane_prod 与 wetland_bg_frac 按 r 拟合。共线组内一次只放开一个。
+3. q10methane 的文献中位（额外 Q10 约 2.45–2.7，Yvon-Durocher 2014）远高于现值 1.33，而账本 V-23、V-48 在固定 295 K 基准下站点偏好 1.33。是否把 q10methane 放开到 [1.0, 2.8] 与驯化权重联合拟合。
+4. 氧化的温度基准 12 °C 硬编码在 Methane_Physics.F90:2454（注释写明来自 Michigan 站），Walter and Heimann 2000 用站点年均土温。vmax 改文献值时是否一并改基准。
+5. 湖泊共用湿地 f（0.2），CTSM 湖泊取 0.5，Kelly and Chynoweth 1981 摘要给湖沉积物有机输入 47±9% 以 CH4 释放。是否为湖泊单列 f；lake_decomp_fact 找不到文献区间，只能对 Johnson et al. 2022 分区单位面积排放拟合。
+6. mino2lim 改 0.29 会同时改变湿地 BGC 分解（C-16 冻结层同用）与洪泛 C-14/C-41。是否同批测。
+7. redoxlag_vertical 设 30 d，CLM 默认 0，当前因查表开启不生效；若以后关查表，取哪个。
+8. 拟合所用塔集：目标与判据第 2 节的 38 座湿地塔合评；稻田参数只有 5 座可计分稻田塔（US-HRA、US-HRC 月数不足），湖泊只有 DE-Dgw 一座。稻田与湖泊参数是否并入全球判据（稻田 30–40 Tg、湖泊不超淡水总量）一起定。
+9. HEAD 上 v2_oo5 之后的候选 4、5（82da22d2、4672cd4d、21d74eda）改动湿地与稻田根际氧化口径，与 rice_aereoxid、k_m_o2 相互作用；本审计未含这些新键。
+
+## 3. 不在本次范围、但仍在起作用的值（供下一轮）
+
+- 编译默认值（nml 未显式赋值）：wetland_bg_frac_forest 0.15（Methane_Const.F90:586）、wetland_lai_open_peat 0.6（:587）、wetland_lai_marsh 3.0（:588，后两者带类别，可能归用户管理）、rice_paddy_min_finundated 0.85（:506）与 rice_drain_window_days 30（:516；rice_host_water 开时是否仍生效未核）。
+- 硬编码常数：氧化 Q10 基准 12 °C（Methane_Physics.F90:2454）、冒泡时间尺度等于步长（:2855）、湖面 k600 = 2.07 + 0.215U^1.7（:3475）、pH 回退 6.2（Methane_pH.F90:58）、有机质含碳 580 gC kg⁻¹（mkinidata/MOD_Initialize.F90:125）、宿主分解 Q10 = 1.5（mkinidata/MOD_Initialize.F90:692，q10methane 的含义依赖它）、湿地植物输入三库分配 0.25/0.5/0.25（BgcShim.F90:289–293）。
+- 站点表：v2/config/v2_oo5/SITE_PARAMS.csv（49 站：有林份额、LAI 上限、雨养份额、盐度）与 SITE_MAIN.csv（泥炭份额）。
+
+## 4. 著录（由 Crossref 与 DataCite 记录生成）
+
+- Schädel, C. et al. (2016): Potential carbon emissions dominated by carbon dioxide from thawed permafrost soils. Nature Climate Change, 6, 950-953. https://doi.org/10.1038/nclimate3054
+- Segers, R. (1998): Methane production and methane consumption: a review of processes underlying wetland methane fluxes. Biogeochemistry, 41, 23-51. https://doi.org/10.1023/a:1005929032764
+- Yvon-Durocher, G. et al. (2014): Methane fluxes show consistent temperature dependence across microbial to ecosystem scales. Nature, 507, 488-491. https://doi.org/10.1038/nature13164
+- Moser, M. et al. (2026): Reviews and syntheses: The role of process-based modeling of the CO 2 : CH 4 production ratio in predicting future terrestrial Arctic methane emissions. Biogeosciences, 23, 605-621. https://doi.org/10.5194/bg-23-605-2026
+- Treat, C.C. et al. (2015): A pan‐Arctic synthesis of CH4 and CO2 production from anoxic soil incubations. Global Change Biology, 21, 2787-2803. https://doi.org/10.1111/gcb.12875
+- Turetsky, M.R. et al. (2014): A synthesis of methane emissions from 71 northern, temperate, and subtropical wetlands. Global Change Biology, 20, 2183-2197. https://doi.org/10.1111/gcb.12580
+- Bridgham, S.D. et al. (2013): Methane emissions from wetlands: biogeochemical, microbial, and modeling perspectives from local to global scales. Global Change Biology, 19, 1325-1346. https://doi.org/10.1111/gcb.12131
+- Riley, W.J. et al. (2011): Barriers to predicting changes in global terrestrial methane fluxes: analyses using CLM4Me, a methane biogeochemistry model integrated in CESM. Biogeosciences, 8, 1925-1953. https://doi.org/10.5194/bg-8-1925-2011
+- Wania, R., Ross, I. and Prentice, I.C. (2010): Implementation and evaluation of a new methane model within a dynamic global vegetation model: LPJ-WHyMe v1.3.1. Geoscientific Model Development, 3, 565-584. https://doi.org/10.5194/gmd-3-565-2010
+- Müller, J. et al. (2015): CH 4 parameter estimation in CLM4.5bgc using surrogate global optimization. Geoscientific Model Development, 8, 3285-3310. https://doi.org/10.5194/gmd-8-3285-2015
+- Walter, B.P. and Heimann, M. (2000): A process‐based, climate‐sensitive model to derive methane emissions from natural wetlands: Application to five wetland sites, sensitivity to model parameters, and climate. Global Biogeochemical Cycles, 14, 745-765. https://doi.org/10.1029/1999gb001204
+- Walter, B.P., Heimann, M. and Matthews, E. (2001): Modeling modern methane emissions from natural wetlands: 1. Model description and results. Journal of Geophysical Research: Atmospheres, 106, 34189-34206. https://doi.org/10.1029/2001jd900165
+- Dunfield, P. et al. (1993): Methane production and consumption in temperate and subarctic peat soils: Response to temperature and pH. Soil Biology and Biochemistry, 25, 321-326. https://doi.org/10.1016/0038-0717(93)90130-4
+- Bender, M. (1992): Kinetics of CH4 oxidation in oxic soils exposed to ambient air or high CH4 mixing ratios. FEMS Microbiology Ecology, 101, 261-269. https://doi.org/10.1016/0168-6496(92)90043-s （Crossref 记录只列一位作者；OSTI 记录为 Bender and Conrad，表中按后者称呼）
+- Schnell, S. and King, G.M. (1996): Responses of methanotrophic activity in soils and cultures to water stress. Applied and Environmental Microbiology, 62, 3203-3209. https://doi.org/10.1128/aem.62.9.3203-3209.1996
+- Colmer, T.D. (2003): Long‐distance transport of gases in plants: a perspective on internal aeration and radial oxygen loss from roots. Plant, Cell & Environment, 26, 17-36. https://doi.org/10.1046/j.1365-3040.2003.00846.x
+- Schimel, J.P. (1995): Plant transport and methane production as controls on methane flux from arctic wet meadow tundra. Biogeochemistry, 28, 183-200. https://doi.org/10.1007/bf02186458
+- Peltola, O. et al. (2018): Technical note: Comparison of methane ebullition modelling approaches used in terrestrial wetland models. Biogeosciences, 15, 937-951. https://doi.org/10.5194/bg-15-937-2018
+- Moldrup, P. et al. (2003): MODELING DIFFUSION AND REACTION IN SOILS: X. A UNIFYING MODEL FOR SOLUTE AND GAS DIFFUSIVITY IN UNSATURATED SOIL. Soil Science, 168, 321-337. https://doi.org/10.1097/01.ss.0000070907.55992.3c
+- Bechtold, M. et al. (2019): PEAT‐CLSM: A Specific Treatment of Peatland Hydrology in the NASA Catchment Land Surface Model. Journal of Advances in Modeling Earth Systems, 11, 2130-2162. https://doi.org/10.1029/2018ms001574
+- Lawrence, D.M. and Slater, A.G. (2008): Incorporating organic soil into a global climate model. Climate Dynamics, 30, 145-160. https://doi.org/10.1007/s00382-007-0278-1
+- Luo, X. et al. (2025): Global variation in vegetation carbon use efficiency inferred from eddy covariance observations. Nature Ecology & Evolution, 9, 1414-1425. https://doi.org/10.1038/s41559-025-02753-0
+- DeLucia, E.H. et al. (2007): Forest carbon use efficiency: is respiration a constant fraction of gross primary production?. Global Change Biology, 13, 1157-1167. https://doi.org/10.1111/j.1365-2486.2007.01365.x
+- Hui, D. and Jackson, R.B. (2006): Geographical and interannual variability in biomass partitioning in grassland ecosystems: a synthesis of field data. New Phytologist, 169, 85-93. https://doi.org/10.1111/j.1469-8137.2005.01569.x
+- Graf, M. and Rochefort, L. (2009): Examining the peat-accumulating potential of fen vegetation in the context of fen restoration of harvested peatlands. Écoscience, 16, 158-166. https://doi.org/10.2980/16-2-3128
+- Moore, T.R. et al. (2002): Plant biomass and production and CO2 exchange in an ombrotrophic bog. Journal of Ecology, 90, 25-36. https://doi.org/10.1046/j.0022-0477.2001.00633.x
+- Lampela, M. et al. (2023): Responses of fine-root biomass and production to drying depend on wetness and site nutrient regime in boreal forested peatland. Frontiers in Forests and Global Change, 6, 1190893. https://doi.org/10.3389/ffgc.2023.1190893
+- Lei, C., Yuckin, S.J. and Rooney, R.C. (2020): Rooting depth and below ground biomass in a freshwater coastal marsh invaded by European Reed (Phragmites australis) compared with remnant uninvaded sites at Long Point, Ontario. The Canadian Field-Naturalist, 133, 364-371. https://doi.org/10.22621/cfn.v133i4.2281
+- Jackson, R.B. et al. (1996): A global analysis of root distributions for terrestrial biomes. Oecologia, 108, 389-411. https://doi.org/10.1007/bf00333714
+- Pausch, J. and Kuzyakov, Y. (2018): Carbon input by roots into the soil: Quantification of rhizodeposition from root to ecosystem scale. Global Change Biology, 24, 1-12. https://doi.org/10.1111/gcb.13850
+- Lu, Y., Watanabe, A. and Kimura, M. (2002): Input and distribution of photosynthesized carbon in a flooded rice soil. Global Biogeochemical Cycles, 16（注册库无页码与文章号）. https://doi.org/10.1029/2002gb001864
+- Epp, M.A. and Chanton, J.P. (1993): Rhizospheric methane oxidation determined via the methyl fluoride inhibition technique. Journal of Geophysical Research: Atmospheres, 98, 18413-18422. https://doi.org/10.1029/93jd01667
+- Kelly, C.A. and Chynoweth, D.P. (1981): The contributions of temperature and of the input of organic matter in controlling rates of sediment methanogenesis1. Limnology and Oceanography, 26, 891-897. https://doi.org/10.4319/lo.1981.26.5.0891
+- Johnson, M.S. et al. (2022): Methane Emission From Global Lakes: New Spatiotemporal Data and Observation‐Driven Modeling of Methane Dynamics Indicates Lower Emissions. Journal of Geophysical Research: Biogeosciences, 127, e2022JG006793. https://doi.org/10.1029/2022jg006793
+- Thoning, K., Dlugokencky, E., Lan, X. and NOAA Global Monitoring Laboratory (2022): Trends in globally-averaged CH4, N2O, and SF6. NOAA GML（DataCite 数据集）. https://doi.org/10.15138/p8xg-aa10

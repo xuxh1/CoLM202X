@@ -1,0 +1,146 @@
+From 7034143cc4d7fa99d341adb89f8f088b04f211ad Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 17:40:06 +0800
+Subject: [PATCH] feat(hydro): site ponding cap for managed-wetland towers
+
+DEF_WETLAND_POND_MAX_SITE (m, default -1 = off, single-point builds only):
+on the dynamic wetland tile (patchtype 2) the ponding cap pond_max takes
+this value in place of the wetland bucket wetwatmax (200 mm), so a managed
+marsh tower whose measured standing water is deeper than 0.2 m can keep it.
+The cap replaces wetwatmax where the soil-ground branch of WATER_VSF uses
+it on the ponding depth wdsrf: the same-step spill of wdsrf above the cap
+as saturation-excess runoff, and the upper bound of the C-77 ponding
+target DEF_WETLAND_POND_TARGET_SITE. The non-dynamic wetland bucket
+wetwat, the catchment lateral-flow bucket and the methane wetwat/wetwatmax
+override keep wetwatmax. With the key below zero pond_max equals wetwatmax
+and every path is unchanged.
+
+---
+ main/MOD_SoilSnowHydrology.F90 | 29 +++++++++++++++++++----------
+ share/MOD_Namelist.F90         | 13 +++++++++++--
+ 2 files changed, 30 insertions(+), 12 deletions(-)
+
+diff --git a/main/MOD_SoilSnowHydrology.F90 b/main/MOD_SoilSnowHydrology.F90
+index 9c5225ed..7cbac8e6 100644
+--- a/main/MOD_SoilSnowHydrology.F90
++++ b/main/MOD_SoilSnowHydrology.F90
+@@ -12,7 +12,8 @@ MODULE MOD_SoilSnowHydrology
+                            DEF_PADDY_RICE_BUND,     DEF_FLOODPLAIN_INFILTRATION, &
+                            DEF_FLOODPLAIN_INFILT_FIX, &
+                            DEF_WETLAND_POND_OUTFLOW, DEF_WETLAND_INFLOW_AREA_SPLIT, &
+-                           DEF_WETLAND_LATERAL_INFLOW, DEF_WETLAND_POND_TARGET_SITE
++                           DEF_WETLAND_LATERAL_INFLOW, DEF_WETLAND_POND_TARGET_SITE, &
++                           DEF_WETLAND_POND_MAX_SITE
+ #if (defined CaMa_Flood)
+    USE YOS_CMF_INPUT,      only: LWINFILT
+ #endif
+@@ -778,6 +779,7 @@ ENDIF
+    real(r8) :: finfl, wrefill                   ! share taking lateral inflow (-), its refill (mm)
+    real(r8) :: fbog                             ! open-bog share of a wetland tile (-)
+    real(r8) :: pond_target                      ! managed ponding depth of a tower's wetland (mm), < 0 off
++   real(r8) :: pond_max                         ! ponding cap of a dynamic wetland tile (mm)
+    real(r8) :: qpond                            ! overland outflow of wetland ponding (mm s-1)
+    real(r8) :: sp_zc(1:nl_soil), sp_zi(0:nl_soil), sp_dz(1:nl_soil) ! in mm
+    logical  :: is_permeable(1:nl_soil)
+@@ -1271,6 +1273,13 @@ IF((patchtype<=1) .or. is_dry_lake &
+ 
+       ENDIF
+ 
++      ! Ponding cap of a dynamic wetland tile: the wetland bucket wetwatmax,
++      ! or at a tower the standing water a managed marsh holds (paper V2)
++      pond_max = wetwatmax
++#ifdef SinglePoint
++      IF (DEF_WETLAND_POND_MAX_SITE >= 0._r8) pond_max = DEF_WETLAND_POND_MAX_SITE * 1000._r8
++#endif
++
+ #if defined(TRACER) && !defined(CatchLateralFlow)
+       ! Water-table floor of a dynamic wetland: when the table sits deeper
+       ! than the class depth, feed the aquifer from the side with the water
+@@ -1282,7 +1291,7 @@ IF((patchtype<=1) .or. is_dry_lake &
+       pond_target = -1._r8
+ #ifdef SinglePoint
+       IF (DEF_WETLAND_POND_TARGET_SITE >= 0._r8) &
+-         pond_target = min(DEF_WETLAND_POND_TARGET_SITE * 1000._r8, wetwatmax)
++         pond_target = min(DEF_WETLAND_POND_TARGET_SITE * 1000._r8, pond_max)
+ #endif
+       IF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2) .and. (pond_target >= 0._r8)) THEN
+          ! Managed wetland at a tower (paper V2, marsh towers): pumps,
+@@ -1295,8 +1304,8 @@ IF((patchtype<=1) .or. is_dry_lake &
+          ! floor refill does, as negative subsurface runoff through the
+          ! aquifer exchange of the solver, which fills the pores from the
+          ! water table up and passes the rest to the ponding store. At or
+-         ! above the target the tile drains as above the floor; the wetland
+-         ! bucket below spills ponding above wetwatmax.
++         ! above the target the tile drains as above the floor; ponding
++         ! above the cap pond_max spills as surface runoff further down.
+          wsupply = max(-wa, 0.)
+          DO j = 1, nl_soil
+             ztop = sp_zi(j-1)
+@@ -1324,9 +1333,9 @@ IF((patchtype<=1) .or. is_dry_lake &
+          ! aquifer exchange as the floor refill, net of the peat outflow,
+          ! which now runs at any depth (PEAT-CLSM Q = c T(zwt), Bechtold et
+          ! al. 2019, eq. 9). The exchange fills the pore space from the
+-         ! water table up and passes what is left to the ponding store; the
+-         ! wetland bucket below spills ponding above wetwatmax as surface
+-         ! runoff in the same step, so the column is never oversaturated.
++         ! water table up and passes what is left to the ponding store;
++         ! ponding above the cap pond_max spills as surface runoff further
++         ! down in the same step, so the column is never oversaturated.
+          ! Candidate 32: the open-bog share fbog of the tile (0 unless
+          ! DEF_METHANE%wetland_max_wtd_bog_share is set) is rain-fed as well
+          ! and takes none of r R_up; below its own floor, the base of the
+@@ -1515,9 +1524,9 @@ ENDIF
+             ! total runoff (mm/s)
+             rnof = rsubst + rsur
+          ELSEIF (patchtype == 2) THEN ! for wetland
+-            IF (wdsrf > wetwatmax) THEN
+-               rsur_se = (wdsrf - wetwatmax) / deltim
+-               wdsrf = wetwatmax
++            IF (wdsrf > pond_max) THEN
++               rsur_se = (wdsrf - pond_max) / deltim
++               wdsrf = pond_max
+             ENDIF
+ #if defined(TRACER)
+             ! Candidate 13 (paper V2): ponded water on an unfrozen dynamic
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 60e839fd..fbdbf492 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -290,9 +290,16 @@ MODULE MOD_Namelist
+    ! of standing water on the dynamic wetland tile of a tower whose water is
+    ! held by pumps, siphons or weirs. In place of the water-table floor (and
+    ! of the lateral inflow) the tile is refilled from the side up to this
+-   ! ponding depth; at most the wetland bucket wetwatmax (0.2 m). < 0 off
+-   ! (default); ignored outside single-point builds.
++   ! ponding depth; at most the ponding cap of the tile (the wetland bucket
++   ! wetwatmax, 0.2 m, or DEF_WETLAND_POND_MAX_SITE). < 0 off (default);
++   ! ignored outside single-point builds.
+    real(r8) :: DEF_WETLAND_POND_TARGET_SITE = -1._r8
++   ! Single point, managed wetland: ponding cap [m] of the dynamic wetland
++   ! tile of a tower in place of the wetland bucket wetwatmax (0.2 m), for
++   ! marshes whose measured standing water is deeper. Ponding above the cap
++   ! spills as surface runoff in the same step. < 0 off (default); ignored
++   ! outside single-point builds.
++   real(r8) :: DEF_WETLAND_POND_MAX_SITE = -1._r8
+ 
+    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
+    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
+@@ -1427,6 +1434,7 @@ CONTAINS
+       DEF_WETLAND_INFLOW_SITE_RUNOFF,         &
+       DEF_WETLAND_INFLOW_RATIO_SITE,          &
+       DEF_WETLAND_POND_TARGET_SITE,           &
++      DEF_WETLAND_POND_MAX_SITE,              &
+       DEF_BGC_DEBUG_SCALARS,                  &
+ 
+       DEF_USE_WaterTableInit,                 &
+@@ -2065,6 +2073,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_WETLAND_INFLOW_SITE_RUNOFF         ,12  ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_INFLOW_RATIO_SITE          ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_WETLAND_POND_TARGET_SITE           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_POND_MAX_SITE              ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

@@ -1,0 +1,26 @@
+site cls  n   KGE  KGEln  beta alpha    r    NSE   RMSE  nRMSE    MAE   bias  legacy
+BW-Gum    0  10   0.15  -0.05   0.41  1.49  0.65  -4.56  241.0   0.68  211.3 -211.3  MAG
+BW-Nxr    0  12  -0.61  -0.64   0.61  1.17 -0.55  -3.14  206.5   1.16  193.3  -70.1  PHASE
+ID-Pag    0  UNSCORED (0 common months)
+NL-Hor    0  UNSCORED (5 obs climatology months)
+RU-Ch2    0  26   0.46   0.55   1.16  1.51  0.92   0.47   20.5   0.60   14.6    5.5  OVERLAP
+RU-Che    0  33  -1.55  -0.39   1.94  3.37  0.83  -7.40   32.5   2.11   21.6   14.4  AMP
+RU-Cok    0  UNSCORED (7 obs climatology months)
+US-A03    0  25   0.40   0.33   0.62  0.93  0.54  -0.23   26.3   0.70   21.0  -14.2  PHASE
+US-A10    0  17  -0.27  -1.98   0.08  0.21  0.63  -1.72   12.4   1.09   10.4  -10.4  MAG+AMP
+US-Atq    0  26   0.39   0.24   0.52  1.09  0.62  -0.21    7.8   0.85    6.0   -4.4  MAG
+US-BZB    0  20  -0.65  -0.06   1.55  2.53  0.71  -4.11   64.1   1.07   42.7   32.7  AMP
+US-BZF    0  19   0.13   0.25   1.32  1.63  0.50  -1.32   59.8   0.90   44.2   21.5  OVERLAP
+US-Beo    0  16   0.41   0.44   0.69  1.47  0.83   0.15    9.0   0.80    6.8   -3.5  OVERLAP
+US-Bes    0  27   0.69   0.64   0.72  0.89  0.92   0.78    7.3   0.48    5.4   -4.3  OVERLAP
+US-DPW    0  40  -1.15  -0.27   2.93  1.94  0.86  -7.76  432.7   2.11  395.3  395.3  MAG+AMP
+US-ICs    0  16  -0.17   0.18   1.39  2.09  0.84  -1.34   12.0   0.88    8.8    5.3  OVERLAP
+US-Ivo    0  41  -0.28   0.11   1.26  2.20  0.67  -2.06   24.8   1.19   19.5    5.4  AMP
+US-LA2    0  12  -0.46  -0.00   1.89  2.16  0.89  -2.84  210.2   1.22  153.3  153.3  AMP
+US-NC4    0  60  -2.26  -0.57   4.14  1.80  0.69  -8.31  386.4   3.49  348.0  347.9  MAG+AMP
+US-NGB    0  33   0.41   0.30   0.67  0.61  0.70   0.30   12.0   0.64    9.4   -6.2  OVERLAP
+US-NGC    0  UNSCORED (5 obs climatology months)
+US-ORv    0  50  -0.01  -0.58   0.32  0.35  0.62  -0.71   26.2   0.88   20.6  -20.3  MAG+AMP
+US-OWC    0  UNSCORED (7 obs climatology months)
+
+scored 18; median KGEln 0.05; KGEln>0.3: 5; legacy OVERLAP: 6

@@ -1,0 +1,405 @@
+From 373faf8a70d6f3e2a63dcdb4eb47e49346396966 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Tue, 29 Sep 2026 13:36:50 +0800
+Subject: [PATCH] feat(hydrology): routing takes floodplain re-infiltration
+ where the soil saw the flood (Q-47)
+
+DEF_FLOODPLAIN_INFILT_FIX (default off; acts only with DEF_FLOODPLAIN_INFILTRATION). The routing now keeps, at each publish, the flood water offered per input cell, per unit catchment and per patch. A patch's re-infiltration goes to its input cells in proportion to the flood water it was offered there, and a cell's share to its unit catchments in proportion to their flood water in it, instead of both by area. The part a unit catchment cannot give at a routing step stays in acc_inf_uc for the next step instead of being dropped; acc_inf_uc moves to MOD_Grid_RiverLakeTimeVars and, with the fix, goes into the routing restart (old restarts read as zero). The yearly C-44/Q-43 log line adds the amount still owed at the end of the year. With the key off, the accumulation, deduction, publish and log follow the old code paths.
+
+---
+ main/HYDRO/MOD_Grid_RiverLakeFlow.F90     | 183 +++++++++++++++++++---
+ main/HYDRO/MOD_Grid_RiverLakeTimeVars.F90 |  44 +++++-
+ share/MOD_Namelist.F90                    |   6 +
+ 3 files changed, 209 insertions(+), 24 deletions(-)
+
+diff --git a/main/HYDRO/MOD_Grid_RiverLakeFlow.F90 b/main/HYDRO/MOD_Grid_RiverLakeFlow.F90
+index f319af3e..d60944cc 100644
+--- a/main/HYDRO/MOD_Grid_RiverLakeFlow.F90
++++ b/main/HYDRO/MOD_Grid_RiverLakeFlow.F90
+@@ -63,13 +63,24 @@ MODULE MOD_Grid_RiverLakeFlow
+    ! catchment between routing steps [m]; not in the restart file, so at most
+    ! one routing step (DEF_GRIDBASED_ROUTING_MAX_DT) of it is lost at a restart
+    real(r8), allocatable :: acc_evp_uc (:)
+-   ! Q-43 (paper V2): flood water re-infiltrated into soil patches since the
+-   ! last routing step, per unit catchment [m3], taken out of the storage at
+-   ! the next routing step (not in the restart; at most one routing step lost)
+-   real(r8), allocatable :: acc_inf_uc (:)
++   ! Q-43 (paper V2): acc_inf_uc, the flood water re-infiltrated into soil
++   ! patches since the last routing step, is owned by MOD_Grid_RiverLakeTimeVars
++   ! so that DEF_FLOODPLAIN_INFILT_FIX can keep it in the restart.
+    real(r8), save :: fpinf_year_total = 0._r8   ! [m3], master only
+    real(r8), save :: fpevp_year_total = 0._r8   ! [m3], master only
+    integer,  save :: fpevp_year = -1
++   ! Q-47 (paper V2), DEF_FLOODPLAIN_INFILT_FIX: the flood water offered to
++   ! the soil at the last routing step, by which the re-infiltration of the
++   ! land steps until the next one is shared among the unit catchments:
++   ! per input cell [m over the cell], per unit catchment [m over the unit
++   ! catchment], its unit catchment sum per input cell [m times the area unit
++   ! of the ucat-to-cell mapping] and per patch its cell water summed over the
++   ! patch area in each cell [m m2]
++   real(r8), allocatable :: fpfix_wat_gd (:)
++   real(r8), allocatable :: fpfix_wat_uc (:)
++   real(r8), allocatable :: fpfix_sum_gd (:)
++   real(r8), allocatable :: fpfix_sum_p  (:)
++   real(r8), save :: fpinf_carry_last = 0._r8   ! re-infiltration still owed after the last routing step [m3], master only
+ CONTAINS
+ 
+    ! ---------
+@@ -275,7 +286,7 @@ CONTAINS
+    real(r8) :: totalvol_bef, totalvol_aft, totalrnof, totaldis
+    real(r8) :: water_balance_err, water_balance_tol
+    real(r8) :: water_balance_vec(6)
+-   real(r8) :: fpevp, totalfpevp, fpinf, totalfpinf
++   real(r8) :: fpevp, totalfpevp, fpinf, totalfpinf, fpinf_carry
+ #ifdef CoLMDEBUG
+    real(r8) :: totalclip
+    real(r8), allocatable :: trc_mass_bef(:), trc_mass_aft(:)
+@@ -640,7 +651,12 @@ CONTAINS
+                volwater   = volwater - fpinf
+                totalrnof  = totalrnof - fpinf
+                totalfpinf = totalfpinf + fpinf
+-               acc_inf_uc(i) = 0._r8
++               IF (DEF_FLOODPLAIN_INFILT_FIX) THEN
++                  ! Q-47: what the storage cannot give now it gives later
++                  acc_inf_uc(i) = acc_inf_uc(i) - fpinf
++               ELSE
++                  acc_inf_uc(i) = 0._r8
++               ENDIF
+             ENDIF
+ 
+             IF (.not. is_built_resv(i)) THEN
+@@ -1414,18 +1430,38 @@ CONTAINS
+       totalfpinf   = water_balance_vec(6)
+ #endif
+ 
++      ! Q-47: re-infiltration the storage still owes after this routing step
++      fpinf_carry = 0._r8
++      IF (DEF_FLOODPLAIN_INFILTRATION .and. DEF_FLOODPLAIN_INFILT_FIX) THEN
++         IF (p_is_worker .and. numucat > 0) fpinf_carry = sum(acc_inf_uc)
++#ifdef USEMPI
++         CALL mpi_allreduce (MPI_IN_PLACE, fpinf_carry, 1, MPI_REAL8, MPI_SUM, p_comm_glb, p_err)
++#endif
++      ENDIF
++
+       ! C-44: one log line per year with the floodplain evaporation total
+       IF ((DEF_FLOODPLAIN_EVAP .or. DEF_FLOODPLAIN_INFILTRATION) .and. p_is_master) THEN
+          IF (fpevp_year /= year) THEN
+-            IF (fpevp_year > 0) write(*,'(A,I5,A,ES12.4,A,ES12.4,A)') ' C-44 floodplain evaporation', &
+-               fpevp_year, ':', fpevp_year_total*1.e-9_r8, ' km3; Q-43 re-infiltration', &
+-               fpinf_year_total*1.e-9_r8, ' km3'
++            IF (fpevp_year > 0) THEN
++               IF (DEF_FLOODPLAIN_INFILTRATION .and. DEF_FLOODPLAIN_INFILT_FIX) THEN
++                  ! Q-47: with what the storage still owed at the end of the year
++                  write(*,'(A,I5,A,ES12.4,A,ES12.4,A,ES12.4,A)') ' C-44 floodplain evaporation', &
++                     fpevp_year, ':', fpevp_year_total*1.e-9_r8, ' km3; Q-43 re-infiltration', &
++                     fpinf_year_total*1.e-9_r8, ' km3; Q-47 carried over', &
++                     fpinf_carry_last*1.e-9_r8, ' km3'
++               ELSE
++                  write(*,'(A,I5,A,ES12.4,A,ES12.4,A)') ' C-44 floodplain evaporation', &
++                     fpevp_year, ':', fpevp_year_total*1.e-9_r8, ' km3; Q-43 re-infiltration', &
++                     fpinf_year_total*1.e-9_r8, ' km3'
++               ENDIF
++            ENDIF
+             fpevp_year = year
+             fpevp_year_total = 0._r8
+             fpinf_year_total = 0._r8
+          ENDIF
+          fpevp_year_total = fpevp_year_total + totalfpevp
+          fpinf_year_total = fpinf_year_total + totalfpinf
++         fpinf_carry_last = fpinf_carry
+       ENDIF
+ 
+       water_balance_err = totalvol_aft - totalvol_bef - totalrnof + totaldis
+@@ -1561,8 +1597,13 @@ CONTAINS
+          !      Inactive when GridRiverLakeFlow is undef (this whole file
+          !      is gated by that macro).
+          ! Q-43: flood fraction and depth on the patches for the soil re-infiltration
+-         IF (DEF_FLOODPLAIN_INFILTRATION .and. allocated(total_floodarea)) &
+-            CALL publish_flood_to_soil (total_floodarea, total_flooddepth)
++         IF (DEF_FLOODPLAIN_INFILTRATION .and. allocated(total_floodarea)) THEN
++            IF (DEF_FLOODPLAIN_INFILT_FIX) THEN
++               CALL publish_flood_to_soil_fix (total_floodarea, total_flooddepth)
++            ELSE
++               CALL publish_flood_to_soil (total_floodarea, total_flooddepth)
++            ENDIF
++         ENDIF
+ #ifdef TRACER
+          IF (allocated(levee_floodarea)) THEN
+             CALL publish_levee_fldfrc_to_patches (levee_floodarea)
+@@ -1836,22 +1877,57 @@ CONTAINS
+    IMPLICIT NONE
+    real(r8), intent(in) :: deltime
+    real(r8), allocatable :: q_pch(:), q_gd(:), q_uc(:)
++   real(r8), allocatable :: r_pch(:), r_gd(:), r_uc(:)
++   integer :: i
+ 
+-      IF (.not. allocated(acc_inf_uc)) THEN
+-         allocate (acc_inf_uc (max(numucat,0)))
+-         acc_inf_uc = 0._r8
+-      ENDIF
+       allocate (q_pch(max(numpatch,0)), q_gd(max(numinpm,0)), q_uc(max(numucat,0)))
+       q_pch = 0._r8
+       IF (allocated(fld_qinfl_p) .and. numpatch > 0) q_pch = fld_qinfl_p(1:numpatch)
+-      CALL worker_remap_data_pset2grid (remap_patch2inpm, q_pch, q_gd, &
+-         fillvalue = 0., filter = filter_rnof)
+-      IF (numinpm > 0) THEN
+-         WHERE (push_ucat2inpm%sum_area > 0)
+-            q_gd = q_gd / push_ucat2inpm%sum_area
+-         END WHERE
++
++      IF (DEF_FLOODPLAIN_INFILT_FIX .and. allocated(fpfix_sum_p)) THEN
++         ! Q-47: a patch takes its re-infiltration from its input cells in
++         ! proportion to the flood water it was offered in each, a cell from
++         ! its unit catchments in proportion to their flood water in it, so
++         ! the routing takes the water where the soil saw it. Water that no
++         ! offered flood can place (none expected) goes by area, as without
++         ! the fix. r_pch [mm s-1 m-1] times the cell water gives the cell
++         ! share [mm s-1 m2], which is then split by fpfix_sum_gd.
++         allocate (r_pch(max(numpatch,0)), r_gd(max(numinpm,0)), r_uc(max(numucat,0)))
++         DO i = 1, numpatch
++            r_pch(i) = 0._r8
++            IF (fpfix_sum_p(i) > 0._r8) THEN
++               r_pch(i) = q_pch(i) * remap_patch2inpm%sum_area(i) / fpfix_sum_p(i)
++               q_pch(i) = 0._r8
++            ENDIF
++         ENDDO
++         CALL worker_remap_data_pset2grid (remap_patch2inpm, r_pch, r_gd, &
++            fillvalue = 0., filter = filter_rnof)
++         CALL worker_remap_data_pset2grid (remap_patch2inpm, q_pch, q_gd, &
++            fillvalue = 0., filter = filter_rnof)
++         DO i = 1, numinpm
++            r_gd(i) = r_gd(i) * fpfix_wat_gd(i)
++            IF (fpfix_sum_gd(i) > 0._r8) THEN
++               r_gd(i) = r_gd(i) / fpfix_sum_gd(i)
++            ELSE
++               q_gd(i) = q_gd(i) + r_gd(i)
++               r_gd(i) = 0._r8
++            ENDIF
++            IF (push_ucat2inpm%sum_area(i) > 0) q_gd(i) = q_gd(i) / push_ucat2inpm%sum_area(i)
++         ENDDO
++         CALL worker_push_data (push_inpm2ucat, r_gd, r_uc, fillvalue = 0., mode = 'sum')
++         CALL worker_push_data (push_inpm2ucat, q_gd, q_uc, fillvalue = 0., mode = 'sum')
++         IF (numucat > 0) q_uc = q_uc + fpfix_wat_uc * r_uc
++         deallocate (r_pch, r_gd, r_uc)
++      ELSE
++         CALL worker_remap_data_pset2grid (remap_patch2inpm, q_pch, q_gd, &
++            fillvalue = 0., filter = filter_rnof)
++         IF (numinpm > 0) THEN
++            WHERE (push_ucat2inpm%sum_area > 0)
++               q_gd = q_gd / push_ucat2inpm%sum_area
++            END WHERE
++         ENDIF
++         CALL worker_push_data (push_inpm2ucat, q_gd, q_uc, fillvalue = 0., mode = 'sum')
+       ENDIF
+-      CALL worker_push_data (push_inpm2ucat, q_gd, q_uc, fillvalue = 0., mode = 'sum')
+       IF (numucat > 0) acc_inf_uc = acc_inf_uc + q_uc * 1.e-3_r8 * deltime
+       deallocate (q_pch, q_gd, q_uc)
+ 
+@@ -1899,6 +1975,69 @@ CONTAINS
+ 
+    END SUBROUTINE publish_flood_to_soil
+ 
++   SUBROUTINE publish_flood_to_soil_fix (total_floodarea_in, total_flooddepth_in)
++   ! Q-47 (paper V2), DEF_FLOODPLAIN_INFILT_FIX: flooded fraction and flood
++   ! depth [mm] on the patches as publish_flood_to_soil, and the flood water
++   ! offered per input cell, per unit catchment and per patch, by which
++   ! accumulate_flood_infiltration shares the re-infiltration of the land
++   ! steps until the next routing step among the unit catchments
++   USE MOD_Grid_RiverLakeNetwork, only: numucat, numinpm, topo_area, &
++                                        push_ucat2inpm, remap_patch2inpm
++   USE MOD_WorkerPushData, only: worker_push_data, worker_remap_data_grid2pset
++   USE MOD_LandPatch, only: numpatch
++   USE MOD_FloodInfiltration, only: flood_infil_alloc, fld_frc_p, fld_dph_p
++   IMPLICIT NONE
++   real(r8), intent(in) :: total_floodarea_in(:)
++   real(r8), intent(in) :: total_flooddepth_in(:)
++   real(r8), allocatable :: frc_uc(:), wat_uc(:), frc_gd(:), wat_gd(:), frc_p(:), wat_p(:)
++   integer :: i
++
++      IF (.not. p_is_worker) RETURN
++      CALL flood_infil_alloc (numpatch)
++      IF (.not. allocated(fpfix_sum_p)) THEN
++         allocate (fpfix_wat_gd(max(numinpm,0)), fpfix_sum_gd(max(numinpm,0)))
++         allocate (fpfix_wat_uc(max(numucat,0)), fpfix_sum_p (max(numpatch,0)))
++      ENDIF
++
++      allocate (frc_uc(max(numucat,0)), wat_uc(max(numucat,0)))
++      DO i = 1, numucat
++         frc_uc(i) = 0._r8; wat_uc(i) = 0._r8
++         IF (topo_area(i) > 0._r8 .and. i <= size(total_floodarea_in)) THEN
++            frc_uc(i) = min(1._r8, max(0._r8, total_floodarea_in(i) / topo_area(i)))
++            IF (i <= size(total_flooddepth_in)) wat_uc(i) = frc_uc(i) * max(0._r8, total_flooddepth_in(i))
++         ENDIF
++      ENDDO
++      allocate (frc_gd(max(numinpm,0)), wat_gd(max(numinpm,0)), frc_p(max(numpatch,0)), wat_p(max(numpatch,0)))
++      CALL worker_push_data (push_ucat2inpm, frc_uc, frc_gd, fillvalue = RIVERLAKE_FLOOD_MISSING_VALUE, mode = 'average')
++      CALL worker_push_data (push_ucat2inpm, wat_uc, wat_gd, fillvalue = RIVERLAKE_FLOOD_MISSING_VALUE, mode = 'average')
++      ! the unit catchment flood water per cell, summed by the mapping areas
++      CALL worker_push_data (push_ucat2inpm, wat_uc, fpfix_sum_gd, fillvalue = 0._r8, mode = 'sum')
++
++      CALL worker_remap_data_grid2pset (remap_patch2inpm, frc_gd, frc_p, &
++         fillvalue = RIVERLAKE_FLOOD_MISSING_VALUE, mode = 'average')
++      CALL worker_remap_data_grid2pset (remap_patch2inpm, wat_gd, wat_p, &
++         fillvalue = RIVERLAKE_FLOOD_MISSING_VALUE, mode = 'average')
++      DO i = 1, numpatch
++         IF (frc_p(i) == RIVERLAKE_FLOOD_MISSING_VALUE) frc_p(i) = 0._r8
++         IF (wat_p(i) == RIVERLAKE_FLOOD_MISSING_VALUE) wat_p(i) = 0._r8
++         fld_frc_p(i) = frc_p(i)
++         fld_dph_p(i) = 0._r8
++         IF (frc_p(i) > 0._r8) fld_dph_p(i) = max(0._r8, wat_p(i)) / frc_p(i) * 1.e3_r8   ! [mm]
++      ENDDO
++
++      ! the water offered per cell and unit catchment, and per patch its cell
++      ! water summed over the patch area in each cell
++      DO i = 1, numinpm
++         fpfix_wat_gd(i) = 0._r8
++         IF (wat_gd(i) /= RIVERLAKE_FLOOD_MISSING_VALUE) fpfix_wat_gd(i) = max(0._r8, wat_gd(i))
++      ENDDO
++      IF (numucat > 0) fpfix_wat_uc = wat_uc
++      CALL worker_remap_data_grid2pset (remap_patch2inpm, fpfix_wat_gd, fpfix_sum_p, &
++         fillvalue = 0._r8, mode = 'sum')
++      deallocate (frc_uc, wat_uc, frc_gd, wat_gd, frc_p, wat_p)
++
++   END SUBROUTINE publish_flood_to_soil_fix
++
+    SUBROUTINE accumulate_floodplain_evap (deltime)
+    ! C-44 (paper V2): Penman (1948) open-water evaporation in the form of
+    ! Shuttleworth (1993), E = [Delta Rn + gamma 6.43 (1 + 0.536 u2) D] /
+diff --git a/main/HYDRO/MOD_Grid_RiverLakeTimeVars.F90 b/main/HYDRO/MOD_Grid_RiverLakeTimeVars.F90
+index 936363a8..c91d5638 100644
+--- a/main/HYDRO/MOD_Grid_RiverLakeTimeVars.F90
++++ b/main/HYDRO/MOD_Grid_RiverLakeTimeVars.F90
+@@ -54,6 +54,12 @@ MODULE MOD_Grid_RiverLakeTimeVars
+    !    existing USE MOD_Grid_RiverLakeTimeVars at the top of that module.
+    real(r8), save       :: acctime_rnof = 0._r8     ! accumulated land time since last routing flush [s]
+    real(r8), allocatable :: acc_rnof_uc (:)         ! accumulated runoff depth per ucatch [m]
++   ! Q-43 (paper V2): flood water the soil re-infiltrated since the last
++   ! routing step, per unit catchment [m3], taken out of the storage at the
++   ! next routing step. With DEF_FLOODPLAIN_INFILT_FIX (Q-47) the part the
++   ! storage cannot give stays here for the next step and goes into the
++   ! restart; without it the next step clears it and no restart keeps it.
++   real(r8), allocatable :: acc_inf_uc (:)
+ 
+    ! -- restart file path (saved for deferred particle-tracer restart read) --
+    character(len=512) :: gridriver_restart_file = ''
+@@ -436,6 +442,8 @@ CONTAINS
+       allocate (volresv (nresv_state))
+       allocate (acc_rnof_uc (ncell_state))
+       acc_rnof_uc = 0._r8
++      allocate (acc_inf_uc (ncell_state))
++      acc_inf_uc = 0._r8
+       wdsrf_ucat_prev = 0._r8
+ 
+       ! Allocated on every rank because read_levee_restart is collective and
+@@ -459,7 +467,8 @@ CONTAINS
+    SUBROUTINE READ_GridRiverLakeTimeVars (file_restart)
+ 
+    USE MOD_SPMD_Task
+-   USE MOD_Namelist,              only: DEF_Reservoir_Method
++   USE MOD_Namelist,              only: DEF_Reservoir_Method, &
++      DEF_FLOODPLAIN_INFILTRATION, DEF_FLOODPLAIN_INFILT_FIX
+    USE MOD_Vector_ReadWrite
+    USE MOD_NetCDFSerial,          only: ncio_var_exist, ncio_read_bcast_serial
+    USE MOD_Grid_RiverLakeNetwork, only: numucat, totalnumucat, ucat_data_address, &
+@@ -482,6 +491,7 @@ CONTAINS
+       ! read of another file.
+       acctime_rnof = 0._r8
+       IF (allocated(acc_rnof_uc)) acc_rnof_uc = 0._r8
++      IF (allocated(acc_inf_uc)) acc_inf_uc = 0._r8
+       IF (allocated(wdsrf_ucat_prev)) wdsrf_ucat_prev = 0._r8
+       wdsrf_ucat_prev_valid = .false.
+       wdsrf_ucat_prev_restart_found = .false.
+@@ -594,6 +604,28 @@ CONTAINS
+          CALL vector_read_and_scatter (file_restart, volwater_ucat, numucat, 'volwater_ucat', ucat_data_address)
+       ENDIF
+ 
++      ! Q-47: re-infiltration the storage still owes; a restart written
++      ! without DEF_FLOODPLAIN_INFILT_FIX owes none
++      IF (DEF_FLOODPLAIN_INFILTRATION .and. DEF_FLOODPLAIN_INFILT_FIX .and. totalnumucat > 0) THEN
++         has_var = .false.
++         IF (p_is_master) has_var = ncio_var_exist(file_restart, 'acc_inf_uc', readflag = .false.)
++#ifdef USEMPI
++         CALL mpi_bcast (has_var, 1, MPI_LOGICAL, p_address_master, p_comm_glb, p_err)
++#endif
++         IF (has_var) THEN
++            CALL vector_read_and_scatter (file_restart, acc_inf_uc, numucat, 'acc_inf_uc', ucat_data_address)
++            invalid_base_count = 0
++            DO i = 1, size(acc_inf_uc)
++               IF (.not. ieee_is_finite(acc_inf_uc(i))) invalid_base_count = invalid_base_count + 1
++            ENDDO
++#ifdef USEMPI
++            CALL mpi_allreduce (MPI_IN_PLACE, invalid_base_count, 1, MPI_INTEGER, &
++               MPI_SUM, p_comm_glb, p_err)
++#endif
++            IF (invalid_base_count > 0) CALL CoLM_stop ('invalid acc_inf_uc in GridRiverLake restart')
++         ENDIF
++      ENDIF
++
+       ! Validate finiteness before every ordered comparison so corrupted NaNs
+       ! are rejected cleanly under -ffpe-trap=invalid. acc_rnof_uc may be
+       ! signed by upstream forcing/numerics, so only its finiteness is an
+@@ -666,7 +698,8 @@ CONTAINS
+    SUBROUTINE WRITE_GridRiverLakeTimeVars (file_restart)
+ 
+    USE MOD_SPMD_Task
+-   USE MOD_Namelist,              only: DEF_Reservoir_Method, DEF_USE_LEVEE, DEF_USE_BIFURCATION
++   USE MOD_Namelist,              only: DEF_Reservoir_Method, DEF_USE_LEVEE, DEF_USE_BIFURCATION, &
++      DEF_FLOODPLAIN_INFILTRATION, DEF_FLOODPLAIN_INFILT_FIX
+    USE MOD_NetCDFSerial
+    USE MOD_Vector_ReadWrite
+    USE MOD_Grid_RiverLakeNetwork, only: numucat, totalnumucat, ucat_data_address, &
+@@ -730,6 +763,12 @@ CONTAINS
+       CALL vector_gather_and_write (&
+          volwater_ucat, numucat, totalnumucat, ucat_data_address, file_restart, 'volwater_ucat', 'ucatch')
+ 
++      ! Q-47: re-infiltration the storage still owes
++      IF (DEF_FLOODPLAIN_INFILTRATION .and. DEF_FLOODPLAIN_INFILT_FIX) THEN
++         CALL vector_gather_and_write (&
++            acc_inf_uc, numucat, totalnumucat, ucat_data_address, file_restart, 'acc_inf_uc', 'ucatch')
++      ENDIF
++
+       IF (DEF_USE_LEVEE) THEN
+          CALL vector_gather_and_write (&
+             levsto, numucat, totalnumucat, ucat_data_address, file_restart, 'levsto', 'ucatch')
+@@ -756,6 +795,7 @@ CONTAINS
+       IF (allocated (volresv    )) deallocate (volresv    )
+       IF (allocated (volwater_ucat)) deallocate (volwater_ucat)
+       IF (allocated (acc_rnof_uc)) deallocate (acc_rnof_uc)
++      IF (allocated (acc_inf_uc )) deallocate (acc_inf_uc )
+       acctime_rnof = 0._r8
+       wdsrf_ucat_prev_valid = .false.
+       wdsrf_ucat_prev_restart_found = .false.
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 41e6ea4e..c4296eb0 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -431,6 +431,10 @@ MODULE MOD_Namelist
+    ! site flood series) re-infiltrates into the soil of flooded soil patches,
+    ! as the CaMa-Flood LWINFILT block of WATER_VSF does
+    logical  :: DEF_FLOODPLAIN_INFILTRATION = .false.
++   ! Q-47 (paper V2), with DEF_FLOODPLAIN_INFILTRATION only: the routing takes
++   ! the re-infiltrated water from the unit catchments whose flood the soil
++   ! patches saw and carries what it cannot take to the next routing step
++   logical  :: DEF_FLOODPLAIN_INFILT_FIX = .false.
+    ! Q-39 (paper V2): lake depth of a lake patch from its water pixels that
+    ! have a depth only; a patch without any takes the dataset default 10 m
+    logical  :: DEF_LAKEDEPTH_VALID_PIXELS = .false.
+@@ -1352,6 +1356,7 @@ CONTAINS
+       DEF_GRIDBASED_ROUTING_MAX_DT,           &
+       DEF_FLOODPLAIN_EVAP,                    & !C-44 (paper V2)
+       DEF_FLOODPLAIN_INFILTRATION,            & !Q-43 (paper V2)
++      DEF_FLOODPLAIN_INFILT_FIX,              & !Q-47 (paper V2)
+       DEF_LAKEDEPTH_VALID_PIXELS,             & !Q-39 (paper V2)
+ 
+       DEF_USE_LEVEE,                          &
+@@ -2084,6 +2089,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_GRIDBASED_ROUTING_MAX_DT           ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_FLOODPLAIN_EVAP                    ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_FLOODPLAIN_INFILTRATION            ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_FLOODPLAIN_INFILT_FIX              ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_LAKEDEPTH_VALID_PIXELS             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_LEVEE                          ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

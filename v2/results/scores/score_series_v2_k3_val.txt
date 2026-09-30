@@ -1,0 +1,26 @@
+site cls  n   KGE  KGEln  beta alpha    r    NSE   RMSE  nRMSE    MAE   bias  legacy
+BW-Gum    0  10  -0.52  -0.07   0.62  2.42  0.63  -4.57  241.3   0.68  216.6 -135.7  AMP
+BW-Nxr    0  12  -1.17  -0.81   1.10  2.51 -0.55  -9.09  322.5   1.81  271.1   17.9  AMP+PHASE
+ID-Pag    0  UNSCORED (0 common months)
+NL-Hor    0  UNSCORED (5 obs climatology months)
+RU-Ch2    0  26   0.52   0.41   0.60  0.77  0.85   0.48   20.2   0.59   15.7  -13.7  OVERLAP
+RU-Che    0  33   0.56   0.57   0.78  1.29  0.76   0.20   10.0   0.65    7.4   -3.4  OVERLAP
+RU-Cok    0  UNSCORED (7 obs climatology months)
+US-A03    0  25   0.49   0.48   0.80  1.08  0.54  -0.11   25.0   0.66   18.3   -7.7  OVERLAP
+US-A10    0  17  -0.40  -2.31   0.07  0.16  0.38  -1.90   12.8   1.12   10.6  -10.6  MAG+AMP+PHASE
+US-Atq    0  26  -0.43  -1.77   0.11  0.24  0.18  -1.32   10.8   1.17    8.2   -8.2  MAG+AMP+PHASE
+US-BZB    0  20   0.62   0.60   0.78  1.14  0.72   0.13   26.5   0.44   21.8  -13.0  OVERLAP
+US-BZF    0  19   0.46   0.45   0.75  0.91  0.53  -0.04   40.0   0.60   30.9  -16.4  OVERLAP
+US-Beo    0  16  -0.57   0.03   1.23  2.54  0.83  -2.30   17.7   1.58   12.0    2.5  AMP
+US-Bes    0  27  -0.62  -0.07   1.78  2.41  0.82  -2.44   28.8   1.88   16.7   12.0  OVERLAP
+US-DPW    0  40  -0.15   0.15   1.97  1.58  0.79  -1.86  247.3   1.20  200.3  199.6  MAG
+US-ICs    0  16  -0.71    nan  -0.00  0.01  0.02  -3.05   15.9   1.15   13.8  -13.8  MAG+AMP+PHASE
+US-Ivo    0  41   0.22   0.26   0.81  1.45  0.40  -1.03   20.2   0.97   15.6   -3.9  PHASE
+US-LA2    0  12   0.22   0.40   1.22  1.74  0.86  -0.17  115.8   0.67   74.9   37.4  OVERLAP
+US-NC4    0  60  -0.50   0.02   2.44  1.20  0.64  -1.50  200.2   1.81  172.1  160.0  MAG
+US-NGB    0  33  -0.36  -2.19   0.07  0.19  0.42  -1.35   21.9   1.17   17.4  -17.4  MAG+AMP
+US-NGC    0  UNSCORED (5 obs climatology months)
+US-ORv    0  50  -0.52  -4.98   0.01  0.03  0.37  -2.17   35.7   1.19   29.7  -29.7  MAG+AMP
+US-OWC    0  UNSCORED (7 obs climatology months)
+
+scored 18; median KGEln 0.03; KGEln>0.3: 6; legacy OVERLAP: 7

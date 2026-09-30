@@ -1,0 +1,103 @@
+From fa4c8b3dc306ec0ef923c41dea77a3bc5dc53d05 Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Thu, 24 Sep 2026 21:57:12 +0800
+Subject: [PATCH] feat(methane): feed the wetland substrate from the tile's
+ productivity and lay old peat out along the soil data
+
+Ledger C-12 (paper V2). Two switches, both off by default:
+
+- DEF_WETLAND_PEAT_C_PROFILE (with DEF_USE_WETLAND_PEAT_C): each layer's
+  initial stock is OM_density * 580 gC/kg of that layer, split among the
+  pools as the column is, instead of the CN dataset's profile rescaled,
+  which piles the stock into the top layers at 6-29 times the soil data.
+- wetland_plant_input: the tile's canopy assimilation times wetland_npp_frac
+  enters the litter pools each step along the land class's root profile,
+  split 0.25/0.5/0.25 and at C:N 46 (CoLM grass litter). Requires the
+  fixed substrate off, so the pools evolve and respiration follows input.
+
+---
+ mkinidata/MOD_Initialize.F90 | 28 ++++++++++++++++++++++++++++
+ share/MOD_Namelist.F90       |  7 +++++++
+ 2 files changed, 35 insertions(+)
+
+diff --git a/mkinidata/MOD_Initialize.F90 b/mkinidata/MOD_Initialize.F90
+index a74f44d8..d8f619ec 100644
+--- a/mkinidata/MOD_Initialize.F90
++++ b/mkinidata/MOD_Initialize.F90
+@@ -117,6 +117,8 @@ CONTAINS
+    real(r8) :: wetland_existing_c
+    real(r8) :: wetland_target_c, wetland_base_c, wetland_scale
+    integer  :: wetland_ipool
++   real(r8), allocatable :: wetland_colc(:), wetland_coln(:)
++   real(r8) :: wetland_layer_c, wetland_colsum
+    real(r8), parameter :: wetland_cn_ratio = 15._r8
+    real(r8), parameter :: carbon_per_kg_om = 580._r8
+ #endif
+@@ -1142,6 +1144,32 @@ ENDIF
+                            decomp_npools_vr(1:nl_soil, :, i) = &
+                               decomp_npools_vr(1:nl_soil, :, i) * wetland_scale
+                         ENDIF
++                        ! Optionally lay the stock out along the soil data's own
++                        ! profile: layer carbon = OM_density * 580 gC/kg of that
++                        ! layer, split among the pools as the column is. The
++                        ! dataset's profile, kept above, piles the stock into the
++                        ! top layers at 6-29 times the soil data's density.
++                        IF (DEF_WETLAND_PEAT_C_PROFILE .and. wetland_target_c > 0._r8) THEN
++                           allocate (wetland_colc(size(decomp_cpools_vr, 2)))
++                           allocate (wetland_coln(size(decomp_cpools_vr, 2)))
++                           DO wetland_ipool = 1, size(decomp_cpools_vr, 2)
++                              wetland_colc(wetland_ipool) = sum(max(decomp_cpools_vr(1:nl_soil, wetland_ipool, i), 0._r8) &
++                                 * dz_soi(1:nl_soil), mask = decomp_cpools_vr(1:nl_soil, wetland_ipool, i) < 1.e30_r8)
++                              wetland_coln(wetland_ipool) = sum(max(decomp_npools_vr(1:nl_soil, wetland_ipool, i), 0._r8) &
++                                 * dz_soi(1:nl_soil), mask = decomp_npools_vr(1:nl_soil, wetland_ipool, i) < 1.e30_r8)
++                           ENDDO
++                           wetland_colsum = sum(wetland_colc)
++                           IF (wetland_colsum > 1.e-12_r8) THEN
++                              DO nsl = 1, nl_soil
++                                 wetland_layer_c = 0._r8
++                                 IF (OM_density(nsl, i) > 0._r8 .and. OM_density(nsl, i) < 1.e30_r8) &
++                                    wetland_layer_c = OM_density(nsl, i) * carbon_per_kg_om
++                                 decomp_cpools_vr(nsl, :, i) = wetland_layer_c * wetland_colc(:) / wetland_colsum
++                                 decomp_npools_vr(nsl, :, i) = wetland_layer_c * wetland_coln(:) / wetland_colsum
++                              ENDDO
++                           ENDIF
++                           deallocate (wetland_colc, wetland_coln)
++                        ENDIF
+                      ENDIF
+                   ENDIF
+ #endif
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 6bb2c363..39c7d400 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -211,6 +211,11 @@ MODULE MOD_Namelist
+    ! dataset is spun up for vegetated land and leaves peatlands about an order
+    ! of magnitude short of observed stocks.  Sensitivity control, default off.
+    logical :: DEF_USE_WETLAND_PEAT_C = .false.
++   ! With DEF_USE_WETLAND_PEAT_C, lay each layer's stock out as OM_density *
++   ! 580 gC/kg of that layer (the soil data's own profile) with the column's
++   ! pool split, instead of rescaling the CN dataset's profile, which piles the
++   ! stock into the top layers (paper V2 C-12). Default off.
++   logical :: DEF_WETLAND_PEAT_C_PROFILE = .false.
+ 
+    ! Dump the BGC decomposition multipliers (t/w/o/depth scalar, fpi) per layer,
+    ! roughly monthly, for the wetland shim.  Diagnostic only: it answers which
+@@ -1248,6 +1253,7 @@ CONTAINS
+       DEF_USE_CN_INIT,                        &
+       DEF_file_cn_init,                       &
+       DEF_USE_WETLAND_PEAT_C,                 &
++      DEF_WETLAND_PEAT_C_PROFILE,             &
+       DEF_BGC_DEBUG_SCALARS,                  &
+ 
+       DEF_USE_WaterTableInit,                 &
+@@ -1863,6 +1869,7 @@ CONTAINS
+       CALL mpi_bcast (DEF_USE_CN_INIT                        ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_file_cn_init                       ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_WETLAND_PEAT_C                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_WETLAND_PEAT_C_PROFILE             ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_BGC_DEBUG_SCALARS                  ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+ 
+       CALL mpi_bcast (DEF_USE_WaterTableInit                 ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+

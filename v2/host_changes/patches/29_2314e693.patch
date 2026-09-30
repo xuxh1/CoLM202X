@@ -1,0 +1,173 @@
+From 2314e6936055cba8b0d15c47ff225183b3e6abcf Mon Sep 17 00:00:00 2001
+From: xuxh1 <18172956238@163.com>
+Date: Mon, 28 Sep 2026 10:38:16 +0800
+Subject: [PATCH] feat(crop): second rice season for double-cropped irrigated
+ rice (C-45)
+
+DEF_RICE_DOUBLE_SEASON_FILE (default 'null', off): a gridded share of
+double-cropped irrigated rice is mapped onto the pfts at start-up; an
+irrigated rice pft with a share of at least 0.5 is sown again on the
+second rice date of the crop calendar (pdrice2, read by the host but
+unused so far) once its first season is harvested. A first season still
+growing on that date skips it. Not in the restart; read every run.
+
+---
+ main/BGC/MOD_BGC_Vars_PFTimeVariables.F90 |  3 +++
+ main/BGC/MOD_BGC_Veg_CNPhenology.F90      | 14 +++++++++++-
+ main/MOD_CropReadin.F90                   | 27 +++++++++++++++++++++++
+ share/MOD_Namelist.F90                    |  6 +++++
+ 4 files changed, 49 insertions(+), 1 deletion(-)
+
+diff --git a/main/BGC/MOD_BGC_Vars_PFTimeVariables.F90 b/main/BGC/MOD_BGC_Vars_PFTimeVariables.F90
+index 4bc5a167..eb1841a0 100644
+--- a/main/BGC/MOD_BGC_Vars_PFTimeVariables.F90
++++ b/main/BGC/MOD_BGC_Vars_PFTimeVariables.F90
+@@ -164,6 +164,7 @@ MODULE MOD_BGC_Vars_PFTimeVariables
+    real(r8),allocatable :: fert_p                    (:)     ! fertilizer nitrogen (gN m-2) including manure
+    real(r8),allocatable :: latbaset_p                (:)     ! latitude vary base temperature for gddplant (degree C)
+    real(r8),allocatable :: plantdate_p               (:)     ! planting date (input)
++   real(r8),allocatable :: rice_double_p             (:)     ! C-45: share of double-cropped irrigated rice (input, not in restart)
+ #endif
+ ! --------------------- END CROP variables -------------------------
+ 
+@@ -559,6 +560,7 @@ CONTAINS
+             allocate (fert_p                   (numpft)); fert_p                   (:) = spval
+             allocate (latbaset_p               (numpft)); latbaset_p               (:) = spval
+             allocate (plantdate_p              (numpft)); plantdate_p              (:) = spval
++            allocate (rice_double_p            (numpft)); rice_double_p            (:) = 0._r8
+ #endif
+ 
+ ! SASU variables
+@@ -2094,6 +2096,7 @@ CONTAINS
+             deallocate (fert_p                   )
+             deallocate (latbaset_p               )
+             deallocate (plantdate_p              )
++            deallocate (rice_double_p            )
+ #endif
+ 
+ ! SASU variables
+diff --git a/main/BGC/MOD_BGC_Veg_CNPhenology.F90 b/main/BGC/MOD_BGC_Veg_CNPhenology.F90
+index 8513dde6..a8c10ee6 100644
+--- a/main/BGC/MOD_BGC_Veg_CNPhenology.F90
++++ b/main/BGC/MOD_BGC_Veg_CNPhenology.F90
+@@ -43,6 +43,9 @@ MODULE MOD_BGC_Veg_CNPhenology
+ 
+    USE MOD_BGC_Vars_TimeVariables, only: &
+        dayl, prev_dayl, prec10, prec60, prec365, prec_today, prec_daily, accumnstep
++#ifdef CROP
++   USE MOD_BGC_Vars_TimeVariables, only: pdrice2
++#endif
+ 
+    USE MOD_Vars_PFTimeVariables, only: &
+        tref_p       ,tlai_p
+@@ -78,6 +81,7 @@ MODULE MOD_BGC_Veg_CNPhenology
+        hui_p             , peaklai_p           , &
+        tref_min_p        , tref_max_p          , tref_min_inst_p     , tref_max_inst_p  , &
+        manunitro_p       , fertnitro_p         , plantdate_p         , fert_p           , &! input from files
++       rice_double_p     , &
+ #endif
+ 
+        leaf_prof_p        , froot_prof_p        , &
+@@ -1021,6 +1025,7 @@ CONTAINS
+    integer :: jdayyrstart(2)
+    real(r8) :: initial_seed_at_planting = 3._r8 ! Initial seed at planting
+    integer ivt
++   logical :: sow_now
+ 
+     !------------------------------------------------------------------------
+ 
+@@ -1045,7 +1050,14 @@ CONTAINS
+            !  plantdate is read in
+            !  determine IF the cft is planted in this time step
+             IF ( (.not. croplive_p(m)) .and. (.not. cropplant_p(m)) ) THEN
+-               IF (jday == int(plantdate_p(m))) THEN
++               sow_now = jday == int(plantdate_p(m))
++               ! C-45 (paper V2): double-cropped irrigated rice is sown again
++               ! on the second rice date once the first season is harvested;
++               ! a first season still growing on that date skips it
++               IF ((.not. sow_now) .and. ivt == nirrig_rice .and. rice_double_p(m) >= 0.5_r8) THEN
++                  IF (pdrice2(i) > 0._r8 .and. pdrice2(i) /= spval) sow_now = jday == int(pdrice2(i))
++               ENDIF
++               IF (sow_now) THEN
+                   cumvd_p(m)       = 0._r8
+                   vf_p(m)          = 0._r8
+                   croplive_p(m)    = .true.
+diff --git a/main/MOD_CropReadin.F90 b/main/MOD_CropReadin.F90
+index c73c6c31..50d3b14b 100644
+--- a/main/MOD_CropReadin.F90
++++ b/main/MOD_CropReadin.F90
+@@ -62,6 +62,10 @@ CONTAINS
+    type(spatial_mapping_type) :: mg2pft_fert
+ 
+    real(r8),allocatable :: pdrice2_tmp      (:)
++   type(grid_type)    :: grid_dbl
++   type(block_data_real8_2d)  :: f_xy_dbl
++   type(spatial_mapping_type) :: mg2pft_dbl
++   real(r8),allocatable :: rice_double_tmp  (:)
+    real(r8),allocatable :: plantdate_tmp    (:)
+    real(r8),allocatable :: fertnitro_tmp    (:)
+    integer ,allocatable :: irrig_method_tmp (:)
+@@ -170,6 +174,29 @@ CONTAINS
+       CALL check_vector_data ('plantdate_pfts value ', plantdate_p)
+ #endif
+ 
++      ! (2b) C-45 (paper V2): share of double-cropped irrigated rice, areal
++      ! weighted onto each pft (the file is made on the model grid)
++      IF (trim(DEF_RICE_DOUBLE_SEASON_FILE) /= 'null') THEN
++         CALL ncio_read_bcast_serial (DEF_RICE_DOUBLE_SEASON_FILE, 'lat', lat)
++         CALL ncio_read_bcast_serial (DEF_RICE_DOUBLE_SEASON_FILE, 'lon', lon)
++         CALL grid_dbl%define_by_center (lat, lon)
++         IF (p_is_io) CALL allocate_block_data (grid_dbl, f_xy_dbl)
++         CALL mg2pft_dbl%build_arealweighted (grid_dbl, landpft)
++         IF (allocated(lon)) deallocate(lon)
++         IF (allocated(lat)) deallocate(lat)
++         IF (p_is_io) CALL ncio_read_block (DEF_RICE_DOUBLE_SEASON_FILE, 'rice_double', grid_dbl, f_xy_dbl)
++         IF (p_is_worker) allocate (rice_double_tmp (max(numpft,0)))
++         CALL mg2pft_dbl%grid2pset (f_xy_dbl, rice_double_tmp)
++         IF (p_is_worker) THEN
++            DO ipft = 1, numpft
++               rice_double_p(ipft) = 0._r8
++               IF (landpft%settyp(ipft) == 62 .and. rice_double_tmp(ipft) /= spval) &
++                  rice_double_p(ipft) = max(0._r8, min(1._r8, rice_double_tmp(ipft)))
++            ENDDO
++            deallocate (rice_double_tmp)
++         ENDIF
++      ENDIF
++
+       ! (3) Read in fertlization
+       IF (DEF_FERT_SOURCE == 1) THEN
+          IF (p_is_worker) THEN
+diff --git a/share/MOD_Namelist.F90 b/share/MOD_Namelist.F90
+index 07ecde0e..642e3042 100644
+--- a/share/MOD_Namelist.F90
++++ b/share/MOD_Namelist.F90
+@@ -428,6 +428,10 @@ MODULE MOD_Namelist
+    ! any paddy only from planting to harvest (cphase 1-4). Needs
+    ! DEF_USE_IRRIGATION (the paddy method is set in MOD_Irrigation).
+    logical :: DEF_PADDY_RICE_BUND       = .false.
++   ! C-45 (paper V2): gridded share of double-cropped irrigated rice (variable
++   ! rice_double on a lat/lon grid); irrigated rice where the share is at least
++   ! 0.5 is sown again on the second rice date of the crop calendar
++   character(len=256) :: DEF_RICE_DOUBLE_SEASON_FILE = 'null'
+    ! C-37 (paper V2): share of the net assimilate (available C less growth
+    ! respiration) of live rice (PFT 61, 62) its roots exude; it enters the
+    ! metabolic litter along the fine-root profile. 0 is off.
+@@ -1196,6 +1200,7 @@ CONTAINS
+       DEF_USE_IRRIGATION,                     & !add by Hongbin Liang @ sysu
+       DEF_IRRIGATION_ALLOCATION,              & !add by Hongbin Liang @ sysu
+       DEF_PADDY_RICE_BUND,                    & !C-32 (paper V2)
++      DEF_RICE_DOUBLE_SEASON_FILE,            & !C-45 (paper V2)
+       DEF_RICE_ROOT_EXUDATE,                  & !C-37 (paper V2)
+       DEF_USE_NOSTRESSNITROGEN,               & !add by Hongbin Liang @ sysu
+       DEF_RSTFAC,                             & !add by Hongbin Liang @ sysu
+@@ -1849,6 +1854,7 @@ CONTAINS
+ 
+       CALL mpi_bcast (DEF_IRRIGATION_ALLOCATION              ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_PADDY_RICE_BUND                    ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
++      CALL mpi_bcast (DEF_RICE_DOUBLE_SEASON_FILE            ,256 ,mpi_character ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RICE_ROOT_EXUDATE                  ,1   ,mpi_real8     ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_USE_NOSTRESSNITROGEN               ,1   ,mpi_logical   ,p_address_master ,p_comm_glb ,p_err)
+       CALL mpi_bcast (DEF_RSTFAC                             ,1   ,mpi_integer   ,p_address_master ,p_comm_glb ,p_err)
+-- 
+2.53.0
+
