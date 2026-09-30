@@ -44,7 +44,7 @@ MODULE MOD_Irrigation
    PUBLIC :: CalIrrigationApplicationFluxes
    PUBLIC :: CalPaddyFallowFlood
 
-   ! C-32b (paper V2, DEF_PADDY_RICE_BUND): standing water an irrigated paddy is
+   ! (DEF_PADDY_RICE_BUND): standing water an irrigated paddy is
    ! kept at, 5-10 cm under continuous flooding (Bouman et al. 2007, IRRI,
    ! Water management in irrigated rice); below the bund height pondmxc (100 mm).
    real(r8), parameter :: paddy_pond_target = 50._r8   ! [mm]
@@ -161,7 +161,7 @@ CONTAINS
       real(r8) :: h2osoi_liq_field_capacity(1:nl_soil)
       real(r8) :: h2osoi_liq_saturation_capacity(1:nl_soil)
       real(r8) :: h2osoi_liq_at_threshold
-      real(r8) :: h2osoi_liq_top, h2osoi_liq_saturation_top   ! C-32d: above the plow pan
+      real(r8) :: h2osoi_liq_top, h2osoi_liq_saturation_top   ! above the plow pan
 
       real(r8) :: smpswc = -1.5e5
       real(r8) :: smpsfc = -3.3e3
@@ -237,10 +237,10 @@ CONTAINS
       !   calculate total irrigation
       DO m = ps, pe
          IF (DEF_PADDY_RICE_BUND .and. irrig_method_p(m) == irrig_method_paddy) THEN
-            ! C-32b: a paddy is topped up to a saturated root zone plus its
+            ! a paddy is topped up to a saturated root zone plus its
             ! standing water. Upstream took the saturation threshold but the
             ! field-capacity amount, so a soil between the two got nothing.
-            ! C-32d: only the puddled soil above the plow pan (centres above
+            ! only the puddled soil above the plow pan (centres above
             ! 0.15 m, MOD_SoilSnowHydrology) is kept saturated; below the pan
             ! the soil drains and irrigation does not chase it.
             deficit_irrig(i) = irrig_supply_fraction * (max(h2osoi_liq_saturation_top - h2osoi_liq_top, 0._r8) &
@@ -325,7 +325,7 @@ CONTAINS
          IF ((ivt == 62) .and. (irrig_method_p(m) == irrig_method_flood)) THEN
             irrig_method_p(m) = irrig_method_paddy
          ENDIF
-         ! C-32: rainfed lowland rice is bunded too; irrig_crop(61) is false, so
+         ! rainfed lowland rice is bunded too; irrig_crop(61) is false, so
          ! the paddy method gives it the bunds but no irrigation water.
          IF (DEF_PADDY_RICE_BUND .and. (ivt == 61) .and. (irrig_method_p(m) == irrig_method_flood)) THEN
             irrig_method_p(m) = irrig_method_paddy
@@ -336,12 +336,12 @@ CONTAINS
          ivt = pftclass(m)
          IF ((ivt >= npcropmin) .and. (irrig_crop(ivt)) .and. &
             (((cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m)<irrig_max_cphase) .and. &
-            ! C-32e: paddies are not irrigated from the start of grain fill;
-            ! C-47: or, with DEF_PADDY_DRAIN_DAYS set, in the pre-harvest drain window
+            ! paddies are not irrigated from the start of grain fill;
+            ! or, with DEF_PADDY_DRAIN_DAYS set, in the pre-harvest drain window
             .not. (DEF_PADDY_RICE_BUND .and. irrig_method_p(m) == irrig_method_paddy .and. &
                    ((DEF_PADDY_DRAIN_DAYS <  0._r8 .and. cphase_p(m) >= 3._r8) .or. &
                     (DEF_PADDY_DRAIN_DAYS >= 0._r8 .and. paddy_predrain_p(m))))) .or. &
-            ! candidate 25: an irrigated paddy in its pre-sowing flood window is
+            ! an irrigated paddy in its pre-sowing flood window is
             ! topped up too, but no water is pumped onto frozen ground
             (paddy_fallow_flood_p(m) .and. t_soisno(1,i) > tfrz))) THEN
             IF (DEF_simulation_time%greenwich) THEN
@@ -364,15 +364,15 @@ CONTAINS
 
    SUBROUTINE CalPaddyFallowFlood(i,idate)
       !   DESCRIPTION:
-      !   Candidate 25 (paper V2, DEF_PADDY_FALLOW_FLOOD): flags an irrigated
+      !   (DEF_PADDY_FALLOW_FLOOD): flags an irrigated
       !   paddy (PFT 62) that is not growing and is at most DEF_PADDY_FALLOW_FLOOD
       !   days before its next sowing, on the first-season date or, for
-      !   double-cropped rice (C-45), the second-season date. A flagged paddy is
+      !   double-cropped rice, the second-season date. A flagged paddy is
       !   bunded (paddy_bunded, MOD_SoilSnowHydrology) and topped up by the paddy
-      !   irrigation (C-32b) as in the growing season, so pre-season flooding
+      !   irrigation as in the growing season, so pre-season flooding
       !   puts water on the field through the irrigation supply. Called at the
       !   start of the time step, before the hydrology, from dates and restart
-      !   state only, so a restart gives the same flag. With C-95
+      !   state only, so a restart gives the same flag. With
       !   (DEF_RICE_SECOND_SOW_DAYS) the second season has no fixed date and
       !   follows the harvest after a land-preparation interval, so only the
       !   first-season date counts.

@@ -147,7 +147,7 @@ MODULE MOD_BGC_Veg_CNPhenology
 
    real(r8), parameter :: yravg   = 20.0_r8      ! length of years to average for gdd
    real(r8), parameter :: yravgm1 = yravg-1.0_r8 ! minus 1 of above
-   logical :: gdd_year_closed = .false.          ! Q-48: the 1 January gdd..20 update ran in this spin-up cycle
+   logical :: gdd_year_closed = .false.          ! the 1 January gdd..20 update ran in this spin-up cycle
 
 CONTAINS
 
@@ -355,7 +355,7 @@ CONTAINS
    SUBROUTINE CropGDDSpinCycleEnd ()
 
 ! !DESCRIPTION:
-! Q-48: a spin-up cycle over single-year or part-year site forcing that does
+! a spin-up cycle over single-year or part-year site forcing that does
 ! not pass the first step of 1 January never updates gdd020/gdd820/gdd1020, so
 ! they stay at the cold-start 0 and rice matures at the constant term of
 ! gddmaturity (587 GDD, harvest 52-62 days after sowing). Such a cycle closes
@@ -1063,8 +1063,8 @@ CONTAINS
    real(r8) :: initial_seed_at_planting = 3._r8 ! Initial seed at planting
    integer ivt
    logical :: sow_now, end_second
-   real(r8) :: gf      ! grain-fill threshold of this crop (Q-33: rice may take DEF_RICE_GRNFILL)
-   real(r8) :: days_left ! C-47: projected days to harvest
+   real(r8) :: gf      ! grain-fill threshold of this crop (rice may take DEF_RICE_GRNFILL)
+   real(r8) :: days_left ! projected days to harvest
 
     !------------------------------------------------------------------------
 
@@ -1092,10 +1092,10 @@ CONTAINS
            !  determine IF the cft is planted in this time step
             IF ( (.not. croplive_p(m)) .and. (.not. cropplant_p(m)) ) THEN
                sow_now = jday == int(plantdate_p(m))
-               ! C-45 (paper V2): double-cropped irrigated rice is sown again
+               ! double-cropped irrigated rice is sown again
                ! on the second rice date once the first season is harvested;
                ! a first season still growing on that date skips it
-               ! C-95 (paper V2): with DEF_RICE_SECOND_SOW_DAYS, the second
+               ! with DEF_RICE_SECOND_SOW_DAYS, the second
                ! season follows the first-season harvest instead (RiceSecondSow)
                IF ((.not. sow_now) .and. ivt == nirrig_rice .and. rice_double_p(m) >= 0.5_r8) THEN
                   IF (DEF_RICE_SECOND_SOW_DAYS >= 0._r8) THEN
@@ -1111,7 +1111,7 @@ CONTAINS
                   cropplant_p(m)   = .true.
                   idop_p(m)        = jday
                   harvdate_p(m)    = NOT_Harvested
-                  ! C-45: a crop harvested on the step before (second rice
+                  ! a crop harvested on the step before (second rice
                   ! season ended on the first-season sowing date) may still
                   ! hold unemerged seed in leaf*_xfer; it goes back to the seed
                   ! pool as the new seed replaces it (zero otherwise)
@@ -1170,7 +1170,7 @@ CONTAINS
                   idpp = int(dayspyr) + jday - idop_p(m)
                ENDIF
 
-              ! C-47: the pre-harvest drain window of a paddy, from the days
+              ! the pre-harvest drain window of a paddy, from the days
               ! left to the earlier of maturity (at the season's mean heat-unit
               ! rate so far) and the maximum season length
                paddy_predrain_p(m) = .false.
@@ -1186,10 +1186,10 @@ CONTAINS
 
                onset_counter_p(m) = onset_counter_p(m) - deltim
 
-              ! C-45: a second-season rice crop still standing on the sowing
+              ! a second-season rice crop still standing on the sowing
               ! date of the first season is harvested then, so the first
               ! season is never skipped (it is sown on the next time step)
-              ! C-95: the second season is then any crop not sown on the
+              ! the second season is then any crop not sown on the
               ! first-season date
                end_second = .false.
                IF (ivt == nirrig_rice .and. rice_double_p(m) >= 0.5_r8) THEN
@@ -1315,7 +1315,7 @@ CONTAINS
    logical FUNCTION RiceSecondSow (m, ivt, jday, h, dayspyr)
 
 ! !DESCRIPTION:
-! C-95 (paper V2): second season of double-cropped irrigated rice. It is sown
+! second season of double-cropped irrigated rice. It is sown
 ! DEF_RICE_SECOND_SOW_DAYS days after the harvest of a first season (a crop
 ! sown on the calendar date plantdate), if the heat left before plantdate
 ! comes round again reaches the maturity requirement of the crop just

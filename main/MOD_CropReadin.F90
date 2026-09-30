@@ -174,7 +174,7 @@ CONTAINS
       CALL check_vector_data ('plantdate_pfts value ', plantdate_p)
 #endif
 
-      ! (2b) C-45 (paper V2): share of double-cropped irrigated rice, areal
+      ! (2b) share of double-cropped irrigated rice, areal
       ! weighted onto each pft (the file is made on the model grid)
       IF (trim(DEF_RICE_DOUBLE_SEASON_FILE) /= 'null') THEN
          CALL ncio_read_bcast_serial (DEF_RICE_DOUBLE_SEASON_FILE, 'lat', lat)

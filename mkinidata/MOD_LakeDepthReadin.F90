@@ -86,7 +86,7 @@ CONTAINS
 
          DO ipatch = 1, numpatch
 
-            ! Q-39: a missing depth takes the default of the lake-depth data
+            ! a missing depth takes the default of the lake-depth data
             ! (Kourzeneva et al. 2012), 10 m, instead of the 0.1 m floor below
             IF (DEF_LAKEDEPTH_VALID_PIXELS .and. lakedepth(ipatch) <= 0.) lakedepth(ipatch) = 10.
 

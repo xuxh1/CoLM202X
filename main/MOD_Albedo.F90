@@ -165,7 +165,7 @@ CONTAINS
 
 !-------------------------- Local Variables ----------------------------
 
-   real(r8) :: &!
+   real(r8) :: &
       age,             &! factor to reduce visible snow alb due to snow age [-]
       albg0,           &! temporary variable [-]
       albsoi(2,2),     &! soil albedo [-]
@@ -419,7 +419,7 @@ ENDIF
 #endif
          ELSE  !other patchtypes (/=0)
             IF (patchtype == 2 .and. fveg > 0. .and. fveg < 1.) THEN
-               ! Tower wetland (C-83): the canopy fills fveg of the patch at the
+               ! Tower wetland: the canopy fills fveg of the patch at the
                ! in-canopy leaf and stem area and the open rest sees the ground,
                ! averaged as twostream_wrap averages a bare PFT. thermk, extkb
                ! and extkd stay those of the canopy for THERMAL.
@@ -544,25 +544,25 @@ ENDIF
 
             power1,        &! (h*lai)
             power2,        &! (k*lai)
-            power3,        &!
+            power3,        &
 
-            sigma,         &!
-            s1,            &!
-            s2,            &!
-            p1,            &!
-            p2,            &!
-            p3,            &!
-            p4,            &!
-            f1,            &!
-            f2,            &!
-            h1,            &!
-            h4,            &!
-            m1,            &!
-            m2,            &!
-            m3,            &!
-            n1,            &!
-            n2,            &!
-            n3,            &!
+            sigma,         &
+            s1,            &
+            s2,            &
+            p1,            &
+            p2,            &
+            p3,            &
+            p4,            &
+            f1,            &
+            f2,            &
+            h1,            &
+            h4,            &
+            m1,            &
+            m2,            &
+            m3,            &
+            n1,            &
+            n2,            &
+            n3,            &
 
             hh1,           &! (h1/sigma)
             hh2,           &! (h2)
@@ -877,25 +877,25 @@ ENDIF
 
             power1,        &! (h*lai)
             power2,        &! (k*lai)
-            power3,        &!
+            power3,        &
 
-            sigma,         &!
-            s1,            &!
-            s2,            &!
-            p1,            &!
-            p2,            &!
-            p3,            &!
-            p4,            &!
-            f1,            &!
-            f2,            &!
-            h1,            &!
-            h4,            &!
-            m1,            &!
-            m2,            &!
-            m3,            &!
-            n1,            &!
-            n2,            &!
-            n3,            &!
+            sigma,         &
+            s1,            &
+            s2,            &
+            p1,            &
+            p2,            &
+            p3,            &
+            p4,            &
+            f1,            &
+            f2,            &
+            h1,            &
+            h4,            &
+            m1,            &
+            m2,            &
+            m3,            &
+            n1,            &
+            n2,            &
+            n3,            &
 
             hh1,           &! (h1/sigma)
             hh2,           &! (h2)

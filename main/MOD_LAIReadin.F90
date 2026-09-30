@@ -256,7 +256,7 @@ CONTAINS
                ENDIF
 
 #ifdef SinglePoint
-               ! Tower wetland (C-83): vegetated fraction from the measured cover
+               ! Tower wetland: vegetated fraction from the measured cover
                ! of the footprint. tlai and tsai stay patch means, as the methane
                ! module, the wetland LAI cap and interception read them; albland
                ! and THERMAL solve the canopy at lai/fveg and sai/fveg over the

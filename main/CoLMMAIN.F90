@@ -738,7 +738,7 @@ SUBROUTINE CoLMMAIN ( &
    integer ps, pe, pc
 
 #endif
-   integer :: mpft             ! pft index for the crop fallow LAI (Q-33)
+   integer :: mpft             ! pft index for the crop fallow LAI
    logical :: fallow_zeroed
 #if (defined CaMa_Flood)
    !add variables for flood evaporation [mm/s] and re-infiltration [mm/s] calculation.
@@ -931,7 +931,7 @@ SUBROUTINE CoLMMAIN ( &
             waterstorage_trc_beg = max(waterstorage(ipatch), 0._r8)
 #endif
             IF (patchtype == 0) THEN
-               ! candidate 25: pre-sowing flood window of irrigated paddies,
+               ! pre-sowing flood window of irrigated paddies,
                ! set before the hydrology bunds the field (off: all false)
                CALL CalPaddyFallowFlood(ipatch,idate)
                CALL CalIrrigationApplicationFluxes(ipatch,deltim,qflx_irrig_drip, &
@@ -1375,7 +1375,7 @@ SUBROUTINE CoLMMAIN ( &
 
 #ifdef SinglePoint
             IF (USE_SITE_WTD .and. SITE_WTD_valid) THEN
-               ! Observed water table (B-3): the host column was re-diagnosed,
+               ! Observed water table: the host column was re-diagnosed,
                ! not fluxed; keep every pool's tracer ratio.
                CALL tracer_prescribed_column (ipatch, nl_soil, &
                   wliq_soisno(1:nl_soil), wliq_soisno_old_trc(1:nl_soil), &
@@ -1641,7 +1641,7 @@ SUBROUTINE CoLMMAIN ( &
             ENDIF
          ENDIF
 #endif
-         ! Q-43: flood water that re-infiltrated this step came from the routing
+         ! flood water that re-infiltrated this step came from the routing
          IF (DEF_FLOODPLAIN_INFILTRATION .and. allocated(fld_qinfl_p)) THEN
             IF (ipatch >= 1 .and. ipatch <= size(fld_qinfl_p)) endwb = endwb - fld_qinfl_p(ipatch)*deltim
          ENDIF
@@ -1664,7 +1664,7 @@ SUBROUTINE CoLMMAIN ( &
             IF (patchtype==2) errorw=0.    !wetland
          ENDIF
 #ifdef SinglePoint
-         ! Observed water table: the column is a forcing, not a budget (B-3)
+         ! Observed water table: the column is a forcing, not a budget
          IF (USE_SITE_WTD .and. SITE_WTD_valid) errorw = 0.
 #endif
 
@@ -2261,7 +2261,7 @@ SUBROUTINE CoLMMAIN ( &
                   lai = sum(lai_p(ps:pe)*pftfrac(ps:pe))
                ENDIF
 #ifdef CROP
-               ! Q-33 (paper V2): no leaf area on a crop pft between harvest
+               ! no leaf area on a crop pft between harvest
                ! and sowing; the patch LAI is summed again only if one changed
                IF (DEF_CROP_FALLOW_NO_LAI) THEN
                   fallow_zeroed = .false.

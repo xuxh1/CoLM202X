@@ -5,8 +5,8 @@ MODULE MOD_Tracer_Reactive_Methane_WetlandVeg
 
 !-----------------------------------------------------------------------
 ! DESCRIPTION:
-!   Vegetation of the permanent-wetland tile from its GLWD v2 make-up
-!   (C-13, paper V2), replacing the five-zone climate proxy when
+!   Vegetation of the permanent-wetland tile from its GLWD v2 make-up,
+!   replacing the five-zone climate proxy when
 !   DEF_METHANE%wetland_veg_glwd is true.
 !
 !   Per patch, from the grid cell nearest to the patch centre:
@@ -19,11 +19,11 @@ MODULE MOD_Tracer_Reactive_Methane_WetlandVeg
 !   With DEF_METHANE%wetland_lai_shape, wetveg_laipeak holds the annual peak
 !   of the patch's remote-sensing LAI for the LAI year in use, and the
 !   non-forested share is scaled by cap / peak instead of clipped at the cap.
-!   With DEF_METHANE%wetland_dim_class (C-88) also the process-dimension
+!   With DEF_METHANE%wetland_dim_class also the process-dimension
 !   shares of the tile classes (16-19, 22-27): wetveg_emerg, emergent marsh
 !   (17); wetveg_dome, tropical peat dome (26, 27); wetveg_moss, moss-carpeted
 !   peatland (22-25). A cell without any tile class gives 0 for all three.
-!   The water-source dimension D2 (C-92) is the rain-fed share
+!   The water-source dimension D2 is the rain-fed share
 !   s_r = s_p + s_b, fed by precipitation alone, held as its permafrost
 !   peat plateau part s_p (wetveg_ombro, the share without lateral inflow)
 !   and its open-bog part s_b (wetveg_bog); globally rainfed_share and
@@ -32,8 +32,8 @@ MODULE MOD_Tracer_Reactive_Methane_WetlandVeg
 !
 ! INPUT FILE: DEF_METHANE%wetland_veg_file, a regular lat/lon grid with
 !   variables lat, lon, forested_share and area_class_NN (km2), as written
-!   by v2/scripts/glwd_class_2deg.py; optionally rainfed_share (C-38) and
-!   bog_share (candidate 32), as written by v2/scripts/mk_rainfed_share.py
+!   by v2/scripts/glwd_class_2deg.py; optionally rainfed_share and
+!   bog_share, as written by v2/scripts/mk_rainfed_share.py
 !   and v2/scripts/mk_bog_share.py, 0 when the file has none.
 !-----------------------------------------------------------------------
 
@@ -47,11 +47,11 @@ MODULE MOD_Tracer_Reactive_Methane_WetlandVeg
    PRIVATE
 
    real(r8), allocatable, public :: wetveg_forest(:)   ! forested share [-]
-   real(r8), allocatable, public :: wetveg_ombro(:)    ! share without lateral inflow (permafrost bog, PEB), C-38 [-]
-   real(r8), allocatable, public :: wetveg_bog(:)      ! open-bog share, candidate 32 [-]
-   real(r8), allocatable, public :: wetveg_emerg(:)    ! emergent marsh share (GLWD 17), C-88 [-]
-   real(r8), allocatable, public :: wetveg_dome(:)     ! tropical peat dome share (GLWD 26-27), C-88 [-]
-   real(r8), allocatable, public :: wetveg_moss(:)     ! moss-carpeted peatland share (GLWD 22-25), C-88 [-]
+   real(r8), allocatable, public :: wetveg_ombro(:)    ! share without lateral inflow (permafrost bog, PEB) [-]
+   real(r8), allocatable, public :: wetveg_bog(:)      ! open-bog share [-]
+   real(r8), allocatable, public :: wetveg_emerg(:)    ! emergent marsh share (GLWD 17) [-]
+   real(r8), allocatable, public :: wetveg_dome(:)     ! tropical peat dome share (GLWD 26-27) [-]
+   real(r8), allocatable, public :: wetveg_moss(:)     ! moss-carpeted peatland share (GLWD 22-25) [-]
    real(r8), allocatable, public :: wetveg_laicap(:)   ! LAI cap of the non-forested share [m2/m2]
    logical,  public :: wetveg_active = .false.
    real(r8), allocatable, public :: wetveg_laipeak(:)  ! annual peak of the remote-sensing LAI [m2/m2]
@@ -159,7 +159,7 @@ CONTAINS
             IF (ierr == NF90_NOERR) ierr = nf90_get_var(ncid, vid, a)
             IF (ierr == NF90_NOERR) forest_g = transpose(a)
          ENDIF
-         ! C-38: rain-fed share of the wetland classes, when the file has it
+         ! rain-fed share of the wetland classes, when the file has it
          IF (ierr == NF90_NOERR) THEN
             IF (nf90_inq_varid(ncid, 'rainfed_share', vid) == NF90_NOERR) THEN
                vname = 'rainfed_share'
@@ -167,7 +167,7 @@ CONTAINS
                IF (ierr == NF90_NOERR) ombro_g = transpose(a)
             ENDIF
          ENDIF
-         ! Candidate 32: open-bog share of the wetland classes, when the file has it
+         ! open-bog share of the wetland classes, when the file has it
          IF (ierr == NF90_NOERR .and. nf90_inq_varid(ncid, 'bog_share', vid) == NF90_NOERR) THEN
             vname = 'bog_share'
             ierr = nf90_get_var(ncid, vid, a)
@@ -189,7 +189,7 @@ CONTAINS
             IF (ierr == NF90_NOERR) amarsh = amarsh + max(transpose(a), 0._r8)
          ENDDO
          IF (DEF_METHANE%wetland_dim_class) THEN
-            ! C-88: area of each dimension over the area of the tile classes
+            ! area of each dimension over the area of the tile classes
             allocate (atile(nlat,nlon), acls(nlat,nlon))
             atile = 0._r8
             DO k = 1, ntile
@@ -306,7 +306,7 @@ CONTAINS
             wetveg_dome(:) = min(DEF_METHANE%wetland_share_dome_site, 1._r8)
          IF (DEF_METHANE%wetland_share_moss_site >= 0._r8) &
             wetveg_moss(:) = min(DEF_METHANE%wetland_share_moss_site, 1._r8)
-         ! C-92, water source D2: the tower's open-bog share s_b, and its
+         ! water source D2: the tower's open-bog share s_b, and its
          ! rain-fed share s_r, of which the permafrost plateau part s_r - s_b
          ! takes no lateral inflow; s_b is bounded by s_r.
          IF (DEF_METHANE%wetland_share_bog_site >= 0._r8) &
@@ -317,7 +317,7 @@ CONTAINS
             wetveg_ombro(:) = srain - wetveg_bog(:)
          ENDIF
       ENDIF
-      ! I-16: canopy height of the forested share of tropical tiles
+      ! canopy height of the forested share of tropical tiles
       IF (DEF_METHANE%wetland_forest_htop_trop > 0._r8) THEN
          CALL wetveg_set_forest_htop (patchlatr_in, numpatch)
          IF (p_is_master) write(*,'(A,F7.2)') &
@@ -335,7 +335,7 @@ CONTAINS
    END SUBROUTINE read_methane_wetveg
 
    SUBROUTINE wetveg_set_forest_htop (patchlatr_in, numpatch)
-      ! Canopy top height of the tropical wetland tiles (I-16): the forested
+      ! Canopy top height of the tropical wetland tiles: the forested
       ! share f stands at wetland_forest_htop_trop and the rest at the land
       ! class height htop0, averaged by share as the PFT heights of a soil
       ! patch (HTOP_readin). Tropical is within 23.5 degrees of the equator,
@@ -400,7 +400,7 @@ CONTAINS
       ! times this ratio. The clip gives min(1, cap / LAI) for any forested
       ! share f; the shape scaling, with c = cap / peak, gives c / (f + (1 - f) c).
       ! Until the first LAI read of a run the peak is unknown and the clip
-      ! relation stands in. 1 without C-13 or without a cap in the cell.
+      ! relation stands in. 1 without wetland_veg_glwd or without a cap in the cell.
       USE MOD_Vars_TimeVariables, only: tlai
       USE MOD_Tracer_Reactive_Methane_Const, only: DEF_METHANE
       integer, intent(in) :: ipatch
@@ -428,7 +428,7 @@ CONTAINS
    real(r8) FUNCTION wetveg_forest_input_ratio (ipatch)
       ! Plant input of a wetland tile under wetland_forest_input_herb over its
       ! assimilation-based input: the herb layer ratio r for both shares.
-      ! With wetland_dim_class (C-89) the forested share f keeps at least its
+      ! With wetland_dim_class the forested share f keeps at least its
       ! moss layer where the ground is moss-carpeted peat,
       !   (1 - f) r + f max(r, wetland_moss_input_frac s_m),
       ! with the tile's moss share s_m standing for the moss share inside the
@@ -480,7 +480,7 @@ CONTAINS
 
    real(r8) FUNCTION wetveg_bg_frac (ipatch)
       ! Belowground share of the wetland plant input, weighted by the
-      ! forested share (C-13); wetland_bg_frac alone without C-13.
+      ! forested share; wetland_bg_frac alone without wetland_veg_glwd.
       USE MOD_Tracer_Reactive_Methane_Const, only: DEF_METHANE
       integer, intent(in) :: ipatch
       wetveg_bg_frac = DEF_METHANE%wetland_bg_frac
@@ -492,7 +492,7 @@ CONTAINS
 
    SUBROUTINE wetland_root_profile (ipatch, prof)
       ! Root profile of a wetland tile, as layer shares summing to one: the
-      ! land-class profile, or with wetland_root_efold > 0 (C-28)
+      ! land-class profile, or with wetland_root_efold > 0
       ! exp(-z/wetland_root_efold) integrated over each layer.
       USE MOD_Tracer_Reactive_Methane_Const, only: DEF_METHANE
       USE MOD_Vars_Global, only: nl_soil, zi_soi
@@ -523,12 +523,12 @@ CONTAINS
    END SUBROUTINE wetland_root_profile
 
    SUBROUTINE set_wetland_veg_glwd (ipatch, lai_in, lai_out, annsum_npp_out, agnpp_out, bgnpp_out, rootfr_out)
-      ! Replaces get_wetland_veg_proxy (C-13): NPP from the tile's own
-      ! assimilation times wetland_npp_frac (as the C-12 input), split by the
+      ! Replaces get_wetland_veg_proxy: NPP from the tile's own
+      ! assimilation times wetland_npp_frac (as the wetland_plant_input), split by the
       ! forest-weighted belowground share; the land class's root profile (as
-      ! the C-12 input); CLM4Me grass aerenchyma defaults, the forested share
+      ! the wetland_plant_input); CLM4Me grass aerenchyma defaults, the forested share
       ! at nongrassporosratio of the grass porosity (Riley et al. 2011), or
-      ! with woody_conduit_area (C-87) on its own conduit and the grass
+      ! with woody_conduit_area on its own conduit and the grass
       ! porosity for the tillers.
       ! annsum_npp_out is 0 so the aerenchyma uses the annual means of agnpp
       ! and bgnpp accumulated by methane_annualupdate.
@@ -562,7 +562,7 @@ CONTAINS
 
       IF (allocated(wetland_aere_active) .and. ipatch >= 1 .and. ipatch <= size(wetland_aere_active)) THEN
          IF (DEF_METHANE%woody_conduit_area >= 0._r8) THEN
-            ! C-87: the forested share has a conduit of its own
+            ! the forested share has a conduit of its own
             ! (woody_conduit_area, methane_aere), so the tillers of the
             ! non-forested share keep the grass porosity
             wetland_aere_poros  (ipatch) = DEF_METHANE%poros_tiller

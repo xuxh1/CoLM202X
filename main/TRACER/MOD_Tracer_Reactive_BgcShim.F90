@@ -85,7 +85,7 @@ CONTAINS
 !  limiter left at all: t_scalar tracks temperature, depth_scalar is fixed, and
 !  w_scalar is 1 precisely because the tile is waterlogged. Frozen layers keep 1
 !  so the suppression is not counted twice against t_scalar and w_scalar --
-!  unless frozen_anoxic_decomp (C-16) is on: just below freezing w_scalar is
+!  unless frozen_anoxic_decomp is on: just below freezing w_scalar is
 !  still near 1, and 1 there made a freezing layer decompose five times faster
 !  than a thawed one.
 !
@@ -98,7 +98,7 @@ CONTAINS
 !  single-point run could show it -- all 44 towers are patchtype 2 -- but a
 !  global run decomposes its entire land surface through this.
 !
-!  With wetland_anoxia_catotelm >= 0 (C-18) the scalar also deepens below the
+!  With wetland_anoxia_catotelm >= 0 the scalar also deepens below the
 !  water table: mino2lim at the table, falling towards the catotelm floor
 !  over wetland_anoxia_efold (HPM). The inundated share has its table at the
 !  surface, the rest at the host water table; above the table it stays at
@@ -143,13 +143,13 @@ CONTAINS
       real(r8), intent(in) :: deltim
       integer :: j, k
       real(r8) :: litter_nrate, plant_ndemand_col
-      real(r8) :: exu_vr(1:nl_soil)   ! root exudate respiration (C-23) [gC m-3 s-1]
+      real(r8) :: exu_vr(1:nl_soil)   ! root exudate respiration [gC m-3 s-1]
 
       IF (.not. ieee_is_finite(deltim) .or. deltim <= 0._r8) THEN
          CALL CoLM_stop(' ***** ERROR: wetland CH4/BGC coupling requires a finite positive timestep')
       ENDIF
 
-      ! candidate 6: nothing is exuded unless the plant input below sets it
+      ! nothing is exuded unless the plant input below sets it
       IF (DEF_METHANE%root_exudate_frac > 0._r8 .and. allocated(root_exudate_vr)) &
          root_exudate_vr(:,ipatch) = 0._r8
 
@@ -183,7 +183,7 @@ CONTAINS
       IF (allocated(sminn_leached))             sminn_leached            (ipatch)             = 0._r8
       IF (allocated(sminn_to_plant))            sminn_to_plant           (ipatch)             = 0._r8
 
-      ! Plant carbon input of the tile (paper V2 C-12), on the source/sink
+      ! Plant carbon input of the tile, on the source/sink
       ! that CDecompStateUpdate adds to the pools once they are not fixed.
       litter_nrate = 0._r8
       exu_vr(:) = 0._r8
@@ -194,7 +194,7 @@ CONTAINS
       IF (DEF_METHANE%bgc_anoxia_limits_decomp) CALL reactive_bgc_set_wetland_anoxia (ipatch)
 
       CALL decomp_rate_constants_bgc (ipatch, nl_soil, z_soi)
-      ! C-18b: the peat passive pool turns over on its own base time.
+      ! the peat passive pool turns over on its own base time.
       IF (DEF_METHANE%wetland_tau_s3 > 0._r8) &
          decomp_k(1:nl_soil,i_soil3,ipatch) = decomp_k(1:nl_soil,i_soil3,ipatch) &
             * tau_s3 / DEF_METHANE%wetland_tau_s3
@@ -213,7 +213,7 @@ CONTAINS
       ENDIF
       CALL SoilBiogeochemDecomp      (ipatch, nl_soil, ndecomp_pools, ndecomp_transitions, dz_soi)
 
-      ! C-23: root exudates are respired where released; booked on the
+      ! root exudates are respired where released; booked on the
       ! metabolic-litter transition so the CH4 side counts them as litter HR.
       ! SoilBiogeochemDecomp assigns decomp_hr_vr, so this comes after it.
       IF (DEF_METHANE%wetland_exudate_frac > 0._r8) THEN
@@ -242,12 +242,12 @@ CONTAINS
       ! the tile's plants return to the soil at steady state; it enters the
       ! litter pools along the land class's root profile with CoLM's grass
       ! litter split and a grass litter C:N (mean of leaf litter 50 and fine
-      ! roots 42 in MOD_Const_PFT). With wetland_bg_frac < 1 (C-15) only that
+      ! roots 42 in MOD_Const_PFT). With wetland_bg_frac < 1 only that
       ! share follows the roots; the aboveground rest is laid on the surface
       ! along CoLM's leaf-litter profile, exp(-surfprof_exp z).
       ! With wetland_forest_input_herb the forested share enters as a herb
       ! layer at the non-forested share's LAI, with the herb belowground share;
-      ! with wetland_dim_class (C-89) moss-carpeted peat keeps at least its
+      ! with wetland_dim_class moss-carpeted peat keeps at least its
       ! moss layer, wetland_moss_input_frac of the stand input.
       ! With wetland_burial_frac_site that share of the litter goes to soil3.
       ! nrate returns the litter N added this step [gN m-2 s-1], buried litter
@@ -256,7 +256,7 @@ CONTAINS
       integer,  intent(in) :: ipatch
       real(r8), intent(in) :: deltim
       real(r8), intent(out) :: nrate
-      real(r8), intent(out) :: exu_vr(1:nl_soil)   ! exudate respiration [gC m-3 s-1] (C-23)
+      real(r8), intent(out) :: exu_vr(1:nl_soil)   ! exudate respiration [gC m-3 s-1]
       integer  :: j
       real(r8) :: cin, cbur, s, bg, prof(1:nl_soil), sprof(1:nl_soil)
 
@@ -267,18 +267,18 @@ CONTAINS
       IF (.not. ieee_is_finite(cin) .or. cin <= 0._r8 .or. cin > 1.e-2_r8) RETURN
       cin = cin * 12.011_r8 * DEF_METHANE%wetland_npp_frac * deltim       ! g C m-2 per step
       IF (DEF_METHANE%wetland_forest_input_herb) cin = cin * wetveg_forest_input_ratio(ipatch)
-      ! Tower vascular cover (paper V2, marsh towers): the open water of the
+      ! Vascular cover of a marsh tower: the open water of the
       ! footprint gives no plant input; the exudate share below follows.
       IF (DEF_METHANE%wetland_cover_frac_site >= 0._r8) cin = cin * DEF_METHANE%wetland_cover_frac_site
 
       CALL wetland_root_profile (ipatch, prof)
 
-      ! C-23: the exudate share is respired where the roots release it and
+      ! the exudate share is respired where the roots release it and
       ! leaves the litter input.
       IF (DEF_METHANE%wetland_exudate_frac > 0._r8) THEN
          exu_vr(:) = cin * DEF_METHANE%wetland_exudate_frac * prof(:) / dz_soi(1:nl_soil) / deltim
          cin = cin * (1._r8 - DEF_METHANE%wetland_exudate_frac)
-      ! candidate 6, where C-23 is off: the same share of the input leaves the
+      ! where wetland_exudate_frac is 0: the same share of the input leaves the
       ! litter input, but it is booked on decomp_hr_vr only after the pools
       ! are updated (tracer_ch4_bgc_finalize_step); CDecompStateUpdate would
       ! otherwise debit the metabolic litter for carbon it never received.
@@ -289,7 +289,7 @@ CONTAINS
       ENDIF
       IF (allocated(decomp_npools_sourcesink)) nrate = cin / DEF_METHANE%wetland_litter_cn / deltim
 
-      ! Managed marshes (paper V2): the buried share of the litter becomes new
+      ! Managed marshes: the buried share of the litter becomes new
       ! peat in the passive pool, along the root profile and with its litter
       ! N, so nrate above still covers all the organic N added. Exudates are
       ! not litter and keep their share of the whole input.
@@ -305,7 +305,7 @@ CONTAINS
          ENDDO
       ENDIF
 
-      bg = wetveg_bg_frac(ipatch)      ! wetland_bg_frac, forest-weighted under C-13
+      bg = wetveg_bg_frac(ipatch)      ! wetland_bg_frac, forest-weighted under wetland_veg_glwd
       IF (DEF_METHANE%wetland_forest_input_herb) bg = DEF_METHANE%wetland_bg_frac
       IF (bg < 1._r8) THEN
          sprof(:) = exp(-surfprof_exp * z_soi(1:nl_soil)) * dz_soi(1:nl_soil)
@@ -536,12 +536,12 @@ CONTAINS
 !  Rates are taken before fpi. This tile's organic N leaves only as net
 !  mineralization, and there is no N loss downstream, so at steady state net
 !  mineralization equals the litter N input and mineral N builds up: fpi is
-!  1 there. A cycle that starts with the fresh pools empty (C-17) has fpi far
+!  1 there. A cycle that starts with the fresh pools empty has fpi far
 !  below 1 at the productive towers (0.04-0.2), because the soil pools whose
 !  mineralization would feed the litter are not built yet. Jumping with those
 !  rates lifts litter by 1/fpi and keeps the tile N-locked for decades.
 !
-!  soil3 is held: it carries the seeded old peat (C-17) and the buried litter
+!  soil3 is held: it carries the seeded old peat and the buried litter
 !  (wetland_burial_frac_site), which are not in equilibrium with today's
 !  input and turn over in millennia; its own input is left out. Its outflow to
 !  soil1 enters as an input, and the flows into it are losses. Floating-C:N

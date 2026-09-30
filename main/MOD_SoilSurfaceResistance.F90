@@ -224,7 +224,7 @@ CONTAINS
       ! where k=alpha_vgm, S=(1+(-k*smp_node)**(n))**(-m), m=m_vgm=1-1/n_vgm
       m_vgm = 1. - 1./n_vgm(1)
       k_vgm = alpha_vgm(1)
-      ! C-94 (paper V2): smp_node is in m here, alpha_vgm in 1/mm
+      ! smp_node is in m here, alpha_vgm in 1/mm
       IF (DEF_VG_ALPHA_MM) k_vgm = alpha_vgm(1)*1000.
       S     = (1. + (- k_vgm*smp_node)**(n_vgm(1)))**(-m_vgm)
       dw    = -hk*(m_vgm-1.)/(k_vgm*m_vgm*(porsl(1)-theta_r(1))) &
@@ -278,7 +278,7 @@ CONTAINS
 #endif
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
          IF (DEF_VG_ALPHA_MM) THEN
-            ! C-94 (paper V2): alpha_vgm in 1/mm, field capacity at -3399 mm
+            ! alpha_vgm in 1/mm, field capacity at -3399 mm
             wfc = theta_r(1)+(porsl(1)-theta_r(1))*(1+(alpha_vgm(1)*3399.)**n_vgm(1))**(1.0/n_vgm(1)-1)
          ELSE
             wfc = theta_r(1)+(porsl(1)-theta_r(1))*(1+(alpha_vgm(1)*339.9)**n_vgm(1))**(1.0/n_vgm(1)-1)
@@ -306,7 +306,7 @@ CONTAINS
       ENDSELECT
 
       ! floor of the snow-free resistance, e.g. the moss and peat surface
-      ! of a wetland tile (C-26 of the paper V2 methane code)
+      ! of a wetland tile (DEF_METHANE%wetland_moss_rss)
       IF (present(rss_min) .and. DEF_RSS_SCHEME .ne. 4) rss = max(rss, rss_min)
 
 !-----------------------------------------------------------------------

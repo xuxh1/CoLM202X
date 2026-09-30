@@ -133,7 +133,7 @@ CONTAINS
       logical  :: run_methane
       logical  :: is_rice_paddy
       real(r8) :: rice_pft_frac
-      real(r8) :: rootfr_m(1:nl_soil)   ! root profile handed to methane (I-27)
+      real(r8) :: rootfr_m(1:nl_soil)   ! root profile handed to methane
       integer  :: lb, snl_loc
       real(r8) :: z_soisno_m(maxsnl+1:nl_soil)
       real(r8) :: dz_soisno_m(maxsnl+1:nl_soil)
@@ -193,7 +193,7 @@ CONTAINS
    END SUBROUTINE ch4_impl_soil_step
 
    SUBROUTINE methane_pft_root_profile (ipatch, prof)
-      ! pft_root_profile (I-27): replace the land-class root profile of a
+      ! pft_root_profile: replace the land-class root profile of a
       ! patch that carries PFTs by the pftfrac-weighted mean, over its
       ! vegetated PFTs, of the host's PFT root profiles (rootfr_p, those of
       ! the host's root water uptake). In a gridded PFT or PC build every

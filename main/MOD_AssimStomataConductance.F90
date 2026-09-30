@@ -179,7 +179,7 @@ CONTAINS
    real(r8) :: &
       eyy(iterationtotal),    &! differnce of pco2i at two iteration step
       pco2y(iterationtotal),  &! adjusted to total iteration number
-      range                    !
+      range
 
    integer ic
 !-----------------------------------------------------------------------
@@ -680,7 +680,7 @@ CONTAINS
    real(r8) :: &
             eyy(iterationtotal),    &! differnce of pco2i at two iteration step
             pco2y(iterationtotal),  &! adjusted to total iteration number
-            range                    !
+            range
 
    integer ic
 !-----------------------------------------------------------------------

@@ -108,7 +108,7 @@ SUBROUTINE Aggregation_LakeDepth ( &
                   zip = USE_zip_for_aggregation, &
                   data_r8_2d_in1 = lakedepth, data_r8_2d_out1 = lakedepth_one)
                IF (DEF_LAKEDEPTH_VALID_PIXELS) THEN
-                  ! Q-39: water pixels without a depth (rivers and other water
+                  ! water pixels without a depth (rivers and other water
                   ! bodies outside the lake data) are 0 and are left out; a
                   ! patch with none keeps 0, which the model reads as missing
                   IF (count(lakedepth_one > 0._r8) > 0) THEN

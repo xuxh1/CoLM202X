@@ -122,7 +122,7 @@ CONTAINS
         wimp                    ,&! water impermeable if porosity less than wimp
         smpmin                  ,&! restriction for min of soil poten. (mm)
         elvstd                  ,&! standard deviation of elevation (m)
-        BVIC                    ,&!
+        BVIC                    ,&
 
         z_soisno (lb:nl_soil)   ,&! layer depth (m)
         dz_soisno(lb:nl_soil)   ,&! layer thickness (m)
@@ -725,7 +725,7 @@ ENDIF
         pondmx           , &! ponding depth (mm)
         wimp             , &! water impermeable IF porosity less than wimp
         elvstd           , &! standard deviation of elevation (m)
-        BVIC             , &!
+        BVIC             , &
         z_soisno (lb:nl_soil)   , &! layer depth (m)
         dz_soisno(lb:nl_soil)   , &! layer thickness (m)
         zi_soisno(lb-1:nl_soil) , &! interface level below a "z" level (m)
@@ -870,7 +870,7 @@ ENDIF
    real(r8) :: pond_target                      ! managed ponding depth of a tower's wetland (mm), < 0 off
    real(r8) :: pond_max                         ! ponding cap of a dynamic wetland tile (mm)
    real(r8) :: qpond                            ! overland outflow of wetland ponding (mm s-1)
-   logical  :: perched                          ! I-25: water table perched above ice on a wetland tile
+   logical  :: perched                          ! water table perched above ice on a wetland tile
    real(r8) :: zi_drain(0:nl_soil)              ! interfaces [m] the peat outflow integrates over
    real(r8) :: sp_zc(1:nl_soil), sp_zi(0:nl_soil), sp_dz(1:nl_soil) ! in mm
    logical  :: is_permeable(1:nl_soil)
@@ -894,8 +894,8 @@ ENDIF
 #endif
    logical :: new_cama_flood
 #endif
-   real(r8) :: gfld_q43, rsur_q43, qinfsub_q43, rsubst_q43  ! Q-43 flood re-infiltration [mm/s]
-   real(r8) :: fld_def                                      ! Q-47 pore deficit above the water table [mm]
+   real(r8) :: gfld_q43, rsur_q43, qinfsub_q43, rsubst_q43  ! flood re-infiltration [mm/s]
+   real(r8) :: fld_def                                      ! pore deficit above the water table [mm]
 
    type(soil_con_struct ) :: soil_con
    type(cell_data_struct) :: cell
@@ -908,7 +908,7 @@ ENDIF
 
    integer :: ps, pe, m
 
-   ! C-32c: saturated conductivity the vertical solver sees; the plow pan of a
+   ! saturated conductivity the vertical solver sees; the plow pan of a
    ! bunded paddy caps it at paddy_plowpan_k in the layer centred 0.15-0.35 m.
    ! Puddled fields lose 1-5 mm/d to percolation on heavy soils, more on light
    ! ones, through the compacted plow sole (Tuong et al. 1994,
@@ -1040,7 +1040,7 @@ ENDIF
 
 #ifdef SinglePoint
 IF (USE_SITE_WTD .and. SITE_WTD_valid) THEN
-      ! Observed water table (site file, B-3): the column is diagnosed from
+      ! Observed water table (site file): the column is diagnosed from
       ! the observed depth instead of being solved.  Layers below the table
       ! are saturated, layers above sit on the retention curve at hydrostatic
       ! equilibrium (the cold-start assumption), ponding is the depth above
@@ -1220,7 +1220,7 @@ IF((patchtype<=1) .or. is_dry_lake &
 #endif
 
 #ifdef SinglePoint
-      ! Q-43 (paper V2): flood water of a site flood series offered to the
+      ! flood water of a site flood series offered to the
       ! flooded part of a soil patch (gridded runs take the flood feedback of
       ! the grid routing, DEF_GridRiverLake_FloodFeedback, instead), as the CaMa-Flood block
       ! below: the runoff scheme sets how much enters the soil, the rest stays
@@ -1229,7 +1229,7 @@ IF((patchtype<=1) .or. is_dry_lake &
       IF (DEF_FLOODPLAIN_INFILTRATION .and. allocated(fld_frc_p)) THEN
          IF (ipatch >= 1 .and. ipatch <= size(fld_frc_p)) THEN
             fld_qinfl_p(ipatch) = 0._r8
-            ! Q-47 (DEF_FLOODPLAIN_INFILT_FIX): a flood starts when the flooded
+            ! (DEF_FLOODPLAIN_INFILT_FIX): a flood starts when the flooded
             ! fraction rises above the re-infiltration threshold and ends when
             ! it falls back to it. Each part of the patch the flood covers may
             ! take at most the pore deficit above the water table the flood
@@ -1273,7 +1273,7 @@ IF((patchtype<=1) .or. is_dry_lake &
                ENDIF
                qinfsub_q43 = max(gfld_q43 - rsur_q43, 0._r8)
                IF (DEF_FLOODPLAIN_INFILT_FIX) THEN
-                  ! Q-47: no more than the current flood may still give
+                  ! no more than the current flood may still give
                   qinfsub_q43 = min(qinfsub_q43, fld_inf_left(ipatch) / (deltim * fld_frc_p(ipatch)))
                   fld_inf_left(ipatch) = max(fld_inf_left(ipatch) - deltim * qinfsub_q43 * fld_frc_p(ipatch), 0._r8)
                ENDIF
@@ -1355,7 +1355,7 @@ IF((patchtype<=1) .or. is_dry_lake &
       sp_zc(1:nl_soil) = z_soisno (1:nl_soil) * 1000.0   ! from meter to mm
       sp_zi(0:nl_soil) = zi_soisno(0:nl_soil) * 1000.0   ! from meter to mm
 
-      ! I-25 (paper V2): perched water table of a dynamic wetland tile. The
+      ! perched water table of a dynamic wetland tile. The
       ! consistency check below takes the water table under every layer beneath
       ! it that is not liquid-saturated, and an ice-filled (impermeable) layer
       ! never is. Over permafrost it thus drops the table the solver returned at
@@ -1467,7 +1467,7 @@ IF((patchtype<=1) .or. is_dry_lake &
       qgtop_out = qgtop
 #endif
       ! Ponding cap of a dynamic wetland tile: the wetland bucket wetwatmax,
-      ! or at a tower the standing water a managed marsh holds (paper V2)
+      ! or at a tower the standing water a managed marsh holds
       pond_max = wetwatmax
 #ifdef SinglePoint
       IF (DEF_WETLAND_POND_MAX_SITE >= 0._r8) pond_max = DEF_WETLAND_POND_MAX_SITE * 1000._r8
@@ -1481,7 +1481,7 @@ IF((patchtype<=1) .or. is_dry_lake &
       ! takes in from below and rnof books. Layers the solver treats as
       ! impermeable (ice-filled) take none; it passes over them as the
       ! exchange does, so the water perches above frozen ground.
-      ! I-25: the peat outflow of a perched table runs through the thawed
+      ! the peat outflow of a perched table runs through the thawed
       ! saturated zone above the ice only, a saturated layer over an
       ! impermeable base (Swenson et al. 2012, eq. 6; CLM5 drains the perched
       ! zone between the perched water table and the frost table, technical
@@ -1503,10 +1503,10 @@ IF((patchtype<=1) .or. is_dry_lake &
          pond_target = min(DEF_WETLAND_POND_TARGET_SITE * 1000._r8, pond_max)
 #endif
       IF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2) .and. (pond_target >= 0._r8)) THEN
-         ! Managed wetland at a tower (paper V2, marsh towers): pumps,
+         ! Managed wetland at a marsh tower: pumps,
          ! siphons and weirs hold standing water on the tile year-round,
          ! which neither the rain nor the class floor gives. In place of the
-         ! floor, and of the lateral inflow of candidate 17, the tile is
+         ! floor, and of the lateral inflow (DEF_WETLAND_LATERAL_INFLOW), the tile is
          ! refilled from the side up to the ponding depth pond_target: the
          ! aquifer deficit, the pore space from the water table up to the
          ! surface and the ponding short of the target. It enters as the
@@ -1534,7 +1534,7 @@ IF((patchtype<=1) .or. is_dry_lake &
          IF (DEF_WETLAND_LATERAL_INFLOW) wetinflow(ipatch) = wsupply / deltim
          IF (DEF_WETLAND_INFLOW_AREA_SPLIT) wetdef_noinfl(ipatch) = 0._r8
       ELSEIF (DEF_USE_Dynamic_Wetland .and. (patchtype == 2) .and. DEF_WETLAND_LATERAL_INFLOW) THEN
-         ! Candidate 17: in place of the floor, the tile takes the lateral
+         ! in place of the floor, the tile takes the lateral
          ! inflow wetlatin offered this step, r R_up (the upland runoff of
          ! its element at the previous step times the upland-to-wetland area
          ! ratio, or the tower's values), on the share that takes lateral
@@ -1545,7 +1545,7 @@ IF((patchtype<=1) .or. is_dry_lake &
          ! water table up and passes what is left to the ponding store;
          ! ponding above the cap pond_max spills as surface runoff further
          ! down in the same step, so the column is never oversaturated.
-         ! Candidate 32: the open-bog share fbog of the tile (0 unless
+         ! the open-bog share fbog of the tile (0 unless
          ! DEF_METHANE%wetland_max_wtd_bog_share is set) is rain-fed as well
          ! and takes none of r R_up; below its own floor, the base of the
          ! acrotelm, it is refilled as the floor branch below refills, scaled
@@ -1580,8 +1580,8 @@ IF((patchtype<=1) .or. is_dry_lake &
             ! finfl, the share taking lateral inflow, is 1 minus the rainfed_share
             ! of DEF_METHANE%wetland_veg_file, which v2/scripts/mk_rainfed_share.py
             ! fills with the BAWLD permafrost-bog (PEB) share of the wetland
-            ! classes (D-40: open bogs keep the floor), or 1 minus
-            ! DEF_METHANE%wetland_ombro_share_site at a tower; 1 without C-13.
+            ! classes (open bogs keep the floor), or 1 minus
+            ! DEF_METHANE%wetland_ombro_share_site at a tower; 1 without wetland_veg_glwd.
             IF (DEF_WETLAND_INFLOW_AREA_SPLIT) THEN
                ! Area split: the column is the area mean of the fed share,
                ! held at the floor, and the share without inflow, whose own
@@ -1601,7 +1601,7 @@ IF((patchtype<=1) .or. is_dry_lake &
                ENDIF
                rsubst = - wrefill / deltim
             ELSE
-               ! C-38: the rain-fed share of the tile takes no lateral inflow
+               ! the rain-fed share of the tile takes no lateral inflow
                rsubst = - wsupply / deltim * wetland_inflow_share(ipatch)
             ENDIF
          ELSE
@@ -1780,7 +1780,7 @@ ENDIF
                wdsrf = pond_max
             ENDIF
 #if (defined TRACER) && (defined BGC)
-            ! Candidate 13 (paper V2): ponded water on an unfrozen dynamic
+            ! ponded water on an unfrozen dynamic
             ! wetland tile leaves over the surface at the lateral outflow of a
             ! water table at the surface (PEAT-CLSM semisurficial runoff,
             ! Bechtold et al. 2019); the subsurface outflow above cannot reach
@@ -2662,7 +2662,7 @@ ENDIF
    real(r8) :: s2                ! k*s**(2b+2)
    real(r8) :: dhkdw1(1:nl_soil) ! d(hk)/d(vol_liq(j))
    real(r8) :: dhkdw2(1:nl_soil) ! d(hk)/d(vol_liq(j+1))
-   real(r8) :: imped(1:nl_soil)  !
+   real(r8) :: imped(1:nl_soil)
    real(r8) :: errorw            ! mass balance error for this time step
 
    integer  :: jwt               ! index of the soil layer right above the water table (-)
@@ -2906,9 +2906,9 @@ ENDIF
    IMPLICIT NONE
 
 !-------------------------- Dummy Arguments ----------------------------
-   integer , intent(in) :: nl_soil      !
+   integer , intent(in) :: nl_soil
    real(r8), intent(in) :: deltim       ! land model time step (sec)
-   real(r8), intent(in) :: pondmx       !
+   real(r8), intent(in) :: pondmx
 
    real(r8), intent(in) :: eff_porosity(1:nl_soil)   ! effective porosity = porosity - vol_ice
    real(r8), intent(in) :: icefrac(1:nl_soil)        ! ice fraction (-)
@@ -2938,12 +2938,12 @@ ENDIF
    real(r8) :: ws               ! summation of pore space of layers below water table (mm)
    real(r8) :: s_node           ! soil wetness (-)
    real(r8) :: available_wliq_soisno     ! available soil liquid water in a layer
-   real(r8) :: qcharge_tot      !
-   real(r8) :: qcharge_layer    !
-   real(r8) :: drainage         !
-   real(r8) :: drainage_tot     !
-   real(r8) :: drainage_layer   !
-   real(r8) :: s_y              !
+   real(r8) :: qcharge_tot
+   real(r8) :: qcharge_layer
+   real(r8) :: drainage
+   real(r8) :: drainage_tot
+   real(r8) :: drainage_layer
+   real(r8) :: s_y
    real(r8) :: rous             ! specific yield [-]
 
    real(r8) :: wt
@@ -3195,10 +3195,10 @@ ENDIF
    !-----------------------------------------------------------------------
    ! A paddy holds surface water behind its bunds (no surface runoff, ponding
    ! up to pondmxc). Upstream: every pft with the paddy method, all year.
-   ! C-32 (DEF_PADDY_RICE_BUND): only from planting to the start of grain
-   ! fill (C-32e, irrig_min_cphase <= cphase < 3); the field is then drained
+   ! (DEF_PADDY_RICE_BUND): only from planting to the start of grain
+   ! fill (irrig_min_cphase <= cphase < 3); the field is then drained
    ! and after harvest drains like any other soil column.
-   ! Candidate 25 (DEF_PADDY_FALLOW_FLOOD): an irrigated paddy is bunded again
+   ! (DEF_PADDY_FALLOW_FLOOD): an irrigated paddy is bunded again
    ! from the set number of days before its next sowing (CalPaddyFallowFlood).
    !-----------------------------------------------------------------------
    logical FUNCTION paddy_bunded(m)
@@ -3215,15 +3215,15 @@ ENDIF
       paddy_bunded = (irrig_method_p(m) == irrig_method_paddy)
       IF (paddy_bunded .and. DEF_PADDY_RICE_BUND) THEN
          IF (DEF_PADDY_DRAIN_DAYS >= 0._r8) THEN
-            ! C-47: drained DEF_PADDY_DRAIN_DAYS before the projected harvest
+            ! drained DEF_PADDY_DRAIN_DAYS before the projected harvest
             paddy_bunded = (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m) < irrig_max_cphase) &
                            .and. (.not. paddy_predrain_p(m))
          ELSE
-            ! C-32e: the field is drained from the start of grain fill (cphase 3),
+            ! the field is drained from the start of grain fill (cphase 3),
             ! so it dries in the last two to three weeks before harvest
             paddy_bunded = (cphase_p(m) >= irrig_min_cphase) .and. (cphase_p(m) < 3._r8)
          ENDIF
-         ! candidate 25: pre-sowing flood window of an irrigated paddy
+         ! pre-sowing flood window of an irrigated paddy
          paddy_bunded = paddy_bunded .or. paddy_fallow_flood_p(m)
       ENDIF
 

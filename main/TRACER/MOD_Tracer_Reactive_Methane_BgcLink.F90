@@ -130,10 +130,10 @@ CONTAINS
             size(decomp_cpools_vr,2))
       ENDIF
 
-      ! candidate 6: this step's root exudates join the respiration only now
+      ! this step's root exudates join the respiration only now
       ! that the pools are updated -- the soil tile's were taken from its
       ! litter when set, the wetland tile's never entered it -- booked on the
-      ! metabolic-litter transition as C-23 books its own.
+      ! metabolic-litter transition as wetland_exudate_frac books its own.
       IF (DEF_METHANE%root_exudate_frac > 0._r8 .and. allocated(root_exudate_vr)) THEN
          IF (ipatch <= size(root_exudate_vr,2)) THEN
             DO k = 1, size(decomp_hr_vr,2)
@@ -168,7 +168,7 @@ CONTAINS
 
    SUBROUTINE tracer_ch4_root_exudate(ipatch, patchtype, deltim, crootfr, exu_vr)
 
-      ! candidate 6: this step's root exudates for the CH4 side, respired
+      ! this step's root exudates for the CH4 side, respired
       ! within the step as litter heterotrophic respiration. The wetland
       ! tile's were set by its plant input in the BGC shim. The soil tile
       ! has been through bgc_driver, whose litterfall is already in the
@@ -177,7 +177,7 @@ CONTAINS
       ! metabolic, cellulose and lignin litter as fine-root litter is, and at
       ! most half a pool per step. The column litter and total carbon drop
       ! by the same amount, so the host C balance of the next step starts
-      ! from the debited pools. Rice PFTs keep their own exudate where C-37
+      ! from the debited pools. Rice PFTs keep their own exudate where
       ! is on.
       USE MOD_Tracer_Reactive_Methane_State, only: root_exudate_vr
       USE MOD_BGC_Vars_TimeVariables, only: lag_npp, decomp_cpools, totlitc, totcolc
@@ -266,7 +266,7 @@ CONTAINS
 
    SUBROUTINE wetland_mineral_n_update(ipatch, deltim)
 
-      ! Mineral N side of the wetland N closure (track B), with the fluxes
+      ! Mineral N side of the wetland N closure, with the fluxes
       ! SoilBiogeochemCompetitionNoPlant set this step: the supplemental N
       ! that lets immobilization run at its potential rate, and the uptake
       ! that returns the litter N from the soil. These are the updates
@@ -300,7 +300,7 @@ CONTAINS
 
    SUBROUTINE wetland_vert_transp(ipatch, deltim)
 
-      ! SOM vertical movement on the wetland tile (track B). CLM applies
+      ! SOM vertical movement on the wetland tile. CLM applies
       ! SoilBiogeochemLittVertTransp to every BGC soil column; bgc_driver does
       ! so for CoLM's vegetated soil, never for the wetland tile. Mixing is
       ! CLM's bioturbation (som_diffus, 1 cm2 yr-1); the advection is
@@ -1451,7 +1451,7 @@ CONTAINS
    ELSE IF (patchtype /= 2) THEN
       nonrice_redoxlag = DEF_METHANE%redoxlag_upland_soil
       ELSE IF (DEF_METHANE%wetland_dim_class) THEN
-         ! C-89: one lag for every wetland tile, not by latitude and carbon
+         ! one lag for every wetland tile, not by latitude and carbon
          nonrice_redoxlag = DEF_METHANE%redoxlag_wetland_dim
    ELSE IF (abs(dlat) <= 23.5_r8 .and. cellorg_top >= tropical_peat_threshold) THEN
       nonrice_redoxlag = DEF_METHANE%redoxlag_tropical_peat

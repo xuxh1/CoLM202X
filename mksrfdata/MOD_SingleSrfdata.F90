@@ -326,7 +326,7 @@ CONTAINS
       ENDIF
 #endif
 
-      ! Observed daily water table (B-3).  mksrfdata copies it from the site
+      ! Observed daily water table.  mksrfdata copies it from the site
       ! file when USE_SITE_WTD is on; the run always reads it back if present.
       readflag = ((.not. mksrfdata) .or. USE_SITE_WTD)
       IF (readflag .and. ncio_var_exist(fsrfdata, 'WTD_year')) THEN

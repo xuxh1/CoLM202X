@@ -414,7 +414,7 @@ ENDIF
 #endif
 
 #if (defined TRACER) && (defined BGC)
-      ! Q-45 (paper V2): peat soil of the wetland tile
+      ! peat soil of the wetland tile
       IF (DEF_WETLAND_PEAT_SOIL > 0) CALL wetland_peat_soil ()
 #endif
 
@@ -1058,7 +1058,7 @@ ENDIF
             CALL mc2f%grid2pset (deadcrootc_grid, deadcrootcin_p )
 
 #if (defined TRACER) && (defined BGC)
-            ! C-17c: peatland share of each patch's wetland tile (collective read)
+            ! peatland share of each patch's wetland tile (collective read)
             IF (DEF_USE_WETLAND_PEAT_C .and. DEF_WETLAND_PEAT_C_PASSIVE) &
                CALL wetland_peat_share_read (wetland_peat_share)
 #endif
@@ -1191,15 +1191,15 @@ ENDIF
                            deallocate (wetland_colc, wetland_coln)
                         ENDIF
                         ! Old peat is humified residue: move each layer's seeded
-                        ! stock into the passive pool at its fixed C:N (paper V2
-                        ! C-17). The fresh pools then fill from the plant input.
+                        ! stock into the passive pool at its fixed C:N
+                        ! (DEF_WETLAND_PEAT_C_PASSIVE). The fresh pools then fill from the plant input.
                         IF (DEF_WETLAND_PEAT_C_PASSIVE) THEN
-                           ! C-17c: only the peatland share moves; the mineral
+                           ! only the peatland share moves; the mineral
                            ! share keeps the dataset's split (1 without a share).
                            wetland_share = 1._r8
                            IF (allocated(wetland_peat_share)) wetland_share = wetland_peat_share(i)
                            DO nsl = 1, nl_soil
-                              ! C-17b: the acrotelm above ZTOP keeps the dataset's split.
+                              ! the acrotelm above ZTOP keeps the dataset's split.
                               IF (z_soi(nsl) < DEF_WETLAND_PEAT_C_PASSIVE_ZTOP) CYCLE
                               wetland_layer_c = sum(max(decomp_cpools_vr(nsl, :, i), 0._r8), &
                                  mask = decomp_cpools_vr(nsl, :, i) < 1.e30_r8)
@@ -1854,8 +1854,8 @@ ENDIF
 
 #if (defined TRACER) && (defined BGC)
    SUBROUTINE wetland_peat_soil ()
-      ! Q-45 (paper V2): the soil of a dynamic wetland tile is mixed layer by
-      ! layer towards a peat column by the tile's peatland share (C-17c). The
+      ! the soil of a dynamic wetland tile is mixed layer by
+      ! layer towards a peat column by the tile's peatland share. The
       ! peat end member is the organic soil of CLM4.5 (Lawrence and Slater
       ! 2008; fibric to sapric peat with depth after Letts et al. 2000):
       ! porosity 0.93 to 0.83, Clapp-Hornberger b 2.7 to 12, saturated suction
@@ -1870,7 +1870,7 @@ ENDIF
       ! conductivity 0.25 and 0.05 W m-1 K-1) at the peat porosity.
       ! Conductivities mix geometrically, the rest linearly; OM_density, and
       ! the carbon seeded from it, are left alone.
-      ! C-91: a tile within DEF_WETLAND_PEAT_TROP_LAT of the equator mixes
+      ! a tile within DEF_WETLAND_PEAT_TROP_LAT of the equator mixes
       ! towards the tropical acrotelm and catotelm of the namelist instead;
       ! the woody peat of tropical swamp forests is not Sphagnum peat.
       USE MOD_Precision
@@ -1925,7 +1925,7 @@ ENDIF
                n_vgm    (j,ip) = (1._r8 - w) * n_vgm(j,ip)     + w * (1._r8 + 1._r8 / pb)
                L_vgm    (j,ip) = (1._r8 - w) * L_vgm(j,ip)     + w * 0.5_r8
                IF (DEF_VG_ALPHA_MM) THEN
-                  ! C-94: alpha already converted to 1/mm on read-in
+                  ! alpha already converted to 1/mm on read-in
                   alpha_vgm(j,ip) = (1._r8 - w) * alpha_vgm(j,ip) + w * 1._r8 / psuc    ! [1/mm]
                   wfc      (j,ip) = theta_r(j,ip) + (porsl(j,ip) - theta_r(j,ip)) &
                      * (1._r8 + (alpha_vgm(j,ip) * 3399._r8) ** n_vgm(j,ip)) ** (1._r8 / n_vgm(j,ip) - 1._r8)
@@ -1955,10 +1955,10 @@ ENDIF
    END SUBROUTINE wetland_peat_soil
 
    SUBROUTINE wetland_peat_share_read (share)
-      ! Peatland share of each patch's wetland tile for C-17c (paper V2):
+      ! Peatland share of each patch's wetland tile (DEF_WETLAND_PEAT_SHARE_FILE):
       ! GLWD v2 peatland classes 22-27 over the tile classes 16-19 and 22-27
       ! in the cell of DEF_WETLAND_PEAT_SHARE_FILE nearest to the patch; a
-      ! cell without tile classes, or no file, gives 1 (C-17b). A single-point
+      ! cell without tile classes, or no file, gives 1. A single-point
       ! run gives its own share in DEF_WETLAND_PEAT_SHARE_SITE.
       ! MPI names come through MOD_SPMD_Task (a second USE MPI here clashes)
       USE netcdf
@@ -2027,7 +2027,7 @@ ENDIF
          ENDDO
          IF (ierr /= NF90_NOERR) bad = 1
          ierr = nf90_close(ncid)
-         ! netCDF fill reads as a huge positive area; no tile class keeps C-17b
+         ! netCDF fill reads as a huge positive area; no tile class keeps
          WHERE (apeat > 1.e30_r8) apeat = 0._r8
          WHERE (amin  > 1.e30_r8) amin  = 0._r8
          WHERE (apeat + amin > 0._r8)

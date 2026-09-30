@@ -329,7 +329,7 @@ CONTAINS
 #ifdef FUN
          cpool_p   (m) = cpool_p   (m) - soilc_change_p     (m) * deltim
 #endif
-         ! C-37: rice root exudates, booked into metabolic litter this step
+         ! rice root exudates, booked into metabolic litter this step
          cpool_p   (m) = cpool_p   (m) - rice_exudc_p       (m) * deltim
          xsmrpool_p(m) = xsmrpool_p(m) + cpool_to_xsmrpool_p(m) * deltim
          xsmrpool_p(m) = xsmrpool_p(m) - leaf_xsmr_p        (m) * deltim

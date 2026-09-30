@@ -538,7 +538,7 @@ CONTAINS
    real(r8) :: rss_min  ! floor of the snow-free soil surface resistance [s/m]
    real(r8) :: rss_open ! soil surface resistance of the open ground of [3] [s/m]
 
-   ! canopy on a fraction of a tower wetland patch (C-83)
+   ! canopy on a fraction of a tower wetland patch
    real(r8) :: fcan                        ! vegetated fraction of the patch [-]
    real(r8) :: lai_c, sai_c                ! leaf and stem area index of the canopy part [-]
    real(r8) :: sabv_c, parsun_c, parsha_c  ! solar radiation and PAR per unit canopy area [W/m2]
@@ -717,9 +717,9 @@ ENDIF
             rss_min = max(DEF_WETLAND_POND_LITTER_RSS, 0.)
 #if (defined TRACER) && (defined BGC)
          ! the litter mat of emergent marshes, on the emergent marsh share of
-         ! the tile (the temperate marsh class, 1 or 0, without C-88)
+         ! the tile (the temperate marsh class, 1 or 0, without wetland_dim_class)
          rss_min = rss_min * wetland_emergent_share(ipatch)
-         ! moss and peat surface of a dynamic wetland tile (C-26)
+         ! moss and peat surface of a dynamic wetland tile
          IF (DEF_USE_Dynamic_Wetland .and. (patchtype==2)) &
             rss_min = max(rss_min, wetland_moss_rss(ipatch, zwt(ipatch), wdsrf(ipatch)))
 #endif
@@ -739,7 +739,7 @@ ENDIF
          ENDIF
       ENDIF
 
-      ! Tower wetland with a vegetated fraction (C-83): the pond litter lies
+      ! Tower wetland with a vegetated fraction: the pond litter lies
       ! under the canopy only; the open water, the bare ground of [3] when the
       ! canopy is solved in [4], evaporates without it
       rss_open = rss
@@ -799,7 +799,7 @@ IF ( patchtype==0.and.DEF_USE_LCT .or. patchtype>0 ) THEN
 
       sabv = sabvsun + sabvsha
 
-      ! Tower wetland (C-83, DEF_WETLAND_FVEG_SITE): the canopy fills fcan =
+      ! Tower wetland (DEF_WETLAND_FVEG_SITE): the canopy fills fcan =
       ! fveg of the patch and the open rest keeps the bare-ground fluxes of
       ! [3]. The canopy is solved per unit canopy area, with the leaf and stem
       ! area, absorbed radiation, foliage water and interception divided by

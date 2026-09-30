@@ -947,7 +947,7 @@ ENDIF
             vecacc, file_hist, 'f_wetzwt', itime_in_file, sumarea, filter, &
             'the depth to water table in wetland','m')
 
-         ! lateral inflow taken by a dynamic wetland (candidate 17) [mm/s]
+         ! lateral inflow taken by a dynamic wetland [mm/s]
          CALL write_history_variable_2d ( DEF_hist_vars%wetinflow .and. DEF_WETLAND_LATERAL_INFLOW, &
             a_wetinflow, file_hist, 'f_wetinflow', itime_in_file, sumarea, filter, &
             'lateral inflow taken by a dynamic wetland','mm/s')

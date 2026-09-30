@@ -2991,7 +2991,7 @@ CONTAINS
 
    SUBROUTINE tracer_prescribed_column (ipatch, nl_soil, wliq, wliq_bef, &
       wa, wa_bef, wdsrf, wdsrf_bef, wetwat, wetwat_bef)
-   ! Mirror of the observed-water-table host branch (B-3).  The host set the
+   ! Mirror of the observed-water-table host branch.  The host set the
    ! column to the equilibrium of the observed depth without fluxes, so each
    ! pool keeps its tracer ratio; a pool that appears from zero takes the
    ! column-mean ratio of the previous step.

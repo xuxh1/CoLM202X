@@ -181,7 +181,7 @@ CONTAINS
       ! the same process, or the second run inherits the first's worst case
       ! and its already-warned flag.
       CALL methane_host_water_reset ()
-      ! I-28: GLWD floodplain area for the soil flood bound (collective)
+      ! GLWD floodplain area for the soil flood bound (collective)
       CALL read_methane_floodplain_cap ()
       CALL init_methane_wetland_fraction_cache (numpatch)
       IF (DEF_METHANE%use_microbial_pools) THEN
@@ -229,7 +229,7 @@ CONTAINS
 
       CALL allocate_wetland_aere_overrides (numpatch)
 
-      ! C-13: the wetland tile's vegetation from its GLWD make-up. Collective
+      ! the wetland tile's vegetation from its GLWD make-up. Collective
       ! (master reads and broadcasts), so every rank calls it.
       IF (DEF_METHANE%wetland_veg_glwd) THEN
          IF (p_is_worker .and. numpatch > 0) THEN

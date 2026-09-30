@@ -283,7 +283,7 @@ CONTAINS
    real(r8):: f1,f2,f3,f4,g1,g2  ! allocation parameters
    real(r8):: cnl,cnfr,cnlw,cndw ! C:N ratios for leaf, fine root, and wood
    real(r8):: curmr, curmr_ratio ! xsmrpool temporary variables
-   real(r8):: gf                 ! grain-fill threshold of this crop (Q-33)
+   real(r8):: gf                 ! grain-fill threshold of this crop
    real(r8):: f5                 ! grain allocation parameter
    real(r8):: cng                ! C:N ratio for grain (= cnlw for now; slevis)
    real(r8):: fleaf              ! fraction allocated to leaf
@@ -294,7 +294,7 @@ CONTAINS
 
       DO m = ps, pe
          ivt = pftclass(m)
-         ! Q-33: rice may take its grain-fill threshold from DEF_RICE_GRNFILL
+         ! rice may take its grain-fill threshold from DEF_RICE_GRNFILL
          gf = grnfill(ivt)
          IF (DEF_RICE_GRNFILL >= 0._r8 .and. (ivt == nrice .or. ivt == nirrig_rice)) gf = DEF_RICE_GRNFILL
          psn_to_cpool_p(m) = assim_p(m) * 12.011_r8
@@ -357,12 +357,12 @@ CONTAINS
             cpool_to_xsmrpool_p(m) = xsmrpool_recover_p(m)
          ENDIF
 
-      ! C-37: live rice exudes a share of its net assimilate (available C less
+      ! live rice exudes a share of its net assimilate (available C less
       ! the growth respiration its allocation would cost) from the roots; it
       ! leaves cpool (CNCStateUpdate1) and joins the metabolic litter along the
       ! fine-root profile, the labile C that feeds paddy CH4 mid-season
       ! (Watanabe et al. 1999; Minoda and Kimura 1994; Wania et al. 2010 for
-      ! the wetland counterpart C-23)
+      ! the wetland counterpart, wetland_exudate_frac)
          rice_exudc_p(m) = 0._r8
 #ifdef CROP
          IF (DEF_RICE_ROOT_EXUDATE > 0._r8 .and. (ivt == nrice .or. ivt == nirrig_rice)) THEN

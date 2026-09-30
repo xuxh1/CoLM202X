@@ -106,11 +106,11 @@ CONTAINS
    real(r8), intent(in) :: bsw(1:nl_soil)          !clapp and hornberger "b" parameter [-]
 #endif
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
-   real(r8), intent(in) :: theta_r  (1:nl_soil), & !
-                           alpha_vgm(1:nl_soil), & !
-                           n_vgm    (1:nl_soil), & !
-                           L_vgm    (1:nl_soil), & !
-                           sc_vgm   (1:nl_soil), & !
+   real(r8), intent(in) :: theta_r  (1:nl_soil), &
+                           alpha_vgm(1:nl_soil), &
+                           n_vgm    (1:nl_soil), &
+                           L_vgm    (1:nl_soil), &
+                           sc_vgm   (1:nl_soil), &
                            fc_vgm   (1:nl_soil)
 #endif
    real(r8), intent(in) :: csol     (1:nl_soil)    !heat capacity of soil solids [J/(m3 K)]

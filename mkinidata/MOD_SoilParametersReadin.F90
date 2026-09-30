@@ -358,7 +358,7 @@ CONTAINS
                   L_vgm      (nsl,ipatch) = soil_L_vgm_l    (ipatch)
                   n_vgm      (nsl,ipatch) = soil_n_vgm_l    (ipatch)
                   IF (DEF_VG_ALPHA_MM) THEN
-                     ! C-94 (paper V2): alpha of the soil data is in 1/cm,
+                     ! alpha of the soil data is in 1/cm,
                      ! the soil water functions take suction in mm
                      alpha_vgm  (nsl,ipatch) = soil_alpha_vgm_l(ipatch) / 10.  ! 1/cm -> 1/mm
                      wfc        (nsl,ipatch) = soil_theta_r_l  (ipatch)+(soil_theta_s_l(ipatch)-soil_theta_r_l(ipatch))*&

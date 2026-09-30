@@ -45,7 +45,7 @@ MODULE MOD_Tracer_Reactive_Methane_Driver
 		real(r8) :: conc_o2(nl_soil), conc_ch4(nl_soil)
 		real(r8) :: conc_o2_unsat(nl_soil), conc_o2_sat(nl_soil)
 		real(r8) :: conc_ch4_unsat(nl_soil), conc_ch4_sat(nl_soil)
-		real(r8) :: acc_unsat(nl_soil), acc_sat(nl_soil)   ! candidate 16: oxidised acceptor shares
+		real(r8) :: acc_unsat(nl_soil), acc_sat(nl_soil)   ! oxidised acceptor shares
 	END TYPE methane_column_result_type
 
 CONTAINS
@@ -226,7 +226,7 @@ CONTAINS
 
       real(r8) :: somhr_loc, lithr_loc, rr_loc, agnpp_loc, bgnpp_loc, annsum_npp_loc
       real(r8) :: hr_vr_loc(1:nl_soil), fphr_loc(1:nl_soil)
-      real(r8) :: exu_vr_loc(1:nl_soil)   ! candidate 6: root exudates respired this step [gC m-3 s-1]
+      real(r8) :: exu_vr_loc(1:nl_soil)   ! root exudates respired this step [gC m-3 s-1]
       real(r8) :: o_scalar_loc(1:nl_soil), pot_f_nit_vr_loc(1:nl_soil)
       real(r8) :: microbe_conc_o2(1:nl_soil), microbe_conc_ch4(1:nl_soil)
       real(r8) :: microbial_prod_potential_eff(1:nl_soil)
@@ -248,7 +248,7 @@ CONTAINS
 			logical :: component_veg_ready(N_METHANE_COMP)
       logical  :: bgc_inputs_ready
 			TYPE(methane_column_result_type) :: soil_column, rice_column
-			! candidate 16: the patch's acceptor pools at the start of the step,
+			! the patch's acceptor pools at the start of the step,
 			! from which each methane column of a soil patch starts
 			real(r8) :: acc_unsat_prev(1:nl_soil), acc_sat_prev(1:nl_soil)
 			logical  :: use_acceptor
@@ -310,7 +310,7 @@ CONTAINS
       CALL tracer_ch4_bgc_patch_inputs (i, rootfr, crootfr, pH, cellorg, &
          somhr_loc, lithr_loc, hr_vr_loc, rr_loc, agnpp_loc, bgnpp_loc, &
          annsum_npp_loc, fphr_loc, o_scalar_loc, pot_f_nit_vr_loc, bgc_inputs_ready)
-      ! candidate 6: this step's root exudates, respired where the roots
+      ! this step's root exudates, respired where the roots
       ! release them, join the litter respiration that CH4 is made from
       IF (DEF_METHANE%root_exudate_frac > 0._r8 .and. (patchtype == 0 .or. patchtype == 2)) THEN
          CALL tracer_ch4_root_exudate (i, patchtype, deltim, crootfr, exu_vr_loc)
@@ -368,7 +368,7 @@ CONTAINS
       ENDIF
       IF (patchtype == 2) THEN
          IF (DEF_METHANE%wetland_veg_glwd .and. wetveg_active) THEN
-            ! C-13: vegetation from the tile's GLWD make-up and own NPP
+            ! vegetation from the tile's GLWD make-up and own NPP
             CALL set_wetland_veg_glwd (i, lai, lai_eff, annsum_npp_loc, agnpp_loc, bgnpp_loc, rootfr_eff)
          ELSE
             CALL get_wetland_veg_proxy (dlat, cellorg(1), lai, i, &
@@ -406,11 +406,11 @@ CONTAINS
       ! biome_f_methane_patch(i) which methane_prod consumes when
       ! DEF_METHANE%use_biome_f_methane is true; otherwise returns
       ! the legacy DEF_METHANE%f_methane scalar (backwards compatible).
-			! C-48: a single-point soil patch takes its flood from the site series
+			! a single-point soil patch takes its flood from the site series
 			IF (patchtype == 0 .and. trim(DEF_METHANE%site_flood_file) /= 'null') &
 				CALL set_methane_site_flood (i, idate)
 			is_floodplain_active = .false.
-			! candidate 27: in the colm mode (scheme 8) every soil tile takes the
+			! in the colm mode (scheme 8) every soil tile takes the
 			! routing flood fraction too, so it is a floodplain when flooded
 			IF (patchtype == 0 .and. (DEF_METHANE%use_routing_for_soil .or. &
 			    (DEF_wetland_finundation_scheme == 8 .and. DEF_METHANE%colm_floodplain_class)) .and. &
@@ -424,7 +424,7 @@ CONTAINS
 						f_inund_flood_patch(i) > DEF_METHANE%hybrid_soil_threshold .and. &
 						f_inund_flood_patch(i) > wetland_frac_per_patch(i)
 			ENDIF
-			! I-28: a soil patch the GLWD floodplain bound keeps dry is no floodplain
+			! a soil patch the GLWD floodplain bound keeps dry is no floodplain
 			IF (is_floodplain_active .and. allocated(fld_cap_p)) THEN
 				IF (i <= size(fld_cap_p)) is_floodplain_active = fld_cap_p(i) > 0._r8
 			ENDIF
@@ -498,7 +498,7 @@ CONTAINS
 				ENDIF
 				CALL repartition_methane_column_state(i, rice_fraction_prev(i), rice_weight)
 				CALL repartition_methane_microbes(i, rice_fraction_prev(i), rice_weight)
-				! candidate 16: the acceptor pools are kept per patch; both columns
+				! the acceptor pools are kept per patch; both columns
 				! start from them and their area mean is kept (aggregate below)
 				use_acceptor = DEF_METHANE%acceptor_pool .and. &
 				   allocated(acceptor_unsat) .and. allocated(acceptor_sat)
@@ -523,8 +523,8 @@ CONTAINS
 				rice_fraction_prev(i) = rice_weight
 				RETURN
       ENDIF
-      ! C-27: annual mean soil temperature of a wetland tile, the reference of
-      ! its CH4 production temperature factor; candidate 30: the temperature
+      ! annual mean soil temperature of a wetland tile, the reference of
+      ! its CH4 production temperature factor; with methanogen_activity, the temperature
       ! its methanogens acclimate to
       IF (patchtype == 2 .and. (DEF_METHANE%q10methane_local_base .or. &
           (DEF_METHANE%methanogen_activity .and. DEF_METHANE%methanogen_qev_ratio > 0._r8))) &
@@ -695,7 +695,7 @@ CONTAINS
 				   i <= size(wetland_frac_per_patch) .and. &
 				   f_inund_flood_patch(i) > DEF_METHANE%hybrid_soil_threshold .and. &
 				   f_inund_flood_patch(i) > wetland_frac_per_patch(i)
-				! I-28: as above, no floodplain where the bound keeps the soil dry
+				! as above, no floodplain where the bound keeps the soil dry
 				IF (is_floodplain_active .and. allocated(fld_cap_p)) THEN
 					IF (i <= size(fld_cap_p)) is_floodplain_active = fld_cap_p(i) > 0._r8
 				ENDIF
@@ -1074,7 +1074,7 @@ CONTAINS
 			tempavg_finrw(i) = ws*tempavg_finrw_component(METHANE_COMP_SOIL,i) + wr*tempavg_finrw_component(METHANE_COMP_RICE,i)
 			fsat_bef(i) = ws*fsat_bef_component(METHANE_COMP_SOIL,i) + wr*fsat_bef_component(METHANE_COMP_RICE,i)
 			finundated_lag(i) = ws*finundated_lag_component(METHANE_COMP_SOIL,i) + wr*finundated_lag_component(METHANE_COMP_RICE,i)
-			! candidate 16: each subcolumn pool is the area mean over the columns
+			! each subcolumn pool is the area mean over the columns
 			IF (use_acceptor) THEN
 				acceptor_unsat(1:nl_soil,i) = wus*soil%acc_unsat + wur*rice%acc_unsat
 				acceptor_sat(1:nl_soil,i)   = wss*soil%acc_sat   + wsr*rice%acc_sat

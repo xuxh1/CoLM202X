@@ -557,8 +557,8 @@ MODULE MOD_Vars_TimeVariables
    real(r8), allocatable :: wetwat        (:) ! water storage in wetland [mm]
    real(r8), allocatable :: wetdef_noinfl (:) ! deficit below the floor of the wetland share without inflow [mm]
    real(r8), allocatable :: wetlatin      (:) ! lateral inflow offered to a wetland per unit fed area, r R_up [mm/s]
-   real(r8), allocatable :: fld_inf_left  (:) ! Q-47: flood re-infiltration the current flood may still give, patch mean [mm]
-   real(r8), allocatable :: fld_frc_evt   (:) ! Q-47: largest flooded fraction of the current flood, 0 without one [-]
+   real(r8), allocatable :: fld_inf_left  (:) ! flood re-infiltration the current flood may still give, patch mean [mm]
+   real(r8), allocatable :: fld_frc_evt   (:) ! largest flooded fraction of the current flood, 0 without one [-]
    real(r8), allocatable :: wat           (:) ! total water storage [mm]
    real(r8), allocatable :: wdsrf         (:) ! depth of surface water [mm]
    real(r8), allocatable :: rss           (:) ! soil surface resistance [s/m]
@@ -1532,7 +1532,7 @@ ENDIF
       CALL ncio_read_vector (file_restart, 'fq   ', landpatch, fq   ) ! integral of profile FUNCTION for moisture
 
 IF (DEF_USE_IRRIGATION) THEN
-      ! C-32 (paper V2): a run that switches irrigation on from a restart written
+      ! a run that switches irrigation on from a restart written
       ! without it starts the irrigation state at zero instead of stopping.
       CALL ncio_read_vector (file_restart, 'irrig_rate            ' , landpatch, irrig_rate            , defval = 0._r8)
       CALL ncio_read_vector (file_restart, 'sum_irrig             ' , landpatch, sum_irrig             , defval = 0._r8)
@@ -1663,11 +1663,11 @@ ENDIF
       CALL check_vector_data ('wdsrf       [mm]   ', wdsrf      ) ! depth of surface water [mm]
       CALL check_vector_data ('rss         [s/m]  ', rss        ) ! soil surface resistance [s/m]
 IF (DEF_USE_Dynamic_Lake) THEN
-      CALL check_vector_data ('dz_lake     [m]    ', dz_lake     )!
+      CALL check_vector_data ('dz_lake     [m]    ', dz_lake     )
 ENDIF
-      CALL check_vector_data ('t_lake      [K]    ', t_lake      )!
-      CALL check_vector_data ('lake_icefrc [-]    ', lake_icefrac)!
-      CALL check_vector_data ('savedtke1   [W/m K]', savedtke1   )!
+      CALL check_vector_data ('t_lake      [K]    ', t_lake      )
+      CALL check_vector_data ('lake_icefrc [-]    ', lake_icefrac)
+      CALL check_vector_data ('savedtke1   [W/m K]', savedtke1   )
       CALL check_vector_data ('z_sno       [m]    ', z_sno )      ! node depth [m]
       CALL check_vector_data ('dz_sno      [m]    ', dz_sno)      ! interface depth [m]
       CALL check_vector_data ('t_soisno    [K]    ', t_soisno   ) ! soil temperature [K]

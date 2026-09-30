@@ -360,8 +360,8 @@ PROGRAM CoLM
       ! Wetland semi-analytic spin-up (DEF_METHANE%wetland_bgc_sasu, read by
       ! land_tracer_init): armed only when this run makes spin-up cycles.
       CALL wetland_bgc_sasu_init (merge(n_spinupcycle, 0, is_spinup))
-      ! Peatland share of each wetland tile for its moss surface resistance (C-26)
-      ! and its tropical peat f_methane (C-29)
+      ! Peatland share of each wetland tile for its moss surface resistance
+      ! and its tropical peat f_methane
       IF (DEF_METHANE%wetland_moss_rss .or. DEF_METHANE%wetland_f_tropical_peat >= 0._r8) &
          CALL wetland_peat_share_read (wetland_tile_peat_share)
 #endif
@@ -680,7 +680,7 @@ PROGRAM CoLM
 #endif
                CALL LAI_readin (lai_year, month, dir_landdata)
 #if (defined TRACER) && (defined BGC)
-               CALL wetveg_cap_lai ()   ! C-13: no-op unless DEF_METHANE%wetland_veg_glwd
+               CALL wetveg_cap_lai ()   ! no-op unless DEF_METHANE%wetland_veg_glwd
 #endif
 #ifdef URBAN_MODEL
                CALL UrbanLAI_readin(lai_year, month, dir_landdata)
@@ -700,7 +700,7 @@ PROGRAM CoLM
 #endif
                CALL LAI_readin (jdate(1), Julian_8day, dir_landdata)
 #if (defined TRACER) && (defined BGC)
-               CALL wetveg_cap_lai ()   ! C-13: no-op unless DEF_METHANE%wetland_veg_glwd
+               CALL wetveg_cap_lai ()   ! no-op unless DEF_METHANE%wetland_veg_glwd
 #endif
             ENDIF
          ENDIF
@@ -777,7 +777,7 @@ PROGRAM CoLM
                   IF (p_is_worker) CALL wetland_bgc_sasu_cycle_end (i_spinupcycle + 1 == n_spinupcycle)
 #endif
 #if (defined BGC) && (defined CROP)
-                  ! Q-48: a cycle that did not pass 1 January closes its GDD year here
+                  ! a cycle that did not pass 1 January closes its GDD year here
                   IF (p_is_worker) CALL CropGDDSpinCycleEnd ()
 #endif
                   i_spinupcycle = i_spinupcycle + 1

@@ -164,9 +164,9 @@ MODULE MOD_BGC_Vars_PFTimeVariables
    real(r8),allocatable :: fert_p                    (:)     ! fertilizer nitrogen (gN m-2) including manure
    real(r8),allocatable :: latbaset_p                (:)     ! latitude vary base temperature for gddplant (degree C)
    real(r8),allocatable :: plantdate_p               (:)     ! planting date (input)
-   real(r8),allocatable :: rice_double_p             (:)     ! C-45: share of double-cropped irrigated rice (input, not in restart)
-   logical ,allocatable :: paddy_predrain_p          (:)     ! C-47: paddy in its pre-harvest drain window (set by CropPhenology, not in restart)
-   logical ,allocatable :: paddy_fallow_flood_p      (:)     ! candidate 25: irrigated paddy in its pre-sowing flood window (set by CalPaddyFallowFlood, not in restart)
+   real(r8),allocatable :: rice_double_p             (:)     ! share of double-cropped irrigated rice (input, not in restart)
+   logical ,allocatable :: paddy_predrain_p          (:)     ! paddy in its pre-harvest drain window (set by CropPhenology, not in restart)
+   logical ,allocatable :: paddy_fallow_flood_p      (:)     ! irrigated paddy in its pre-sowing flood window (set by CalPaddyFallowFlood, not in restart)
 #endif
 ! --------------------- END CROP variables -------------------------
 

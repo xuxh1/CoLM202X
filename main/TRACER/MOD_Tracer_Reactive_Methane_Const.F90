@@ -191,7 +191,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       real(r8) :: redoxlag_boreal_bog            = 45._r8   ! Boreal slowest (cold Sphagnum, Whalen & Reeburgh 1990 Nature)
       real(r8) :: redoxlag_rice_paddy            = 25._r8   ! Managed flood/drain redox response; faster than wetland 30d but avoids unrealistically immediate production
       real(r8) :: redoxlag_upland_soil           = 30._r8   ! Default (only when Plan A activates upland CH4)
-      ! redoxlag_wetland_dim (C-89, paper V2): with wetland_dim_class and
+      ! redoxlag_wetland_dim: with wetland_dim_class and
       !   use_biome_redoxlag every wetland tile takes this one lag in place of
       !   the class values above, for the newly inundated area
       !   (finundated_lag) and the newly saturated layers (layer_sat_lag)
@@ -296,7 +296,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! Fallback atmospheric CH4/O2 boundary conductance [m/s], used only
       ! when current CoLM Monin-Obukhov state is absent or invalid.
       real(r8) :: grnd_methane_cond_default = 1.e-6_r8
-      ! grnd_methane_cond_host (candidate 9, paper V2): the boundary-layer
+      ! grnd_methane_cond_host: the boundary-layer
       !   conductance of a vegetated non-lake tile is 1/(rd + raw), the host
       !   water vapour resistance from the ground through the canopy air to
       !   the reference height (MOD_Vars_1DFluxes, raw_grnd), instead of
@@ -310,7 +310,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! methane production constants
       real(r8) :: mino2lim = 0.2_r8         ! minimum anaerobic decomposition rate as a fraction of potential aerobic rate (0.2+ params:0.2)
       real(r8) :: q10methane_base = 295._r8 ! temperature at which the effective f_methane actually equals the constant f_methane (295+ params:295)
-      ! q10methane_local_base (C-27, paper V2): the reference temperature of
+      ! q10methane_local_base: the reference temperature of
       !   the production temperature factor of a wetland tile is the tile's own
       !   annual mean soil temperature over the top metre instead of
       !   q10methane_base: Q10 describes the seasonal response about the
@@ -319,7 +319,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   full 365-day mean is used; q10methane_base until the first one is
       !   complete. Off by default.
       logical  :: q10methane_local_base = .false.
-      ! q10methane_base_unfrozen (Q-44, paper V2): with q10methane_local_base,
+      ! q10methane_base_unfrozen: with q10methane_local_base,
       !   the reference is the mean top-metre soil temperature over the
       !   unfrozen part of the last calendar year (steps whose column mean is
       !   above freezing) instead of the full 365-day mean. The within-site
@@ -329,7 +329,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   (Yvon-Durocher et al. 2014, Extended Data Fig. 2e); frozen months,
       !   when methanogens are inactive, do not set it. Off by default.
       logical  :: q10methane_base_unfrozen = .false.
-      ! q10methane_base_weight (Q-44, paper V2): with q10methane_local_base,
+      ! q10methane_base_weight: with q10methane_local_base,
       !   the reference is q10methane_base + weight x (tile mean -
       !   q10methane_base): 1 takes the tile's own mean (full acclimation),
       !   0 the fixed base; in between, CH4 emission at a fixed temperature
@@ -338,11 +338,11 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   2014). Between 0 and 1.
       real(r8) :: q10methane_base_weight = 1._r8
       real(r8) :: q10lakebase = 298._r8       ! (K) base temperature for lake CH4 production (params:298. code:298._r8)
-      ! q10lake (Q-44, paper V2): Q10 of lake CH4 production; <= 0 keeps the
+      ! q10lake: Q10 of lake CH4 production; <= 0 keeps the
       !   CLM4Me tie to 1.5 x q10methane, so a change of the wetland Q10 does
       !   not carry over to lakes when this is set.
       real(r8) :: q10lake = -1._r8
-      ! methanogen_activity (candidate 30, paper V2): CH4 production of a
+      ! methanogen_activity: CH4 production of a
       !   wetland tile (patchtype 2) is multiplied by the methanogen activity
       !   level m_act of each layer of each subcolumn, the dormancy variable of
       !   JULES-microbe (Chadburn et al. 2020, GBC 34, e2020GB006678, eq. A5,
@@ -363,8 +363,8 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   The carbon a dormant community leaves unconverted goes to CO2, so
       !   closure against the BGC pools holds, and it adds no O2 demand.
       !   m_act starts at 1 (the present scheme); rice, floodplain and lake
-      !   are unchanged. An alternative to q10methane_local_base (C-27, C-51,
-      !   C-53), not combined with it. Off by default.
+      !   are unchanged. An alternative to q10methane_local_base and its
+      !   options, not combined with it. Off by default.
       logical  :: methanogen_activity  = .false.
       real(r8) :: methanogen_k2        = 0.01_r8     ! [hr-1] k2, maximum respiration per unit biomass at 0 C (Table A1, p.17; Price and Sowers 2004, p.20)
       real(r8) :: methanogen_q2        = 4.3_r8      ! [-] Q2, temperature sensitivity of methanogens (Table A1, p.17; Yvon-Durocher et al. 2014, p.20)
@@ -372,7 +372,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       real(r8) :: methanogen_alpha     = 0.001_r8    ! [-] alpha, maintenance respiration as a fraction of k2; activity floor alpha/f (Table A1, p.17; p.18)
       real(r8) :: methanogen_mu        = 0.00042_r8  ! [hr-1] mu, growth-rate threshold for dormancy and reactivation (Table A1, p.17; p.20)
       real(r8) :: methanogen_qev_ratio = 0.55_r8     ! [-] Q_ev / Q2 of the acclimation (Table A1, p.17; eq. A6, p.19; Bradford et al. 2019, p.20)
-      ! acceptor_pool (candidate 16, paper V2): a dynamic pool of alternative
+      ! acceptor_pool: a dynamic pool of alternative
       !   electron acceptors (NO3-, Mn, Fe(III), SO4--, humic quinones lumped
       !   as one, Segers and Leffelaar 2001, JGR 106, 3511-3528, p.3515) in
       !   each layer of each subcolumn of every non-lake patch (wetland,
@@ -424,7 +424,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       real(r8) :: redoxlag_vertical=30._r8   ! time lag (days) to inhibit production for newly unsaturated layers (30+ params:0.)
       real(r8) :: pHmax = 9._r8          ! maximum pH for methane production(params:9. code:9.)
       real(r8) :: pHmin = 2.2_r8         ! minimum pH for methane production(params:2.2 code:2.2)
-      ! ph_factor_floor (paper V2): floor phi of the pH factor, phi + (1 - phi) D(pH).
+      ! ph_factor_floor: floor phi of the pH factor, phi + (1 - phi) D(pH).
       ! D is fitted to peat pushed off its own pH by buffers (Dunfield et al. 1993);
       ! at their native pH acidic peats and bogs keep 0.23-0.8 of their maximum
       ! (Dunfield et al. 1993 Fig. 5; Ye et al. 2012; Kotsyurbenko et al. 2007),
@@ -497,14 +497,14 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! Wetland tiles still use sigmoid(zwt) to keep dyn_wtd seasonality.
       ! Requires GridRiverLakeFlow active + DEF_USE_Dynamic_Wetland=.true.
       logical  :: use_routing_for_soil = .false.
-      ! colm_floodplain_class (candidate 27, paper V2): in the colm mode
+      ! colm_floodplain_class: in the colm mode
       !   (scheme 8), which resets use_routing_for_soil although every soil
       !   tile takes the routing flood fraction, a soil tile flooded beyond the
       !   static wetland share is treated as a floodplain (floodplain redox lag
       !   and biome class, methane_area_floodplain diagnostic), as in the
       !   hybrid mode. Off by default.
       logical  :: colm_floodplain_class = .false.
-      ! flooded_soil_ph_neutral (candidate 23, paper V2): the flooded
+      ! flooded_soil_ph_neutral: the flooded
       !   (saturated) subcolumn of a soil tile, floodplain or paddy, takes no pH
       !   factor. Flooded mineral soils converge to pH 6.7-7.2 as reduction
       !   consumes protons (Ponnamperuma, after Sahrawat 2015), near the
@@ -513,10 +513,10 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   otherwise cuts paddy and floodplain production by about a quarter.
       !   Peat wetland tiles keep their pH factor. Off by default.
       logical  :: flooded_soil_ph_neutral = .false.
-      ! prod_fliq_off (candidate 29, paper V2): methanogenesis in a freezing
+      ! prod_fliq_off: methanogenesis in a freezing
       !   layer of a non-lake tile is not multiplied by the unfrozen water
       !   fraction on top of the decomposition moisture scalar, which already
-      !   drops as the pore water freezes (double count, Q-27). CTSM zeroes the
+      !   drops as the pore water freezes (double count). CTSM zeroes the
       !   production of a frozen layer only without vertically resolved soil
       !   carbon or in lakes (ch4Mod.F90, base_decomp). Cold-season emission is
       !   45-50% of the annual total in observations but 27% in the GCP
@@ -576,7 +576,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! SIF is enabled only when coupled BGC does not already apply anoxia limits.
       logical :: bgc_anoxia_limits_decomp = .false.  ! true: BGC o_scalar already limits decomposition
       logical :: use_ch4_sif              = .true.   ! true: apply CH4 seasonal inundation factor
-      ! floodplain_anoxic_decomp (C-14, paper V2): on non-wetland, non-paddy
+      ! floodplain_anoxic_decomp: on non-wetland, non-paddy
       !   patches CH4 is produced (below the water table, in both the flooded
       !   and the non-flooded subcolumn) from decomposition at the anoxic
       !   rate, mino2lim times the aerobic rate their BGC carries (o_scalar is
@@ -584,8 +584,8 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   the CLM4Me seasonal inundation factor with no permanently inundated
       !   share (Riley et al. 2011, appendix B). Off by default.
       logical :: floodplain_anoxic_decomp = .false.
-      ! anoxic_decomp_flooded_only (Q-81, paper V2): with C-14 on, only the
-      !   flooded subcolumn decomposes at the anoxic rate (under C-41 when
+      ! anoxic_decomp_flooded_only: with floodplain_anoxic_decomp on, only the
+      !   flooded subcolumn decomposes at the anoxic rate (seasonally scaled when
       !   floodplain_sif is on); the non-flooded subcolumn keeps the aerobic
       !   rate in every layer. Its layers below the water table are saturated
       !   for most of the year, and appendix B of Riley et al. (2011) has the
@@ -593,15 +593,15 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   I tau / (phi beta + 1 - phi), so production returns to the input
       !   rate as phi goes to 1 instead of staying at beta (mino2lim) times
       !   it; the layers above the table are aerobic soil. Off by default
-      !   (C-14 in both subcolumns).
+      !   (floodplain_anoxic_decomp in both subcolumns).
       logical :: anoxic_decomp_flooded_only = .false.
-      ! wt_layer_sat_share (Q-81, paper V2): in the non-flooded subcolumn the
+      ! wt_layer_sat_share: in the non-flooded subcolumn the
       !   layer holding the water table makes CH4 on the share of its
       !   thickness below the table only; the share above it is unsaturated
       !   soil (CH4 only from anoxic microsites when anoxicmicrosites is on).
       !   Off by default: the whole layer counts as below the table.
       logical :: wt_layer_sat_share = .false.
-      ! wt_layer_node_transport (Q-81, paper V2): in the non-flooded
+      ! wt_layer_node_transport: in the non-flooded
       !   subcolumn the layer holding the water table counts as saturated for
       !   gas and liquid transport, oxidation kinetics, ebullition and plant
       !   uptake only when the table is above its node. The off setting counts
@@ -613,18 +613,18 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   rule (wt_layer_sat_share sets its share). Off by default.
       logical :: wt_layer_node_transport = .false.
       ! If BGC later applies real o_scalar limits, set (true, false).
-      ! frozen_anoxic_decomp (C-16, paper V2): a frozen wetland layer keeps
+      ! frozen_anoxic_decomp: a frozen wetland layer keeps
       !   the anoxic limit mino2lim on decomposition instead of 1. Ice brings
       !   no oxygen, and CLM applies o_scalar in every layer whatever its
       !   temperature. With 1, a layer held at the freezing point, where
       !   w_scalar is still near 1, decomposed five times faster than a
       !   thawed one. Off by default.
       logical :: frozen_anoxic_decomp = .false.
-      ! liquid_fraction_scaling (paper version): CH4 production, oxidation and
+      ! liquid_fraction_scaling: CH4 production, oxidation and
       !   aerenchyma transport in a soil layer scale with its unfrozen water
       !   fraction wliq/(wliq+wice) instead of stopping at tfrz. Off by default.
       logical :: liquid_fraction_scaling = .false.
-      ! wetland_oxic_cap_kinetics (paper version): the layers above a wetland's
+      ! wetland_oxic_cap_kinetics: the layers above a wetland's
       !   water table oxidise CH4 with the saturated-zone kinetics (k_m,
       !   vmax_methane_oxid) instead of the upland values. Off by default.
       logical :: wetland_oxic_cap_kinetics = .false.
@@ -702,7 +702,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   alive. Blended with the scheme value by max(), so an already-wet patch
       !   -- a wetland tile carrying a rice CFT, or scheme 6 with the water table
       !   at the surface -- is never dried by it. 0 (default) leaves the paddy
-      !   on the scheme value; the methane paper version uses 0.85.
+      !   on the scheme value; run/paper_ch4_parameter.nml uses 0.85.
       real(r8) :: rice_paddy_min_finundated     = 0._r8
       ! Midseason drying: the standard Asian practice of draining for 7-10 days
       ! around 30-40 days after planting. Timing and depth are tunable; the
@@ -730,7 +730,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       real(r8) :: wetland_max_wtd_temperate_marsh     = -1._r8
       real(r8) :: wetland_max_wtd_boreal_fen          = -1._r8
       real(r8) :: wetland_max_wtd_boreal_bog          = -1._r8
-      ! wetland_max_wtd_bog_share (candidate 32, paper V2): water-table floor
+      ! wetland_max_wtd_bog_share: water-table floor
       !   z_bog [m below surface] of the open-bog share of a dynamic wetland
       !   tile. A bog is fed by precipitation alone and draws down in summer
       !   until its acrotelm is drained; the catotelm below stays saturated,
@@ -747,7 +747,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   BOG / (PEB + WTU + MAR + BOG + FEN), Olefeldt et al. 2021, from
       !   v2/scripts/mk_bog_share.py) or wetland_bog_share_site at a tower.
       !   Within the share that takes lateral inflow, 1 - s with s the
-      !   rain-fed share (C-38), it weighs w_b = min(max(b / (1 - s), 0), 1),
+      !   rain-fed share, it weighs w_b = min(max(b / (1 - s), 0), 1),
       !   and that share's floor becomes the area mean
       !   (1 - w_b) z_class + w_b z_bog of the class floor z_class above
       !   (left off where z_class is off) and z_bog. With
@@ -778,8 +778,8 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   surface below the water level (ponded depth, else minus zwt); a
       !   value <= 0 keeps the step (inundated when zwt <= 0).
       real(r8) :: wetland_microtopo_sigma = -1._r8
-      ! wetland_plant_input: plant carbon input of the permanent-wetland tile
-      !   (paper V2 C-12). The tile's own canopy assimilation times
+      ! wetland_plant_input: plant carbon input of the permanent-wetland tile.
+      !   The tile's own canopy assimilation times
       !   wetland_npp_frac (NPP/GPP) enters the litter pools every step along
       !   the tile's root profile, split labile/cellulose/lignin as CoLM's
       !   grass litter (0.25/0.5/0.25), with nitrogen at wetland_litter_cn.
@@ -788,11 +788,11 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       logical  :: wetland_plant_input = .false.
       real(r8) :: wetland_npp_frac    = 0.5_r8     ! [-]
       real(r8) :: wetland_litter_cn   = 46._r8     ! [g C / g N]
-      ! wetland_bg_frac (C-15, paper V2): share of that input that follows the
+      ! wetland_bg_frac: share of that input that follows the
       !   root profile; the rest is aboveground litter laid on the surface
       !   along CoLM's leaf-litter profile. 1 keeps everything on the roots.
       real(r8) :: wetland_bg_frac     = 1._r8      ! [-]
-      ! wetland_veg_glwd (C-13, paper V2): replace the five-zone wetland
+      ! wetland_veg_glwd: replace the five-zone wetland
       !   vegetation proxy by the tile's GLWD make-up read from wetland_veg_file
       !   (forested share and class areas per grid cell). The forested share
       !   takes wetland_bg_frac_forest as its belowground input share (tropical
@@ -802,14 +802,14 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   peatland (GLWD 23, 25) and wetland_lai_marsh for marsh (17, 19, 27).
       logical  :: wetland_veg_glwd       = .false.
       character(len=256) :: wetland_veg_file = 'null'
-      ! site_flood_file (C-48, paper V2): single-point runs have no river
+      ! site_flood_file: single-point runs have no river
       !   routing, so a river-fed tower never floods. The file gives monthly
       !   flood_frac and flood_depth [m] per site (dims site, time; with lat,
       !   lon, year, month); the soil patch of the nearest site within 0.05
       !   degree takes them as the routing floodplain fraction and depth,
       !   linearly between mid-months (monthly climatology outside the years).
       character(len=256) :: site_flood_file = 'null'
-      ! floodplain_glwd_cap_file (I-28, paper V2): colm mode only. The routing
+      ! floodplain_glwd_cap_file: colm mode only. The routing
       !   flood of the soil tiles is bounded by the riverine and lacustrine
       !   floodplain of the cell in GLWD v2 (maximum extent over 1984-2020;
       !   Lehner et al. 2025, ESSD 17, 2277-2329, table 2): classes 8-15 and
@@ -830,15 +830,15 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       ! Single-point overrides of the gridded make-up (a tower sits in one
       ! wetland, the grid cell holds a mix); < 0 keeps the file value.
       real(r8) :: wetland_forest_share_site = -1._r8  ! [-]
-      ! wetland_ombro_share_site (C-38, paper V2): rain-fed (ombrotrophic) share
+      ! wetland_ombro_share_site: rain-fed (ombrotrophic) share
       !   of a tower's wetland, which receives no lateral inflow; < 0 keeps the
       !   rainfed_share of wetland_veg_file (0 when the file has none).
       real(r8) :: wetland_ombro_share_site  = -1._r8  ! [-]
-      ! wetland_bog_share_site (candidate 32, paper V2): open-bog share of a
+      ! wetland_bog_share_site: open-bog share of a
       !   tower's wetland for wetland_max_wtd_bog_share; < 0 keeps the
       !   bog_share of wetland_veg_file (0 when the file has none).
       real(r8) :: wetland_bog_share_site    = -1._r8  ! [-]
-      ! wetland_dim_class (C-88 step 1, paper V2): the wetland class tree
+      ! wetland_dim_class: the wetland class tree
       !   (latitude and modelled top-layer carbon, get_biome_f_methane) no
       !   longer decides the water-table floor, the pond litter resistance
       !   (DEF_WETLAND_POND_LITTER_RSS) and the moss surface resistance
@@ -856,20 +856,20 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   the temperate marsh and boreal classes times the peatland share.
       !   The values are the class values; only which tile takes them
       !   changes (v2/results/design_wetland_class_260930.txt, sect. 5).
-      !   Step 2 (C-89): with use_biome_redoxlag every wetland tile takes
+      !   Step 2: with use_biome_redoxlag every wetland tile takes
       !   redoxlag_wetland_dim, and with wetland_forest_input_herb the
       !   moss-carpeted forested share keeps wetland_moss_input_frac of the
-      !   stand input. Step 3 (C-92), the water-source dimension: the
+      !   stand input. Step 3, the water-source dimension: the
       !   rain-fed share s_r, fed by precipitation alone (Bridgham et al.
       !   2013), is the permafrost peat plateau share s_p (BAWLD PEB,
       !   rainfed_share of wetland_veg_file) plus the open-bog share s_b
       !   (BAWLD BOG, bog_share), both of the BAWLD wetland area (Olefeldt et
       !   al. 2021). The plateaus, raised by ground ice, take no lateral
-      !   inflow (C-38, DEF_WETLAND_INFLOW_AREA_SPLIT of C-65), so the fed
+      !   inflow (as with DEF_WETLAND_INFLOW_AREA_SPLIT), so the fed
       !   share is 1 - (s_r - s_b); open bogs keep the floor refill, at
-      !   wetland_max_wtd_bog_share when set (C-71). Only the tower keys
-      !   below are new; with them unset the shares are those of C-38 and
-      !   C-71. Needs wetland_veg_glwd. Off by default.
+      !   wetland_max_wtd_bog_share when set. Only the tower keys
+      !   below are new; with them unset the rain-fed and open-bog shares come
+      !   from the wetland vegetation file. Needs wetland_veg_glwd. Off by default.
       logical  :: wetland_dim_class         = .false.
       ! A tower's own shares for wetland_dim_class, from its wetland type
       ! (a tower sits in one wetland, not in the cell's mix); < 0 keeps the
@@ -882,7 +882,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       real(r8) :: wetland_share_rain_site   = -1._r8  ! [-]
       real(r8) :: wetland_share_bog_site    = -1._r8  ! [-]
       real(r8) :: wetland_lai_cap_site      = -1._r8  ! [m2 m-2]
-      ! wetland_forest_htop_trop (I-16, paper V2): canopy top height [m] of the
+      ! wetland_forest_htop_trop: canopy top height [m] of the
       !   forested share f of a tropical wetland tile (wetland_veg_glwd; within
       !   23.5 degrees of the equator, the tropical band of get_biome_f_methane).
       !   The host gives the tile the canopy height of its land class (IGBP 11,
@@ -895,13 +895,13 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   nothing else of the canopy changes. < 0 keeps the land-class height
       !   (default).
       real(r8) :: wetland_forest_htop_trop  = -1._r8  ! [m]
-      ! wetland_cover_frac_site (paper V2, marsh towers): vascular plant cover
+      ! wetland_cover_frac_site (marsh towers): vascular plant cover
       !   of a tower's footprint. The plant carbon input of the wetland tile
       !   (wetland_plant_input), root exudates included, is scaled by it, for
       !   a rewetted or managed marsh whose emergent plants leave part of the
       !   footprint as open water. < 0 keeps the whole input (default).
       real(r8) :: wetland_cover_frac_site   = -1._r8  ! [-]
-      ! wetland_burial_frac_site (paper V2, managed marsh towers): share of the
+      ! wetland_burial_frac_site (managed marsh towers): share of the
       !   wetland tile's plant litter input (wetland_plant_input, what is left
       !   after the root exudates) buried as new peat instead of entering the
       !   litter pools. Rewetted Delta marshes bury 280-350 g C m-2 yr-1, about
@@ -911,7 +911,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   litter N; soil3 turns over in millennia on the anoxic tile and
       !   wetland_bgc_sasu holds it. < 0 buries nothing (default).
       real(r8) :: wetland_burial_frac_site  = -1._r8  ! [-]
-      ! wetland_lai_shape (paper V2, shoulder seasons): with wetland_veg_glwd,
+      ! wetland_lai_shape (shoulder seasons): with wetland_veg_glwd,
       !   scale the non-forested share's remote-sensing LAI by cap / annual
       !   peak instead of clipping it at the cap each month. The clip holds
       !   an open fen at its July LAI from April to November wherever the
@@ -920,12 +920,12 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   scaling keeps the measured peak and the remote-sensing seasonal
       !   shape. Off by default (clip).
       logical  :: wetland_lai_shape         = .false.
-      ! wetland_forest_input_herb (paper V2, boreal wetlands): with
+      ! wetland_forest_input_herb (boreal wetlands): with
       !   wetland_plant_input and wetland_veg_glwd, the forested share of a
       !   wetland tile feeds the methanogens as a herb layer at the LAI of the
       !   non-forested share instead of through its remote-sensing canopy. A
-      !   GLWD tile carries the LAI of the dryland forest around it (paper V2
-      !   Q-9); tree litter is woody and falls on the surface, and tree and
+      !   GLWD tile carries the LAI of the dryland forest around it; tree
+      !   litter is woody and falls on the surface, and tree and
       !   shrub fine roots sit mostly above the water table while sedge roots
       !   reach below it (Moore et al. 2002), so grass litter along the roots
       !   overstates the substrate the trees give the methanogens. The tile's assimilation is split between the two shares by LAI and
@@ -942,7 +942,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   (wetland_lai_marsh) as well. The aerenchyma keeps the tile's NPP.
       !   Off by default.
       logical  :: wetland_forest_input_herb = .false.
-      ! wetland_moss_input_frac (C-89, paper V2): with wetland_forest_input_herb
+      ! wetland_moss_input_frac: with wetland_forest_input_herb
       !   and wetland_dim_class, the forested share of a tile keeps at least
       !   its moss layer, this share of the stand input, where the ground is
       !   moss-carpeted peat (s_m, GLWD 22-25). The input ratio becomes
@@ -960,7 +960,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   published share leaves out (biased high). The input keeps the herb
       !   belowground share.
       real(r8) :: wetland_moss_input_frac   = 0.48_r8  ! [-]
-      ! wetland_anoxia_catotelm (C-18, paper V2): below the water table the
+      ! wetland_anoxia_catotelm: below the water table the
       !   wetland anoxia scalar falls with depth d under the table from
       !   mino2lim to this floor, floor + (mino2lim - floor) exp(-d/efold),
       !   as in HPM (Frolking et al. 2010, eq. 9, c2 = 0.3 m). Anoxic/oxic
@@ -968,14 +968,14 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   Moore 2000). Negative keeps mino2lim at every depth (default).
       real(r8) :: wetland_anoxia_catotelm   = -1._r8  ! [-]
       real(r8) :: wetland_anoxia_efold      = 0.3_r8  ! [m]
-      ! wetland_tau_s3 (C-18b, paper V2): base turnover time of the wetland
+      ! wetland_tau_s3: base turnover time of the wetland
       !   tile's passive pool in place of CENTURY's 222 yr, at the same
       !   reference (t_scalar = 1 near 30 C). ORCHIDEE-PEAT v2 uses a passive
       !   rate of 0.0006 per year at 30 C, i.e. 1667 yr (Qiu et al. 2019,
       !   Table 1); LPJ-WHy a slow pool of 1000 yr at 10 C. Negative keeps
       !   tau_s3 (default).
       real(r8) :: wetland_tau_s3            = -1._r8  ! [yr]
-      ! Wetland N closure and burial (track B, paper V2), all off by default.
+      ! Wetland N closure and burial, all off by default.
       ! wetland_n_unlimited: litter-to-SOM immobilization on the wetland tile
       !   runs at its potential rate and the N a layer lacks is supplied, as in
       !   CLM's carbon-only supplemental N (suplnitro = 'ALL'). The tile's
@@ -997,7 +997,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       logical  :: wetland_n_uptake          = .false.
       logical  :: wetland_vert_transp       = .false.
       real(r8) :: wetland_burial_velocity   = 0._r8   ! [m yr-1]
-      ! wetland_bgc_sasu (paper V2): semi-analytic spin-up of the wetland
+      ! wetland_bgc_sasu: semi-analytic spin-up of the wetland
       !   tile's decomposition pools. At the end of every spin-up cycle but
       !   the last, litter, CWD, soil1 and soil2 of each layer jump to the
       !   steady state of that cycle's flux-weighted rates before the N limit
@@ -1007,7 +1007,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   Solves each layer on its own, so it excludes wetland_vert_transp.
       !   Off by default.
       logical  :: wetland_bgc_sasu          = .false.
-      ! wetland_exudate_frac (C-23, paper V2): share of the wetland plant input
+      ! wetland_exudate_frac: share of the wetland plant input
       !   released as root exudates. It is respired within the step in the
       !   layer where it is released, along the land class's root profile,
       !   and counts as litter heterotrophic respiration for CH4 production;
@@ -1022,7 +1022,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   metabolic litter turns negative. root_exudate_frac books the same
       !   exudate after the pool update; a value above 0 here stops the run.
       real(r8) :: wetland_exudate_frac      = 0._r8   ! [-]
-      ! root_exudate_frac (candidate 6, paper V2): share of the net primary
+      ! root_exudate_frac: share of the net primary
       !   production of every non-lake tile released by the roots as
       !   exudates, the live plant carbon that feeds methanogens without
       !   passing through the litter first (fexu, Wania et al. 2010, Table 4
@@ -1044,13 +1044,13 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !     steady state that is the litter input less the exudate. Litter N
       !     stays.
       !   - wetland tile: the exudate leaves the plant input
-      !     (wetland_plant_input) as in C-23; only where wetland_exudate_frac
-      !     is 0, since C-23 releases the same exudate there.
-      !   - paddy rice with DEF_RICE_ROOT_EXUDATE > 0 (C-37) keeps its own
+      !     (wetland_plant_input) as with wetland_exudate_frac; only where
+      !     wetland_exudate_frac is 0, since it releases the same exudate there.
+      !   - paddy rice with DEF_RICE_ROOT_EXUDATE > 0 keeps its own
       !     exudate; the rice share of the tile is left out.
       !   <= 0 is off (default).
       real(r8) :: root_exudate_frac         = 0._r8   ! [-]
-      ! rice_aere_override (C-24, paper V2): .true. gives live paddy rice the
+      ! rice_aere_override: .true. gives live paddy rice the
       !   tiller geometry of get_rice_veg_proxy (porosity 0.40, radius 0.75 mm,
       !   1.0 gC per tiller), whose aerenchyma cross-section per unit tiller
       !   carbon is 1/51 of the CLM4Me default; ebullition then carries most
@@ -1059,7 +1059,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   al. 2010), and the plants become the main pathway, as observed in
       !   paddies (Cicerone and Shetter 1981). .true. by default.
       logical  :: rice_aere_override        = .true.
-      ! rice_aereoxid (C-25, paper V2): share of the CH4 entering the
+      ! rice_aereoxid: share of the CH4 entering the
       !   aerenchyma of paddy rice that is oxidised in the rhizosphere by the
       !   O2 the roots release from inside the plant (not drawn from the soil
       !   layer's O2, as CLM4Me's aereoxid). The CLM4Me legacy switch (aereoxid with
@@ -1069,23 +1069,23 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   1989), 0.65 as the season mean emitted fraction 0.35 (Huang et al.
       !   1998). 0 (off) by default.
       real(r8) :: rice_aereoxid             = 0._r8   ! [-]
-      ! wetland_aereoxid (candidate 4, paper V2): share of the CH4 entering the
+      ! wetland_aereoxid: share of the CH4 entering the
       !   aerenchyma of a wetland tile, or of the flooded subcolumn of a soil
       !   patch other than a paddy, that is oxidised at the roots, with the
       !   O2 the roots release (as rice_aereoxid); the tile then takes no plant
       !   O2 into its soil layers, which in the prognostic scheme fuelled the
-      !   oxidation of 58-90% of production in flooded subcolumns (V-87, V-88).
+      !   oxidation of 58-90% of production in flooded subcolumns.
       !   In situ rhizosphere oxidation of wetland plants is mostly 10-50% of
       !   the potential emission (King 1996; Calhoun and King 1997; Kankaala
       !   and Bergstrom 2004), lower for sedges (Turner et al. 2020).
       !   < 0 (off) by default.
       real(r8) :: wetland_aereoxid          = -1._r8  ! [-]
-      ! rice_rox_only (candidate 5, paper V2): with rice_aereoxid, the paddy
+      ! rice_rox_only: with rice_aereoxid, the paddy
       !   column takes no plant O2 into its soil layers either, so root O2 is
       !   counted once, as the rhizosphere oxidation share. Off by default
-      !   (C-25b keeps both).
+      !   (off keeps both).
       logical  :: rice_rox_only             = .false.
-      ! rox_on_rooted_production (D-59, paper V2): what the fixed rhizosphere
+      ! rox_on_rooted_production: what the fixed rhizosphere
       !   oxidation share x of a tile acts on (wetland_aereoxid on a wetland
       !   tile and on the flooded subcolumn of a soil patch other than a
       !   paddy, rice_aereoxid on a paddy column; x off leaves the tile alone).
@@ -1125,7 +1125,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   wetland_aereoxid >= 0 or rice_aereoxid > 0. Bit-for-bit unchanged
       !   when off.
       logical  :: rox_on_rooted_production  = .false.
-      ! rice_host_water (C-32, paper V2): .true. floods the paddy column when
+      ! rice_host_water: .true. floods the paddy column when
       !   the host holds water on the field (surface water >= 1 mm or the
       !   water table at the surface), i.e. from irrigation and the bunds of
       !   DEF_USE_IRRIGATION / DEF_PADDY_RICE_BUND, instead of the imposed
@@ -1133,24 +1133,24 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   post-harvest decay. Rainfed rice then floods only when rain fills
       !   the bunds. .false. by default.
       logical  :: rice_host_water           = .false.
-      ! lake_sed_o2_demand (C-33, paper V2): .true. lets respiration of the
+      ! lake_sed_o2_demand: .true. lets respiration of the
       !   non-CH4 carbon in lake sediment consume O2 where O2 is present, as in
       !   soils; the sediment below the oxic surface film then turns anoxic.
       !   .false. keeps no O2 demand, so the 1 mol m-3 O2 every lake layer is
       !   allocated with stays for years and oxidises the CH4 made at depth
       !   (DE-Dgw: oxidation about equal to production after nine years).
       logical  :: lake_sed_o2_demand        = .false.
-      ! lake_prod_efold (C-40, paper V2): e-folding depth [m] of lake sediment
+      ! lake_prod_efold: e-folding depth [m] of lake sediment
       !   decomposition below the bed, the fresh deposit being the reactive
       !   part (Middelburg 1989, doi:10.1016/0016-7037(89)90239-1); column
       !   total unchanged. <= 0 keeps the carbon profile (CLM4Me).
       real(r8) :: lake_prod_efold           = -1._r8  ! [m]
-      ! floodplain_sif (C-41, paper V2): .true. gives the flooded subcolumn of
-      !   a floodplain (C-14) the CLM4Me seasonal inundation factor instead of
+      ! floodplain_sif: .true. gives the flooded subcolumn of
+      !   a floodplain the CLM4Me seasonal inundation factor instead of
       !   mino2lim: full rate for the annually inundated share, mino2lim for
       !   the seasonal excess (Riley et al. 2011, doi:10.5194/bg-8-1925-2011).
       logical  :: floodplain_sif            = .false.
-      ! flood_saturates_soil (C-49, paper V2): .true. fills the pores of the
+      ! flood_saturates_soil: .true. fills the pores of the
       !   flooded subcolumn of a soil patch (routing or site flood) with
       !   water for the gas diffusion and oxygen of the CH4 column, instead
       !   of lending it only what the host soil holds: the host soil does not
@@ -1159,12 +1159,12 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   down (BW-Nxr: O2 1-1.6 mol m-3 under flood, wetland tiles 0.02-0.09).
       !   The host water balance is untouched.
       logical  :: flood_saturates_soil      = .false.
-      ! lake_strat_drho (C-43, paper V2): bottom-minus-surface water density
+      ! lake_strat_drho: bottom-minus-surface water density
       !   [kg m-3] above which the lake counts as stratified and its CH4 node
       !   exchanges no gas with the air (stored CH4 leaves at overturn).
       !   <= 0: always exchanging when ice-free.
       real(r8) :: lake_strat_drho           = -1._r8  ! [kg m-3]
-      ! lake_bubble_dissol_depth (K-1, paper V2): e-folding rise distance h_b
+      ! lake_bubble_dissol_depth: e-folding rise distance h_b
       !   [m] over which a bubble from the lake bed loses its CH4 to the water.
       !   The lake's ebullition reaches the air as the share
       !   sum_k dA_k exp(-z_k/h_b) / sum_k dA_k of the bed area dA_k at depth
@@ -1178,25 +1178,25 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   about 19 m. The ebullition threshold keeps the full water head.
       !   <= 0: all lake ebullition goes to the air (default).
       real(r8) :: lake_bubble_dissol_depth  = -1._r8  ! [m]
-      ! lake_k_m (K-2, paper V2): Michaelis-Menten constant [mol m-3] for CH4
+      ! lake_k_m: Michaelis-Menten constant [mol m-3] for CH4
       !   in the oxidation of the lake water node, which otherwise takes the
       !   soil value k_m (5e-3). LAKE 2.0 calibrates 3.75e-2 for lake water
       !   (Stepanenko et al. 2016); hypolimnion water of two Alaskan lakes
       !   gives 4.5e-3 and 1.1e-2 (Lofton et al. 2014). The maximum rate is
       !   set by lake_vmax_methane_oxid. <= 0 keeps k_m (default).
       real(r8) :: lake_k_m                  = -1._r8  ! [mol m-3]
-      ! lake_sod20 (K-3, paper V2): sediment O2 demand at 20 C [g O2 m-2 d-1]
+      ! lake_sod20: sediment O2 demand at 20 C [g O2 m-2 d-1]
       !   drawn from the lake water node, lake_sod20 * 1.065**(T_bot - 20 C)
       !   * O2 / (K_O2 + O2), with T_bot the temperature of the deepest lake
       !   layer and K_O2 the O2 constant of the water-node CH4 oxidation
       !   (lake_k_m_o2, else k_m_o2). Guo et al. (2023) take 1.5-9.9 g O2
       !   m-2 d-1 and 1.065 for a tropical floodplain lake; LAKE 2.0 applies
       !   the demand after Walker and Snodgrass (1986). With the stratification
-      !   gate (lake_strat_drho, C-43) it lets the water cut off from the air
+      !   gate (lake_strat_drho) it lets the water cut off from the air
       !   turn anoxic. The O2 taken is counted in lake_sed_o2_flux.
       !   <= 0: no sediment O2 demand on the water (default).
       real(r8) :: lake_sod20                = -1._r8  ! [g O2 m-2 d-1]
-      ! lake_icebubble_release (K-5, paper V2): rate [d-1] at which the CH4 of
+      ! lake_icebubble_release: rate [d-1] at which the CH4 of
       !   the bubbles held under lake ice leaves once the ice fraction of the
       !   top lake layer falls to 0.1 or below. While it is above 0.1 the lake
       !   bed keeps bubbling and the bubbles that reach the surface go into the
@@ -1207,7 +1207,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   <= 0: the lake bubbles only when the ice fraction is 0.1 or below,
       !   nothing is stored (default).
       real(r8) :: lake_icebubble_release    = -1._r8  ! [d-1]
-      ! lake_icebubble_dissol (K-5, paper V2): share [0-1] of the CH4 released
+      ! lake_icebubble_dissol: share [0-1] of the CH4 released
       !   from the under-ice bubble store that dissolves into the lake water
       !   node, where it is oxidised or leaves by gas exchange like the CH4
       !   the sediment releases by diffusion; the rest joins the ebullition to
@@ -1215,7 +1215,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   2015); Johnson et al. (2022) oxidise 75% of the CH4 stored under ice
       !   at ice-out. Used only with lake_icebubble_release > 0.
       real(r8) :: lake_icebubble_dissol     = 0.4_r8  ! [-]
-      ! lake_active_pool (candidate 22, paper V2): lake CH4 production is fed
+      ! lake_active_pool: lake CH4 production is fed
       !   by an active pool of degradable organic carbon C_act [g C m-2] in
       !   each lake patch, supplied at a constant rate S and mineralized at
       !   first order,
@@ -1225,13 +1225,13 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   and 10). S is the degradable deposition, the sediment supply net of
       !   burial, so FLaMe's burial term (eq. 8, k_bur = k20/2) is left out.
       !   The pool is spread over the sediment layers as the present
-      !   production is: exp(-z/lake_prod_efold) when that is set (C-40),
+      !   production is: exp(-z/lake_prod_efold) when that is set,
       !   else the lake_soilc carbon profile. Layer j mineralizes its share at
       !   k(T_j), times the 1 K freezing ramp of lake sediment; CH4 is
-      !   f_methane (lake_f_methane when set, C-93) of that (at most 0.5; a
+      !   f_methane (lake_f_methane when set) of that (at most 0.5; a
       !   share of the whole mineralization,
       !   as FLaMe f_mm 1/4, 1/6-1/2) and the rest leaves as CO2 on the present path,
-      !   with its O2 demand under lake_sed_o2_demand (C-33). At steady state
+      !   with its O2 demand under lake_sed_o2_demand. At steady state
       !   C_act = S / k and production is f_methane S whatever the
       !   temperature, which sets only the pool size and the seasonal timing.
       !   The whole-column lake_soilc path (lake_decomp_fact, q10lake,
@@ -1240,7 +1240,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   restart written before it); 1/k is 107 d at 28 C and 171 d at 4 C.
       !   Needs allowlakeprod. Off by default; bit-for-bit unchanged when off.
       logical  :: lake_active_pool          = .false.
-      ! lake_cdep_band (candidate 22, paper V2): S, the degradable organic
+      ! lake_cdep_band: S, the degradable organic
       !   carbon supply to the sediment of a lake patch [g C m-2 yr-1], by the
       !   patch latitude: (1) north of 60 N, (2) 45-60 N, (3) 23.5-45 N,
       !   (4) 23.5 S-23.5 N, (5) south of 23.5 S. S is the sediment
@@ -1259,17 +1259,17 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   measured sediment mineralization has median 40 and range 5.3-196
       !   g C m-2 yr-1 (Sobek et al. 2009).
       real(r8) :: lake_cdep_band(5)         = [20._r8, 30._r8, 35._r8, 59._r8, 35._r8]  ! [g C m-2 yr-1]
-      ! lake_k20 (candidate 22, paper V2): first-order mineralization rate of
+      ! lake_k20: first-order mineralization rate of
       !   the active pool at 20 C [d-1]; FLaMe k20 0.008 (0.003-0.015) d-1
       !   (Maisonnier et al. 2025, Table 1). Used with lake_active_pool.
       real(r8) :: lake_k20                  = 0.008_r8  ! [d-1]
-      ! lake_theta (candidate 22, paper V2): temperature coefficient of k;
+      ! lake_theta: temperature coefficient of k;
       !   FLaMe 1.02 (Maisonnier et al. 2025, Table 1), a Q10 of 1.22; the
       !   measured Q10 of lake sediment mineralization, 2.1-2.3 (Gudasz et
       !   al. 2010, Nature 466, 478-481, doi:10.1038/nature09186), is theta
       !   1.077-1.087. Used with lake_active_pool.
       real(r8) :: lake_theta                = 1.02_r8   ! [-]
-      ! lake_f_methane (C-93, paper V2): share of the mineralization of the
+      ! lake_f_methane: share of the mineralization of the
       !   active pool (lake_active_pool) that becomes CH4 below the lake water
       !   table, in place of f_methane for the lake patches the pool feeds, so
       !   that steady-state production is lake_f_methane S (lake_cdep_band).
@@ -1286,11 +1286,11 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   Maisonnier et al. 2025). At most 0.5 (2 CH2O -> CH4 + CO2), as
       !   f_methane. Needs lake_active_pool; < 0 keeps f_methane (default).
       real(r8) :: lake_f_methane            = -1._r8  ! [-]
-      ! wetland_salinity_site (C-42, paper V2): porewater salinity [psu] of a
+      ! wetland_salinity_site: porewater salinity [psu] of a
       !   tower's wetland; the yield is scaled by 10**(-0.056 S) (Poffenbarger
       !   et al. 2011, doi:10.1007/s13157-011-0197-0). <= 0: fresh, no scaling.
       real(r8) :: wetland_salinity_site     = -1._r8  ! [psu]
-      ! wetland_nitrate_site (C-96, paper V2): nitrate of the water feeding a
+      ! wetland_nitrate_site: nitrate of the water feeding a
       !   tower's tidal wetland [mg L-1], the creek or river annual mean.
       !   Nitrate reducers take the electron donors of methanogens; the yield
       !   is scaled by K / (K + NO3), K = wetland_nitrate_ki, as in PEPRMT-Tidal
@@ -1298,7 +1298,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   code, doi:10.5281/zenodo.10278505). <= 0: no scaling.
       real(r8) :: wetland_nitrate_site      = -1._r8  ! [mg L-1]
       real(r8) :: wetland_nitrate_ki        = 0.102_r8  ! [mg L-1]
-      ! tundra_high_share_site (candidate 15, paper V2, site diagnosis only):
+      ! tundra_high_share_site (site diagnosis only):
       !   share of a tower's wetland tile taken by high microsites (tussocks,
       !   polygon rims, high centres). They respire as usual but make almost no
       !   CH4: ecosys ridges emit 0.0-0.1 against 4-6 g C m-2 yr-1 in centres
@@ -1313,17 +1313,17 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   low remainder. Single point only (no global map of high microsites);
       !   <= 0 is off (default).
       real(r8) :: tundra_high_share_site    = -1._r8  ! [-]
-      ! wetland_moss_rss (C-26, paper V2): the moss and peat surface of a
+      ! wetland_moss_rss: the moss and peat surface of a
       !   dynamic wetland tile resists evaporation, so its snow-free soil
       !   surface resistance is held at least at that of the surface. Sphagnum
       !   carpets keep about 100 s m-1 with the water table near the surface
       !   (Kim and Verma 1996; Kettridge et al. 2013), rising as it falls below
       !   about 0.1 m, to near 500 s m-1 at 0.35 m in Finnish and Swedish mires
       !   (Alekseychik et al. 2018). The resistance is weighted by the tile's
-      !   peatland share (C-17c); tropical classes and ponded tiles take none.
+      !   peatland share; tropical classes and ponded tiles take none.
       !   Off by default.
       logical  :: wetland_moss_rss          = .false.
-      ! wetland_root_efold (C-28, paper V2): e-folding depth [m] of the root
+      ! wetland_root_efold: e-folding depth [m] of the root
       !   profile of a wetland tile, used for its plant carbon input (root
       !   litter, exudates) and for the CH4 root fraction (aerenchyma, root
       !   respiration); root water uptake keeps the land-class profile. IGBP
@@ -1333,8 +1333,8 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   gives flood-tolerant graminoids exp(-z/0.2517 m) (Wania et al.
       !   2010). A value <= 0 keeps the land-class profile (default).
       real(r8) :: wetland_root_efold        = -1._r8  ! [m]
-      ! wetland_f_tropical_peat (C-29, paper V2): f_methane of the peatland
-      !   share (C-17c) of a wetland tile within 23.5 degrees of the equator.
+      ! wetland_f_tropical_peat: f_methane of the peatland
+      !   share of a wetland tile within 23.5 degrees of the equator.
       !   Anaerobic incubations of tropical forest peat give CH4 as 0.2-0.3%
       !   of the decomposed carbon at 25 C (Girkin et al. 2020), and the
       !   Maludam tower emits about 0.5% of half its ecosystem respiration
@@ -1342,8 +1342,8 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   source (Riley et al. 2011, Table 1). A negative value keeps
       !   f_methane (default).
       real(r8) :: wetland_f_tropical_peat   = -1._r8  ! [-]
-      ! wetland_f_tree_ratio (C-30, paper V2): the forested share of a
-      !   wetland tile (C-13) makes CH4 at this fraction of f_methane. Tree-
+      ! wetland_f_tree_ratio: the forested share of a
+      !   wetland tile makes CH4 at this fraction of f_methane. Tree-
       !   covered towers emit a median 1.9% of half their ecosystem
       !   respiration against 6.4% at open ones (FLUXNET-CH4 TREE flag), while
       !   the model's respiration there is about right; cutting their plant
@@ -1353,7 +1353,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   soils (Treat et al. 2015, Fig. 3a). A negative value keeps f_methane
       !   (default).
       real(r8) :: wetland_f_tree_ratio      = -1._r8  ! [-]
-      ! woody_conduit_area (C-87, paper V2): cross-section [m2 m-2] of the gas
+      ! woody_conduit_area: cross-section [m2 m-2] of the gas
       !   conduit of woody plants standing in water, for the forested share
       !   f_w of a wetland tile (wetland_veg_glwd), in both subcolumns, and for
       !   all of the flooded subcolumn of a woody soil patch (the non-grass
@@ -1379,7 +1379,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   (wetland_aereoxid) acts on this conduit as on the tillers.
       !   < 0 (off) keeps the tillers on the forested share (default).
       real(r8) :: woody_conduit_area        = -1._r8  ! [m2 m-2]
-      ! pft_grass_share (I-27, paper V2): a gridded PFT or PC build merges
+      ! pft_grass_share: a gridded PFT or PC build merges
       !   every natural soil type into patchclass 1 (MOD_LandPatch.F90), so
       !   methane_patch_is_nongrass calls every natural soil patch non-grass:
       !   all of them get the non-grass aerenchyma porosity and, with
@@ -1398,7 +1398,7 @@ MODULE MOD_Tracer_Reactive_Methane_Const
       !   the non-forested share of a wetland tile. Single-point builds keep
       !   the tower's IGBP class. Off (default) keeps the class test.
       logical  :: pft_grass_share           = .false.
-      ! pft_root_profile (I-27, paper V2): the methane module takes a
+      ! pft_root_profile: the methane module takes a
       !   patch's root profile from its land class (MOD_Const_LC rootfr), so
       !   in a gridded PFT or PC build every natural soil patch (patchclass 1)
       !   gets the evergreen needleleaf forest profile. With this key a patch
@@ -1553,7 +1553,7 @@ CONTAINS
 	         ENDIF
 
        CASE ('colm')
-         ! CoLM mode (B-3, B-10).  The mapped wetland tile is permanent
+         ! CoLM mode.  The mapped wetland tile is permanent
          ! wetland (finundated 1, host wetland bucket); every other tile
          ! takes the routing flood fraction and depth, wetland first, gated
          ! by hybrid_soil_threshold.  Without routing -- a single point --
@@ -1844,7 +1844,7 @@ CONTAINS
             DEF_METHANE%lake_oxic_sediment_depth
          bad = .true.
       ENDIF
-      ! K-5: above 100 d-1 the store empties within about an hour of ice-out,
+      ! above 100 d-1 the store empties within about an hour of ice-out,
       ! two orders of magnitude beyond the published 0.14-1 d-1
       IF (DEF_METHANE%lake_icebubble_release > 100._r8) THEN
          IF (p_is_master) write(6,*) '***** ERROR: lake_icebubble_release must be <= 100 d-1 (<= 0 off): ', &
@@ -1856,7 +1856,7 @@ CONTAINS
             DEF_METHANE%lake_icebubble_dissol
          bad = .true.
       ENDIF
-      ! candidate 22: the supply stays within five times the largest measured
+      ! the supply stays within five times the largest measured
       ! sediment mineralization (196 g C m-2 yr-1, Sobek et al. 2009); k20 within
       ! about seven times FLaMe's upper bound; theta from none to a Q10 of 6
       IF (any(DEF_METHANE%lake_cdep_band < 0._r8) .or. any(DEF_METHANE%lake_cdep_band > 1000._r8)) THEN
@@ -1876,7 +1876,7 @@ CONTAINS
          IF (p_is_master) write(6,*) '***** ERROR: lake_active_pool needs allowlakeprod'
          bad = .true.
       ENDIF
-      ! C-93: same stoichiometric bound as f_methane; set without the pool it
+      ! same stoichiometric bound as f_methane; set without the pool it
       ! would be read and never used
       IF (DEF_METHANE%lake_f_methane > 0.5_r8) THEN
          IF (p_is_master) write(6,*) '***** ERROR: lake_f_methane must be negative (off) ', &
@@ -1887,7 +1887,7 @@ CONTAINS
          IF (p_is_master) write(6,*) '***** ERROR: lake_f_methane >= 0 needs lake_active_pool'
          bad = .true.
       ENDIF
-      ! C-96: a nitrate set with a non-positive half-inhibition constant
+      ! a nitrate set with a non-positive half-inhibition constant
       ! would divide by zero or turn the factor negative
       IF (DEF_METHANE%wetland_nitrate_site > 0._r8 .and. DEF_METHANE%wetland_nitrate_ki <= 0._r8) THEN
          IF (p_is_master) write(6,*) '***** ERROR: wetland_nitrate_site needs wetland_nitrate_ki > 0: ', &

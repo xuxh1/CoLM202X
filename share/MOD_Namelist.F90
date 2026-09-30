@@ -70,7 +70,7 @@ MODULE MOD_Namelist
    logical  :: USE_SITE_htop             = .true.
    logical  :: USE_SITE_LAI              = .true.
    logical  :: USE_SITE_lakedepth        = .true.
-   logical  :: USE_SITE_WTD              = .false.   ! observed daily water table from the site file (B-3)
+   logical  :: USE_SITE_WTD              = .false.   ! observed daily water table from the site file
    logical  :: USE_SITE_soilreflectance  = .true.
    logical  :: USE_SITE_soilparameters   = .true.
    logical  :: USE_SITE_dbedrock         = .true.
@@ -161,7 +161,7 @@ MODULE MOD_Namelist
    ! to model patches through FIT algorithm (Montzka et al., 2017).
    logical :: DEF_USE_SOILPAR_UPS_FIT = .true.
 
-   ! C-94 (paper V2): the van Genuchten alpha of the soil data is fitted in
+   ! the van Genuchten alpha of the soil data is fitted in
    ! 1/cm (suction points in cm, as psi_s), but the soil water functions take
    ! suction in mm. Convert alpha to 1/mm on read-in and take the field
    ! capacity at -3399 mm (and the peat end member alpha as 1/suction[mm])
@@ -220,46 +220,46 @@ MODULE MOD_Namelist
    ! With DEF_USE_WETLAND_PEAT_C, lay each layer's stock out as OM_density *
    ! 580 gC/kg of that layer (the soil data's own profile) with the column's
    ! pool split, instead of rescaling the CN dataset's profile, which piles the
-   ! stock into the top layers (paper V2 C-12). Default off.
+   ! stock into the top layers. Default off.
    logical :: DEF_WETLAND_PEAT_C_PROFILE = .false.
    ! Soil water potential of a frozen layer for the decomposition moisture
    ! scalar from freezing-point depression instead of the liquid-water
    ! potential of the soil-water solver, which leaves an ice-filled layer at
-   ! saturation all winter (methane paper version). Default off.
+   ! saturation all winter. Default off.
    logical :: DEF_USE_FROZEN_SOIL_PSI = .false.
    ! Lake patches whose gridded sediment carbon is zero take the soil
-   ! organic-matter proxy that SinglePoint runs use (methane paper version).
+   ! organic-matter proxy that SinglePoint runs use.
    ! Default off.
    logical :: DEF_USE_LAKE_SOILC_OM_FALLBACK = .false.
    ! With DEF_USE_WETLAND_PEAT_C, put each layer's seeded stock entirely into
    ! the passive pool (soil3) instead of the CN dataset's split. Old peat is
    ! the humified residue left after about 90% of the litter decomposed near
    ! the surface (Clymo 1984); the dataset's split, spun up for mineral soil,
-   ! puts half of it in pools that turn over in decades (paper V2 C-17).
+   ! puts half of it in pools that turn over in decades.
    ! Default off.
    logical :: DEF_WETLAND_PEAT_C_PASSIVE = .false.
    ! Only layers whose node lies at or below this depth [m] are moved to the
    ! passive pool; the acrotelm above keeps the dataset's split (Clymo 1984
-   ! puts it at 10-50 cm). 0 moves every layer (paper V2 C-17b).
+   ! puts it at 10-50 cm). 0 moves every layer.
    real(r8) :: DEF_WETLAND_PEAT_C_PASSIVE_ZTOP = 0._r8
-   ! Only the peatland share of the wetland tile is moved (paper V2 C-17c):
+   ! Only the peatland share of the wetland tile is moved:
    ! the rest keeps the dataset's split, which was spun up for mineral soil and
    ! suits the mineral wetlands. The share is the peatland classes (22-27)
    ! over the tile classes (16-19, 22-27) of the GLWD v2 cell nearest to the
    ! patch, read from this file (area_class_NN, as written by
-   ! v2/scripts/glwd_class_2deg.py); 'null' moves the whole layer (C-17b).
+   ! v2/scripts/glwd_class_2deg.py); 'null' moves the whole layer.
    character(len=256) :: DEF_WETLAND_PEAT_SHARE_FILE = 'null'
    ! Single-point runs give the tower's own share here (0 mineral, 1 peat);
    ! < 0 keeps the file or, without one, the whole layer.
    real(r8) :: DEF_WETLAND_PEAT_SHARE_SITE = -1._r8
-   ! Peat soil of the wetland tile (paper V2 Q-45): the soil hydraulic and
+   ! Peat soil of the wetland tile: the soil hydraulic and
    ! thermal parameters of a dynamic wetland tile are mixed layer by layer
    ! towards a peat column by the tile's peatland share. 0 off; 1 the organic
    ! end member of CLM4.5 varying with depth over 0-0.5 m (fibric to sapric);
    ! 2 an acrotelm above DEF_WETLAND_PEAT_C_PASSIVE_ZTOP (0.3 m when unset)
    ! over a catotelm.
    integer  :: DEF_WETLAND_PEAT_SOIL = 0
-   ! Tropical peat end members of DEF_WETLAND_PEAT_SOIL (paper V2 C-91): a
+   ! Tropical peat end members of DEF_WETLAND_PEAT_SOIL: a
    ! tile within this latitude [degrees] of the equator mixes towards the
    ! acrotelm and catotelm given below instead of the CLM4.5 organic soil,
    ! which describes boreal Sphagnum (fibric) over sapric peat. Each is
@@ -270,11 +270,11 @@ MODULE MOD_Namelist
    real(r8) :: DEF_WETLAND_PEAT_TROP_ACRO(4) = (/0.93_r8,  2.7_r8, 10.3_r8, 0.28_r8/)
    real(r8) :: DEF_WETLAND_PEAT_TROP_CATO(4) = (/0.83_r8, 12.0_r8, 10.1_r8, 1.e-4_r8/)
    ! Ponded water on an unfrozen dynamic wetland tile leaves over the surface
-   ! at the lateral outflow of a water table at the surface (paper V2
-   ! candidate 13; PEAT-CLSM semisurficial runoff, Bechtold et al. 2019)
+   ! at the lateral outflow of a water table at the surface (the
+   ! PEAT-CLSM semisurficial runoff, Bechtold et al. 2019)
    ! instead of staying until the wetland water store overflows. Default off.
    logical  :: DEF_WETLAND_POND_OUTFLOW = .false.
-   ! Perched water table of a dynamic wetland tile (paper V2 I-25): above
+   ! Perched water table of a dynamic wetland tile: above
    ! ice-filled soil layers (permafrost, or seasonal frost in spring) the
    ! water table stays on the saturated zone perched on the ice instead of
    ! dropping below the ice to the column bottom, so the water-table floor,
@@ -284,8 +284,8 @@ MODULE MOD_Namelist
    ! perched drainage). Default off.
    logical  :: DEF_WETLAND_PERCHED_DRAINAGE = .false.
    ! Split the dynamic wetland tile by area at the water-table floor instead
-   ! of scaling the refill by the share that takes lateral inflow (paper V2
-   ! C-38, boreal wetlands). The fed share is held at the floor; the share
+   ! of scaling the refill by the share that takes lateral inflow (boreal
+   ! wetlands). The fed share is held at the floor; the share
    ! without inflow (1 - wetland_inflow_share of the methane module, the
    ! permafrost peat plateaus, PEB, of BAWLD, Olefeldt et al. 2021) keeps the
    ! deficit it builds up below the floor, carried between steps in
@@ -298,7 +298,7 @@ MODULE MOD_Namelist
    ! fens average 5.6 and 8.4 g CH4 m-2 yr-1 (Treat et al. 2018). Default off.
    logical  :: DEF_WETLAND_INFLOW_AREA_SPLIT = .false.
    ! Finite lateral inflow to the dynamic wetland tile in place of the
-   ! water-table floor refill (paper V2 candidate 17). The tile takes, every
+   ! water-table floor refill. The tile takes, every
    ! step, the runoff of the uplands around it: q_in = r R_up on the share
    ! that takes lateral inflow (wetland_inflow_share of the methane module),
    ! as negative subsurface runoff, at any water-table depth, net of the peat
@@ -320,7 +320,7 @@ MODULE MOD_Namelist
    ! and the upland-to-wetland area ratio r of the tower; zero is rain-fed.
    real(r8) :: DEF_WETLAND_INFLOW_SITE_RUNOFF(12) = 0._r8
    real(r8) :: DEF_WETLAND_INFLOW_RATIO_SITE = 0._r8
-   ! Single point, managed wetland (paper V2, marsh towers): target depth [m]
+   ! Single point, managed wetland (marsh towers): target depth [m]
    ! of standing water on the dynamic wetland tile of a tower whose water is
    ! held by pumps, siphons or weirs. In place of the water-table floor (and
    ! of the lateral inflow) the tile is refilled from the side up to this
@@ -334,7 +334,7 @@ MODULE MOD_Namelist
    ! spills as surface runoff in the same step. < 0 off (default); ignored
    ! outside single-point builds.
    real(r8) :: DEF_WETLAND_POND_MAX_SITE = -1._r8
-   ! Single point, tower wetland (paper V2, marsh towers): vegetated fraction
+   ! Single point, tower wetland (marsh towers): vegetated fraction
    ! [0-1] of the wetland patch, the measured vascular cover of the footprint
    ! in place of fveg0 (1). The canopy fills this fraction at the in-canopy
    ! leaf and stem area (patch mean over the fraction), the rest is open
@@ -500,14 +500,14 @@ MODULE MOD_Namelist
    logical  :: DEF_GridRiverLake_FloodFeedback = .false.
    logical  :: DEF_GridRiverLake_FloodplainStorageFix = .false.
    real(r8) :: DEF_GridRiverLake_FloodInfiltMax = 5._r8
-   ! C-44 (paper V2): open-water evaporation from the flooded area of the
+   ! open-water evaporation from the flooded area of the
    ! grid-based routing floodplain (beyond the channel), Penman open water
    logical  :: DEF_FLOODPLAIN_EVAP = .false.
-   ! Q-43 (paper V2): flood water of the grid-based routing (or a single-point
+   ! flood water of the grid-based routing (or a single-point
    ! site flood series) re-infiltrates into the soil of flooded soil patches,
    ! as the CaMa-Flood LWINFILT block of WATER_VSF does
    logical  :: DEF_FLOODPLAIN_INFILTRATION = .false.
-   ! Q-47 (paper V2), with DEF_FLOODPLAIN_INFILTRATION only: the routing takes
+   ! with DEF_FLOODPLAIN_INFILTRATION only: the routing takes
    ! the re-infiltrated water from the unit catchments whose flood the soil
    ! patches saw and carries what it cannot take to the next routing step;
    ! a flood re-infiltrates at most the pore deficit it found above the water
@@ -515,14 +515,14 @@ MODULE MOD_Namelist
    ! of each routing input cell beyond its lake and wetland share, without
    ! that of the unit catchments flooded all last year
    logical  :: DEF_FLOODPLAIN_INFILT_FIX = .false.
-   ! I-29 (paper V2): the evaporation of a lake patch beyond its precipitation
+   ! the evaporation of a lake patch beyond its precipitation
    ! (lake_deficit, which the land side puts back into the patch water) is
    ! taken out of the grid-based routing storage of the unit catchments the
    ! patch drains to, and carried over while the storage cannot give it; the
    ! floodplain evaporation of DEF_FLOODPLAIN_EVAP then leaves out the flooded
    ! area the lake patches cover. Not with the Dynamic Lake.
    logical  :: DEF_LAKE_EVAP_ROUTING = .false.
-   ! Q-39 (paper V2): lake depth of a lake patch from its water pixels that
+   ! lake depth of a lake patch from its water pixels that
    ! have a depth only; a patch without any takes the dataset default 10 m
    logical  :: DEF_LAKEDEPTH_VALID_PIXELS = .false.
 
@@ -571,36 +571,36 @@ MODULE MOD_Namelist
 
    logical :: DEF_USE_IRRIGATION        = .false. ! use irrigation
    integer :: DEF_IRRIGATION_ALLOCATION = 1       ! irrigation allocated method
-   ! C-32 (paper V2): bunded paddies. .true. gives rainfed rice (PFT 61) the
+   ! bunded paddies. .true. gives rainfed rice (PFT 61) the
    ! bunds of the flood-managed rice (surface water held up to pondmxc, no
    ! surface runoff) without irrigation, and holds water behind the bunds of
    ! any paddy only from planting to harvest (cphase 1-4). Needs
    ! DEF_USE_IRRIGATION (the paddy method is set in MOD_Irrigation).
    logical :: DEF_PADDY_RICE_BUND       = .false.
-   ! C-45 (paper V2): gridded share of double-cropped irrigated rice (variable
+   ! gridded share of double-cropped irrigated rice (variable
    ! rice_double on a lat/lon grid); irrigated rice where the share is at least
    ! 0.5 is sown again on the second rice date of the crop calendar
    character(len=256) :: DEF_RICE_DOUBLE_SEASON_FILE = 'null'
-   ! C-95 (paper V2): with C-45, the second season of double-cropped irrigated
+   ! with DEF_RICE_DOUBLE_SEASON_FILE, the second season of double-cropped irrigated
    ! rice is sown this many days (land preparation) after the first-season
    ! harvest instead of on the second rice date, if the heat left before the
    ! first-season sowing date comes round again reaches the maturity
-   ! requirement of the crop; negative keeps the second rice date of C-45
+   ! requirement of the crop; negative keeps the second rice date of
    real(r8) :: DEF_RICE_SECOND_SOW_DAYS = -1._r8
-   ! Q-33 (paper V2): a crop pft outside its growing season (not croplive)
+   ! a crop pft outside its growing season (not croplive)
    ! gets no leaf area; with satellite LAI the fallow field otherwise
    ! photosynthesises on the MODIS LAI and all of it goes to leaf carbon
    logical :: DEF_CROP_FALLOW_NO_LAI = .false.
-   ! Q-33 (paper V2): heat-unit index at which rice starts grain fill
+   ! heat-unit index at which rice starts grain fill
    ! (CLM5 0.40); negative keeps the compiled GPAM value 0.68
    real(r8) :: DEF_RICE_GRNFILL = -1._r8
-   ! C-47 (paper V2): a paddy is drained this many days before its projected
+   ! a paddy is drained this many days before its projected
    ! harvest (the earlier of maturity at the season's mean heat-unit rate and
-   ! the maximum season length); negative keeps C-32e, drained from grain fill
+   ! the maximum season length); negative keeps the paddy drained from grain fill
    real(r8) :: DEF_PADDY_DRAIN_DAYS = -1._r8
-   ! Candidate 25 (paper V2): an irrigated paddy (PFT 62, flood or paddy
-   ! method) is bunded and topped up by the paddy irrigation (C-32b) from this
-   ! many days before its next sowing, first or second (C-45) season, so its
+   ! an irrigated paddy (PFT 62, flood or paddy
+   ! method) is bunded and topped up by the paddy irrigation from this
+   ! many days before its next sowing, first or second season, so its
    ! soil is already anoxic at planting. Pre-season flooding of more than 30 d
    ! scales rice emissions by 2.41 (SFp, IPCC 2019 Refinement Vol. 4 Table
    ! 5.13); winter-drained fields emit 42 % less in the rice season than
@@ -609,7 +609,7 @@ MODULE MOD_Namelist
    ! keeps the whole fallow flooded (winter-flooded paddy). Needs
    ! DEF_PADDY_RICE_BUND; 0 or less is off.
    real(r8) :: DEF_PADDY_FALLOW_FLOOD = 0._r8
-   ! C-37 (paper V2): share of the net assimilate (available C less growth
+   ! share of the net assimilate (available C less growth
    ! respiration) of live rice (PFT 61, 62) its roots exude; it enters the
    ! metabolic litter along the fine-root profile. 0 is off.
    real(r8) :: DEF_RICE_ROOT_EXUDATE    = 0._r8
@@ -1368,14 +1368,14 @@ CONTAINS
       DEF_USE_LAIFEEDBACK,                    & !add by Xingjie Lu, use for updating LAI with leaf carbon
       DEF_USE_IRRIGATION,                     & !add by Hongbin Liang @ sysu
       DEF_IRRIGATION_ALLOCATION,              & !add by Hongbin Liang @ sysu
-      DEF_PADDY_RICE_BUND,                    & !C-32 (paper V2)
-      DEF_RICE_DOUBLE_SEASON_FILE,            & !C-45 (paper V2)
-      DEF_RICE_SECOND_SOW_DAYS,               & !C-95 (paper V2)
-      DEF_CROP_FALLOW_NO_LAI,                 & !Q-33 (paper V2)
-      DEF_RICE_GRNFILL,                       & !Q-33 (paper V2)
-      DEF_PADDY_DRAIN_DAYS,                   & !C-47 (paper V2)
-      DEF_PADDY_FALLOW_FLOOD,                 & !candidate 25 (paper V2)
-      DEF_RICE_ROOT_EXUDATE,                  & !C-37 (paper V2)
+      DEF_PADDY_RICE_BUND,                    &
+      DEF_RICE_DOUBLE_SEASON_FILE,            &
+      DEF_RICE_SECOND_SOW_DAYS,               &
+      DEF_CROP_FALLOW_NO_LAI,                 &
+      DEF_RICE_GRNFILL,                       &
+      DEF_PADDY_DRAIN_DAYS,                   &
+      DEF_PADDY_FALLOW_FLOOD,                 &
+      DEF_RICE_ROOT_EXUDATE,                  &
       DEF_USE_NOSTRESSNITROGEN,               & !add by Hongbin Liang @ sysu
       DEF_RSTFAC,                             & !add by Hongbin Liang @ sysu
       DEF_LC_YEAR,                            &
@@ -1392,7 +1392,7 @@ CONTAINS
       DEF_USE_CANYON_HWR,                     &
 
       DEF_USE_SOILPAR_UPS_FIT,                &
-      DEF_VG_ALPHA_MM,                        & !C-94 (paper V2)
+      DEF_VG_ALPHA_MM,                        &
       DEF_THERMAL_CONDUCTIVITY_SCHEME,        &
       DEF_SNOW_THERMAL_CONDUCTIVITY_SCHEME,   &
       DEF_USE_SUPERCOOL_WATER,                &
@@ -1449,11 +1449,11 @@ CONTAINS
       DEF_GridRiverLake_FloodFeedback,        &
       DEF_GridRiverLake_FloodplainStorageFix,  &
       DEF_GridRiverLake_FloodInfiltMax,        &
-      DEF_FLOODPLAIN_EVAP,                    & !C-44 (paper V2)
-      DEF_FLOODPLAIN_INFILTRATION,            & !Q-43 (paper V2)
-      DEF_FLOODPLAIN_INFILT_FIX,              & !Q-47 (paper V2)
-      DEF_LAKE_EVAP_ROUTING,                  & !I-29 (paper V2)
-      DEF_LAKEDEPTH_VALID_PIXELS,             & !Q-39 (paper V2)
+      DEF_FLOODPLAIN_EVAP,                    &
+      DEF_FLOODPLAIN_INFILTRATION,            &
+      DEF_FLOODPLAIN_INFILT_FIX,              &
+      DEF_LAKE_EVAP_ROUTING,                  &
+      DEF_LAKEDEPTH_VALID_PIXELS,             &
 
       DEF_USE_LEVEE,                          &
       DEF_USE_BIFURCATION,                    &
@@ -1525,7 +1525,7 @@ CONTAINS
       DEF_WETLAND_PEAT_TROP_ACRO,             &
       DEF_WETLAND_PEAT_TROP_CATO,             &
       DEF_WETLAND_POND_OUTFLOW,               &
-      DEF_WETLAND_PERCHED_DRAINAGE,           & !I-25 (paper V2)
+      DEF_WETLAND_PERCHED_DRAINAGE,           &
       DEF_WETLAND_INFLOW_AREA_SPLIT,          &
       DEF_WETLAND_LATERAL_INFLOW,             &
       DEF_WETLAND_INFLOW_RATIO_MAX,           &
@@ -2032,7 +2032,7 @@ CONTAINS
          write(*,*) 'Warning: Dynamic Lake is used if CATCHMENT-based lateral flow used.'
 #endif
 
-         ! I-29: the Dynamic Lake keeps its own water and sets no lake_deficit
+         ! the Dynamic Lake keeps its own water and sets no lake_deficit
          IF (DEF_LAKE_EVAP_ROUTING .and. DEF_USE_Dynamic_Lake) THEN
             DEF_LAKE_EVAP_ROUTING = .false.
             write(*,*) '                  *****                  '

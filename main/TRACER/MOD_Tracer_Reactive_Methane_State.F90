@@ -224,7 +224,7 @@ MODULE MOD_Tracer_Reactive_Methane_State
    PROTECTED :: f_inund_levee_patch, f_inund_flood_patch, f_inund_flood_depth_patch, &
       wetland_frac_per_patch, f_h2osfc
 
-   ! I-28: GLWD riverine and lacustrine floodplain area (classes 8-15, 30) per
+   ! GLWD riverine and lacustrine floodplain area (classes 8-15, 30) per
    ! cell of DEF_METHANE%floodplain_glwd_cap_file [km2]; kept across the
    ! LULCC re-initialisation, which rebuilds the patch bound from it
    real(r8), allocatable :: fpcap_lat(:), fpcap_lon(:), fpcap_area(:,:)
@@ -387,8 +387,8 @@ MODULE MOD_Tracer_Reactive_Methane_State
 	   real(r8), allocatable :: lake_water_o2_stock           (:)    ! well-mixed lake-water O2 inventory (mol/m2)
 	   real(r8), allocatable :: lake_frozen_ch4_stock         (:)    ! immobile CH4 retained during lake freeze (mol/m2)
 	   real(r8), allocatable :: lake_frozen_o2_stock          (:)    ! immobile O2 retained during lake freeze (mol/m2)
-	   real(r8), allocatable :: lake_icebubble_ch4_stock      (:)    ! K-5: CH4 of bubbles held under lake ice (mol/m2)
-	   real(r8), allocatable :: lake_cact                     (:)    ! candidate 22: active lake sediment carbon pool (gC/m2)
+	   real(r8), allocatable :: lake_icebubble_ch4_stock      (:)    ! CH4 of bubbles held under lake ice (mol/m2)
+	   real(r8), allocatable :: lake_cact                     (:)    ! active lake sediment carbon pool (gC/m2)
 	   real(r8), allocatable :: lake_liquid_fraction_prev     (:)    ! previous liquid fraction for conservative phase transfer
 	   real(r8), allocatable :: lake_water_ch4_oxid           (:)    ! water-column CH4 oxidation (mol/m2/s)
 	   real(r8), allocatable :: lake_sed_ch4_flux             (:)    ! sediment-to-water CH4 flux (mol/m2/s)
@@ -409,14 +409,14 @@ MODULE MOD_Tracer_Reactive_Methane_State
 	real(r8), allocatable :: tempavg_bgnpp         (:) ! temporary average below-ground NPP (gC/m2/s)
 	real(r8), allocatable :: annsum_counter        (:) ! seconds since last annual accumulator turnover
 	real(r8), allocatable :: tempavg_somhr         (:) ! temporary average SOM heterotrophic resp. (gC/m2/s)
-   real(r8), allocatable :: annavg_tsoi           (:) ! C-27: last full 365-day mean soil temperature, top metre (K)
-   real(r8), allocatable :: tempavg_tsoi_int      (:) ! C-27: time integral of that temperature since the last turnover (K s)
-   real(r8), allocatable :: tempavg_tsoi_cnt      (:) ! C-27: seconds since the last turnover (s)
-   real(r8), allocatable :: methanogen_act_unsat (:,:) ! candidate 30: methanogen activity per layer, unsaturated subcolumn (-)
-   real(r8), allocatable :: methanogen_act_sat   (:,:) ! candidate 30: methanogen activity per layer, saturated subcolumn (-)
-   real(r8), allocatable :: acceptor_unsat       (:,:) ! candidate 16: oxidised share of the electron acceptor capacity per layer, unsaturated subcolumn (-)
-   real(r8), allocatable :: acceptor_sat         (:,:) ! candidate 16: oxidised share of the electron acceptor capacity per layer, saturated subcolumn (-)
-   ! candidate 6: root exudates respired this step [gC m-3 s-1]; set before the
+   real(r8), allocatable :: annavg_tsoi           (:) ! last full 365-day mean soil temperature, top metre (K)
+   real(r8), allocatable :: tempavg_tsoi_int      (:) ! time integral of that temperature since the last turnover (K s)
+   real(r8), allocatable :: tempavg_tsoi_cnt      (:) ! seconds since the last turnover (s)
+   real(r8), allocatable :: methanogen_act_unsat (:,:) ! methanogen activity per layer, unsaturated subcolumn (-)
+   real(r8), allocatable :: methanogen_act_sat   (:,:) ! methanogen activity per layer, saturated subcolumn (-)
+   real(r8), allocatable :: acceptor_unsat       (:,:) ! oxidised share of the electron acceptor capacity per layer, unsaturated subcolumn (-)
+   real(r8), allocatable :: acceptor_sat         (:,:) ! oxidised share of the electron acceptor capacity per layer, saturated subcolumn (-)
+   ! root exudates respired this step [gC m-3 s-1]; set before the
    ! CH4 step reads them, booked on decomp_hr_vr after the pool update. Not
    ! restart state.
    real(r8), allocatable :: root_exudate_vr      (:,:)
@@ -758,7 +758,7 @@ CONTAINS
 	      allocate (lake_frozen_ch4_stock           (numpatch)); lake_frozen_ch4_stock        (:)   = 0._r8
 	      allocate (lake_frozen_o2_stock            (numpatch)); lake_frozen_o2_stock         (:)   = 0._r8
 	      allocate (lake_icebubble_ch4_stock        (numpatch)); lake_icebubble_ch4_stock     (:)   = 0._r8
-	      ! candidate 22: the active pool starts empty
+	      ! the active pool starts empty
 	      allocate (lake_cact                       (numpatch)); lake_cact                    (:)   = 0._r8
 	      allocate (lake_liquid_fraction_prev       (numpatch)); lake_liquid_fraction_prev    (:)   = spval
 	      allocate (lake_water_ch4_oxid             (numpatch)); lake_water_ch4_oxid          (:)   = 0._r8
@@ -787,10 +787,10 @@ CONTAINS
       allocate (annavg_tsoi                 (numpatch)); annavg_tsoi            (:) = spval
       allocate (tempavg_tsoi_int            (numpatch)); tempavg_tsoi_int       (:) = 0._r8
       allocate (tempavg_tsoi_cnt            (numpatch)); tempavg_tsoi_cnt       (:) = 0._r8
-      ! candidate 30: full activity reproduces the production without it
+      ! full activity reproduces the production without it
       allocate (methanogen_act_unsat (nl_soil,numpatch)); methanogen_act_unsat (:,:) = 1._r8
       allocate (methanogen_act_sat   (nl_soil,numpatch)); methanogen_act_sat   (:,:) = 1._r8
-      ! candidate 16: acceptor pools start full (fully oxidised)
+      ! acceptor pools start full (fully oxidised)
       allocate (acceptor_unsat       (nl_soil,numpatch)); acceptor_unsat       (:,:) = 1._r8
       allocate (acceptor_sat         (nl_soil,numpatch)); acceptor_sat         (:,:) = 1._r8
       allocate (root_exudate_vr      (nl_soil,numpatch)); root_exudate_vr      (:,:) = 0._r8
@@ -877,7 +877,7 @@ CONTAINS
 	         allocate(wetland_frac_per_patch(numpatch))
 	      ENDIF
 	      wetland_frac_per_patch(:) = 1._r8
-      ! I-28: the flood bound belongs to this patch layout; rebuilt below
+      ! the flood bound belongs to this patch layout; rebuilt below
       IF (allocated(fld_cap_p)) deallocate(fld_cap_p)
 
 	      IF (.not. p_is_worker) RETURN
@@ -919,7 +919,7 @@ CONTAINS
 	         ENDIF
 	      ENDDO
 
-      ! I-28: flooded fraction of a soil patch at most the GLWD floodplain
+      ! flooded fraction of a soil patch at most the GLWD floodplain
       ! area of its cell over the soil area (patchtype 0) of its element, so
       ! the flooded soil area of the element stays within the floodplain.
       ! Other patches, and patches outside the file's rows, are not bounded.
@@ -996,7 +996,7 @@ CONTAINS
 	   END SUBROUTINE init_methane_wetland_fraction_cache
 
    SUBROUTINE read_methane_floodplain_cap ()
-      ! I-28 (paper V2): GLWD riverine and lacustrine floodplain area (classes
+      ! GLWD riverine and lacustrine floodplain area (classes
       ! 8-15, and the large river deltas, 30, which replace them inside the
       ! delta outlines) per cell of DEF_METHANE%floodplain_glwd_cap_file, read
       ! on the master and broadcast, so every rank calls this; call it before
@@ -1334,7 +1334,7 @@ CONTAINS
 	      drydown_o2_stock = max(lake_water_o2_stock(ipatch), 0._r8) + &
 	         max(lake_frozen_o2_stock(ipatch), 0._r8)
 
-	      ! K-5: CH4 held in bubbles under the ice leaves with the water
+	      ! CH4 held in bubbles under the ice leaves with the water
 	      IF (allocated(lake_icebubble_ch4_stock)) THEN
 	         drydown_ch4_stock = drydown_ch4_stock + max(lake_icebubble_ch4_stock(ipatch), 0._r8)
 	         lake_icebubble_ch4_stock(ipatch) = 0._r8
@@ -2205,7 +2205,7 @@ CONTAINS
       CALL ncio_read_vector (file_restart, 'ch4_annavg_finrw',     landpatch, annavg_finrw,     defval = spval)
       CALL ncio_read_vector (file_restart, 'ch4_tempavg_agnpp',    landpatch, tempavg_agnpp,    defval = 0._r8)
       CALL ncio_read_vector (file_restart, 'ch4_tempavg_bgnpp',    landpatch, tempavg_bgnpp,    defval = 0._r8)
-      ! C-27 soil-temperature mean; a restart written before it takes the
+      ! soil-temperature mean; a restart written before it takes the
       ! defaults (no mean yet, a new year starts). A presence check reduces
       ! over the global communicator, which not every rank reaches here (a
       ! 480-rank run hung), so the strict completeness rule is lifted instead.
@@ -2213,23 +2213,23 @@ CONTAINS
       CALL ncio_read_vector (file_restart, 'ch4_annavg_tsoi',      landpatch, annavg_tsoi,      defval = spval)
       CALL ncio_read_vector (file_restart, 'ch4_tempavg_tsoi_int', landpatch, tempavg_tsoi_int, defval = 0._r8)
       CALL ncio_read_vector (file_restart, 'ch4_tempavg_tsoi_cnt', landpatch, tempavg_tsoi_cnt, defval = 0._r8)
-      ! K-5 under-ice bubble store; a restart written before it starts the
+      ! under-ice bubble store; a restart written before it starts the
       ! store empty, under the same lifted completeness rule
       CALL ncio_read_vector (file_restart, 'ch4_lake_icebubble_ch4_stock', landpatch, &
          lake_icebubble_ch4_stock, defval = 0._r8)
-      ! candidate 30 methanogen activity, read the same way; a restart written
+      ! methanogen activity, read the same way; a restart written
       ! before it starts from full activity (the production without it)
       CALL ncio_read_vector (file_restart, 'ch4_methanogen_act_unsat', nl_soil, landpatch, &
          methanogen_act_unsat, defval = 1._r8)
       CALL ncio_read_vector (file_restart, 'ch4_methanogen_act_sat',   nl_soil, landpatch, &
          methanogen_act_sat,   defval = 1._r8)
-      ! candidate 16 acceptor pools, read the same way; a restart written
+      ! acceptor pools, read the same way; a restart written
       ! before them starts from full pools, as a cold start does
       CALL ncio_read_vector (file_restart, 'ch4_acceptor_unsat', nl_soil, landpatch, &
          acceptor_unsat, defval = 1._r8)
       CALL ncio_read_vector (file_restart, 'ch4_acceptor_sat',   nl_soil, landpatch, &
          acceptor_sat,   defval = 1._r8)
-      ! candidate 22 active lake carbon pool, read the same way; a restart
+      ! active lake carbon pool, read the same way; a restart
       ! written before it starts the pool empty
       CALL ncio_read_vector (file_restart, 'ch4_lake_cact', landpatch, lake_cact, defval = 0._r8)
       CALL ncio_set_complete_require_present (strict_restart_active)
@@ -2368,11 +2368,11 @@ CONTAINS
 	               count(invalid_restart_value(lake_frozen_o2_stock) .or. lake_frozen_o2_stock < -restart_neg_floor) + &
 	               count(invalid_restart_fraction_or_sentinel(lake_liquid_fraction_prev))
 	         ENDIF
-	         ! K-5: a missing field reads as 0, a valid empty store
+	         ! a missing field reads as 0, a valid empty store
 	         corrupt_prognostic_values = corrupt_prognostic_values + &
 	            count(invalid_restart_value(lake_icebubble_ch4_stock) .or. &
 	                  lake_icebubble_ch4_stock < -restart_neg_floor)
-	         ! candidate 22: a missing field reads as 0, a valid empty pool
+	         ! a missing field reads as 0, a valid empty pool
 	         corrupt_prognostic_values = corrupt_prognostic_values + &
 	            count(invalid_restart_value(lake_cact) .or. lake_cact < 0._r8)
 	         IF (component_state_present) THEN
@@ -2553,12 +2553,12 @@ CONTAINS
 	      WHERE (invalid_restart_fraction_or_sentinel(fsat_bef)) fsat_bef = spval
 	      WHERE (invalid_restart_fraction_or_sentinel(finundated_lag)) finundated_lag = spval
 	      WHERE (invalid_restart_fraction_or_sentinel(layer_sat_lag)) layer_sat_lag = spval
-	      ! candidate 30: an activity outside (0,1] restarts at full activity
+	      ! an activity outside (0,1] restarts at full activity
 	      WHERE (invalid_restart_value(methanogen_act_unsat) .or. methanogen_act_unsat <= 0._r8 .or. &
 	             methanogen_act_unsat > 1._r8) methanogen_act_unsat = 1._r8
 	      WHERE (invalid_restart_value(methanogen_act_sat) .or. methanogen_act_sat <= 0._r8 .or. &
 	             methanogen_act_sat > 1._r8) methanogen_act_sat = 1._r8
-	      ! candidate 16: an oxidised share outside [0,1] restarts full
+	      ! an oxidised share outside [0,1] restarts full
 	      WHERE (invalid_restart_value(acceptor_unsat) .or. acceptor_unsat < 0._r8 .or. &
 	             acceptor_unsat > 1._r8) acceptor_unsat = 1._r8
 	      WHERE (invalid_restart_value(acceptor_sat) .or. acceptor_sat < 0._r8 .or. &
@@ -2657,7 +2657,7 @@ CONTAINS
 	               IF (patchtype(ipatch) /= PATCHTYPE_LAKE) CYCLE
 	               lake_component_total = totcol_methane_lake(ipatch) + &
 	                  lake_water_ch4_stock(ipatch) + lake_frozen_ch4_stock(ipatch)
-	               ! K-5: the under-ice bubble store is part of the lake inventory
+	               ! the under-ice bubble store is part of the lake inventory
 	               IF (lake_icebubble_ch4_stock(ipatch) > 0._r8) &
 	                  lake_component_total = lake_component_total + lake_icebubble_ch4_stock(ipatch)
 	               lake_inventory_tolerance = 1.e-12_r8 + 1.e-10_r8 * &
@@ -2877,7 +2877,7 @@ CONTAINS
    END SUBROUTINE publish_methane_levee_flood_patch
 
    SUBROUTINE set_methane_site_flood (ipatch, idate)
-      ! C-48 (paper V2): flood fraction and depth of a single-point soil patch
+      ! flood fraction and depth of a single-point soil patch
       ! from DEF_METHANE%site_flood_file (see MOD_Tracer_Reactive_Methane_Const),
       ! standing in for the routing floodplain a single point cannot simulate.
       USE netcdf
@@ -2981,13 +2981,13 @@ CONTAINS
       IF (allocated(f_inund_flood_depth_patch)) THEN
          IF (ipatch <= size(f_inund_flood_depth_patch)) f_inund_flood_depth_patch(ipatch) = max(0._r8, d)
       ENDIF
-      ! Q-43: the same flood re-infiltrates into the host soil of the patch
+      ! the same flood re-infiltrates into the host soil of the patch
       ! (a single point has no routing; the river supplies the water)
       IF (DEF_FLOODPLAIN_INFILTRATION) THEN
          CALL flood_infil_alloc (size(f_inund_flood_patch))
          fld_frc_p(ipatch) = max(0._r8, min(1._r8, f))
          fld_dph_p(ipatch) = max(0._r8, d) * 1.e3_r8
-         ! I-28: the soil re-infiltrates under the same bounded flood the
+         ! the soil re-infiltrates under the same bounded flood the
          ! methane physics sees
          IF (allocated(fld_cap_p)) THEN
             IF (ipatch <= size(fld_cap_p)) fld_frc_p(ipatch) = min(fld_frc_p(ipatch), fld_cap_p(ipatch))
@@ -3732,7 +3732,7 @@ CONTAINS
 	                  ! The generic column is the canonical total inventory;
 	                  ! keep the independent water stock once and assign only
 	                  ! the remainder to the lake sediment representation.
-	                  ! The K-5 under-ice bubble store is not remapped (it is
+	                  ! The under-ice bubble store is not remapped (it is
 	                  ! reallocated empty); its CH4 is in the total and so
 	                  ! goes to the sediment here.
 	                  lake_water_ch4_stock(np) = max(lake_water_ch4_stock(np), 0._r8)

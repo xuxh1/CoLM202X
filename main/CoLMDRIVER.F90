@@ -86,7 +86,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
       CALL site_wtd_update (idate)
 #endif
 
-      ! Candidate 17 (paper V2): the lateral inflow taken by a dynamic wetland
+      ! the lateral inflow taken by a dynamic wetland
       ! is booked by the host hydrology; patches that skip that branch keep
       ! zero. At a tower the inflow offered this step comes from the namelist.
       IF (DEF_WETLAND_LATERAL_INFLOW .and. (numpatch > 0)) THEN
@@ -434,7 +434,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 #endif
 
 #ifndef SinglePoint
-      ! Candidate 17: the runoff of this step from the uplands of each element
+      ! the runoff of this step from the uplands of each element
       ! is offered to its dynamic wetlands at the next step, once every patch
       ! has run, so the result does not depend on the order of the patches.
       IF (DEF_WETLAND_LATERAL_INFLOW .and. (numpatch > 0)) CALL wetland_inflow_upland ()
@@ -448,7 +448,7 @@ CONTAINS
 
    SUBROUTINE wetland_inflow_upland ()
    !--------------------------------------------------------------------
-   ! Candidate 17: lateral inflow offered to the dynamic wetland patches of
+   ! lateral inflow offered to the dynamic wetland patches of
    ! each element per unit area of their fed share, wetlatin = r R_up.
    ! The runoff of the other soil tiles of a grid cell feeds its peat tile
    ! in ORCHIDEE-PEAT (Qiu et al. 2018, p. 501; Largeron et al. 2018, eq. 1);
@@ -522,7 +522,7 @@ CONTAINS
 
    SUBROUTINE wetland_inflow_site ()
    !--------------------------------------------------------------------
-   ! Candidate 17 at a tower (one wetland patch, no upland patch beside it):
+   ! at a tower (one wetland patch, no upland patch beside it):
    ! wetlatin = r R_up with R_up the monthly climatology of the upland runoff
    ! DEF_WETLAND_INFLOW_SITE_RUNOFF [mm/day] and r the upland-to-wetland area
    ! ratio DEF_WETLAND_INFLOW_RATIO_SITE of the tower; both default to zero,
